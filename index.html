@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NFT MATCH</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script>
+</head>
+<body>
+
+    <div id="tg-gate-overlay" class="tg-gate-overlay hidden">
+        <div class="tg-gate-modal">
+            <h2>NFTMatch не доступен</h2>
+            <p>Наш сервис не работает вне телеграмма, чтобы им воспользоваться перейдите в нашего бота</p>
+            <a href="https://t.me/NFTMatchBot" target="_blank" class="tg-gate-link">Перейти в бота</a>
+        </div>
+    </div>
+    <header>
+        <a href="index.html" class="header-logo">
+            NFT<br>Match
+        </a>
+        <nav>
+            <a href="index.html">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                </svg>
+                API
+            </a>
+        </nav>
+    </header>
+
+    <main>
+        <div class="main-container">
+
+            <div class="top-section">
+                <h1>NFT Match</h1>
+                <div class="top-section-info">
+                    <p class="top-section-text">
+                        Наш сервис работет с цветами NFT, он поможет вам найти идеальное сочетание модели и фона для вашей коллекции.
+                    </p>
+                    <div id="topLottieAnimation" class="top-lottie-container"></div>
+                </div>
+            </div>
+
+            <section class="tools-section">
+                <div class="features-container">
+
+                    <a href="./Monohrome/background-finder.html" class="feature-card">
+                        <div class="card-image-wrapper">
+                            <img src="./Photoshop/Section3Photo.png" alt="Изображение для поиска фонов и моделей">
+                        </div>
+                        <div class="card-content">
+                            <div class="card-text-content">
+                                <h2>Монохром NFT</h2>
+                                <p>Поиск NFT по сочетанию с фоном</p>
+                            </div>
+                            <div class="card-action">
+                                <hr class="action-divider">
+                                <span>Найти</span>
+                            </div>
+                        </div>
+                    </a>
+
+                    <a href="./nft-page/index.html" class="feature-card">
+                        <div class="card-image-wrapper">
+                            <img src="./Photoshop/Section4Photo.png" alt="Изображение для поиска похожих моделей">
+                        </div>
+                        <div class="card-content">
+                            <div class="card-text-content">
+                                <h2>Похожие NFT</h2>
+                                <p>Поиск похожих по цвету NFT моделей</p>
+                            </div>
+                            <div class="card-action">
+                                <hr class="action-divider">
+                                <span>Найти</span>
+                            </div>
+                        </div>
+                    </a>
+
+                    <a href="#" class="feature-card full-width-card">
+                        <div id="cardLottieAnimationWrapper" class="card-image-wrapper lottie-bg">
+                            <div id="cardLottieAnimation"></div>
+                        </div>
+                        <div class="card-content">
+                            <h2>Update soon...</h2>
+                        </div>
+                    </a>
+
+                </div>
+            </section>
+
+        </div>
+    </main>
+    
+    <script>
+        // Сохраняем экземпляры анимаций в глобальные переменные, чтобы управлять ими
+        window.topLottieAnimation = lottie.loadAnimation({
+            container: document.getElementById('topLottieAnimation'),
+            renderer: 'svg',
+            loop: true,
+            autoplay: true,
+            path: 'https://cdn.changes.tg/gifts/models/Spring%20Basket/lottie/Knitty%20Kitty.json'
+        });
+
+        window.cardLottieAnimation = lottie.loadAnimation({
+            container: document.getElementById('cardLottieAnimation'),
+            renderer: 'svg',
+            loop: true,
+            autoplay: true,
+            path: 'https://cdn.changes.tg/gifts/models/Plush%20Pepe/lottie/Toading....json'
+        });
+    </script>
+    <script src="./main-page.js"></script>
+</body>
+</html>

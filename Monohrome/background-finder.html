@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BACKGROUND SELECTION</title>
+    <link rel="stylesheet" href="./background-finder.css">
+    <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
+</head>
+<body>
+
+    <header>
+        <a href="/index.html" class="header-logo">
+            NFT<br>Match
+        </a>
+        <nav>
+            <a href="index.html">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                </svg>
+                API
+            </a>
+        </nav>
+    </header>
+
+    <main>
+        <div class="main-container">
+            
+            <div class="mode-switcher-container">
+                <div class="mode-switcher">
+                    <button id="mode-find-bgs" class="mode-tab" data-mode="findBgs">Поиск фонов</button>
+                    <button id="mode-find-models" class="mode-tab" data-mode="findModels">Поиск моделей</button>
+                </div>
+            </div>
+            
+            <div class="content-wrapper">
+
+                <div id="find-bgs-controls" class="mode-content active">
+                    <div class="selection-block">
+                        <div class="custom-dropdown-container" id="gift-container-bgs">
+                            <label for="gift-search-bgs">Название коллекции:</label>
+                            <div class="dropdown-header with-search" id="gift-dropdown-header-bgs">
+                                <input type="text" id="gift-search-bgs" placeholder="Поиск..." class="dropdown-search" autocomplete="off">
+                                <span id="gift-selected-value-bgs" class="selected-value-placeholder">Выберите коллекцию</span>
+                                <div class="arrow"></div>
+                            </div>
+                            <div class="dropdown-list hidden" id="gift-dropdown-list-bgs">
+                                <div class="list-options" id="gift-list-options-bgs"></div>
+                            </div>
+                        </div>
+                        <div class="custom-dropdown-container" id="model-container-bgs">
+                            <label for="model-search-bgs">Название модели:</label>
+                            <div class="dropdown-header with-search" id="model-dropdown-header-bgs">
+                                <input type="text" id="model-search-bgs" placeholder="Поиск..." class="dropdown-search" autocomplete="off">
+                                <span id="model-selected-value-bgs" class="selected-value-placeholder">Выберите модель</span>
+                                <div class="arrow"></div>
+                            </div>
+                            <div class="dropdown-list hidden" id="model-dropdown-list-bgs">
+                                <div class="list-options" id="model-list-options-bgs"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="monocolor-alert-wrapper"></div>
+                    <div id="picker-area">
+                        <div class="gift-preview-container" id="pickerContainer"></div>
+                        <div id="pickerTargetColorsDisplay" class="target-color-display"></div>
+                    </div>
+                </div>
+                <div id="find-models-controls" class="mode-content">
+                     <div class="selection-block">
+                        <div class="custom-dropdown-container" id="gift-container-models">
+                            <label for="gift-search-models">Название коллекции:</label>
+                            <div class="dropdown-header with-search" id="gift-dropdown-header-models">
+                                <input type="text" id="gift-search-models" placeholder="Поиск..." class="dropdown-search" autocomplete="off">
+                                <span id="gift-selected-value-models" class="selected-value-placeholder">Выберите коллекцию</span>
+                                <div class="arrow"></div>
+                            </div>
+                            <div class="dropdown-list hidden" id="gift-dropdown-list-models">
+                                <div class="list-options" id="gift-list-options-models"></div>
+                            </div>
+                        </div>
+                        <div class="custom-dropdown-container" id="color-container-models">
+                            <label for="color-search-models">Задний фон:</label>
+                            <div class="dropdown-header with-search" id="color-dropdown-header-models">
+                                <input type="text" id="color-search-models" placeholder="Поиск..." class="dropdown-search" autocomplete="off">
+                                <span id="color-selected-value-models" class="selected-value-placeholder">Выберите фон</span>
+                                <div class="arrow"></div>
+                            </div>
+                            <div class="dropdown-list hidden" id="color-dropdown-list-models">
+                                <div class="list-options" id="color-list-options-models"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <hr class="divider">
+                
+                <div id="results-wrapper" class="content-section results-initial-hide"> 
+                    <div id="loading-container"></div>
+                    <div class="results-grid" id="results-grid">
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+
+        <div id="details-modal-overlay" class="modal-overlay hidden">
+            <div class="details-modal">
+                <div class="details-modal-header">
+                    <h3 id="modal-gift-name" class="modal-title"></h3>
+                    <button id="modal-close-btn" class="modal-close-btn">&times;</button>
+                </div>
+                <div class="modal-photo-container">
+                    </div>
+                <div class="modal-info">
+                    <div class="info-row">
+                        <span class="info-label">Модель:</span>
+                        <span id="modal-model-name" class="info-value"></span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Фон:</span>
+                        <span id="modal-bg-name" class="info-value"></span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Совпадение:</span>
+                        <span id="modal-compat-value" class="info-value compat"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <script type="module" src="./background-finder.js"></script> 
+</body>
+</html>

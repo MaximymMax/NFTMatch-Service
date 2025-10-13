@@ -1,0 +1,471 @@
+@import "./global.css";
+
+:root {
+    --bg-color: #0a1020;
+    --surface-color: #16213a;
+    --surface-elevated: #1e2944;
+    --border-color: #ffffff;
+    --primary-color: #2563eb;
+    --primary-hover: #1d4ed8;
+    --accent-color: #ffffff;
+    --text-primary: #f1f5fa;
+    --text-secondary: #d8d8d8;
+    --text-muted: #6b7fa7;
+    --card-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.18);
+    --radius: 0.8rem;
+    
+    --img-size-mobile-vertical-height: 8rem;
+    --img-size-mobile-horizontal: 8rem;
+    --img-size-desktop: 9rem;
+    --image-background-color: rgb(45, 61, 87);
+    --lottie-card-bg-color: #a9a9a9;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    background: linear-gradient(180deg, #1a237e 0%, #0a1020 100%);
+    color: var(--text-primary);
+    min-height: 100vh;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    overflow-x: hidden;
+    min-width: 350px;
+}
+
+header {
+    background-color: var(--surface-color);
+    border-bottom-left-radius: var(--radius);
+    border-bottom-right-radius: var(--radius);
+    box-shadow: var(--card-shadow);
+    padding: 1rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.header-logo {
+    color: var(--text-primary);
+    font-size: 1.2rem;
+    font-weight: 700;
+    text-decoration: none;
+    line-height: 1.1;
+    white-space: normal;
+    text-align: center;
+    text-shadow: 0 0 8px rgba(255, 255, 255, 0.7);
+}
+
+header nav a {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    transition: color 200ms ease-in-out;
+}
+
+header nav a:hover {
+    color: var(--text-primary);
+}
+
+header nav a svg {
+    height: 1.5rem;
+    width: 1.5rem;
+    margin-bottom: 0.25rem;
+}
+
+main {
+    display: flex;
+    justify-content: center;
+    padding: 1rem;
+}
+
+.main-container {
+    width: 100%;
+    max-width: 950px;
+    background: var(--surface-color);
+    border-radius: var(--radius);
+    box-shadow: var(--card-shadow);
+    padding: 1.5rem;
+    margin-top: 0.5rem;
+    margin-bottom: 3rem;
+}
+
+.top-section {
+    text-align: center;
+}
+
+.top-section h1 {
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+}
+
+.top-section-info {
+    display: flex;
+    flex-direction: row;
+    align-items: center; /* UPDATED: Changed from 'stretch' to 'center' for vertical alignment */
+    gap: 1rem;
+}
+
+.top-section-text {
+    flex: 1;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    text-align: left;
+    margin-left: 0.6rem; /* Убираем отступы у параграфа */
+}
+
+.top-lottie-container {
+    width: 120px;
+    height: 120px;
+    flex-shrink: 0;
+}
+
+/* Секция с инструментами */
+.tools-section {
+    margin-top: 1.5rem; /* Отступ сверху для отделения от верхнего блока */
+}
+
+.tools-title {
+    text-align: center;
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+}
+
+.features-container {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    align-items: stretch;
+}
+
+.features-container .full-width-card {
+    grid-column: 1 / -1;
+}
+
+.feature-card {
+    display: flex;
+    border-radius: var(--radius);
+    text-decoration: none;
+    color: inherit;
+    overflow: hidden;
+    box-shadow: var(--card-shadow);
+    transition: transform 0.2s, box-shadow 0.2s;
+    background-color: var(--image-background-color);
+}
+
+.features-container .feature-card.full-width-card {
+    background-color: #2d3d57;
+
+}
+
+.feature-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+}
+
+.card-image-wrapper {
+    position: relative;
+    height: auto;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border-radius: 0;
+    background-color: var(--image-background-color);
+}
+
+.features-container a:not(.full-width-card) {
+    flex-direction: column;
+}
+
+.features-container a:not(.full-width-card) .card-image-wrapper {
+    width: 100%;
+    height: var(--img-size-mobile-vertical-height);
+    border-top-left-radius: var(--radius);
+    border-top-right-radius: var(--radius);
+}
+
+.features-container a:not(.full-width-card) .card-content {
+    border-bottom-left-radius: var(--radius);
+    border-bottom-right-radius: var(--radius);
+}
+
+.features-container a.full-width-card {
+    flex-direction: row;
+    min-height: var(--img-size-mobile-horizontal);
+}
+
+.features-container a.full-width-card .card-image-wrapper {
+    width: var(--img-size-mobile-horizontal);
+    height: var(--img-size-mobile-horizontal);
+    border-radius: var(--radius) 0 0 var(--radius); /* ИЗМЕНЕНО */
+}
+
+.features-container a.full-width-card .card-content {
+    border-radius: 0 var(--radius) var(--radius) 0; /* ИЗМЕНЕНО */
+}
+
+.card-image-wrapper img {
+    width: 100%;
+    height: 100%;
+    display: block;
+    padding: 0;
+    object-fit: contain;
+}
+
+.lottie-bg {
+    background-color: #2d3d57;
+}
+.lottie-bg svg {
+    width: 80%;
+    height: 80%;
+}
+
+.card-content {
+    padding: 1rem;
+    color: var(--text-primary);
+    position: relative;
+    cursor: pointer;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: space-between;
+}
+
+.card-content h2 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 0 0 0.45rem 0;
+    line-height: 1.2;
+}
+
+.card-content p {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    line-height: 1.4;
+    margin: 0;
+}
+
+.card-action {
+    width: 100%;
+    margin-top: 0.75rem;
+}
+
+.action-divider {
+    border: none;
+    height: 1px;
+    background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.3), transparent);
+    margin: 0 0 0.5rem 0;
+}
+
+.card-action span {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--accent-color);
+    text-align: center;
+    display: block;
+}
+
+.features-container a:nth-child(1) .card-content {
+    background-color: #2d3d57;
+}
+.features-container a:nth-child(2) .card-content {
+    background-color: #2d3d57;
+}
+.features-container a:nth-child(3) .card-content {
+    background-color: #2d3d57;
+    justify-content: center;
+    align-items: center;
+}
+.features-container a:nth-child(3) h2 {
+    margin: 0;
+}
+
+/* ------------------------------------------- */
+/* --- Media Queries для ПК --- */
+/* ------------------------------------------- */
+
+@media (min-width: 601px) {
+    
+    .top-section h1 {
+        font-size: 2.5rem;
+    }
+    .top-section-info {
+        gap: 2rem;
+    }
+    .top-lottie-container {
+        width: 220px;
+        height: 220px;
+    }
+    .top-section-text {
+        font-size: 1rem;
+    }
+    
+    .tools-title {
+        font-size: 2.2rem;
+    }
+
+    .features-container {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+
+    .features-container .full-width-card {
+        grid-column: auto;
+    }
+    
+    .feature-card {
+        flex-direction: row !important; /* UPDATED: Changed to 'row' to put image on the left */
+        min-height: var(--img-size-desktop);
+    }
+    
+    .feature-card .card-image-wrapper {
+        width: var(--img-size-desktop);
+        min-width: var(--img-size-desktop);
+        height: auto;
+        align-self: stretch;
+        /* UPDATED: Corrected border-radius for the left side */
+        border-radius: var(--radius) 0 0 var(--radius) !important;
+    }
+    
+    .feature-card .card-content {
+        /* UPDATED: Corrected border-radius for the right side */
+        border-radius: 0 var(--radius) var(--radius) 0 !important;
+        justify-content: center;
+        padding-left: 1.5rem;
+        padding-right: 1.5rem;
+    }
+
+    .card-action {
+        display: none;
+    }
+
+    .card-content h2 {
+        font-size: 1.25rem;
+        margin-bottom: 0.5rem;
+    }
+    .card-content p {
+        font-size: 0.9rem;
+    }
+}
+
+.full-width-card .card-content h2 {
+    font-size: 1.8rem;
+    text-align: center;
+}
+
+.lottie-bg {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+}
+
+#cardLottieAnimation {
+    width: 80%;
+    height: 80%;
+}
+
+@media (max-width: 768px) {
+    .full-width-card .card-content h2 {
+        font-size: 1.3rem;
+    }
+}
+
+.body-gated {
+    overflow: hidden !important; /* Надежно блокируем прокрутку */
+}
+
+/* Размываем и блокируем основной контент страницы */
+.body-gated header,
+.body-gated main {
+    filter: blur(16px); /* <-- УВЕЛИЧИЛИ РАЗМЫТИЕ */
+    pointer-events: none;
+    user-select: none;
+    transition: filter 0.3s ease;
+}
+
+/* Сам оверлей теперь без backdrop-filter, он больше не нужен */
+.tg-gate-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 10000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 1rem;
+    background-color: rgba(10, 16, 32, 0.5); /* Затемняем фон */
+    opacity: 1;
+    transition: opacity 0.3s ease;
+}
+
+.tg-gate-overlay.hidden {
+    /* Меняем display на none, чтобы оверлей полностью исчезал */
+    display: none;
+    opacity: 0;
+}
+
+/* Стили для модального окна остаются без изменений */
+.tg-gate-modal {
+    background-color: var(--surface-elevated);
+    border-radius: var(--radius);
+    padding: 2rem 1.5rem;
+    width: 100%;
+    max-width: 340px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* <-- Центрируем блочные элементы (кнопку) */
+    text-align: center;  /* <-- Устанавливаем общее выравнивание по центру (для заголовка) */
+    gap: 0.5rem;
+}
+
+.tg-gate-icon {
+    width: 64px;
+    height: 64px;
+    margin-bottom: 1rem;
+}
+
+.tg-gate-modal h2 {
+    font-size: 1.4rem;
+    font-weight: 700;
+    margin: 0 0 1rem 0; /* <-- ДОБАВИЛИ ОТСТУП СНИЗУ */
+    color: var(--text-primary);
+}
+
+.tg-gate-modal p {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    margin: 0 0 1.5rem 0;
+    width: 100%; /* <-- Растягиваем параграф на всю ширину */
+    text-align: left; /* <-- ПЕРЕОПРЕДЕЛЯЕМ выравнивание только для него */
+}
+
+.tg-gate-link {
+    display: block;
+    width: 100%;
+    background-color: var(--primary-color);
+    color: var(--text-primary);
+    text-decoration: none;
+    padding: 0.8rem 1.5rem;
+    border-radius: var(--radius);
+    font-weight: 600;
+    font-size: 1rem;
+    transition: background-color 0.2s;
+}
+
+.tg-gate-link:hover {
+    background-color: var(--primary-hover);
+}

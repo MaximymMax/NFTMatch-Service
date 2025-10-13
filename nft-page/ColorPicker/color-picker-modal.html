@@ -1,0 +1,20 @@
+<div class="card-modal color-picker-modal" id="colorPickerModalContent">
+    <div class="modal-header">
+        <button class="close-modal-btn" id="closeColorPickerModalBtn" aria-label="Закрыть" style="position: absolute; left: 1rem;">&times;</button>
+        <button class="btn-primary" id="saveColorsBtn" style="padding: 0.5rem 1.5rem;">Сохранить</button>
+    </div>
+    
+    <div class="modal-body color-picker-modal-body">
+        <div id="colorPickerVisualArea">
+            <div class="gift-preview-container" id="pickerContainer">
+                <img id="pickerPreviewImage" src="" alt="Gift Preview" class="rounded-lg w-full" crossorigin="anonymous">
+                <canvas id="pickerColorCanvas" class="hidden"></canvas>
+            </div>
+        </div>
+        
+        <h3 class="text-center font-semibold text-text-secondary mb-2">Выбранные цвета:</h3>
+        <div id="pickerTargetColorsDisplay" class="target-color-display justify-center">
+        </div>
+        
+    </div>
+</div>

@@ -1,0 +1,1979 @@
+/*
+======================================
+1. CORE & GLOBALS
+======================================
+*/
+
+:root {
+    --bg-color: #0a1020;
+    --surface-color: #16213a;
+    --surface-elevated: #1e2944;
+    --border-color: #22305a;
+    --primary-color: #38bdf8;
+    --primary-hover: #0ea5e9;
+    --accent-color: #c084fc;
+    --accent-hover: #a464e1;
+    --text-primary: #f1f5fa;
+    --text-secondary: #d8d8d8;
+    --text-muted: #6b7fa7;
+    --card-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.18);
+    --radius: 0.8rem;
+    --glow-color: rgba(56, 189, 248, 0.2);
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    background: linear-gradient(180deg, #1a237e 0%, var(--bg-color) 100%);
+    color: var(--text-primary);
+    min-height: 100vh;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    overflow-x: hidden;
+    min-width: 350px;
+}
+
+label {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    font-weight: 500;
+    /* Убираем нижний отступ, чтобы прижать к дропдауну */
+    margin-bottom: 0; 
+}
+
+.custom-dropdown-container label[for="gift-search"]{
+    padding-left: 10px; 
+}
+.custom-dropdown-container label[for="model-search"]{
+    padding-left: 10px; 
+}
+.multi-select-container label[for="multi-gift-search"] {
+    padding-left: 10px; 
+}
+
+.divider {
+    border: 0;
+    height: 1px;
+    background-image: linear-gradient(to right, rgba(0, 0, 0, 0), var(--border-color), rgba(0, 0, 0, 0));
+    margin: 2rem 0;
+}
+
+/*
+---
+*/
+
+/*
+======================================
+2. HEADER & NAVIGATION
+======================================
+*/
+
+header {
+    background-color: var(--surface-color);
+    border-bottom-left-radius: var(--radius);
+    border-bottom-right-radius: var(--radius);
+    box-shadow: var(--card-shadow);
+    padding: 1rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+}
+
+header nav {
+    position: static;
+    transform: none;
+    top: auto;
+    right: auto;
+}
+
+.header-logo {
+    color: var(--text-primary);
+    font-size: 1.2rem;
+    font-weight: 700;
+    text-decoration: none;
+    line-height: 1.1;
+    white-space: normal;
+    text-align: center;
+    /* Свечение: белый цвет, небольшой радиус */
+    text-shadow: 0 0 8px rgba(255, 255, 255, 0.7); 
+}
+
+header nav a {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    transition: color 200ms ease-in-out;
+    text-decoration: none;
+}
+
+header nav a:hover {
+    color: var(--text-primary);
+}
+
+header nav a svg {
+    height: 1.5rem;
+    width: 1.5rem;
+    margin-bottom: 0.25rem;
+}
+
+/*
+---
+*/
+
+/*
+======================================
+3. MAIN CONTENT & SELECTION BLOCKS
+======================================
+*/
+
+main {
+    display: flex;
+    justify-content: center;
+    padding: 1rem;
+    overflow-x: hidden;
+}
+
+.main-container {
+    width: 100%;
+    max-width: 900px;
+    background: rgba(22, 33, 58, 0.92);
+    border-radius: var(--radius);
+    box-shadow: var(--card-shadow);
+    padding: 1rem;
+    margin-top: 0.5rem;
+    margin-bottom: 3rem;
+    min-height: 110vh;
+    overflow-y: visible;
+}
+
+.page-title {
+    font-size: clamp(1.4rem, 4vw, 1.8rem);
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0;
+    line-height: 1.2;
+}
+
+.page-title.centered-title {
+    text-align: center;
+    margin: 0 auto 2rem auto;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.selection-block {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+/*
+---
+*/
+
+/*
+======================================
+4. CUSTOM DROPDOWN (SELECT)
+======================================
+*/
+
+.monocolor-indicator {
+    background-color: #f87171; /* Красный фон */
+    border-radius: 50%;
+    width: 22px;
+    height: 22px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-shrink: 0;
+    margin-left: auto; /* Выравнивание вправо */
+}
+
+.monocolor-indicator svg {
+    width: 14px;
+    height: 14px;
+    color: var(--text-primary); /* Белый/светлый цвет для иконки */
+    stroke-width: 2.5; /* Немного толще, чтобы было видно */
+}
+
+.custom-dropdown-container {
+    position: relative;
+}
+
+.dropdown-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1rem;
+    background-color: var(--surface-elevated);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    color: var(--text-secondary);
+    position: relative; /* <<<< ДОБАВЬ ЭТО */
+}
+
+.dropdown-header.active {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.4);
+    position: relative;
+    z-index: 1200;
+}
+
+.dropdown-header.disabled,
+.dropdown-header.disabled-control,
+.dropdown-header.disabled-button {
+    cursor: not-allowed;
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.dropdown-header .arrow {
+    width: 12px;
+    height: 12px;
+    border-right: 2px solid var(--text-muted);
+    border-bottom: 2px solid var(--text-muted);
+    transition: transform 0.2s;
+    /* vvvv ЗАМЕНИ СТАРЫЙ TRANSFORM НА ЭТО vvvv */
+    position: absolute;
+    right: 1rem;
+    top: 50%;
+    transform: translateY(-50%) rotate(45deg); 
+}
+
+.dropdown-header.active .arrow {
+    /* vvvv ЗАМЕНИ СТАРЫЙ TRANSFORM НА ЭТО vvvv */
+    transform: translateY(-50%) rotate(225deg);
+}
+
+.dropdown-list {
+    position: absolute; /* <<<< ВЕРНИ ABSOLUTE */
+    top: calc(100% + 3px); /* <<<< ВЕРНИ ЭТИ СТРОКИ */
+    left: 0;
+    right: 0;
+    background-color: var(--surface-elevated);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    box-shadow: var(--card-shadow);
+    z-index: 100;
+    padding: 0.5rem;
+    max-height: 350px;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.stretch-dropdown {
+    position: relative !important;
+    top: auto !important;
+    left: auto !important;
+    right: auto !important;
+    margin-top: 0.5rem;
+}
+
+.dropdown-list::-webkit-scrollbar {
+    width: 8px;
+    background-color: transparent;
+}
+
+.dropdown-list::-webkit-scrollbar-thumb {
+    background-color: var(--border-color);
+    border-radius: 4px;
+}
+
+.dropdown-list.hidden {
+    display: none;
+}
+
+/* Dropdown with Search Specifics */
+.dropdown-header.with-search {
+    padding: 0.75rem 1rem;
+    display: flex;
+    align-items: center;
+    position: relative;
+    cursor: pointer;
+    justify-content: space-between;
+}
+
+.dropdown-header .dropdown-search {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
+    background: transparent;
+    border: none;
+    outline: none;
+    z-index: 20;
+    opacity: 0;
+    transition: opacity 0.2s;
+    color: var(--text-primary);
+    font-size: 0.95rem;
+    line-height: 1.2;
+    caret-color: var(--text-primary);
+    padding: 0.75rem 30px 0.75rem 0.75rem;
+    pointer-events: none;
+}
+
+.dropdown-header.disabled .dropdown-search,
+.dropdown-header.disabled-control .dropdown-search {
+    opacity: 0 !important;
+    pointer-events: none !important;
+    z-index: 1 !important;
+}
+
+.dropdown-header .selected-value-placeholder {
+    position: static;
+    transform: none;
+    font-size: 0.95rem;
+    line-height: 1.2;
+    color: var(--text-secondary);
+    padding-right: 1.5rem;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    flex-grow: 1;
+    z-index: 10;
+    pointer-events: auto;
+    transition: opacity 0.2s;
+}
+
+.dropdown-header.disabled .selected-value-placeholder,
+.dropdown-header.disabled-control .selected-value-placeholder {
+    opacity: 1 !important;
+    pointer-events: none !important;
+}
+
+.dropdown-header.open .dropdown-search,
+.dropdown-header.value-active .dropdown-search {
+    opacity: 1;
+    pointer-events: auto;
+    z-index: 21;
+    /* Уменьшаем ширину, чтобы оставить место для стрелки */
+    width: 90%; 
+    padding: 0.5rem 0.75rem;
+    font-size: 1rem;
+}
+
+.dropdown-header.open .selected-value-placeholder,
+.dropdown-header.value-active .selected-value-placeholder {
+    opacity: 0;
+    pointer-events: none;
+}
+
+#multi-select-content {
+    position: absolute; /* Делаем его плавающим */
+    top: calc(100% + 3px); /* Отступ всего 1px от заголовка */
+    left: 0;
+    right: 0;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.45); /* Используем "всплывающую" тень */
+    margin-top: 0; /* Убираем отступ */
+    overflow: hidden;
+    /* Копируем базовые стили из .multi-select-content */
+    background-color: var(--surface-elevated);
+    border: 1px solid var(--border-color);
+    border-radius: 0.75rem;
+    z-index: 120;
+    padding: 0.4rem;
+    min-height: 160px;
+    -webkit-overflow-scrolling: touch;
+}
+
+.dropdown-header.open .selected-value-placeholder {
+    display: none;
+}
+
+/* List Options */
+.list-option {
+    padding: 0.75rem 1rem;
+    cursor: pointer;
+    border-radius: 0.5rem;
+    transition: background-color 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.list-option:hover {
+    background-color: var(--surface-color);
+}
+
+.option-image {
+    width: 35px;
+    height: 35px;
+    object-fit: contain;
+    border-radius: 4px;
+    flex-shrink: 0;
+    align-self: center;
+    /* 🔥 ДОБАВЛЕНО: Стили для плавного появления */
+    opacity: 0;
+    transition: opacity 0.4s ease-in-out;
+}
+
+.option-text {
+    font-size: 1.05rem;
+    line-height: 1.4;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex-grow: 1;
+}
+
+/*
+---
+*/
+
+/*
+======================================
+5. DETAILS BLOCK (PHOTO & COLORS)
+======================================
+*/
+
+#monocolor-alert-wrapper {
+    margin-bottom: 1.5rem;
+}
+
+.monocolor-alert {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0.4rem 1rem;
+    background-color: rgba(248, 113, 113, 0.15); /* Светло-красный фон */
+    border: 1px solid #f87171; /* Красная рамка */
+    color: #f87171; /* Красный текст */
+    border-radius: var(--radius);
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.monocolor-alert svg {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+}
+
+.details-content {
+    display: none;
+    opacity: 0;
+    transition: opacity 0.5s ease-in-out;
+}
+
+.details-content.visible {
+    display: flex;
+    flex-direction: row;
+    gap: 1rem;
+    border-radius: var(--radius);
+    opacity: 1;
+    position: relative;
+    margin-bottom: 2rem;
+}
+
+.photo-container {
+    flex: 1 1 150px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 150px;
+    background-color: var(--surface-elevated);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    overflow: hidden;
+}
+
+#gift-photo {
+    max-width: 90%;
+    max-height: 250px;
+    object-fit: contain;
+    border-radius: var(--radius);
+    animation: fadeIn 0.5s ease-in-out;
+}
+
+.colors-info {
+    flex: 1 1 150px;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.colors-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    overflow-y: auto;
+    padding-right: 0.5rem;
+}
+
+.color-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.4rem 0.5rem;
+    background-color: var(--surface-color);
+    border-radius: var(--radius);
+    color: var(--text-secondary);
+    font-size: clamp(0.8rem, 2vw, 1.2rem);
+}
+
+.color-square {
+    width: 1.5em;
+    height: 1.5em;
+    border-radius: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    flex-shrink: 0;
+}
+
+.change-color-btn {
+    font-family: 'Inter', sans-serif;
+    padding: 0.8rem 0.5rem;
+    background-color: var(--primary-color);
+    color: var(--text-primary);
+    border: none;
+    border-radius: var(--radius);
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s, transform 0.2s;
+    flex-shrink: 0;
+}
+
+.change-color-btn:hover {
+    background-color: var(--primary-hover);
+    transform: translateY(-2px);
+}
+
+.change-color-btn.hidden {
+    display: none;
+}
+
+/*
+---
+*/
+
+/*
+======================================
+6. MULTI-SELECT
+======================================
+*/
+
+.multi-select-container {
+    margin-bottom: 2rem;
+    z-index: 10;
+    /* 🔥 КОРРЕКЦИЯ ШИРИНЫ 1: Даем контейнеру 100% ширину родителя */
+    width: 100%; 
+}
+
+.multi-select-dropdown {
+    z-index: 10;
+}
+
+.multi-select-container .custom-dropdown-container {
+    width: 100%;
+    display: block; 
+}
+
+.multi-select-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 48px;
+    padding: 0.75rem 1rem;
+    background-color: var(--surface-elevated);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+}
+
+.multi-select-header.active {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.4);
+    position: relative;
+    z-index: 1200;
+}
+
+.list-option.list-placeholder {
+    pointer-events: none; /* Запрещаем клик по плейсхолдеру */
+    color: var(--text-muted); /* Делаем текст приглушенным */
+    font-style: italic;
+    cursor: default;
+    background-color: var(--surface-default); /* Используем нейтральный фон */
+    padding-left: 1.5rem; /* Немного отступа для лучшей читаемости */
+}
+.list-option.list-placeholder:hover {
+    background-color: var(--surface-default); /* Отключаем эффект наведения */
+}
+
+/* MULTI-SELECT DROPDOWN: поверх контента, если есть место, иначе раздвигает main-container вниз */
+.multi-select-content {
+    position: absolute; 
+    top: calc(100% + 1px); /* Новый отступ */
+    left: 0;
+    right: 0;
+    background-color: var(--surface-elevated);
+    border: 1px solid var(--border-color);
+    border-radius: 0.75rem;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.45);
+    z-index: 120;
+    padding: 0.4rem;
+    width: 100%;
+    min-height: 160px;
+    overflow: hidden;
+    -webkit-overflow-scrolling: touch;
+    margin-top: 0; /* Убираем отступ */
+}
+
+/* Минимальная высота для открытого dropdown-header с поиском */
+.dropdown-header.with-search.open {
+    min-height: 20px;
+}
+
+.multi-select-content.hidden {
+    display: none;
+}
+
+.multi-list-scroll-wrapper {
+    max-height: 350px; /* <--- Фиксированная высота для скролла */
+    overflow-y: auto; /* <--- Скролл для всего контента под контролами */
+    padding-right: 5px; /* <--- Отступ для скроллбара */
+    margin-top: 5px;
+}
+.multi-list-scroll-wrapper::-webkit-scrollbar {
+    width: 8px;
+    background-color: transparent;
+}
+
+.multi-list-scroll-wrapper::-webkit-scrollbar-thumb {
+    background-color: var(--border-color);
+    border-radius: 4px;
+}
+
+.dropdown-controls-wrapper {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background-color: var(--surface-elevated);
+    padding: 0.5rem 0.4rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.dropdown-controls-buttons {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 0.5rem;
+}
+
+.control-btn {
+    background: transparent;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s, color 0.2s;
+    font-size: 0.9rem;
+}
+
+.clear-btn {
+    color: #f87171;
+}
+
+.clear-btn:hover {
+    background-color: rgba(248, 113, 113, 0.1);
+}
+
+.select-all-btn {
+    color: var(--primary-color);
+}
+
+.select-all-btn:hover {
+    background-color: rgba(56, 189, 248, 0.1);
+}
+
+.list-divider {
+    height: 1px;
+    background-image: linear-gradient(to right, rgba(0, 0, 0, 0), var(--border-color), rgba(0, 0, 0, 0));
+    margin: 10px 0;
+}
+
+.list-divider.hidden { 
+    display: none;
+}
+
+.multi-list-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.multi-list-options {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.multi-list-option-label {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    padding: 0.4rem 0.75rem;
+    cursor: pointer;
+    border-radius: 0.5rem;
+    transition: background-color 0.15s;
+    font-size: 0.9rem;
+    position: relative;
+    min-height: 40px;
+}
+
+.multi-list-option-label:hover {
+    background-color: var(--surface-color);
+}
+
+.multi-list-option-label .option-image {
+    width: 35px;
+    height: 35px;
+    object-fit: contain;
+    border-radius: 4px;
+    flex-shrink: 0;
+    position: absolute;
+    left: 2.8rem;
+    top: 50%;
+    transform: translateY(-50%);
+    transition: opacity 0.2s; /* Можно оставить короткий transition для hover-эффектов */
+}
+
+.option-image.loaded {
+    opacity: 1;
+}
+
+.multi-list-option-label:hover .option-image {
+    opacity: 1;
+}
+
+.multi-list-option-label .multi-select-checkbox {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.multi-list-option-label span {
+    /* Сдвигаем текст левее, вслед за иконкой */
+    margin-left: 5.1rem;
+    display: block;
+    line-height: 1.2;
+    padding-right: 10px;
+    color: var(--text-secondary);
+    transition: color 0.2s, font-weight 0.2s;
+}
+
+/* Custom Checkbox ::before (Circle) */
+.multi-list-option-label span::before {
+    content: '';
+    display: block;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 2px solid var(--border-color);
+    background-color: transparent;
+    transition: all 0.2s ease-in-out;
+    flex-shrink: 0;
+    position: absolute;
+    top: 50%;
+    /* Позиционирование чекбокса */
+    left: 0.75rem; /* Начальная позиция чекбокса */
+    transform: translateY(-50%);
+    box-sizing: border-box;
+    z-index: 2;
+}
+
+/* ====================================== */
+/* СТИЛИ ПРИ ВЫБОРЕ (:checked)            */
+/* ====================================== */
+
+/* 🔥 ИЗМЕНЕНИЕ 3: Выбранный чекбокс - Заливка круга и цвет рамки */
+.multi-select-checkbox:checked + .option-image + span::before {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+/* 🔥 ИЗМЕНЕНИЕ 4: Выбранный чекбокс - Появление галочки */
+.multi-select-checkbox:checked + .option-image + span::after {
+    opacity: 1;
+    color: var(--text-primary);
+}
+
+/* 🔥 ИЗМЕНЕНИЕ 5: Выбранный чекбокс - Цвет текста */
+.multi-select-checkbox:checked + .option-image + span {
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+/* 🔥 ИЗМЕНЕНИЕ 6: Выбранный чекбокс - Стиль метки-контейнера */
+.multi-select-checkbox:checked + .option-image {
+    opacity: 1; /* Полная непрозрачность иконки при выборе */
+}
+
+/* 🔥 ИЗМЕНЕНИЕ 7: Изменение фонового цвета всей метки-контейнера при выборе (необязательно) */
+.multi-list-option-label.checked-style {
+    background-color: var(--surface-color); /* Более темный фон для выбранных элементов */
+}
+
+/* Custom Checkbox ::after (Checkmark) */
+.multi-list-option-label span::after {
+    content: '✓'; 
+    position: absolute;
+    top: 50%;
+    /* Позиционирование галочки */
+    left: 0.75rem; 
+    transform: translate(2px, -50%); 
+    font-size: 14px;
+    color: var(--text-primary); 
+    opacity: 0;
+    transition: opacity 0.2s ease-in-out;
+    pointer-events: none;
+    line-height: 1;
+    z-index: 3;
+    font-weight: bold;
+}
+
+
+.multi-select-checkbox:checked + span::after {
+    opacity: 1;
+    color: var(--text-primary);
+}
+
+.multi-select-checkbox:checked + span {
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+/*
+======================================
+7. ACTION & SORT CONTROLS
+======================================
+*/
+
+.action-and-sort-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    margin-top: 30px;
+    margin-bottom: 30px;
+    flex-wrap: nowrap;
+    min-width: 100%;
+}
+
+.sort-and-display-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+#sort-desktop-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+#sort-order-desktop {
+    padding: 0.5rem 1rem;
+    background-color: var(--surface-color);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    font-size: 0.9rem;
+    min-width: 150px;
+}
+
+.btn-icon-sort-mobile {
+    display: none;
+    background-color: var(--surface-elevated);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    padding: 8px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.btn-icon-sort-mobile:hover {
+    background-color: var(--surface-color);
+}
+
+.btn-icon-display-mode {
+    background-color: var(--surface-elevated);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    padding: 8px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: background-color 0.2s;
+    display: none;
+}
+
+.btn-icon-display-mode:hover {
+    background-color: var(--surface-color);
+}
+
+.btn-icon-search {
+    background-color: var(--surface-elevated);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    padding: 10px 20px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background-color 0.2s, box-shadow 0.2s;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.btn-icon-search:hover {
+    background-color: var(--surface-color);
+    box-shadow: 0 4px 10px var(--glow-color);
+}
+
+.btn-icon-search .spinner {
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    border-top: 3px solid var(--text-primary);
+    border-radius: 50%;
+    width: 16px;
+    height: 16px;
+    animation: spin 1s linear infinite;
+    display: inline-block;
+    vertical-align: middle;
+    margin-right: 8px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.disabled-control,
+.disabled-button:disabled {
+    cursor: not-allowed !important;
+    opacity: 0.6 !important;
+    pointer-events: none !important;
+    box-shadow: none !important;
+}
+
+/*
+---
+*/
+
+/*
+======================================
+8. MODALS & OVERLAYS
+======================================
+*/
+
+.modal-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(20, 28, 48, 0.55);
+    backdrop-filter: blur(8px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+}
+
+.modal-overlay.hidden {
+    display: none !important;
+}
+
+.card-modal {
+    background-color: var(--surface-elevated);
+    border-radius: var(--radius);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+    padding: 0;
+    position: relative;
+    width: 450px;
+    max-width: 95vw;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.7rem 1rem;
+}
+
+.modal-header .close-modal-btn {
+    align-self: flex-end; /* Прижимаем крестик к правому краю */
+    margin-bottom: 0.5rem; /* Добавляем отступ снизу от крестика */
+}
+
+.nft-details-modal .modal-header {
+    flex-direction: column; /* Ставим элементы друг под друга */
+    align-items: stretch;   /* Растягиваем их по ширине */
+    padding-bottom: 0;      /* Убираем нижний отступ у контейнера */
+}
+
+.nft-details-modal .modal-header .close-modal-btn {
+    align-self: flex-end; /* Крестик прижимаем вправо */
+}
+
+
+.card-modal .close-modal-btn {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 2rem;
+    cursor: pointer;
+    z-index: 2;
+    transition: color 0.15s;
+    line-height: 1;
+    padding: 0;
+}
+.card-modal .close-modal-btn:hover {
+    color: #f87171;
+}
+
+.sort-modal {
+    background-color: var(--surface-elevated);
+    padding: 20px;
+    border-radius: var(--radius);
+    max-width: 300px;
+    width: 90%;
+}
+
+.sort-modal-options button {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 10px;
+    margin-top: 8px;
+    background: var(--surface-color);
+    color: var(--text-primary);
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+/*
+---
+*/
+
+/*
+======================================
+9. RESULTS SECTION & CARDS
+======================================
+*/
+
+.results-container {
+    padding-top: 1rem;
+    opacity: 0;
+    transition: opacity 0.5s ease-in-out;
+    display: none;
+}
+
+.results-container.visible {
+    opacity: 1;
+    display: block;
+}
+
+.results-initial-hide {
+    display: none !important;
+}
+
+.results-controls {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+    padding: 0.5rem 1rem;
+    background-color: var(--surface-elevated);
+    border-radius: var(--radius);
+}
+
+.results-controls label {
+    margin: 0;
+    font-size: 0.9rem;
+}
+
+.results-controls select {
+    padding: 0.5rem 1rem;
+    background-color: var(--surface-color);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    font-size: 0.9rem;
+}
+
+.results-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    transition: grid-template-columns 0.3s;
+}
+
+.result-card {
+    background-color: var(--surface-elevated);
+    border-radius: var(--radius);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+    transition: transform 0.2s, box-shadow 0.2s;
+    overflow: hidden;
+    cursor: pointer;
+}
+
+.result-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.6), 0 0 10px var(--primary-color);
+}
+
+.result-card-image-wrapper {
+    position: relative;
+    padding-bottom: 65%;
+    height: 0;
+    overflow: hidden;
+    background-color: var(--surface-color);
+}
+
+.result-card-image-wrapper.image-wrapper-single {
+    padding-bottom: 100%;
+}
+
+.result-card-image {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 90%;
+    height: 90%;
+    object-fit: contain;
+    padding: 0;
+}
+
+/* Card Models (3 models style) */
+.card-model-main,
+.card-model-side {
+    position: absolute;
+    object-fit: contain;
+    padding: 0;
+    margin: 0;
+    bottom: 0;
+    transform: none;
+    /* Начинаем с невидимости и добавляем плавный переход */
+    opacity: 0;
+    transition: opacity 0.4s ease-in-out;
+}
+
+.card-model-main {
+    width: 40%;
+    height: 90%;
+    left: 50%;
+    transform: translateX(-50%);
+    /* opacity: 1; - это свойство теперь управляется классом .loaded */
+    z-index: 3;
+}
+
+.card-model-main.loaded {
+    opacity: 1;
+}
+
+.card-model-side.loaded {
+    opacity: 0.4;
+}
+
+.card-model-side {
+    width: 30%;
+    height: 70%;
+    /* opacity: 0.4; - это свойство теперь управляется классом .loaded */
+    z-index: 2;
+}
+
+.model-left {
+    left: 2%;
+}
+
+.model-right {
+    right: 2%;
+}
+
+.card-model-main.model-single {
+    width: 90%;
+    height: 90%;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    bottom: auto;
+    z-index: 1;
+}
+
+.result-card-info {
+    background-color: #283754;
+    padding: 0.75rem;
+    text-align: left;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    flex-direction: column;
+}
+
+.result-card-info h2.similarity-percent {
+    font-size: 1.6rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 5px 0;
+    line-height: 1.2;
+}
+
+.result-card-info h3.gift-name {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 2px 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-transform: none;
+    line-height: 1.2;
+}
+
+.result-card-info p.model-name {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+    margin: 0 0 10px 0;
+    line-height: 1.2;
+}
+
+.result-card-info .info-details {
+    margin-top: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding-top: 5px;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.result-card-info .info-details p {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+    margin: 0;
+}
+
+.result-card-info .info-details p .price-value,
+.result-card-info .price-info .currency-symbol {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.result-card-info .price-info .currency-symbol {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.result-card-info .ton-icon {
+    width: 16px;
+    height: 16px;
+    vertical-align: middle;
+    margin-left: 4px;
+}
+
+/*
+---
+*/
+
+/*
+======================================
+10. COLOR PICKER MODAL
+======================================
+*/
+
+.color-picker-modal {
+    max-width: 450px;
+    width: 90%;
+}
+
+.color-picker-modal .modal-header {
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.7rem 1.5rem;
+}
+
+.color-picker-modal-body {
+    padding: 1rem 1.5rem 2rem 1.5rem;
+}
+
+.color-picker-modal-body .gift-preview-container {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    overflow: hidden;
+    margin: 0 auto 1.5rem auto;
+    background-color: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+}
+
+#pickerPreviewImage {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    display: block;
+    margin: auto;
+    width: 100% !important;
+    height: 100% !important;
+}
+
+#pickerColorCanvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    display: none !important;
+    visibility: hidden !important;
+}
+
+.color-picker {
+    position: absolute;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 3px solid var(--accent-color);
+    box-shadow: 0 0 0 3px #10182a;
+    background: #fff;
+    cursor: grab;
+    transform: translate(-50%, -50%);
+    transition: box-shadow 0.2s, border-color 0.2s, transform 0.2s;
+    z-index: 20;
+}
+.color-picker.dragging {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 5px rgba(56, 189, 248, 0.33);
+    transform: scale(1.15) translate(-50%, -50%);
+}
+.color-picker.invalid {
+    animation: shake 0.3s;
+    border-color: #f87171;
+}
+
+.picker-color-preview {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 2px solid #fff;
+    box-shadow: 0 0 4px #0008;
+    pointer-events: none;
+}
+
+.target-color-display {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 1.5rem;
+    padding: 1rem 0;
+}
+
+.color-swatch {
+    width: 70px;
+    height: 70px;
+    border-radius: 0.7rem;
+    border: 3px solid var(--border-color);
+    background: #10182a;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: center;
+    box-shadow: 0 2px 8px 0 rgba(56,189,248,0.08);
+    position: relative;
+    overflow: hidden;
+}
+
+.color-swatch-hex {
+    background: rgba(0, 0, 0, 0.5);
+    color: var(--text-primary);
+    width: 90%;
+    text-align: center;
+    padding: 3px 0;
+    font-size: 0.8rem;
+    font-weight: 600;
+    position: absolute;
+    bottom: 5px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-radius: 5px;
+}
+
+.color-picker-description {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    padding: 0 0 1rem 0;
+    margin-bottom: 1rem;
+    text-align: center;
+    line-height: 1.4;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 1rem;
+}
+
+#saveColorsBtn {
+    background-color: var(--primary-color);
+    color: var(--text-primary);
+    border: none;
+    border-radius: 0.5rem;
+    padding: 0.5rem 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    font-size: 0.9rem;
+    line-height: 1;
+}
+
+#saveColorsBtn:hover {
+    background-color: var(--primary-hover);
+}
+
+/*
+---
+*/
+
+/*
+======================================
+11. NFT DETAILS MODAL
+======================================
+*/
+
+.nft-details-modal {
+    max-width: 800px;
+    width: 95%;
+}
+
+.nft-details-modal .modal-header h3 {
+    text-align: left; /* Выравниваем заголовок по левому краю */
+    font-size: 1.2rem;
+    color: var(--text-primary);
+    font-weight: 600;
+    width: 100%; /* Заголовок занимает всю ширину */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+     text-align: center; /* Заголовок выравниваем по центру */
+    margin: 0rem 0 0.2rem 0; /* Добавляем отступ сверху */
+    padding: 0  2rem; /* Добавляем боковые отступы, чтобы текст не прилипал к краям */
+    box-sizing: border-box;
+}
+
+.nft-details-modal-body {
+    padding: 1rem 1rem 1.5rem 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.comparison-container {
+    display: flex;
+    flex-direction: row;
+    gap: 0.75rem;
+    justify-content: space-around;
+    width: 100%;
+    max-width: 450px;
+    margin: 0 auto;
+}
+
+.comparison-photo-box {
+    flex: 0 0 47%;
+    aspect-ratio: 1 / 1;
+    background-color: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    position: relative;
+    padding: 0.25rem;
+}
+
+.comparison-photo-box .model-photo {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    display: block;
+}
+
+.box-label {
+    position: absolute;
+    top: 5px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(0, 0, 0, 0.5);
+    color: var(--text-primary);
+    font-size: 0.75rem;
+    padding: 2px 8px;
+    border-radius: 4px;
+    z-index: 5;
+    white-space: nowrap;
+}
+
+.similar-models-title {
+    font-size: 1rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+    margin: 0;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.similar-models-list-wrapper {
+    background-color: var(--surface-elevated);
+    position: relative;
+    z-index: 1;
+    overflow-x: hidden;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+    padding-right: 0;
+    border-radius: var(--radius);
+}
+
+.similar-models-list-wrapper::-webkit-scrollbar {
+    display: none;
+}
+
+.similar-models-list-wrapper::before,
+.similar-models-list-wrapper::after {
+    content: '';
+    position: absolute;
+    left: -2px;
+    right: -2px;
+    height: 40px;
+    z-index: 20;
+    pointer-events: none;
+    transition: opacity 0.3s;
+    opacity: 0;
+}
+
+.similar-models-list-wrapper::before {
+    top: -2px;
+    background: linear-gradient(to bottom,
+        var(--surface-elevated) 0%,
+        transparent 100%
+    );
+}
+
+.similar-models-list-wrapper::after {
+    bottom: -8px;
+    background: linear-gradient(to top,
+        var(--surface-elevated) 0%,
+        transparent 100%
+    );
+}
+
+.similar-models-list-wrapper.can-scroll-down::after {
+    opacity: 1;
+    background: linear-gradient(to top,
+        var(--surface-elevated) 10%,
+        transparent 100%
+    );
+}
+
+.similar-models-list-wrapper.can-scroll-up::before {
+    opacity: 1;
+    background: linear-gradient(to bottom,
+        var(--surface-elevated) 10%,
+        transparent 100%
+    );
+}
+
+.similar-models-list {
+    background-color: var(--surface-elevated);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding-bottom: 0;
+    width: 100%;
+    max-height: 25vh;
+    overflow-y: scroll;
+    padding-right: 0;
+    -webkit-overflow-scrolling: touch;
+}
+
+.similar-models-list::-webkit-scrollbar {
+    display: none;
+    width: 0;
+}
+
+
+.model-item {
+    flex-shrink: 0;
+    width: 100%;
+    display: flex;
+    height: 65px;
+    background-color: var(--surface-elevated);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    overflow: hidden;
+    cursor: pointer;
+    transition: box-shadow 0.2s, border-color 0.2s;
+}
+
+.model-item:hover {
+    transform: none;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+.model-photo-mini {
+    aspect-ratio: 1 / 1;
+    height: 100%;
+    flex-shrink: 0;
+    padding: 0.25rem;
+    box-sizing: border-box;
+}
+
+.model-photo-mini-img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    display: block;
+}
+
+.model-info {
+    flex-grow: 1;
+    padding: 0.5rem 0.5rem 0.5rem 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    gap: 0;
+}
+
+.model-name-coof {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.model-name-text {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.model-coof-text {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--accent-color);
+}
+
+.model-price {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.model-price .ton-icon-small {
+    width: 14px;
+    height: 14px;
+    vertical-align: middle;
+}
+
+.list-loading {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 1rem;
+    color: var(--text-muted);
+}
+.spinner-small {
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top: 2px solid var(--text-muted);
+    border-radius: 50%;
+    width: 14px;
+    height: 14px;
+    animation: spin 1s linear infinite;
+}
+
+/*
+---
+*/
+
+/*
+======================================
+12. MISCELLANEOUS & UTILITIES
+======================================
+*/
+
+.content-section {
+    /* Убраны фон, радиус, отступы и тень для "невидимости" контейнера */
+    padding: 0;
+    position: relative;
+    margin-top: 2rem;
+    display: block;
+}
+
+.content-section p {
+    color: var(--text-secondary);
+    line-height: 1.6;
+}
+
+.loading-indicator {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    gap: 15px;
+    padding: 2rem 0;
+    min-height: 100px;
+}
+
+.loading-indicator p {
+    color: var(--text-secondary);
+    font-size: 1.1rem;
+    font-weight: 500;
+}
+
+.cancel-search-btn {
+    background-color: var(--surface-color);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+    padding: 8px 18px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    font-weight: 500;
+    transition: background-color 0.2s, color 0.2s;
+    flex-shrink: 0;
+    font-size: 0.9rem;
+}
+
+.cancel-search-btn:hover {
+    background-color: var(--surface-elevated);
+    color: var(--text-primary);
+}
+
+
+/*
+======================================
+13. MEDIA QUERIES (ADAPTIVITY)
+======================================
+*/
+
+@media (min-width: 601px) {
+    .details-content.visible {
+        display: flex;
+        flex-direction: row;
+        gap: 1rem;
+        align-items: stretch;
+    }
+
+    .photo-container {
+        flex: 0 0 50%;
+        max-width: 50%;
+        min-height: 320px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        overflow: hidden;
+    }
+
+    #gift-photo {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        border-radius: var(--radius);
+    }
+
+    .colors-info {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        min-height: 320px;
+        gap: 1rem;
+    }
+
+    .colors-list {
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        overflow-y: auto;
+        padding-right: 0.5rem;
+    }
+
+    .color-item {
+        flex: 0 0 auto;
+        padding: 0.6rem 0.75rem;
+    }
+
+    .change-color-btn {
+        width: 100%;
+        margin-top: auto;
+        flex-shrink: 0;
+    }
+}
+
+@media (max-width: 768px) {
+    #sort-desktop-wrapper {
+        display: none;
+    }
+    .btn-icon-sort-mobile {
+        display: block;
+    }
+    .btn-icon-display-mode.desktop-only {
+        display: none;
+    }
+    .btn-icon-display-mode.mobile-only {
+        display: block;
+    }
+}
+
+@media (min-width: 769px) {
+    .btn-icon-sort-mobile,
+    .btn-icon-display-mode.mobile-only {
+        display: none;
+    }
+    .btn-icon-display-mode.desktop-only {
+        display: block;
+    }
+    #sort-desktop-wrapper {
+        display: flex;
+    }
+}
+
+@media (max-width: 600px) {
+    .results-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+    }
+
+    .results-grid.grid-top-3 {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .results-grid.grid-top-1 {
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+    }
+
+    .results-grid.grid-top-1 .result-card-info h2.similarity-percent {
+        font-size: 1.2rem;
+    }
+    .results-grid.grid-top-1 .result-card-info h3.gift-name {
+        font-size: 0.85rem;
+        line-height: 1.1;
+    }
+    .results-grid.grid-top-1 .result-card-info p.model-name {
+        font-size: 0.7rem;
+        margin-bottom: 5px;
+    }
+    .results-grid.grid-top-1 .result-card-info .info-details p {
+        font-size: 0.75rem;
+    }
+    .results-grid.grid-top-1 .ton-icon {
+        width: 13px;
+        height: 13px;
+    }
+
+    .result-card-image {
+        height: 120px;
+        width: 95%;
+        height: 95%;
+    }
+
+    .card-model-main {
+        width: 50%;
+        height: 90%;
+    }
+    .card-model-side {
+        width: 35%;
+        height: 75%;
+        opacity: 0.3;
+    }
+
+    .details-content.visible {
+        flex-direction: row;
+        align-items: stretch;
+        max-width: 400px;
+        margin: 0 auto 2rem auto;
+        width: 100%;
+    }
+
+    .photo-container {
+        flex: 0 0 50%;
+        max-width: 50%;
+        overflow: hidden;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .colors-info {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        overflow: hidden;
+    }
+
+    .colors-list {
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-around;
+        overflow-y: auto;
+        gap: 0.5rem;
+    }
+
+    .color-item {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        font-size: 0.9rem;
+        min-height: 2.5rem;
+        padding: 0.5rem;
+        box-sizing: border-box;
+    }
+
+    .change-color-btn {
+        padding: 0.8rem 0.5rem;
+        width: 100%;
+        margin-top: auto;
+        flex-shrink: 0;
+    }
+
+    .results-controls {
+        flex-direction: column;
+        align-items: flex-end;
+    }
+
+    .results-controls label,
+    .results-controls select {
+        font-size: 0.8rem;
+    }
+
+    .nft-details-modal {
+         max-width: 90%;
+    }
+
+    .comparison-container {
+         max-width: 100%;
+         gap: 0.5rem;
+    }
+
+    .model-item {
+        height: 55px;
+    }
+}

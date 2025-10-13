@@ -1,0 +1,124 @@
+/*
+======================================
+СТИЛИ ДЛЯ МОДАЛЬНОГО ОКНА ВЫБОРА ЦВЕТА
+======================================
+*/
+
+/* Фон модального окна (использует общий .card-modal-overlay) */
+.color-picker-overlay {
+    position: fixed;
+    z-index: 1000;
+    inset: 0;
+    background: rgba(20, 28, 48, 0.55);
+    backdrop-filter: blur(8px);
+    display: flex; /* По умолчанию мы его показываем, чтобы центрировать */
+    align-items: center;
+    justify-content: center;
+    /* 🔥 ДОБАВЛЕНО: Для плавного скрытия/показа */
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 0.3s, visibility 0.3s;
+}
+
+.color-picker-overlay.hidden {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none; /* Гарантирует, что клики через него не пройдут */
+}
+
+/* Контейнер модального окна */
+.color-picker-modal {
+    max-width: 600px; /* Делаем модалку шире для изображения */
+    width: 90%;
+}
+
+.color-picker-modal .modal-header {
+    justify-content: space-between; 
+    align-items: center;
+}
+
+.color-picker-modal-body .gift-preview-container {
+    /* Контейнер должен быть относительным, что уже есть, 
+       но мы гарантируем, что его изображение не растягивается */
+    position: relative;
+    width: 100%;
+    /* Если изображение квадратное, добавьте aspect-ratio: */
+    aspect-ratio: 1 / 1; 
+    overflow: hidden; /* Обрезает все, что выходит за границы */
+    
+    /* Дополнительные стили, если они нужны: */
+    background-color: var(--surface-color); 
+    border-radius: var(--radius);
+}
+
+#pickerPreviewImage {
+    /* 💡 КЛЮЧ: Обеспечиваем сохранение пропорций и вписывание */
+    max-width: 100%;
+    max-height: 100%;
+    width: auto; /* Позволяет ширине уменьшаться */
+    height: auto; /* Позволяет высоте уменьшаться */
+    object-fit: contain; /* 💡 САМОЕ ВАЖНОЕ СВОЙСТВО */
+    display: block;
+    margin: auto; /* Центрируем изображение, если оно меньше контейнера */
+    
+    /* Убеждаемся, что классы w-full (width: 100%) из index.html не конфликтуют. 
+       Если конфликтуют, добавьте !important. */
+    width: 100% !important; 
+    height: 100% !important;
+}
+
+#pickerColorCanvas {
+    /* Canvas должен полностью перекрывать изображение, но он скрыт */
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+/* Стили для пипеток (Draggable Picker) */
+.color-picker {
+    position: absolute;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 3px solid var(--accent-color); /* Используем переменную из gift-page.css */
+    box-shadow: 0 0 0 3px #10182a;
+    background: #fff;
+    cursor: grab;
+    transform: translate(-50%, -50%);
+    transition: box-shadow 0.2s, border-color 0.2s, transform 0.2s;
+    z-index: 20; /* Выше, чем изображение */
+}
+.color-picker.dragging {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 5px rgba(37, 99, 235, 0.33); 
+    transform: scale(1.15) translate(-50%, -50%);
+}
+.color-picker.invalid {
+    animation: shake 0.3s;
+    border-color: #f87171;
+}
+@keyframes shake {
+    0%, 100% {transform: translate(-50%, -50%) translateX(0);}
+    25% {transform: translate(-50%, -50%) translateX(-5px);}
+    75% {transform: translate(-50%, -50%) translateX(5px);}
+}
+
+/* Превью цвета внутри пипетки */
+.picker-color-preview {
+    position: absolute; 
+    left: 50%; 
+    top: 50%; 
+    transform: translate(-50%, -50%);
+    width: 18px; 
+    height: 18px; 
+    border-radius: 50%; 
+    border: 2px solid #fff;
+    box-shadow: 0 0 4px #0008; 
+    pointer-events: none;
+}
+
+/* Стили для выбранных цветов (используем общий .color-swatch) */
+.target-color-display {
+    justify-content: center;
+    gap: 1.5rem;
+}

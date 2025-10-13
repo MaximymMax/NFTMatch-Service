@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GIFT SELECTION</title>
+    <link rel="stylesheet" href="gift-page.css">
+</head>
+<body>
+
+    <header>
+        <a href="/index.html" class="header-logo">
+            NFT<br>Match
+        </a>
+        <nav>
+            <a href="index.html">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                </svg>
+                API
+            </a>
+        </nav>
+    </header>
+
+    <main>
+        <div class="main-container">
+            
+            <h1 class="page-title centered-title">Поиск похожих NFT</h1> 
+
+            <div class="selection-block">
+                <div class="custom-dropdown-container" id="gift-container">
+                    <label for="gift-search">Название коллекции:</label>
+                    <div class="dropdown-header with-search" id="gift-dropdown-header">
+                        <input type="text" id="gift-search" placeholder="Поиск..." class="dropdown-search" autocomplete="off">
+                        <span id="gift-selected-value" class="selected-value-placeholder">Выберите коллекцию</span>
+                        <div class="arrow"></div>
+                    </div>
+                    <div class="dropdown-list hidden" id="gift-dropdown-list">
+                        <div class="list-options" id="gift-list-options"></div>
+                    </div>
+                </div>
+                
+                <div class="custom-dropdown-container" id="model-container">
+                    <label for="model-search">Название модели:</label>
+                        <div class="dropdown-header with-search" id="model-dropdown-header">
+                            <input type="text" id="model-search" placeholder="Поиск..." class="dropdown-search" autocomplete="off">
+                            <span id="model-selected-value" class="selected-value-placeholder">Выберите модель</span>
+                            <div class="arrow"></div>
+                        </div>
+                        <div class="dropdown-list hidden" id="model-dropdown-list">
+                            <div class="list-options" id="model-list-options"></div>
+                        </div>
+                </div>
+            </div>
+
+            <div id="monocolor-alert-wrapper">
+                </div>
+            <div class="details-content hidden" id="details-content">
+                <div id="photo-container" class="photo-container">
+                    <img src="" alt="Фото подарка" id="gift-photo">
+                </div>
+                <div class="colors-info">
+                    <div class="colors-list" id="colors-list"></div>
+                    <button class="change-color-btn hidden" id="change-color-btn">Изменить цвет</button>
+                </div>
+            </div>
+
+            <div class="multi-select-container">
+                <label for="multi-gift-search">Набор коллекций для поиска:</label>
+                <div class="custom-dropdown-container" id="multi-container"> <div class="dropdown-header with-search" id="multi-select-header">
+                        <input type="text" id="multi-gift-search" placeholder="Поиск..." class="dropdown-search" autocomplete="off">
+                        <span id="multi-selected-summary" class="selected-value-placeholder">Выберите набор коллекций</span>
+                        <div class="arrow"></div>
+                    </div>
+                    <div class="dropdown-list hidden" id="multi-select-content">
+                        
+                        <div class="dropdown-controls-wrapper">
+                            <div class="dropdown-controls-buttons">
+                                <button id="clear-all-btn" class="control-btn clear-btn">Очистить выбор</button>
+                                <button id="select-all-btn" class="control-btn select-all-btn">Выбрать все</button>
+                            </div>
+                        </div>
+                        
+                        <div class="multi-list-scroll-wrapper"> <div id="multi-list-options"> <div id="selected-items-list" class="multi-list-group"></div>
+        
+                                <div id="list-divider" class="list-divider hidden"></div>
+                                
+                                <div id="unselected-items-list" class="multi-list-group"></div>
+                                
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <hr class="divider">
+            
+            <div class="action-and-sort-controls">
+                <button id="submit-btn" class="btn-icon-search disabled-button">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                    <span>Поиск NFT</span>
+                </button>
+                
+                <div class="sort-and-display-group">
+                    
+                    <button id="display-mode-button-desktop" class="btn-icon-display-mode desktop-only" title="Вид">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                        </svg>
+                    </button>
+                    <button id="display-mode-button" class="btn-icon-display-mode mobile-only" title="Вид">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                        </svg>
+                    </button>
+
+                    <button id="sort-mobile-button" class="btn-icon-sort-mobile" title="Сортировка">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h13M3 8h9m-9 4h16m-16 4h9m-9 4h13" />
+                        </svg>
+                    </button>
+
+                    <div id="sort-desktop-wrapper" class="sort-control-group">
+                        <label for="sort-order-desktop">Сортировка:</label>
+                        <select id="sort-order-desktop">
+                            <option value="percent-desc">По совпадению (убыв.)</option>
+                            <option value="percent-asc">По совпадению (возр.)</option>
+                            <option value="name">По имени</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="results-wrapper" class="content-section results-initial-hide"> 
+                <div id="loading-container" class="hidden">
+                    </div>
+                
+                <div class="results-grid" id="results-grid">
+                </div>
+            </div>
+            
+        </div>
+    </main>
+
+    <div id="sort-modal-overlay" class="modal-overlay hidden">
+        <div class="sort-modal">
+            <h3>Выберите сортировку</h3>
+            <div class="sort-modal-options" id="sort-modal-options">
+            </div>
+        </div>
+    </div>
+    <div id="display-mode-modal-overlay" class="modal-overlay hidden">
+        <div class="display-mode-modal sort-modal">
+            <h3>Выберите вид карточек</h3>
+            <div class="display-mode-options sort-modal-options">
+                <button data-mode="top-3" class="mode-select-btn">Топ 3 модели (Детальный вид)</button>
+                <button data-mode="top-1" class="mode-select-btn">Топ 1 модель (Плотный вид)</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="colorPickerModalOverlay" class="modal-overlay hidden">
+        <div class="card-modal color-picker-modal" id="colorPickerModalContent">
+            <div class="modal-header">
+                <button class="close-modal-btn" id="closeColorPickerModalBtn" aria-label="Закрыть">&times;</button>
+                <button class="btn-primary" id="saveColorsBtn">Сохранить</button>
+            </div>
+            
+            <div class="modal-body color-picker-modal-body">
+                <div id="colorPickerVisualArea">
+                    <div class="gift-preview-container" id="pickerContainer">
+                        <img id="pickerPreviewImage" src="" alt="Gift Preview" class="rounded-lg w-full" crossorigin="anonymous">
+                        <canvas id="pickerColorCanvas" class="hidden"></canvas>
+                    </div>
+                </div>
+                
+                <div id="pickerTargetColorsDisplay" class="target-color-display justify-center">
+                    </div>
+                
+            </div>
+        </div>
+    </div>
+
+    <div id="nftDetailsModalOverlay" class="modal-overlay hidden">
+        <div class="card-modal nft-details-modal">
+            <div class="modal-header">
+                <button class="close-modal-btn" id="closeNftDetailsModalBtn" aria-label="Закрыть">&times;</button>
+                <h3 id="nftDetailsModalTitle">Подарок</h3> 
+            </div>
+            
+            <div class="modal-body nft-details-modal-body">
+                
+                <div class="comparison-container">
+                    <div class="comparison-photo-box selected-model-box" id="selectedModelPhoto">
+                        <p class="box-label">Сравнить с</p>
+                    </div>
+                    
+                    <div class="comparison-photo-box target-model-box" id="targetModelPhoto">
+                        <p class="box-label">Целевая модель</p>
+                    </div>
+                </div>
+                
+                <h4 class="similar-models-title">Похожие модели этого подарка:</h4>
+                <div class="similar-models-list-wrapper" id="similarModelsListWrapper">
+                    <div class="similar-models-list" id="similarModelsList">
+                        </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="./gift-page.js"></script> 
+</body>
+</html>

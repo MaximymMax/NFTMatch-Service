@@ -1,0 +1,26 @@
+*,
+*::after,
+*::before {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  scroll-behavior: smooth;
+}
+
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+
+li {
+  list-style-type: none;
+}
+
+body {
+  min-width: 320px;
+}
