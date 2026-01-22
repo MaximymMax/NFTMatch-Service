@@ -1,6 +1,6 @@
 const SERVER_BASE_URL = 'https://nftmatchbot20250730152328.azurewebsites.net/';
 const API_PHOTO_MODEL_URL = 'https://cdn.changes.tg/gifts/models';
-const API_SIMILAR_MODELS = '/api/MonoCoof/SimilarNFTs';
+const API_SIMILAR_MODELS = '/api/MonoCoof/SimilarNFT';
 
 export function initNftDetailsModal() {
 
@@ -109,18 +109,10 @@ export function initNftDetailsModal() {
         if (!gift || !model) return;
 
         if (window.themesModal && typeof window.themesModal.openModelDetail === 'function') {
-            // Скрываем текущую модалку (убираем класс visible для анимации)
-            modalOverlay.classList.remove('visible');
-            setTimeout(() => {
-                modalOverlay.classList.add('hidden');
-            }, 300);
+            modalOverlay.classList.add('hidden');
 
             window.themesModal.openModelDetail(gift, model, () => {
-                // Callback при возврате назад
                 modalOverlay.classList.remove('hidden');
-                requestAnimationFrame(() => {
-                    modalOverlay.classList.add('visible');
-                });
                 document.body.classList.add('modal-open');
             });
         }
@@ -135,6 +127,8 @@ export function initNftDetailsModal() {
             listWrapper.classList.remove('can-scroll-up', 'can-scroll-down');
             return;
         }
+
+        const fragment = document.createDocumentFragment();
 
         currentSimilarModels.forEach(model => {
             const modelName = model.name;
@@ -177,11 +171,14 @@ export function initNftDetailsModal() {
                 updatePhotoContainers();
             });
 
-            similarModelsList.appendChild(modelItem);
+            fragment.appendChild(modelItem);
         });
 
-        updatePhotoContainers();
-        setTimeout(updateScrollShadows, 100);
+        requestAnimationFrame(() => {
+            similarModelsList.appendChild(fragment);
+            updatePhotoContainers();
+            setTimeout(updateScrollShadows, 100);
+        });
     }
 
     function getApiAuthHeader() {
@@ -214,6 +211,7 @@ export function initNftDetailsModal() {
                     if (cachedUserData) masterUserData = JSON.parse(cachedUserData);
                 } catch (e) { }
 
+                // Если нет в кэше, пробуем взять из WebApp
                 if (!masterUserData && window.Telegram?.WebApp?.initDataUnsafe?.user) {
                     const tgUser = window.Telegram.WebApp.initDataUnsafe.user;
                     masterUserData = { telegramId: tgUser.id, username: tgUser.username };
@@ -229,13 +227,14 @@ export function initNftDetailsModal() {
 
             const requestBody = {
                 ...userData,
-                "Colors": apiColors,
+                "Colors": apiColors, // Теперь здесь точно массив строк
                 "NameTargetGift": targetGiftName || null,
                 "NameTargetModel": targetModelName || null,
                 "NameGift": cardGiftName,
                 "MonohromeModelsOnly": true
             };
 
+            // ИСПРАВЛЕНИЕ URL: убираем двойной слеш, если SERVER_BASE_URL заканчивается на /
             const baseUrl = SERVER_BASE_URL.endsWith('/') ? SERVER_BASE_URL.slice(0, -1) : SERVER_BASE_URL;
             const finalUrl = `${baseUrl}${API_SIMILAR_MODELS}`;
 
@@ -250,31 +249,17 @@ export function initNftDetailsModal() {
 
             if (!response.ok) {
                 const errorText = await response.text();
+                // Логируем для отладки, если снова будет 400
+                console.error("API Error Body:", requestBody);
                 throw new Error(`HTTP error! Status: ${response.status} - ${errorText}`);
             }
 
             const data = await response.json();
-            let rawModelsList = [];
 
-            // Обработка данных (Object vs Array)
-            if (data && typeof data === 'object' && !Array.isArray(data)) {
-                let giftData = data[cardGiftName];
-                if (!giftData) {
-                    const values = Object.values(data);
-                    if (values.length > 0) giftData = values[0];
-                }
-                if (giftData && Array.isArray(giftData.SimilarModels)) {
-                    rawModelsList = giftData.SimilarModels;
-                }
-            }
-            else if (Array.isArray(data)) {
-                rawModelsList = data;
-            }
-
-            currentSimilarModels = rawModelsList.map(item => ({
-                name: item.Name || item.Key || 'Unknown',
-                coof: (item.Coof !== undefined) ? item.Coof : (item.Value !== undefined ? item.Value : 0),
-                count: item.Count || 0
+            currentSimilarModels = data.map(item => ({
+                name: item.Name,
+                coof: item.Coof,
+                count: item.Count
             }));
 
             renderSimilarModelsList();
@@ -288,70 +273,44 @@ export function initNftDetailsModal() {
     }
 
     function openNftDetailsModal(clickedGift, clickedModel, mainTargetGift, mainTargetModel, colors) {
+        cardGiftName = clickedGift;
+        selectedModelName = clickedModel;
+        targetGiftName = mainTargetGift;
+        targetModelName = mainTargetModel;
+
+        // ЗАЩИТА: Если передали null или undefined, делаем пустой массив. 
+        // Если передали объекты (вдруг), вытаскиваем hex.
+        if (Array.isArray(colors)) {
+            apiColors = colors.map(c => (typeof c === 'object' && c.hex) ? c.hex : c);
+        } else {
+            apiColors = [];
+        }
+
+        currentSimilarModels = [];
+
+        if (modalTitle) modalTitle.textContent = cardGiftName;
+
+        updatePhotoContainers();
+
+        if (modalOverlay) {
+            modalOverlay.classList.remove('hidden');
+            document.body.classList.add('modal-open');
+        }
+
+        // Оптимизация: откладываем загрузку, чтобы дать анимации открытия проиграться плавно
         requestAnimationFrame(() => {
-            cardGiftName = clickedGift;
-            selectedModelName = clickedModel;
-            targetGiftName = mainTargetGift;
-            targetModelName = mainTargetModel;
-
-            if (Array.isArray(colors)) {
-                apiColors = colors.map(c => (typeof c === 'object' && c.hex) ? c.hex : c);
-            } else {
-                apiColors = [];
-            }
-
-            currentSimilarModels = [];
-
-            if (modalTitle) modalTitle.textContent = cardGiftName;
-
-            updatePhotoContainers();
-
-            if (modalOverlay) {
-                // 1. Сначала убираем hidden (становится display: flex, но opacity: 0)
-                modalOverlay.classList.remove('hidden');
-
-                // 2. Через RAF добавляем класс visible для запуска анимации opacity
-                requestAnimationFrame(() => {
-                    modalOverlay.classList.add('visible');
-                });
-
-                document.body.classList.add('modal-open');
-            }
-
-            fetchSimilarModels();
-
-            const newUrl = new URL(window.location);
-            newUrl.searchParams.set('gift', cardGiftName);
-            newUrl.searchParams.set('model', selectedModelName);
-            window.history.pushState({ path: newUrl.href }, '', newUrl.href);
+            setTimeout(fetchSimilarModels, 300);
         });
     }
 
     function closeNftDetailsModal() {
-        const newUrl = new URL(window.location);
-        newUrl.searchParams.delete('gift');
-        newUrl.searchParams.delete('model');
-        window.history.replaceState({ path: newUrl.href }, '', newUrl.href);
-
         if (modalOverlay) {
-            // 1. Убираем класс видимости (запускается fade-out анимация)
-            modalOverlay.classList.remove('visible');
-
-            // 2. Ждем окончания анимации (0.3s в CSS), затем скрываем полностью
-            setTimeout(() => {
-                modalOverlay.classList.add('hidden');
-            }, 300);
+            modalOverlay.classList.add('hidden');
         }
-
         document.body.classList.remove('modal-open');
 
         const content = document.getElementById('similarModelsList');
         if (content) content.innerHTML = '';
-
-        // Вызываем глобальный коллбек закрытия для обновления URL в gift-page.js
-        if (window.onModalClose && typeof window.onModalClose === 'function') {
-            window.onModalClose();
-        }
 
         selectedModelName = null;
         currentSimilarModels = [];
@@ -371,10 +330,6 @@ export function initNftDetailsModal() {
 
     return {
         openNftDetailsModal: openNftDetailsModal,
-        closeNftDetailsModal: closeNftDetailsModal,
-        // Для обратной совместимости, если gift-page вызывает open
-        open: (data) => {
-            // Логика совместимости, если нужно
-        }
+        closeNftDetailsModal: closeNftDetailsModal
     };
 }

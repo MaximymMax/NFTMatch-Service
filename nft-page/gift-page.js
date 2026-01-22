@@ -231,9 +231,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (window.Telegram && window.Telegram.WebApp) {
                     const tg = window.Telegram.WebApp;
                     tg.BackButton.show();
-                    tg.BackButton.onClick(() => {
-                        window.NFTDetailsModal.close();
-                    });
+                    // Удалено переопределение BackButton для закрытия модалки
                 }
             }
         }
@@ -261,7 +259,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const newUrl = `${window.location.pathname}?${params.toString()}`;
-        window.history.replaceState({ path: newUrl }, '', newUrl);
+        window.history.pushState({ path: newUrl }, '', newUrl);
     }
 
     function getApiAuthHeader() {
@@ -1052,7 +1050,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const newUrl = `${window.location.pathname}?${params.toString()}`;
-        window.history.replaceState({ path: newUrl }, '', newUrl);
+        window.history.pushState({ path: newUrl }, '', newUrl);
     }
 
     function renderResults() {
