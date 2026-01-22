@@ -1,116 +1,138 @@
 <!DOCTYPE html>
 <html lang="ru">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>NFT MATCH</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
     <link rel="stylesheet" href="styles.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
+
 <body>
 
     <div id="tg-gate-overlay" class="tg-gate-overlay hidden">
         <div class="tg-gate-modal">
             <h2>NFTMatch не доступен</h2>
-            <p>Наш сервис не работает вне телеграмма, чтобы им воспользоваться перейдите в нашего бота</p>
+            <p>Наш сервис не работает вне телеграмма. Перейдите в нашего бота.</p>
             <a href="https://t.me/NFTMatchBot" target="_blank" class="tg-gate-link">Перейти в бота</a>
         </div>
     </div>
-    <header>
-        <a href="index.html" class="header-logo">
-            NFT<br>Match
-        </a>
-        <nav>
-            <a href="index.html">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
-                </svg>
-                API
-            </a>
-        </nav>
-    </header>
+
+    <header class="safe-area-gradient"></header>
 
     <main>
         <div class="main-container">
 
-            <div class="top-section">
-                <h1>NFT Match</h1>
-                <div class="top-section-info">
-                    <p class="top-section-text">
-                        Наш сервис работет с цветами NFT, он поможет вам найти идеальное сочетание модели и фона для вашей коллекции.
+            <div class="glow-effect glow-left"></div>
+            <div class="glow-effect glow-right"></div>
+            <section class="hero-section">
+                <div class="hero-content">
+
+                    <div id="hero-carousel-wrapper" class="hero-carousel-wrapper hidden">
+                        <div class="hero-carousel-track" id="hero-carousel-track">
+                        </div>
+                    </div>
+
+                    <h1 class="hero-title">NFT Match</h1>
+
+                    <p class="hero-description">
+                        Создавайте идеальные коллекции. Инструменты для поиска гармоничных сочетаний подарков и фонов,
+                        чтобы сделать ваш профиль уникальным.
                     </p>
-                    <div id="topLottieAnimation" class="top-lottie-container"></div>
-                </div>
-            </div>
 
-            <section class="tools-section">
-                <div class="features-container">
-
-                    <a href="./Monohrome/background-finder.html" class="feature-card">
-                        <div class="card-image-wrapper">
-                            <img src="./Photoshop/Section3Photo.png" alt="Изображение для поиска фонов и моделей">
-                        </div>
-                        <div class="card-content">
-                            <div class="card-text-content">
-                                <h2>Монохром NFT</h2>
-                                <p>Поиск NFT по сочетанию с фоном</p>
-                            </div>
-                            <div class="card-action">
-                                <hr class="action-divider">
-                                <span>Найти</span>
-                            </div>
+                    <a href="https://t.me/NFTStyler" target="_blank" class="hero-btn">
+                        <img src="./Photoshop/telegram_logo.png" alt="TG" class="btn-icon">
+                        <div class="hero-btn-text">
+                            <span>Наш канал</span>
+                            <span class="btn-sub">@NFTStyler</span>
                         </div>
                     </a>
-
-                    <a href="./nft-page/index.html" class="feature-card">
-                        <div class="card-image-wrapper">
-                            <img src="./Photoshop/Section4Photo.png" alt="Изображение для поиска похожих моделей">
-                        </div>
-                        <div class="card-content">
-                            <div class="card-text-content">
-                                <h2>Похожие NFT</h2>
-                                <p>Поиск похожих по цвету NFT моделей</p>
-                            </div>
-                            <div class="card-action">
-                                <hr class="action-divider">
-                                <span>Найти</span>
-                            </div>
-                        </div>
-                    </a>
-
-                    <a href="#" class="feature-card full-width-card">
-                        <div id="cardLottieAnimationWrapper" class="card-image-wrapper lottie-bg">
-                            <div id="cardLottieAnimation"></div>
-                        </div>
-                        <div class="card-content">
-                            <h2>Update soon...</h2>
-                        </div>
-                    </a>
-
                 </div>
             </section>
 
+            <section class="tools-wrapper-styled">
+                <div class="tools-header-label">
+                    Доступные функции
+                </div>
+
+                <div class="features-container">
+                    <a href="./Monohrome/background-finder.html" class="feature-card-new">
+                        <div class="card-header-title">Монохромы</div>
+                        <div class="card-body-gradient">
+                            <div class="inner-blue-card">
+                                <img src="https://cdn.changes.tg/gifts/models/Spring%20Basket/png/Knitty%20Kitty.png"
+                                    alt="Mono">
+                            </div>
+                        </div>
+                        <div class="card-footer-btn">Открыть</div>
+                    </a>
+
+                    <a href="./nft-page/index.html" class="feature-card-new">
+                        <div class="card-header-title">Похожие</div>
+                        <div class="card-body-gradient">
+                            <img src="https://cdn.changes.tg/gifts/models/Snake%20Box/png/Seashore.png" alt="Similar"
+                                class="img-shadow">
+                        </div>
+                        <div class="card-footer-btn">Открыть</div>
+                    </a>
+
+                    <a href="./Thematic/themes.html" class="feature-card-new">
+                        <div class="card-header-title">Тематики</div>
+                        <div class="card-body-gradient">
+                            <img src="https://cdn.changes.tg/gifts/models/Restless%20Jar/png/Kittens.png" alt="Themes"
+                                class="img-shadow">
+                        </div>
+                        <div class="card-footer-btn">Открыть</div>
+                    </a>
+                </div>
+            </section>
+
+            <div class="info-cards-wrapper section-separator">
+
+                <a href="./API_info/api.html" class="info-card card-api">
+                    <div class="info-card-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                        </svg>
+                    </div>
+                    <div class="info-card-text">
+                        <h3>API</h3>
+                        <p>Открытый доступ к данным.</p>
+                    </div>
+                </a>
+
+                <a href="./Support/support.html" class="info-card card-support">
+                    <div class="info-card-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                            stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <div class="info-card-text">
+                        <h3>Поддержка</h3>
+                        <p>Поддержать развитие проекта.</p>
+                    </div>
+                </a>
+
+            </div>
+
+            <div class="footer-credits">
+                Thanks to <a href="https://t.me/GiftChanges" target="_blank">@GiftChanges</a>
+            </div>
+
         </div>
     </main>
-    
-    <script>
-        // Сохраняем экземпляры анимаций в глобальные переменные, чтобы управлять ими
-        window.topLottieAnimation = lottie.loadAnimation({
-            container: document.getElementById('topLottieAnimation'),
-            renderer: 'svg',
-            loop: true,
-            autoplay: true,
-            path: 'https://cdn.changes.tg/gifts/models/Spring%20Basket/lottie/Knitty%20Kitty.json'
-        });
 
-        window.cardLottieAnimation = lottie.loadAnimation({
-            container: document.getElementById('cardLottieAnimation'),
-            renderer: 'svg',
-            loop: true,
-            autoplay: true,
-            path: 'https://cdn.changes.tg/gifts/models/Plush%20Pepe/lottie/Toading....json'
-        });
-    </script>
     <script src="./main-page.js"></script>
 </body>
+
 </html>

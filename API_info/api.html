@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>API NFTMatch</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="api.css">
+    
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+<body>
+
+    <header class="header-safe-area"></header>
+
+    <main>
+        <div class="container">
+
+            <section class="api-hero">
+                <h1>API</h1>
+                <p>Документация и примеры интеграции</p>
+            </section>
+
+            <div class="notice-box base-url-notice">
+                <div class="notice-header">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+                    <span>Base URL</span>
+                </div>
+                <div class="notice-text">
+                    Базовый адрес для всех запросов:<br>
+                    <span class="base-url-pill">
+                        https://nftmatchbot20250730152328.azurewebsites.net/api/
+                        <button class="notice-copy-btn" onclick="copyText('https://nftmatchbot20250730152328.azurewebsites.net/api/')">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                        </button>
+                    </span>
+                </div>
+            </div>
+
+            <div class="notice-box auth-notice">
+                <div class="notice-header">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                    </svg>
+                    <span>Авторизация</span>
+                </div>
+                <div class="notice-text">
+                    Все запросы требуют заголовок с ключом доступа:
+                    <span class="header-pill">Authorization: {YOUR_KEY}</span>
+                    <div class="contact-link">
+                        Ключ выдает <a href="https://t.me/Criminal_hamster" target="_blank">@Criminal_hamster</a>.
+                    </div>
+                </div>
+            </div>
+
+            <div class="toc-simple-list">
+                <a href="#mono" class="toc-item">
+                    <span>Монохромы</span>
+                </a>
+                <a href="#similar" class="toc-item">
+                    <span>Похожие модели</span>
+                </a>
+                <a href="#thematic" class="toc-item">
+                    <span>Тематики</span>
+                </a>
+            </div>
+
+            <section id="mono" class="tools-wrapper-styled">
+                <div class="tools-header-label">Монохромы</div>
+                
+                <div class="info-box">
+                    <strong>Параметры фильтрации (Query Params):</strong>
+                    <ul>
+                        <li><code>top=N</code> — Лимит количества результатов</li>
+                        <li><code>coof=0.X</code> — Минимальный порог схожести от 0.0 до 1.0</li>
+                    </ul>
+                    Эти параметры можно комбинировать в любом запросе этой секции.
+                </div>
+
+                <div class="endpoint-card">
+                    <div class="ep-header">
+                        <span class="method post">POST</span>
+                        <div class="route-container">
+                            <span class="route">MonoCoof/TopNftByColor</span>
+                            <button class="copy-btn" onclick="copyText('MonoCoof/TopNftByColor')">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                            </button>
+                        </div>
+                    </div>
+                    <p class="ep-desc">Поиск лучших моделей, подходящих под заданный цвет фона.</p>
+                    
+                    <div class="data-blocks">
+                        <div class="block-wrapper req">
+                            <div class="block-title">Request Body</div>
+<pre class="block-code">{
+  "NameGift": "Lush Bouquet",
+  "NameColor": "Carrot Juice",
+  "MonohromeModelsOnly": true
+}</pre>
+                        </div>
+                        
+                        <div class="block-wrapper res">
+                            <div class="block-title">Response Example</div>
+<pre class="block-code">[
+    { 
+        "Name": "Tulips", 
+        "Coof": 0.93 
+    },
+    { 
+        "Name": "Carrots", 
+        "Coof": 0.90 
+    }
+]</pre>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="endpoint-card">
+                    <div class="ep-header">
+                        <span class="method post">POST</span>
+                        <div class="route-container">
+                            <span class="route">MonoCoof/TopBackgroundColorsByNFT</span>
+                            <button class="copy-btn" onclick="copyText('MonoCoof/TopBackgroundColorsByNFT')">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                            </button>
+                        </div>
+                    </div>
+                    <p class="ep-desc">Подбор лучших фонов для конкретной модели.</p>
+                    <div class="data-blocks">
+                        <div class="block-wrapper req">
+                            <div class="block-title">Request Body</div>
+<pre class="block-code">{
+  "NameGift": "Lush Bouquet",
+  "NameModel": "Carrots"
+}</pre>
+                        </div>
+                        <div class="block-wrapper res">
+                            <div class="block-title">Response Example</div>
+<pre class="block-code">[
+    {
+        "Key": "Persimmon",
+        "Value": 0.92
+    },
+    {
+        "Key": "Carrot Juice",
+        "Value": 0.90
+    },
+]</pre>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="endpoint-card">
+                    <div class="ep-header">
+                        <span class="method post">POST</span>
+                        <div class="route-container">
+                            <span class="route">MonoCoof/TopBackgroundColorsByColors</span>
+                            <button class="copy-btn" onclick="copyText('MonoCoof/TopBackgroundColorsByColors')">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                            </button>
+                        </div>
+                    </div>
+                    <p class="ep-desc">Поиск фонов для списка цветов (HEX). Рекомендуется указывать 3 оттенка одного цвета, близких друг к другу.</p>
+                    <div class="data-blocks">
+                        <div class="block-wrapper req">
+                            <div class="block-title">Request Body</div>
+<pre class="block-code">{
+  "Colors": 
+  [
+    "#FF5500", 
+    "#FF4500", 
+    "#FF6347"
+  ]
+}</pre>
+                        </div>
+                        <div class="block-wrapper res">
+                            <div class="block-title">Response Example</div>
+<pre class="block-code">[
+    {
+        "Key": "Tomato",
+        "Value": 0.91
+    },
+    {
+        "Key": "BurntSienna",
+        "Value": 0.81
+    }
+]</pre>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="endpoint-card">
+                    <div class="ep-header">
+                        <span class="method post">POST</span>
+                        <div class="route-container">
+                            <span class="route">MonoCoof/MonohromeCoof</span>
+                            <button class="copy-btn" onclick="copyText('MonoCoof/MonohromeCoof')">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                            </button>
+                        </div>
+                    </div>
+                    <p class="ep-desc">Расчет точного коэффициента сочетаемости (0.0 - 1.0) для конкретной пары.</p>
+                    <div class="data-blocks">
+                        <div class="block-wrapper req">
+                            <div class="block-title">Request Body</div>
+<pre class="block-code">{
+    "NameGift": "Lush Bouquet",
+    "NameModel": "Carrots",
+    "NameColor": "Carrot Juice"
+}</pre>
+                        </div>
+                        <div class="block-wrapper res">
+                            <div class="block-title">Response Example</div>
+<pre class="block-code">{
+    "Coof": 0.90,
+    "Ismonohrome": true
+}</pre>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="similar" class="tools-wrapper-styled">
+                <div class="tools-header-label">Похожие модели</div>
+
+                <div class="endpoint-card">
+                    <div class="ep-header">
+                        <span class="method post">POST</span>
+                        <div class="route-container">
+                            <span class="route">MonoCoof/SimilarNFT</span>
+                            <button class="copy-btn" onclick="copyText('MonoCoof/SimilarNFT')">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                            </button>
+                        </div>
+                    </div>
+                    <p class="ep-desc">Сравнение целевой модели с конкретной коллекцией.</p>
+                    <div class="data-blocks">
+                        <div class="block-wrapper req">
+                            <div class="block-title">Request Body</div>
+<pre class="block-code">{
+  "NameTargetGift":"Lush Bouquet",
+  "NameTargetModel": "Carrots",
+  "NameGift": "Santa Hat"
+}</pre>
+                        </div>
+                        <div class="block-wrapper res">
+                            <div class="block-title">Response Example</div>
+<pre class="block-code">[
+    {
+        "Name": "Peachy",
+        "Coof": 0.8988,
+        "Count": 1338
+    },
+    {
+        "Name": "Frosted Sun",
+        "Coof": 0.8799,
+        "Count": 1329
+    }
+]</pre>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="thematic" class="tools-wrapper-styled">
+                <div class="tools-header-label">Тематики</div>
+
+                <div class="info-box">
+                    <strong>Параметры списка (Query Params):</strong>
+                    Эти параметры применяются к методам <code>GetAllCollections</code>:
+                    <ul>
+                        <li><code>page=1</code> — Номер страницы (int)</li>
+                        <li><code>search=text</code> — Поиск по названию (string)</li>
+                        <li><code>sort=name|count</code> — Сортировка по имени или количеству</li>
+                        <li><code>desc=true|false</code> — Направление сортировки</li>
+                    </ul>
+                </div>
+
+                <div class="endpoint-card">
+                    <div class="ep-header">
+                        <span class="method get">GET</span>
+                        <div class="route-container">
+                            <span class="route">Thematic/GetAllCollections</span>
+                            <button class="copy-btn" onclick="copyText('Thematic/GetAllCollections?page=1&sort=count&desc=true')">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                            </button>
+                        </div>
+                    </div>
+                    <p class="ep-desc">Получение базового списка коллекций (ID, Название, Количество).</p>
+                </div>
+
+                <div class="endpoint-card">
+                    <div class="ep-header">
+                        <span class="method get">GET</span>
+                        <div class="route-container">
+                            <span class="route">Thematic/GetAllCollections/WithParameters</span>
+                            <button class="copy-btn" onclick="copyText('Thematic/GetAllCollections/WithParameters?page=1&sort=count')">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                            </button>
+                        </div>
+                    </div>
+                    <p class="ep-desc">Получение расширенного списка коллекций (включая дополнительные данные).</p>
+                </div>
+
+                <div class="endpoint-card">
+                    <div class="ep-header">
+                        <span class="method get">GET</span>
+                        <div class="route-container">
+                            <span class="route">
+                                Thematic/GetGiftsByCollection/<span class="param-path">{Name}</span>
+                            </span>
+                            <button class="copy-btn" onclick="copyText('Thematic/GetGiftsByCollection/Animals')">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                            </button>
+                        </div>
+                    </div>
+                    <p class="ep-desc">Получить простой список моделей, входящих в коллекцию.</p>
+                </div>
+
+                <div class="endpoint-card">
+                    <div class="ep-header">
+                        <span class="method get">GET</span>
+                        <div class="route-container">
+                            <span class="route">
+                                Thematic/GetGiftsByCollection/<span class="param-path">{Name}</span>/WithParameters/<span class="param-path">{Bg?}</span>
+                            </span>
+                            <button class="copy-btn" onclick="copyText('Thematic/GetGiftsByCollection/Animals/WithParameters')">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                            </button>
+                        </div>
+                    </div>
+                    <p class="ep-desc">Получить модели с кластеризацией. Параметр <code>{Bg?}</code> является опциональным (название фона).</p>
+                </div>
+
+                <div class="endpoint-card">
+                    <div class="ep-header">
+                        <span class="method get">GET</span>
+                        <div class="route-container">
+                            <span class="route">
+                                Thematic/GetCollectionByGift/<span class="param-path">{Gift}</span>/<span class="param-path">{Model}</span>
+                            </span>
+                            <button class="copy-btn" onclick="copyText('Thematic/GetCollectionByGift/GiftName/ModelName')">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                            </button>
+                        </div>
+                    </div>
+                    <p class="ep-desc">Узнать, к каким тематикам относится конкретная модель (простой список имен).</p>
+                </div>
+
+                <div class="endpoint-card">
+                    <div class="ep-header">
+                        <span class="method get">GET</span>
+                        <div class="route-container">
+                            <span class="route">
+                                Thematic/GetCollectionByGift/<span class="param-path">{Gift}</span>/<span class="param-path">{Model}</span>/WithParameters
+                            </span>
+                            <button class="copy-btn" onclick="copyText('Thematic/GetCollectionByGift/GiftName/ModelName/WithParameters')">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                            </button>
+                        </div>
+                    </div>
+                    <p class="ep-desc">Узнать тематики модели с расширенной информацией.</p>
+                </div>
+                
+            </section>
+
+        </div>
+    </main>
+    
+    <script src="api-page.js"></script>
+</body>
+</html>

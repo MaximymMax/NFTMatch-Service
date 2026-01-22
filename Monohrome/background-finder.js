@@ -1,43 +1,188 @@
 document.addEventListener('DOMContentLoaded', () => {
 
-    // --- URL API & Constants ---
     const SERVER_BASE_URL = 'https://nftmatchbot20250730152328.azurewebsites.net';
     const API_PHOTO_URL = 'https://cdn.changes.tg/gifts/models';
-    const API_GIFT_ORIGINALS_URL = 'https://cdn.changes.tg/gifts/originals'; 
+    const API_GIFT_ORIGINALS_URL = 'https://cdn.changes.tg/gifts/originals';
+    const INIT_DATA_KEY = 'tgInitData';
+    const BYPASS_KEY_STORAGE = 'apiBypassKey';
+
+    function initTelegramData() {
+        if (window.Telegram && window.Telegram.WebApp) {
+            const tg = window.Telegram.WebApp;
+            tg.ready();
+            tg.expand();
+
+            tg.BackButton.offClick(); // Очищаем старые обработчики
+            tg.BackButton.show();
+
+            tg.BackButton.onClick(() => {
+                // Если есть история переходов (мы пришли с другой страницы) -> возвращаемся назад.
+                // Состояние той страницы (скролл, табы) браузер восстановит сам.
+                if (window.history.length > 1) {
+                    window.history.back();
+                } else {
+                    // Если истории нет (открыли по прямой ссылке) -> идем в корень
+                    window.location.href = '../index.html';
+                }
+            });
+        }
+    }
+
+    // ВЫЗЫВАЕМ ФУНКЦИЮ СРАЗУ
+    initTelegramData();
+
+    // --- НОВАЯ ФУНКЦИЯ: Синхронизация URL с текущим состоянием ---
+    function updateUrlState(modalData = null) {
+        const params = new URLSearchParams();
+
+        // 1. Сохраняем режим
+        params.set('mode', state.currentMode);
+
+        // 2. Сохраняем параметры в зависимости от режима
+        if (state.currentMode === 'findBgs') {
+            if (state.findBgs.selectedGift) params.set('gift', state.findBgs.selectedGift);
+            if (state.findBgs.selectedModel) params.set('model', state.findBgs.selectedModel);
+        } else {
+            if (state.findModels.selectedGift) params.set('gift', state.findModels.selectedGift);
+            if (state.findModels.selectedColor) params.set('color', state.findModels.selectedColor.id); // Или name, как тебе удобнее
+        }
+
+        // 3. Если открыта модалка, сохраняем её параметры
+        // Мы ожидаем, что modalData придет в формате: { giftName, modelName, bgName }
+        if (modalData) {
+            params.set('view', 'details');
+            params.set('d_gift', modalData.giftName);
+            params.set('d_model', modalData.modelName);
+            if (modalData.bgName) params.set('d_bg', modalData.bgName);
+        }
+
+        // 4. Обновляем URL без перезагрузки
+        // Используем pushState, чтобы кнопка "Назад" возвращала к предыдущему состоянию
+        const newUrl = `${window.location.pathname}?${params.toString()}`;
+        window.history.replaceState({ path: newUrl }, '', newUrl);
+    }
+
+    let hasUserModifiedColors = false;
+
+    function getPlural(count, one, few, many) {
+        count = Math.abs(count);
+        count %= 100;
+        if (count >= 5 && count <= 20) {
+            return many;
+        }
+        count %= 10;
+        if (count === 1) {
+            return one;
+        }
+        if (count >= 2 && count <= 4) {
+            return few;
+        }
+        return many;
+    }
 
     const GIFT_NAME_TO_ID = {
-        "Santa Hat": "5983471780763796287", "Signet Ring": "5936085638515261992", "Precious Peach": "5933671725160989227",
-        "Plush Pepe": "5936013938331222567", "Spiced Wine": "5913442287462908725", "Jelly Bunny": "5915502858152706668",
-        "Durov's Cap": "5915521180483191380", "Perfume Bottle": "5913517067138499193", "Eternal Rose": "5882125812596999035",
-        "Berry Box": "5882252952218894938", "Vintage Cigar": "5857140566201991735", "Magic Potion": "5846226946928673709",
-        "Kissed Frog": "5845776576658015084", "Hex Pot": "5825801628657124140", "Evil Eye": "5825480571261813595",
-        "Sharp Tongue": "5841689550203650524", "Trapped Heart": "5841391256135008713", "Skull Flower": "5839038009193792264",
-        "Scared Cat": "5837059369300132790", "Spy Agaric": "5821261908354794038", "Homemade Cake": "5783075783622787539",
-        "Genie Lamp": "5933531623327795414", "Lunar Snake": "6028426950047957932", "Party Sparkler": "6003643167683903930",
-        "Jester Hat": "5933590374185435592", "Witch Hat": "5821384757304362229", "Hanging Star": "5915733223018594841",
-        "Love Candle": "5915550639663874519", "Cookie Heart": "6001538689543439169", "Desk Calendar": "5782988952268964995",
-        "Jingle Bells": "6001473264306619020", "Snow Mittens": "5980789805615678057", "Voodoo Doll": "5836780359634649414",
-        "Mad Pumpkin": "5841632504448025405", "Hypno Lollipop": "5825895989088617224", "B-Day Candle": "5782984811920491178",
-        "Bunny Muffin": "5935936766358847989", "Astral Shard": "5933629604416717361", "Flying Broom": "5837063436634161765",
-        "Crystal Ball": "5841336413697606412", "Eternal Candle": "5821205665758053411", "Swiss Watch": "5936043693864651359",
-        "Ginger Cookie": "5983484377902875708", "Mini Oscar": "5879737836550226478", "Lol Pop": "5170594532177215681",
-        "Ion Gem": "5843762284240831056", "Star Notepad": "5936017773737018241", "Loot Bag": "5868659926187901653",
-        "Love Potion": "5868348541058942091", "Toy Bear": "5868220813026526561", "Diamond Ring": "5868503709637411929",
-        "Sakura Flower": "5167939598143193218", "Sleigh Bell": "5981026247860290310", "Top Hat": "5897593557492957738",
-        "Record Player": "5856973938650776169", "Winter Wreath": "5983259145522906006", "Snow Globe": "5981132629905245483",
-        "Electric Skull": "5846192273657692751", "Tama Gadget": "6023752243218481939", "Candy Cane": "6003373314888696650",
-        "Neko Helmet": "5933793770951673155", "Jack-in-the-Box": "6005659564635063386", "Easter Egg": "5773668482394620318",
-        "Bonded Ring": "5870661333703197240", "Pet Snake": "6023917088358269866", "Snake Box": "6023679164349940429",
-        "Xmas Stocking": "6003767644426076664", "Big Year": "6028283532500009446", "Holiday Drink": "6003735372041814769",
-        "Gem Signet": "5859442703032386168", "Light Sword": "5897581235231785485", "Restless Jar": "5870784783948186838",
-        "Nail Bracelet": "5870720080265871962", "Heroic Helmet": "5895328365971244193", "Bow Tie": "5895544372761461960",
-        "Heart Locket": "5868455043362980631", "Lush Bouquet": "5871002671934079382", "Whip Cupcake": "5933543975653737112",
-        "Joyful Bundle": "5870862540036113469", "Cupid Charm": "5868561433997870501", "Valentine Box": "5868595669182186720",
-        "Snoop Dogg": "6014591077976114307", "Swag Bag": "6012607142387778152", "Snoop Cigar": "6012435906336654262",
-        "Low Rider": "6014675319464657779", "Westside Sign": "6014697240977737490", "Stellar Rocket": "6042113507581755979",
-        "Jolly Chimp": "6005880141270483700", "Moon Pendant": "5998981470310368313", "Ionic Dryer": "5933937398953018107",
-        "Input Key": "5870972044522291836", "Mighty Arm": "5895518353849582541", "Artisan Brick": "6005797617768858105",
-        "Clover Pin": "5960747083030856414", "Sky Stilettos": "5870947077877400011", "Fresh Socks": "5895603153683874485"
+        "Santa Hat": "5983471780763796287",
+        "Signet Ring": "5936085638515261992",
+        "Precious Peach": "5933671725160989227",
+        "Plush Pepe": "5936013938331222567",
+        "Spiced Wine": "5913442287462908725",
+        "Jelly Bunny": "5915502858152706668",
+        "Durov's Cap": "5915521180483191380",
+        "Perfume Bottle": "5913517067138499193",
+        "Eternal Rose": "5882125812596999035",
+        "Berry Box": "5882252952218894938",
+        "Vintage Cigar": "5857140566201991735",
+        "Magic Potion": "5846226946928673709",
+        "Kissed Frog": "5845776576658015084",
+        "Hex Pot": "5825801628657124140",
+        "Evil Eye": "5825480571261813595",
+        "Sharp Tongue": "5841689550203650524",
+        "Trapped Heart": "5841391256135008713",
+        "Skull Flower": "5839038009193792264",
+        "Scared Cat": "5837059369300132790",
+        "Spy Agaric": "5821261908354794038",
+        "Homemade Cake": "5783075783622787539",
+        "Genie Lamp": "5933531623327795414",
+        "Lunar Snake": "6028426950047957932",
+        "Party Sparkler": "6003643167683903930",
+        "Jester Hat": "5933590374185435592",
+        "Witch Hat": "5821384757304362229",
+        "Hanging Star": "5915733223018594841",
+        "Love Candle": "5915550639663874519",
+        "Cookie Heart": "6001538689543439169",
+        "Desk Calendar": "5782988952268964995",
+        "Jingle Bells": "6001473264306619020",
+        "Snow Mittens": "5980789805615678057",
+        "Voodoo Doll": "5836780359634649414",
+        "Mad Pumpkin": "5841632504448025405",
+        "Hypno Lollipop": "5825895989088617224",
+        "B-Day Candle": "5782984811920491178",
+        "Bunny Muffin": "5935936766358847989",
+        "Astral Shard": "5933629604416717361",
+        "Flying Broom": "5837063436634161765",
+        "Crystal Ball": "5841336413697606412",
+        "Eternal Candle": "5821205665758053411",
+        "Swiss Watch": "5936043693864651359",
+        "Ginger Cookie": "5983484377902875708",
+        "Mini Oscar": "5879737836550226478",
+        "Lol Pop": "5170594532177215681",
+        "Ion Gem": "5843762284240831056",
+        "Star Notepad": "5936017773737018241",
+        "Loot Bag": "5868659926187901653",
+        "Love Potion": "5868348541058942091",
+        "Toy Bear": "5868220813026526561",
+        "Diamond Ring": "5868503709637411929",
+        "Sakura Flower": "5167939598143193218",
+        "Sleigh Bell": "5981026247860290310",
+        "Top Hat": "5897593557492957738",
+        "Record Player": "5856973938650776169",
+        "Winter Wreath": "5983259145522906006",
+        "Snow Globe": "5981132629905245483",
+        "Electric Skull": "5846192273657692751",
+        "Tama Gadget": "6023752243218481939",
+        "Candy Cane": "6003373314888696650",
+        "Neko Helmet": "5933793770951673155",
+        "Jack-in-the-Box": "6005659564635063386",
+        "Easter Egg": "5773668482394620318",
+        "Bonded Ring": "5870661333703197240",
+        "Pet Snake": "6023917088358269866",
+        "Snake Box": "6023679164349940429",
+        "Xmas Stocking": "6003767644426076664",
+        "Big Year": "6028283532500009446",
+        "Holiday Drink": "6003735372041814769",
+        "Gem Signet": "5859442703032386168",
+        "Light Sword": "5897581235231785485",
+        "Restless Jar": "5870784783948186838",
+        "Nail Bracelet": "5870720080265871962",
+        "Heroic Helmet": "5895328365971244193",
+        "Bow Tie": "5895544372761461960",
+        "Heart Locket": "5868455043362980631",
+        "Lush Bouquet": "5871002671934079382",
+        "Whip Cupcake": "5933543975653737112",
+        "Joyful Bundle": "5870862540036113469",
+        "Cupid Charm": "5868561433997870501",
+        "Valentine Box": "5868595669182186720",
+        "Snoop Dogg": "6014591077976114307",
+        "Swag Bag": "6012607142387778152",
+        "Snoop Cigar": "6012435906336654262",
+        "Low Rider": "6014675319464657779",
+        "Westside Sign": "6014697240977737490",
+        "Stellar Rocket": "6042113507581755979",
+        "Jolly Chimp": "6005880141270483700",
+        "Moon Pendant": "5998981470310368313",
+        "Ionic Dryer": "5933937398953018107",
+        "Input Key": "5870972044522291836",
+        "Mighty Arm": "5895518353849582541",
+        "Artisan Brick": "6005797617768858105",
+        "Clover Pin": "5960747083030856414",
+        "Sky Stilettos": "5870947077877400011",
+        "Fresh Socks": "5895603153683874485",
+        "Happy Brownie": "6006064678835323371",
+        "Ice Cream": "5900177027566142759",
+        "Spring Basket": "5773725897517433693",
+        "Instant Ramen": "6005564615793050414",
+        "Faith Amulet": "6003456431095808759",
+        "Mousse Cake": "5935877878062253519"
     };
 
     const fixedColors = [
@@ -122,12 +267,376 @@ document.addEventListener('DOMContentLoaded', () => {
         { id: 'Tomato', name: 'Tomato', hex: '#E6793E', gradient: 'radial-gradient(circle, rgb(230, 121, 62) 0%, rgb(212, 78, 63) 100%)' },
         { id: 'Turquoise', name: 'Turquoise', hex: '#5EC0B8', gradient: 'radial-gradient(circle, rgb(94, 192, 184) 0%, rgb(61, 146, 142) 100%)' },
     ];
-    
-    // --- Global State ---
+
+    function updateDropdownSelection(dropdown, value) {
+        if (!dropdown || !dropdown.value) return;
+        dropdown.value.textContent = value;
+        if (dropdown.input) dropdown.input.value = ''; // Сброс поиска
+        if (dropdown.header) dropdown.header.classList.remove('value-active');
+    }
+
+    function getApiAuthHeader() {
+        // 1. Сначала проверяем ключ разработчика (если есть)
+        const bypassKey = sessionStorage.getItem(BYPASS_KEY_STORAGE);
+        if (bypassKey) {
+            return `Tma ${bypassKey}`; // Или просто bypassKey, если на бэке так настроено
+        }
+
+        // 2. Потом проверяем данные из Телеграма
+        const initData = sessionStorage.getItem(INIT_DATA_KEY);
+        if (initData) {
+            return `Tma ${initData}`;
+        }
+
+        // 3. Если ничего нет
+        console.warn("Auth token missing!");
+        return 'Tma invalid';
+    }
+
+
+    async function secureFetch(apiUrl, requestBody, signal = null) {
+        const authHeader = getApiAuthHeader();
+
+        // 1. ЛОГИКА ТЕСТИРОВАНИЯ (Simulate Check)
+        // Если есть ключ обхода И параметр isSubscribed = 'false', вызываем ошибку
+        const bypassKey = sessionStorage.getItem(BYPASS_KEY_STORAGE);
+        const isSubscribedParam = sessionStorage.getItem('isSubscribed');
+
+        if (bypassKey && isSubscribedParam === 'false') {
+            console.warn("%c[TEST MODE] Subscription Check Failed (Simulated)", "color: orange");
+
+            // Имитируем задержку сети
+            await new Promise(r => setTimeout(r, 500));
+
+            // Показываем модалку
+            showSubscriptionModal("-100FAKEID");
+
+            // Прерываем выполнение, выкидывая ошибку, как будто пришел 403
+            throw new Error("[TEST MODE] Subscription required");
+        }
+
+        const options = {
+            method: requestBody ? 'POST' : 'GET',
+            headers: {
+                'Authorization': authHeader
+            },
+            signal: signal
+        };
+
+        if (requestBody) {
+            options.headers['Content-Type'] = 'application/json';
+            options.body = JSON.stringify(requestBody);
+        }
+
+        const response = await fetch(apiUrl, options);
+
+        // 2. ОБРАБОТКА ОШИБКИ 403 (РЕАЛЬНАЯ)
+        if (response.status === 403) {
+            try {
+                // Клонируем, так как response.json() можно прочитать только один раз
+                const errorData = await response.clone().json();
+
+                if (errorData.error === 'subscription_required') {
+                    console.warn("[API] Subscription required. Channel ID:", errorData.channelId);
+                    showSubscriptionModal(errorData.channelId);
+                    throw new Error("Subscription required"); // Прерываем цепочку промисов
+                }
+            } catch (e) {
+                // Если не удалось распарсить JSON или это не та ошибка, пробрасываем дальше
+                if (e.message === "Subscription required") throw e;
+            }
+        }
+
+        if (!response.ok) {
+            let errorDetails = await response.text();
+            try {
+                const errorJson = JSON.parse(errorDetails);
+                errorDetails = errorJson.error || errorJson.message || errorDetails;
+            } catch (e) { }
+
+            throw new Error(`[API ${response.status}] ${errorDetails}`);
+        }
+
+        return await response.json();
+    }
+
+    window.closeSubscriptionModal = function () {
+        const overlay = document.querySelector('.sub-modal-overlay');
+        if (overlay) {
+            overlay.classList.remove('active');
+            // Удаляем оверлей из DOM через небольшую задержку (после анимации), 
+            // или просто скрываем CSS-классом. 
+            // Для надежности просто убираем active, чтобы можно было переиспользовать.
+        }
+    };
+
+    function showSubscriptionModal(channelId) {
+        // Убираем лоадеры сразу, чтобы они не крутились под окном подписки
+        if (typeof hideLoading === 'function') hideLoading();
+
+        // Если это модалка деталей - нужно убрать спиннер с кнопки (если он там был)
+        // Но так как secureFetch выбрасывает ошибку, код дальше не пойдет, и модалка не откроется.
+
+        let overlay = document.querySelector('.sub-modal-overlay');
+
+        if (!overlay) {
+            const html = `
+                <div class="sub-modal-overlay">
+                    <div class="sub-modal">
+                        <div class="sub-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+                            </svg>
+                        </div>
+                        <h3 class="sub-title">Требуется подписка</h3>
+                        <p class="sub-text">Для использования поиска необходимо подписаться на наш Telegram канал.</p>
+                        
+                        <a href="https://t.me/NFTMatchChannel" target="_blank" class="sub-btn">
+                            Подписаться
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+                            </svg>
+                        </a>
+                        
+                        <button class="sub-btn check-btn" onclick="window.closeSubscriptionModal()">
+                            Я подписался
+                        </button>
+                    </div>
+                </div>
+            `;
+            document.body.insertAdjacentHTML('beforeend', html);
+            overlay = document.querySelector('.sub-modal-overlay');
+
+            // Добавляем закрытие по клику на фон (опционально)
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) window.closeSubscriptionModal();
+            });
+        }
+
+        // Показываем с небольшой задержкой для плавности
+        setTimeout(() => overlay.classList.add('active'), 10);
+    }
+
+    async function createSimilarButtonFallback(giftName, modelName) {
+        const url = `${SERVER_BASE_URL}/api/BaseInfo/GetSimilarGiftsForVisualization/${encodeURIComponent(giftName)}/${encodeURIComponent(modelName)}`;
+
+        // Создаем ссылку (пока пустую)
+        const link = document.createElement('a');
+
+        // ❗️ Путь с / в начале ❗️
+        link.href = `../nft-page/index.html?giftName=${encodeURIComponent(giftName)}&modelName=${encodeURIComponent(modelName)}&randomGiftsCount=100`;
+
+        link.id = 'show-themes-link'; // Тот же ID для наследования размеров
+        link.className = 'similar-fallback-style'; // Наш новый класс для стилей
+
+        try {
+            const data = await secureFetch(url, null);
+
+            if (!data || !data.SimilarGifts || data.SimilarGifts.length < 2) {
+                throw new Error('Not enough similar gifts found');
+            }
+
+            const color = data.TargetGiftMainColorHex || '#38bdf8'; // Запасной синий
+            link.style.setProperty('--similar-color', color);
+
+            const imgLeftSrc = `${API_PHOTO_URL}/${encodeURIComponent(data.SimilarGifts[0].GiftName)}/png/${encodeURIComponent(data.SimilarGifts[0].ModelName)}.png`;
+            const imgRightSrc = `${API_PHOTO_URL}/${encodeURIComponent(data.SimilarGifts[1].GiftName)}/png/${encodeURIComponent(data.SimilarGifts[1].ModelName)}.png`;
+
+            link.innerHTML = `
+            <div class="fallback-glow"></div>
+            <img src="${imgLeftSrc}" alt="similar 1" class="fallback-img left">
+            <span>Похожие по цвету</span>
+            <img src="${imgRightSrc}" alt="similar 2" class="fallback-img right">
+        `;
+
+        } catch (error) {
+            console.warn("[Similar Fallback] Ошибка:", error.message, "Создаем кнопку без картинок.");
+            // Создаем кнопку, даже если API упал
+            link.style.setProperty('--similar-color', '#38bdf8'); // Запасной синий
+            link.innerHTML = `
+            <div class="fallback-glow"></div>
+            <span>Похожие по цвету</span>
+        `;
+        }
+
+        return link;
+    }
+
+    async function renderSimilarGiftsFallback(container, giftName, modelName, onClickCallback = null) {
+        // Устанавливаем спиннер, пока грузится
+        container.innerHTML = `
+        <span style="font-size: 0.9rem; color: var(--text-muted);">
+            <span class="loading-spinner-mini" style="width:14px; height: 14px; border-width: 2px;"></span>
+            Загрузка...
+        </span>`;
+
+        const url = `${SERVER_BASE_URL}/api/BaseInfo/GetSimilarGiftsForVisualization/${encodeURIComponent(giftName)}/${encodeURIComponent(modelName)}`;
+
+        try {
+            const data = await secureFetch(url, null);
+
+            if (!data || !data.SimilarGifts || data.SimilarGifts.length === 0) {
+                throw new Error("Похожие гифты не найдены.");
+            }
+
+            // --- Создаем карточку (аналогично themes-modal.js) ---
+
+            const card = document.createElement('div');
+            card.className = 'theme-card-stylized';
+
+            if (data.TargetGiftMainColorHex) {
+                card.style.setProperty('--cluster-color', data.TargetGiftMainColorHex);
+            } else {
+                card.classList.add('no-color');
+            }
+
+            // Градиент
+            const gradientBg = document.createElement('div');
+            gradientBg.className = 'theme-gradient-bg';
+
+            // Картинки
+            const flyout = document.createElement('div');
+            flyout.className = 'theme-model-flyout';
+            data.SimilarGifts.slice(0, 5).forEach((gift, index) => {
+                const img = document.createElement('img');
+                // ❗️ Используем API_PHOTO_URL из этого файла
+                img.src = `${API_PHOTO_URL}/${encodeURIComponent(gift.GiftName)}/png/${encodeURIComponent(gift.ModelName)}.png`;
+                img.alt = gift.ModelName;
+                img.className = `model-img-${index + 1}`;
+                flyout.appendChild(img);
+            });
+
+            // Правая колонка
+            const rightCol = document.createElement('div');
+            rightCol.className = 'theme-card-right-col';
+
+            const infoDiv = document.createElement('div');
+            infoDiv.className = 'theme-card-stylized-info';
+
+            const title = document.createElement('h3');
+            title.textContent = "Похожие";
+
+            const subtitle = document.createElement('p');
+            subtitle.textContent = "по цвету";
+            subtitle.style.color = "var(--text-primary)"; // Делаем белым
+
+            infoDiv.appendChild(title);
+            infoDiv.appendChild(subtitle);
+
+            // Стрелка
+            const arrow = document.createElement('div');
+            arrow.className = 'theme-card-arrow';
+            arrow.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" /></svg>`;
+
+            rightCol.appendChild(infoDiv);
+            rightCol.appendChild(arrow);
+
+            // Собираем карточку
+            card.appendChild(gradientBg);
+            card.appendChild(flyout);
+            card.appendChild(rightCol);
+
+            // Навигация (❗️ с исправленным путем ❗️)
+            const destUrl = `../nft-page/index.html?giftName=${encodeURIComponent(giftName)}&modelName=${encodeURIComponent(modelName)}&randomGiftsCount=100`;
+
+            card.addEventListener('click', (e) => {
+                e.preventDefault();
+                // Выполняем колбэк (например, закрытие модалки), если он есть
+                if (onClickCallback) {
+                    onClickCallback();
+                }
+                window.location.href = destUrl;
+            });
+
+            // Добавляем в DOM
+            container.innerHTML = ''; // Очищаем спиннер
+            container.appendChild(card);
+
+        } catch (error) {
+            console.error(`[Themes Fallback] Ошибка:`, error);
+            container.innerHTML = '<span style="font-size: 0.9rem; color: #f87171;">Ошибка загрузки</span>';
+        }
+    }
+
+    async function updateModelThemes(modelName) {
+        const container = document.getElementById('model-themes-container');
+        if (container) {
+            container.innerHTML = ''; // Очищаем и ничего не добавляем
+            container.style.display = 'none'; // Скрываем блок
+        }
+    }
+
+    async function loadThemesForModal(giftName, modelName, container) {
+        if (!container) return;
+        container.innerHTML = '';
+
+        try {
+            // ❗️ ИЗМЕНЕНИЕ: Новый URL
+            const url = `${SERVER_BASE_URL}/api/BaseInfo/GetCollectionByGift/${encodeURIComponent(giftName)}/${encodeURIComponent(modelName)}/WithParameters`;
+            const themes = await secureFetch(url, null);
+
+            if (themes && themes.length > 0) {
+                const themeCount = themes.length;
+                const pluralName = getPlural(themeCount, 'тематике', 'тематикам', 'тематикам');
+                const ending = getCountEnding(themeCount);
+
+                const link = document.createElement('a');
+                link.href = '#';
+                link.id = 'show-themes-link';
+
+                link.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9.568 3H5.25A2.25 2.25 0 0 0 3 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 0 0 5.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 0 0 9.568 3Z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 6h.008v.008H6V6Z" />
+                </svg>
+                <span>Принадлежит ${themeCount}${ending} ${pluralName}</span>
+            `;
+
+                link.onclick = (e) => {
+                    e.preventDefault();
+                    closeDetailsModal(true);
+                    if (window.themesModal) {
+                        // ❗️ ИЗМЕНЕНИЕ: Передаем полный массив [Collection]
+                        window.themesModal.open(themes, giftName, modelName);
+                    }
+                };
+
+                container.appendChild(link);
+
+            } else {
+                // ⬇️ ❗️❗️ ЗАМЕНИ БЛОК 'ELSE' ❗️❗️ ⬇️
+
+                // СТАЛО:
+                container.innerHTML = `
+                <span style="font-size: 0.9rem; color: var(--text-muted);">
+                    <span class="loading-spinner-mini" style="width:14px; height: 14px; border-width: 2px;"></span>
+                </span>`; // Показываем мини-спиннер
+
+                // Асинхронно создаем нашу новую кнопку
+                const link = await createSimilarButtonFallback(giftName, modelName);
+
+                link.onclick = (e) => {
+                    e.preventDefault();
+                    closeDetailsModal(false); // Закрываем модалку
+                    window.location.href = link.href;
+                };
+
+                container.innerHTML = ''; // Очищаем спиннер
+                container.appendChild(link);
+
+                // ⬆️ ❗️❗️ КОНЕЦ ЗАМЕНЫ ❗️❗️ ⬆️
+            }
+
+        } catch (error) {
+            console.error('[API Error] Ошибка при загрузке тематик для модалки:', error);
+            container.innerHTML = '<span style="font-size: 0.9rem; color: #f87171;">Ошибка загрузки тем</span>';
+        }
+    }
+
     let state = {
         currentMode: 'findBgs',
         giftNames: [],
-        modelNames: [], 
+        modelNames: [],
         findBgs: {
             selectedGift: null,
             selectedModel: null,
@@ -140,9 +649,20 @@ document.addEventListener('DOMContentLoaded', () => {
             lastResults: [],
         },
     };
+
+    let nftsState = {
+        isExpanded: false,
+        page: 1,
+        pageSize: 18, // По 18 штук (3 колонки x 6 рядов)
+        isLoading: false,
+        hasMore: true,
+        currentGift: null,
+        currentModel: null,
+        currentBg: null,
+        observer: null
+    };
     let searchTimeout = null;
 
-    // 🔥 НАЧАЛО ВСТАВКИ: ЛОГИКА LAZY LOADING
     let observerMap = new Map();
 
     const lazyLoadCallback = (entries, observer) => {
@@ -159,6 +679,16 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
+
+    function getCountEnding(count) {
+        const lastDigit = count % 10;
+        const lastTwo = count % 100;
+        if (lastTwo >= 11 && lastTwo <= 19) return 'ти';
+        if (lastDigit === 1) return 'й';
+        if (lastDigit >= 2 && lastDigit <= 4) return 'м';
+        return 'ти'; // 0, 5, 6, 7, 8, 9
+    }
+
     function setupLazyLoading(contentElement, scrollRoot, type) {
         if (!contentElement) return;
 
@@ -168,8 +698,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!observer) {
             const options = {
                 root: scrollRoot,
-                // Агрессивная предзагрузка для списков, умеренная для сетки
-                rootMargin: type === 'list' ? '600px' : '400px' 
+                rootMargin: type === 'list' ? '600px' : '400px'
             };
             observer = new IntersectionObserver(lazyLoadCallback, options);
             observerMap.set(observerKey, observer);
@@ -181,7 +710,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // --- Element References ---
     const modeSwitcher = document.querySelector('.mode-switcher');
     const findBgsControls = document.getElementById('find-bgs-controls');
     const findModelsControls = document.getElementById('find-models-controls');
@@ -190,7 +718,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const resultsGrid = document.getElementById('results-grid');
 
 
-    // Picker elements
     const pickerArea = document.getElementById('picker-area');
     const pickerContainer = document.getElementById('pickerContainer');
     const pickerTargetColorsDisplay = document.getElementById('pickerTargetColorsDisplay');
@@ -202,8 +729,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const modalModelName = document.getElementById('modal-model-name');
     const modalBgName = document.getElementById('modal-bg-name');
     const modalCompatValue = document.getElementById('modal-compat-value');
-    
-    // Dropdown Objects
+    const modalGiftCount = document.getElementById('modal-gift-count');
+
     const dropdowns = {
         giftBgs: {
             header: document.getElementById('gift-dropdown-header-bgs'),
@@ -235,39 +762,326 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // --- CORE LOGIC ---
+    async function openDetailsModal(data) {
+        // 1. Показываем глобальный лоадер, чтобы пользователь понимал, что идет загрузка
+        showLoading(false); // false = не очищать сетку результатов, просто показать спиннер поверх или в углу
+        // Если showLoading работает только для сетки, можно добавить простой курсор wait
+        document.body.style.cursor = 'wait';
 
-    function openDetailsModal(data) {
-        // Формируем URL для Lottie-анимации
-        const lottieUrl = `https://cdn.changes.tg/gifts/models/${encodeURIComponent(data.giftName)}/lottie/${encodeURIComponent(data.modelName)}.json`;
+        try {
+            // Подготовка переменных DOM
+            const iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="search-icon-small"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607z" /></svg>`;
 
-        // Устанавливаем фон для контейнера
-        modalPhotoContainer.style.background = data.backgroundGradient || 'var(--surface-color)';
-        
-        // Создаем и вставляем плеер анимации
-        modalPhotoContainer.innerHTML = `
-            <lottie-player
-                src="${lottieUrl}"
-                background="transparent"
-                speed="1"
-                loop
-                autoplay
-            ></lottie-player>
-        `;
+            // --- ПАРАЛЛЕЛЬНАЯ ЗАГРУЗКА ДАННЫХ ---
 
-        // Заполняем остальную информацию
-        document.getElementById('modal-gift-name').textContent = data.giftName;
-        modalModelName.textContent = data.modelName;
-        modalBgName.textContent = data.bgName;
-        modalCompatValue.textContent = `${data.compatValue}%`;
-        detailsModalOverlay.classList.remove('hidden');
+            // Формируем промис для тематик
+            const themesUrl = `${SERVER_BASE_URL}/api/Thematic/GetCollectionByGift/${encodeURIComponent(data.giftName)}/${encodeURIComponent(data.modelName)}`;
+            const themesPromise = secureFetch(themesUrl, null).catch(err => {
+                console.warn("Themes fetch failed", err);
+                return []; // Возвращаем пустой массив при ошибке, чтобы не ломать всё окно
+            });
+
+            // Формируем промис для рендеринга кнопки (мы модифицируем renderSimilarButton, чтобы она возвращала промис)
+            // Но renderSimilarButton сразу пишет в DOM. 
+            // Для "прелоада" нам нужно сначала очистить контейнер кнопки, чтобы там не было старого,
+            // а renderSimilarButton отработает и вставит кнопку.
+            const btnContainer = document.getElementById('modal-similar-btn-container');
+            // Мы вызываем renderSimilarButton с await
+            const buttonPromise = renderSimilarButton(btnContainer, data.giftName, data.modelName);
+
+            // Ждем завершения всех запросов
+            const [themes] = await Promise.all([themesPromise, buttonPromise]);
+
+            // --- ЗАПОЛНЕНИЕ DOM (Когда данные уже есть) ---
+
+            // 1. Фото и фон
+            const lottieUrl = `${API_PHOTO_URL}/${encodeURIComponent(data.giftName)}/lottie/${encodeURIComponent(data.modelName)}.json`;
+            modalPhotoContainer.style.background = data.backgroundGradient || 'var(--surface-color)';
+            modalPhotoContainer.innerHTML = `
+                <lottie-player src="${lottieUrl}" background="transparent" speed="1" loop autoplay></lottie-player>
+            `;
+
+            // 2. Текстовые данные
+            document.getElementById('modal-gift-name').textContent = data.giftName;
+
+            const modelNameEl = document.getElementById('modal-model-name');
+            const bgNameEl = document.getElementById('modal-bg-name');
+
+            // Клонирование для сброса лисенеров
+            const newModelEl = modelNameEl.cloneNode(true);
+            const newBgEl = bgNameEl.cloneNode(true);
+            modelNameEl.parentNode.replaceChild(newModelEl, modelNameEl);
+            bgNameEl.parentNode.replaceChild(newBgEl, bgNameEl);
+
+            // Сброс классов
+            newModelEl.className = 'info-value';
+            newBgEl.className = 'info-value';
+
+            newModelEl.textContent = data.modelName;
+            newBgEl.textContent = data.bgName;
+
+            // Логика перекрестных ссылок
+            if (state.currentMode === 'findBgs') {
+                newBgEl.classList.add('action-link');
+                newBgEl.title = "Найти лучшие модели с этим фоном";
+                newBgEl.innerHTML = `${data.bgName} ${iconSvg}`;
+                newBgEl.onclick = () => {
+                    closeDetailsModal(false);
+                    switchMode('findModels');
+                    const colorObj = fixedColors.find(c => c.name === data.bgName);
+                    if (colorObj) {
+                        state.findModels.selectedGift = data.giftName;
+                        state.findModels.selectedColor = colorObj;
+                        dropdowns.giftModels.value.textContent = data.giftName;
+                        dropdowns.colorModels.value.textContent = colorObj.name;
+                        fetchAllModelNames(data.giftName, false);
+                        fetchMatchingModels();
+                    }
+                };
+            } else {
+                newModelEl.classList.add('action-link');
+                newModelEl.title = "Найти лучшие фоны для этой модели";
+                newModelEl.innerHTML = `${data.modelName} ${iconSvg}`;
+                newModelEl.onclick = async () => {
+                    closeDetailsModal(false);
+                    switchMode('findBgs');
+                    state.findBgs.selectedGift = data.giftName;
+                    state.findBgs.selectedModel = data.modelName;
+                    dropdowns.giftBgs.value.textContent = data.giftName;
+                    dropdowns.modelBgs.value.textContent = data.modelName;
+                    await fetchAllModelNames(data.giftName, true);
+                    displayMonocolorAlert(data.modelName);
+                    setupInPageColorPicker();
+                };
+            }
+
+            // Совпадение и Количество
+            modalCompatValue.textContent = `${data.compatValue}%`;
+            modalGiftCount.classList.remove('count-error');
+            modalGiftCount.textContent = (data.count !== null && data.count !== undefined) ? `${data.count} шт` : '-';
+
+            // 3. Тематики (используем уже загруженные данные themes)
+            const themesValueEl = document.getElementById('modal-themes-value');
+            themesValueEl.className = 'info-value'; // сброс
+
+            if (themes && themes.length > 0) {
+                const count = themes.length;
+                const plural = getPlural(count, 'штука', 'штуки', 'штук');
+                themesValueEl.classList.add('link-style');
+                themesValueEl.innerHTML = `${count} ${plural} ${iconSvg}`;
+                themesValueEl.onclick = () => {
+                    if (window.themesModal) {
+                        // 1. Скрываем текущее окно (Детали)
+                        detailsModalOverlay.classList.add('hidden');
+
+                        // 2. Открываем окно Тематик
+                        // Передаем (GiftName, ModelName, Callback при возврате)
+                        window.themesModal.open(data.giftName, data.modelName, () => {
+                            // Этот код выполнится, когда в тематиках нажмут "Назад"
+                            detailsModalOverlay.classList.remove('hidden');
+                        });
+                    }
+                };
+            } else {
+                themesValueEl.textContent = 'Нет';
+                themesValueEl.onclick = null;
+            }
+
+            // 4. Инициализация секции NFT (она свернута, данные грузить не надо)
+            initNFTsSection(data.giftName, data.modelName, data.bgName);
+
+            // --- ОТКРЫТИЕ ОКНА ---
+            // Скрываем лоадеры
+            hideLoading();
+            document.body.style.cursor = 'default';
+
+            // И только теперь показываем модалку
+            document.body.classList.add('modal-open');
+            detailsModalOverlay.classList.remove('hidden');
+
+        } catch (error) {
+            console.error("Ошибка при открытии модального окна:", error);
+            hideLoading();
+            document.body.style.cursor = 'default';
+            // Можно показать алерт об ошибке
+        }
+        updateUrlState({
+            giftName: data.giftName,
+            modelName: data.modelName,
+            bgName: data.bgName
+        });
     }
 
-    function closeDetailsModal() {
+    // Функция для рендеринга золотой кнопки в модалке
+    // --- ЗАМЕНИТЬ ФУНКЦИЮ ПОЛНОСТЬЮ: renderSimilarButton ---
+    // --- ЗАМЕНИТЬ ФУНКЦИЮ ПОЛНОСТЬЮ: renderSimilarButton ---
+    async function renderSimilarButton(container, giftName, modelName) {
+        container.innerHTML = '<div class="loading-spinner-mini"></div>';
+
+        const similarUrl = `${SERVER_BASE_URL}/api/MonoCoof/SimilarNFTs`;
+        const body = {
+            NameTargetGift: giftName,
+            NameTargetModel: modelName,
+            MonohromeModelsOnly: true
+        };
+
+        try {
+            const [responseData, mainColors] = await Promise.all([
+                secureFetch(similarUrl, body),
+                fetchAndParseMainColors(giftName, modelName)
+            ]);
+
+            // --- ОБНОВЛЕННАЯ ЛОГИКА ЦВЕТА (Смягченная) ---
+            let bgColor = 'linear-gradient(135deg, #f6d365 0%, #fda085 100%)';
+            let textColor = '#ffffff';
+            let customBorder = '';
+
+            if (mainColors && mainColors.length > 0) {
+                let rSum = 0, gSum = 0, bSum = 0, count = 0;
+                const colorsToUse = mainColors.slice(0, 3);
+
+                colorsToUse.forEach(c => {
+                    const hex = c.hex.replace('#', '');
+                    if (hex.length === 6) {
+                        rSum += parseInt(hex.substring(0, 2), 16);
+                        gSum += parseInt(hex.substring(2, 4), 16);
+                        bSum += parseInt(hex.substring(4, 6), 16);
+                        count++;
+                    }
+                });
+
+                if (count > 0) {
+                    const r = Math.round(rSum / count);
+                    const g = Math.round(gSum / count);
+                    const b = Math.round(bSum / count);
+
+                    const brightness = Math.round(((r * 299) + (g * 587) + (b * 114)) / 1000);
+
+                    if (brightness > 140) {
+                        // ФОН СВЕТЛЫЙ (Deep Tone) - Мягче
+                        // Умножаем на 0.45 (было 0.35)
+                        const factor = 0.45;
+                        const tr = Math.round(r * factor);
+                        const tg = Math.round(g * factor);
+                        const tb = Math.round(b * factor);
+                        textColor = `rgb(${tr}, ${tg}, ${tb})`;
+                        customBorder = 'none';
+                    } else {
+                        // ФОН ТЕМНЫЙ (Pale Tone) - Мягче
+                        // Смешиваем с белым на 70% (было 85%)
+                        const mix = 0.70;
+                        const tr = Math.round(r + (255 - r) * mix);
+                        const tg = Math.round(g + (255 - g) * mix);
+                        const tb = Math.round(b + (255 - b) * mix);
+                        textColor = `rgb(${tr}, ${tg}, ${tb})`;
+                    }
+
+                    // Градиент
+                    bgColor = `linear-gradient(180deg, rgba(${r},${g},${b}, 1) 0%, rgba(${Math.max(0, r - 20)},${Math.max(0, g - 20)},${Math.max(0, b - 20)}, 1) 100%)`;
+                }
+            }
+
+            // --- ЛОГИКА ИКОНОК ---
+            let allCandidates = [];
+            if (responseData) {
+                Object.keys(responseData).forEach(gName => {
+                    const groupData = responseData[gName];
+                    if (groupData && groupData.SimilarModels) {
+                        groupData.SimilarModels.forEach(m => {
+                            if (gName === giftName && m.Key === modelName) return;
+                            allCandidates.push({
+                                gift: gName,
+                                model: m.Key,
+                                score: m.Value
+                            });
+                        });
+                    }
+                });
+            }
+
+            if (allCandidates.length === 0) {
+                container.innerHTML = '';
+                return;
+            }
+
+            allCandidates.sort((a, b) => b.score - a.score);
+            const topCandidates = allCandidates.slice(0, 10);
+
+            let item1, item2;
+            if (topCandidates.length > 0) {
+                const idx1 = Math.floor(Math.random() * topCandidates.length);
+                item1 = topCandidates[idx1];
+
+                const differentCollectionCandidates = topCandidates.filter(c => c.gift !== item1.gift);
+                if (differentCollectionCandidates.length > 0) {
+                    const idx2 = Math.floor(Math.random() * differentCollectionCandidates.length);
+                    item2 = differentCollectionCandidates[idx2];
+                } else {
+                    const differentModelCandidates = topCandidates.filter(c => c.model !== item1.model);
+                    if (differentModelCandidates.length > 0) {
+                        const idx2 = Math.floor(Math.random() * differentModelCandidates.length);
+                        item2 = differentModelCandidates[idx2];
+                    }
+                }
+            }
+
+            // --- РЕНДЕРИНГ ---
+            const href = `../nft-page/index.html?giftName=${encodeURIComponent(giftName)}&modelName=${encodeURIComponent(modelName)}&randomGiftsCount=100`;
+            const btn = document.createElement('a');
+            btn.className = 'similar-color-btn';
+            btn.href = href;
+
+            btn.style.background = bgColor;
+            btn.style.setProperty('color', textColor, 'important');
+            btn.style.textShadow = 'none';
+
+            if (customBorder) btn.style.border = customBorder;
+
+            // ФИКС ВЫРАВНИВАНИЯ
+            const imgStyle = 'display:block; margin:0;';
+            const img1 = item1 ? `<img src="${API_PHOTO_URL}/${encodeURIComponent(item1.gift)}/png/${encodeURIComponent(item1.model)}.png" class="similar-btn-icon" style="${imgStyle}" alt="">` : '';
+            const img2 = item2 ? `<img src="${API_PHOTO_URL}/${encodeURIComponent(item2.gift)}/png/${encodeURIComponent(item2.model)}.png" class="similar-btn-icon" style="${imgStyle}" alt="">` : '';
+
+            btn.innerHTML = `
+                ${img1}
+                <span style="display:inline-block; line-height:1; padding-top:1px;">Похожие по цвету</span>
+                ${img2}
+            `;
+
+            btn.onclick = (e) => {
+                e.preventDefault();
+                window.location.href = href;
+            };
+
+            container.innerHTML = '';
+            container.appendChild(btn);
+
+        } catch (error) {
+            console.error('[Similar Button API Error]', error);
+            container.innerHTML = '';
+        }
+    }
+
+    function closeDetailsModal(keepOverlayOpen = false) {
         detailsModalOverlay.classList.add('hidden');
+
+        // Очищаем контейнеры
+        const themesContainer = document.getElementById('modal-themes-container');
+        if (themesContainer) themesContainer.innerHTML = '';
+
+        // ВАЖНО: Если мы не "свопаем" на другое модальное окно (например, Тематик),
+        // а просто закрываем или переходим к поиску на странице -> убираем класс modal-open
+        // keepOverlayOpen = true только если мы открываем ThemesModal поверх.
+        if (!keepOverlayOpen) {
+            document.body.classList.remove('modal-open');
+        }
+        if (!keepOverlayOpen) {
+            updateUrlState(null); // Передаем null, чтобы убрать параметры d_*
+        }
     }
 
-    function switchMode(mode) {
+    // 🔥 ЗАМЕНИ ФУНКЦИЮ switchMode НА ЭТУ:
+    function switchMode(mode, updateUrl = true) {
         state.currentMode = mode;
 
         modeSwitcher.classList.toggle('mode-models', mode === 'findModels');
@@ -278,7 +1092,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (mode === 'findBgs') {
             findBgsControls.classList.add('active');
             findModelsControls.classList.remove('active');
-            pickerArea.style.display = 'flex'; 
+            pickerArea.style.display = 'flex';
 
             if (state.findBgs.lastResults.length > 0) {
                 renderBackgroundResults(state.findBgs.lastResults);
@@ -290,7 +1104,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             findBgsControls.classList.remove('active');
             findModelsControls.classList.add('active');
-            pickerArea.style.display = 'none'; 
+            pickerArea.style.display = 'none';
 
             if (state.findModels.lastResults.length > 0) {
                 renderModelResults(state.findModels.lastResults, state.findModels.selectedColor);
@@ -300,8 +1114,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 clearResults();
             }
         }
+
+        // Обновляем URL только если разрешено (при старте мы запретим)
+        if (updateUrl) updateUrlState();
     }
-    
+
     function clearResults() {
         resultsGrid.innerHTML = '';
         resultsWrapper.classList.add('results-initial-hide');
@@ -323,26 +1140,71 @@ document.addEventListener('DOMContentLoaded', () => {
         loadingContainer.innerHTML = '';
         resultsGrid.classList.remove('loading');
     }
-    
+
     const getTelegramUserData = () => {
-        const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
-        if (tgUser) {
-            console.log("Telegram user data found:", tgUser);
+        let masterUserData = null;
+        try {
+            const cachedUserData = sessionStorage.getItem('tgUser');
+            if (cachedUserData) {
+                console.log("User data LOADED from sessionStorage:", cachedUserData);
+                masterUserData = JSON.parse(cachedUserData); // Читаем стандартный формат
+            }
+        } catch (e) {
+            console.error('Failed to parse user data from sessionStorage:', e);
+        }
+
+        if (!masterUserData) {
+            console.log("No user data in sessionStorage. Trying direct access (fallback)...");
+            const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
+
+            if (tgUser) {
+                console.log("Telegram user data found directly (fallback):", tgUser);
+                // Сразу создаем стандартный формат
+                masterUserData = {
+                    telegramId: tgUser.id,
+                    username: tgUser.username || null,
+                    // firstName и lastName нам здесь не нужны
+                };
+
+                try {
+                    // И сохраняем в кеш стандартный формат с ЧИСЛОМ
+                    const dataToSave = {
+                        ...masterUserData,
+                        telegramId: parseInt(tgUser.id, 10) // Гарантируем число при сохранении
+                    };
+                    sessionStorage.setItem('tgUser', JSON.stringify(dataToSave));
+                } catch (e) { /* Ошибка сохранения не критична */ }
+            }
+        }
+
+        // ЕСЛИ ДАННЫЕ НАШЛИСЬ (в кеше или напрямую)
+        if (masterUserData) {
+            let numericId = null;
+            // Гарантированно преобразуем ID в число при ИСПОЛЬЗОВАНИИ
+            if (masterUserData.telegramId !== null && masterUserData.telegramId !== undefined) {
+                numericId = parseInt(masterUserData.telegramId, 10);
+                // Если parseInt вернул не число (NaN), ставим null
+                if (isNaN(numericId)) {
+                    numericId = null;
+                    console.warn("Parsed telegramId is NaN, setting id to null.");
+                }
+            }
+            // 
+            // ✅ ВОЗВРАЩАЕМ ОБЪЕКТ В ФОРМАТЕ { id, Username } ДЛЯ API ЭТОГО ФАЙЛА ✅
+            // 
             return {
-                id: tgUser.id,
-                Username: tgUser.username || null,
+                id: numericId, // Теперь id (маленькая) и ГАРАНТИРОВАННО число или null
+                Username: masterUserData.username // Username (большая)
             };
         }
-        console.log("Not running in Telegram Web App, sending null user data.");
-        return { id: null, Username: null };
+
+        // Если данных нет нигде
+        console.log("User data not found. Sending null in {id, Username} format.");
+        return { id: null, Username: null }; // Возвращаем null в нужном формате
     };
 
-    // --- API & DATA FETCHING ---
-
     async function fetchAllGiftNames() {
-        const cacheKey = 'giftNamesCache'; // ❗ Используем тот же ключ, что и на gift-page.js
-
-        // 1. Пробуем загрузить из кэша
+        const cacheKey = 'giftNamesCache';
         try {
             const cachedData = sessionStorage.getItem(cacheKey);
             if (cachedData) {
@@ -357,23 +1219,21 @@ document.addEventListener('DOMContentLoaded', () => {
             sessionStorage.removeItem(cacheKey);
         }
 
-        // 2. Если в кэше пусто, грузим с сервера
         const url = `${SERVER_BASE_URL}/api/ListGifts/AllGiftNames`;
         console.log(`%c[API Request] Fetching all gift names from: ${url}`, 'color: dodgerblue');
+
         try {
-            const response = await fetch(url);
-            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-            state.giftNames = await response.json();
+            // ИЗМЕНЕНИЕ: Используем secureFetch вместо fetch
+            state.giftNames = await secureFetch(url, null);
+
             console.log('%c[API Success] Loaded gift names from server:', 'color: green', state.giftNames);
 
-            // 3. Сохраняем в кэш
             try {
                 sessionStorage.setItem(cacheKey, JSON.stringify(state.giftNames));
             } catch (error) {
                 console.error('[Cache Error] Ошибка сохранения в кэш:', error);
             }
 
-            // 4. Отображаем
             populateDropdown(dropdowns.giftBgs.options, state.giftNames, 'gift');
             populateDropdown(dropdowns.giftModels.options, state.giftNames, 'gift');
 
@@ -383,44 +1243,48 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function fetchAllModelNames(giftName, updateDOM = true) {
-    if (!giftName) {
-        if (updateDOM) {
-            dropdowns.modelBgs.options.innerHTML = `<div class="list-option list-placeholder">Сначала выберите коллекцию</div>`;
+        if (!giftName) {
+            if (updateDOM) {
+                dropdowns.modelBgs.options.innerHTML = `<div class="list-option list-placeholder">Сначала выберите коллекцию</div>`;
+            }
+            state.modelNames = [];
+            return;
         }
-        state.modelNames = [];
-        return;
-    }
-    const url = `${SERVER_BASE_URL}/api/ListGifts/${encodeURIComponent(giftName)}/AllModelNames`;
-    console.log(`%c[API Request] Fetching models for "${giftName}" from: ${url}`, 'color: dodgerblue');
-    try {
-        const response = await fetch(url);
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-        const modelsDict = await response.json();
-        
-        state.modelNames = Object.entries(modelsDict).map(([name, isMonochrome]) => ({ name, isMonochrome }));
-        console.log(`%c[API Success] Loaded models for "${giftName}":`, 'color: green', state.modelNames);
+        const url = `${SERVER_BASE_URL}/api/ListGifts/${encodeURIComponent(giftName)}/AllModelNames`;
+        console.log(`%c[API Request] Fetching models for "${giftName}" from: ${url}`, 'color: dodgerblue');
 
-        if (updateDOM) {
-            const modelNamesList = state.modelNames.map(m => m.name);
-            populateDropdown(dropdowns.modelBgs.options, modelNamesList, 'model');
-        }
+        try {
+            // ИЗМЕНЕНИЕ: Используем secureFetch вместо fetch
+            // Сервер сразу возвращает массив, secureFetch его распарсит
+            const modelsList = await secureFetch(url, null);
 
-    } catch (error) {
-        console.error(`[API Error] Ошибка при загрузке моделей для ${giftName}:`, error);
-        state.modelNames = [];
-        if (updateDOM) {
-            dropdowns.modelBgs.options.innerHTML = `<div class="list-option list-placeholder">Модели не найдены</div>`;
+            state.modelNames = modelsList;
+            console.log(`%c[API Success] Loaded models for "${giftName}":`, 'color: green', state.modelNames);
+
+            if (updateDOM) {
+                populateDropdown(dropdowns.modelBgs.options, state.modelNames, 'model');
+            }
+
+        } catch (error) {
+            console.error(`[API Error] Ошибка при загрузке моделей для ${giftName}:`, error);
+            state.modelNames = [];
+            if (updateDOM) {
+                dropdowns.modelBgs.options.innerHTML = `<div class="list-option list-placeholder">Модели не найдены</div>`;
+            }
         }
     }
-}
 
     async function fetchAndParseMainColors(giftName, modelName) {
         const url = `${SERVER_BASE_URL}/api/ListGifts/${encodeURIComponent(giftName)}/${encodeURIComponent(modelName)}/MainColors`;
         console.log(`%c[API Request] Fetching main colors for "${giftName} - ${modelName}" from: ${url}`, 'color: dodgerblue');
         try {
-            const response = await fetch(url);
+            const response = await fetch(url, {
+                headers: {
+                    'Authorization': getApiAuthHeader()
+                }
+            });
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-            
+
             const colorsString = await response.text();
             if (!colorsString) return [];
 
@@ -428,11 +1292,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const colors = cleanedString.split(';').map(item => {
                 const parts = item.trim().split(':');
                 if (parts.length !== 2) return null;
-                
+
                 const posPart = parts[0];
                 const xMatch = posPart.match(/X=(\d+)/);
                 const yMatch = posPart.match(/Y=(\d+)/);
-                
+
                 return {
                     x: xMatch ? parseInt(xMatch[1], 10) : 0,
                     y: yMatch ? parseInt(yMatch[1], 10) : 0,
@@ -456,47 +1320,47 @@ document.addEventListener('DOMContentLoaded', () => {
         let requestBody;
         const targetHexColors = state.findBgs.targetColors.map(c => c.hex);
 
-        if (targetHexColors.length === 3 && targetHexColors.every(c => /^#[0-9A-F]{6}$/i.test(c))) {
+        // --- ИЗМЕНЕНИЕ НАЧАЛО ---
+        // Логика: 
+        // 1. Если пользователь трогал пикеры (hasUserModifiedColors === true) -> ищем по ЦВЕТАМ.
+        // 2. Иначе (по умолчанию) -> ищем по ИМЕНИ гифта и модели.
+
+        if (hasUserModifiedColors && targetHexColors.length === 3 && targetHexColors.every(c => /^#[0-9A-F]{6}$/i.test(c))) {
             apiUrl = `${SERVER_BASE_URL}/api/MonoCoof/TopBackgroundColorsByColors`;
             requestBody = {
                 ...getTelegramUserData(),
-                colors: targetHexColors
+                Colors: targetHexColors
             };
-            console.log("%c[API Request] Using 3-color search:", 'color: purple', targetHexColors);
+            console.log("%c[API Request] User modified colors. Using 3-color search:", 'color: purple', targetHexColors);
         } else if (state.findBgs.selectedGift && state.findBgs.selectedModel) {
             apiUrl = `${SERVER_BASE_URL}/api/MonoCoof/TopBackgroundColorsByNFT`;
             requestBody = {
                 ...getTelegramUserData(),
-                nameGift: state.findBgs.selectedGift,
-                nameModel: state.findBgs.selectedModel
+                NameGift: state.findBgs.selectedGift,
+                NameModel: state.findBgs.selectedModel
             };
-            console.log(`%c[API Request] Using NFT-based search for: ${state.findBgs.selectedModel}`, 'color: dodgerblue');
+            console.log(`%c[API Request] Using NFT-based search (Default) for: ${state.findBgs.selectedModel}`, 'color: dodgerblue');
         } else {
             hideLoading();
             resultsGrid.innerHTML = `<p style="text-align: center;">Выберите модель для поиска.</p>`;
             return;
         }
+        // --- ИЗМЕНЕНИЕ КОНЕЦ ---
 
         try {
-            const response = await fetch(apiUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(requestBody),
-            });
-
-            if (!response.ok) throw new Error(`HTTP ${response.status}: ${await response.text()}`);
-
-            const serverData = await response.json();
+            const serverData = await secureFetch(apiUrl, requestBody);
             console.log('%c[API Success] Received background data:', 'color: green', serverData);
 
             const enrichedBgs = serverData.map(item => {
                 const foundColor = fixedColors.find(fc => fc.id === item.Key);
                 return foundColor ? { ...foundColor, compatValue: item.Value } : null;
             }).filter(Boolean);
-            
-            state.findBgs.lastResults = enrichedBgs;
+
+            const resultsWithCounts = await fetchGiftCounts(enrichedBgs, state.findBgs.selectedGift, 'findBgs');
+
+            state.findBgs.lastResults = resultsWithCounts;
             hideLoading();
-            renderBackgroundResults(enrichedBgs);
+            renderBackgroundResults(resultsWithCounts);
 
         } catch (error) {
             console.error('[API Error] Ошибка при поиске фонов:', error);
@@ -507,31 +1371,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function fetchMatchingModels() {
         if (!state.findModels.selectedGift || !state.findModels.selectedColor) return;
-        
+
         const isGridEmpty = resultsGrid.innerHTML.trim() === '';
         showLoading(isGridEmpty);
 
         const url = `${SERVER_BASE_URL}/api/MonoCoof/TopNftByColor`;
         const requestBody = {
-            ...getTelegramUserData(), // <-- ДОБАВЛЕНО
-            nameGift: state.findModels.selectedGift,
-            nameColor: state.findModels.selectedColor.id,
-            monohromeModelsOnly: false
+            ...getTelegramUserData(),
+            NameGift: state.findModels.selectedGift,
+            NameColor: state.findModels.selectedColor.id,
+            MonohromeModelsOnly: true
         };
 
         console.log(`%c[API Request] Searching for models with POST to: ${url}`, 'color: dodgerblue');
         console.log('Request Body:', requestBody);
 
         try {
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(requestBody)
-            });
-
-            if (!response.ok) throw new Error(`HTTP ${response.status}: ${await response.text()}`);
-            
-            const serverData = await response.json();
+            const serverData = await secureFetch(url, requestBody);
             console.log('%c[API Success] Received model data:', 'color: green', serverData);
 
             const modelsToRender = serverData.map(item => ({
@@ -540,30 +1396,31 @@ document.addEventListener('DOMContentLoaded', () => {
                 compatValue: item.Coof,
                 isMonohrome: item.IsMonohrome,
             }));
-            
-            state.findModels.lastResults = modelsToRender;
-            hideLoading();
-            renderModelResults(modelsToRender, state.findModels.selectedColor);
 
-        } catch(error) {
-             console.error('[API Error] Ошибка при поиске моделей:', error);
-             hideLoading();
-             resultsGrid.innerHTML = `<p style="text-align: center;">Не удалось загрузить данные. ${error}</p>`;
+            const resultsWithCounts = await fetchGiftCounts(modelsToRender, state.findModels.selectedGift, 'findModels');
+
+            state.findModels.lastResults = resultsWithCounts; // Сохраняем обогащенные данные
+            hideLoading();
+            renderModelResults(resultsWithCounts, state.findModels.selectedColor);
+
+        } catch (error) {
+            console.error('[API Error] Ошибка при поиске моделей:', error);
+            hideLoading();
+            resultsGrid.innerHTML = `<p style="text-align: center;">Не удалось загрузить данные. ${error}</p>`;
         }
     }
 
-    // --- RENDERING ---
-
     function renderBackgroundResults(backgroundData) {
         resultsWrapper.classList.remove('results-initial-hide');
-        resultsGrid.innerHTML = ''; 
+        resultsGrid.innerHTML = '';
         if (!backgroundData || backgroundData.length === 0) {
             resultsGrid.innerHTML = '<p style="text-align: center;">Подходящих фонов не найдено.</p>';
             return;
         }
-        
+
         const modelImageUrl = `${API_PHOTO_URL}/${encodeURIComponent(state.findBgs.selectedGift)}/png/${encodeURIComponent(state.findBgs.selectedModel)}.png`;
         const fragment = document.createDocumentFragment();
+
         backgroundData.forEach(bg => {
             const card = document.createElement('div');
             card.className = 'result-card-bg';
@@ -579,19 +1436,82 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>`;
 
             card.addEventListener('click', () => {
-                openDetailsModal({
-                    imageUrl: modelImageUrl,
-                    backgroundGradient: bg.gradient,
-                    giftName: state.findBgs.selectedGift,
-                    modelName: state.findBgs.selectedModel,
-                    bgName: bg.name,
-                    compatValue: compatValue
-                });
+                // ИСПОЛЬЗУЕМ GLOBAL MODAL из themes-modal.js
+                if (window.themesModal) {
+                    window.themesModal.openModelDetail(
+                        state.findBgs.selectedGift,
+                        state.findBgs.selectedModel,
+                        bg.name
+                    );
+
+                    updateUrlState({
+                        giftName: state.findBgs.selectedGift,
+                        modelName: state.findBgs.selectedModel,
+                        bgName: bg.name
+                    });
+                }
             });
             fragment.appendChild(card);
         });
         resultsGrid.appendChild(fragment);
         setupLazyLoading(resultsGrid, null, 'grid');
+    }
+
+    async function fetchGiftCounts(results, giftName, mode) {
+        let requestBody = [];
+
+        if (mode === 'findBgs') {
+            const modelName = state.findBgs.selectedModel;
+            requestBody = results.map(bg => ({
+                NameGift: giftName,
+                NameModel: modelName,
+                BackgroundName: bg.id // id здесь это имя цвета (напр. "Amber")
+            }));
+        } else if (mode === 'findModels') {
+            const bgName = state.findModels.selectedColor.id;
+            requestBody = results.map(model => ({
+                NameGift: giftName,
+                NameModel: model.modelName,
+                BackgroundName: bgName
+            }));
+        }
+
+        if (requestBody.length === 0) return results;
+
+        const countApiUrl = `${SERVER_BASE_URL}/api/BaseInfo/GetCountsForModelsAndBackgrounds`;
+
+        try {
+            // Используем secureFetch (он у вас есть в файле)
+            const countsData = await secureFetch(countApiUrl, requestBody);
+
+            // Создаем Map для быстрого поиска
+            const countMap = new Map();
+
+            if (mode === 'findBgs') {
+                countsData.forEach(item => {
+                    // Если ошибка или null, считаем как null
+                    if (item.BackgroundName) countMap.set(item.BackgroundName, item.Count);
+                });
+
+                results.forEach(bg => {
+                    bg.count = countMap.has(bg.id) ? countMap.get(bg.id) : null;
+                });
+            } else if (mode === 'findModels') {
+                countsData.forEach(item => {
+                    if (item.NameModel) countMap.set(item.NameModel, item.Count);
+                });
+
+                results.forEach(model => {
+                    model.count = countMap.has(model.modelName) ? countMap.get(model.modelName) : null;
+                });
+            }
+
+            return results;
+
+        } catch (error) {
+            console.error('[API Error] Counts batch fetch failed:', error);
+            return results;
+        }
     }
 
     function renderModelResults(modelData, backgroundColor) {
@@ -601,7 +1521,7 @@ document.addEventListener('DOMContentLoaded', () => {
             resultsGrid.innerHTML = '<p style="text-align: center;">Подходящих моделей не найдено.</p>';
             return;
         }
-        
+
         const fragment = document.createDocumentFragment();
         modelData.forEach(model => {
             const modelImageUrl = `${API_PHOTO_URL}/${encodeURIComponent(model.giftName)}/png/${encodeURIComponent(model.modelName)}.png`;
@@ -617,30 +1537,32 @@ document.addEventListener('DOMContentLoaded', () => {
                     <p class="compat-value">${compatValue}%</p>
                     <p class="bg-name">${model.modelName}</p>
                 </div>`;
-            
+
             card.addEventListener('click', () => {
-                openDetailsModal({
-                    imageUrl: modelImageUrl,
-                    backgroundGradient: backgroundColor.gradient,
-                    giftName: model.giftName,
-                    modelName: model.modelName,
-                    bgName: backgroundColor.name,
-                    compatValue: compatValue
-                });
+                if (window.themesModal) {
+                    window.themesModal.openModelDetail(
+                        model.giftName,
+                        model.modelName,
+                        backgroundColor.name
+                    );
+
+                    updateUrlState({
+                        giftName: model.giftName,
+                        modelName: model.modelName,
+                        bgName: backgroundColor.name
+                    });
+                }
             });
             fragment.appendChild(card);
         });
         resultsGrid.appendChild(fragment);
         setupLazyLoading(resultsGrid, null, 'grid');
-
     }
-
-    // --- DROPDOWN LOGIC ---
 
     function populateDropdown(container, items, type) {
         container.innerHTML = '';
         const fragment = document.createDocumentFragment();
-        const PRELOAD_COUNT = 15; // Предзагружаем первые 15 картинок
+        const PRELOAD_COUNT = 15;
 
         items.forEach((item, index) => {
             const isPreload = index < PRELOAD_COUNT;
@@ -648,8 +1570,7 @@ document.addEventListener('DOMContentLoaded', () => {
             fragment.appendChild(option);
         });
         container.appendChild(fragment);
-        
-        // Запускаем наблюдение за картинками, которые не были предзагружены
+
         const scrollRoot = container.closest('.dropdown-list');
         setupLazyLoading(container, scrollRoot, 'list');
     }
@@ -657,7 +1578,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function createDropdownOption(item, type, isPreload = false) {
         const option = document.createElement('div');
         option.classList.add('list-option');
-        
+
         const placeholderImg = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
         let imageHtml = '';
         let name = '';
@@ -670,23 +1591,43 @@ document.addEventListener('DOMContentLoaded', () => {
                 return `<img src="${placeholderImg}" data-src="${url}" alt="${alt}" class="option-image lazy-load">`;
             }
         };
-        
+
         if (type === 'gift') {
-            name = item;
+            name = item; // item - это строка "Santa Hat"
             const giftId = GIFT_NAME_TO_ID[name];
             if (giftId) {
                 const imageUrl = `${API_GIFT_ORIGINALS_URL}/${giftId}/Original.png`;
                 imageHtml = generateImageTag(imageUrl, name);
             }
+            // Обычный span для гифтов
+            option.innerHTML = `${imageHtml}<span class="option-text">${name}</span>`;
+            option.dataset.value = name;
+
         } else if (type === 'model') {
-            name = item;
+            name = item.NameModel;
             const giftName = state.currentMode === 'findBgs' ? state.findBgs.selectedGift : state.findModels.selectedGift;
+
             if (giftName) {
                 const imageUrl = `${API_PHOTO_URL}/${encodeURIComponent(giftName)}/png/${encodeURIComponent(name)}.png`;
                 imageHtml = generateImageTag(imageUrl, name);
             }
-            const modelData = state.modelNames.find(m => m.name === name);
-            if (modelData && modelData.isMonochrome === false) {
+
+            let themesHtml = '';
+            if (item.Themes && item.Themes.length > 0) {
+                // ✅ ИЗМЕНЕНИЕ: Возвращаем "2 тематики"
+                const plural = getPlural(item.Themes.length, 'тематика', 'тематики', 'тематик');
+                themesHtml = `<span class="option-theme-count">${item.Themes.length} ${plural}</span>`;
+            } else {
+                themesHtml = `<span class="option-theme-count"> </span>`;
+            }
+
+            const infoWrapperHtml = `
+                <div class="option-info-wrapper">
+                    <span class="option-text">${name}</span>
+                    ${themesHtml}
+                </div>`;
+
+            if (item.IsMonochrome === false) {
                 statusHtml = `
                     <div class="monocolor-indicator">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -694,14 +1635,19 @@ document.addEventListener('DOMContentLoaded', () => {
                         </svg>
                     </div>`;
             }
+
+            option.innerHTML = `${imageHtml}${infoWrapperHtml}${statusHtml}`;
+            option.dataset.value = name;
+
         } else if (type === 'color') {
-            name = item.name;
+            name = item.name; // item - это { id: "...", name: "...", ... }
             imageHtml = `<div class="color-swatch-mini" style="background: ${item.gradient};"></div>`;
             option.classList.add('color-option');
+            // Обычный span для цветов
+            option.innerHTML = `${imageHtml}<span class="option-text">${name}</span>`;
+            option.dataset.value = item.id;
         }
 
-        option.innerHTML = `${imageHtml}<span class="option-text">${name}</span>${statusHtml}`;
-        option.dataset.value = (type === 'color') ? item.id : name;
         return option;
     }
 
@@ -714,8 +1660,9 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        const modelData = state.modelNames.find(m => m.name === modelName);
-        if (modelData && modelData.isMonochrome === false) {
+        // ✅ НОВАЯ ЛОГИКА: Ищем в массиве объектов по полю NameModel
+        const modelData = state.modelNames.find(m => m.NameModel === modelName);
+        if (modelData && modelData.IsMonochrome === false) {
             wrapper.innerHTML = `
                 <div class="monocolor-alert">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -732,11 +1679,11 @@ document.addEventListener('DOMContentLoaded', () => {
         Object.values(dropdowns).forEach(dropdown => {
             const isTarget = dropdown === dd;
             const shouldClose = forceClose || !isTarget;
-            
+
             if (shouldClose) {
                 dropdown.list.classList.add('hidden');
                 dropdown.header.classList.remove('open', 'active');
-                if(dropdown.input.value === '') {
+                if (dropdown.input.value === '') {
                     dropdown.header.classList.remove('value-active');
                 }
             }
@@ -744,28 +1691,32 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (dd && !forceClose) {
             const isOpening = dd.list.classList.contains('hidden');
-            if(isOpening) {
+            if (isOpening) {
                 dd.list.classList.remove('hidden');
                 dd.header.classList.add('open', 'active');
                 setTimeout(() => dd.input.focus(), 50);
             } else {
-                 dd.list.classList.add('hidden');
-                 dd.header.classList.remove('open', 'active');
+                dd.list.classList.add('hidden');
+                dd.header.classList.remove('open', 'active');
             }
         }
     }
-    
+
     function filterDropdown(input, optionsContainer, items, type) {
         const searchText = input.value.toLowerCase();
+
         const filtered = items.filter(item => {
-            const name = (type === 'color') ? item.name : (type === 'model') ? item.name : item;
+            let name = '';
+            if (type === 'color') name = item.name;
+            else if (type === 'model') name = item.NameModel; // ✅ НОВАЯ ЛОГИКА
+            else name = item; // для 'gift' (это просто строка)
+
             return name.toLowerCase().includes(searchText);
         });
-        const itemsToDisplay = (type === 'model') ? filtered.map(m => m.name) : filtered;
-        populateDropdown(optionsContainer, itemsToDisplay, type);
+
+        // Передаем отфильтрованный массив (объектов или строк)
+        populateDropdown(optionsContainer, filtered, type);
     }
-    
-    // --- IN-PAGE COLOR PICKER LOGIC ---
 
     function resetPickerAreaToPlaceholder() {
         pickerContainer.innerHTML = `
@@ -782,23 +1733,219 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
     }
 
+    function initNFTsSection(giftName, modelName, bgName) {
+        // 1. Сбрасываем состояние
+        nftsState = {
+            isExpanded: false,
+            page: 1,
+            pageSize: 18,
+            isLoading: false,
+            hasMore: true,
+            currentGift: giftName,
+            currentModel: modelName,
+            currentBg: bgName,
+            observer: null
+        };
+
+        const header = document.getElementById('nfts-toggle-header');
+        const grid = document.getElementById('nfts-grid-container');
+        const arrow = document.getElementById('nfts-arrow');
+
+        // Если элементов нет в DOM (например, модалка закрылась), выходим
+        if (!header || !grid) return;
+
+        // 2. Сбрасываем визуальный стиль (свернуто)
+        header.style.color = 'var(--text-muted)';
+        header.classList.remove('expanded');
+
+        if (arrow) arrow.style.transform = 'rotate(0deg)';
+
+        grid.style.display = 'none';
+        grid.classList.add('hidden');
+        grid.innerHTML = '';
+
+        // 3. Привязываем клик. Используем onclick, чтобы затереть любые старые обработчики
+        header.onclick = function (e) {
+            if (e) e.stopPropagation(); // Предотвращаем всплытие (на всякий случай)
+            toggleNFTsSection();
+        };
+    }
+
+    // 2. Логика раскрытия/закрытия
+    function toggleNFTsSection() {
+        const header = document.getElementById('nfts-toggle-header');
+        const grid = document.getElementById('nfts-grid-container');
+        const arrow = document.getElementById('nfts-arrow'); // Ищем по ID, так надежнее
+
+        if (!header || !grid) return;
+
+        // Переключаем флаг
+        nftsState.isExpanded = !nftsState.isExpanded;
+
+        if (nftsState.isExpanded) {
+            // РАСКРЫВАЕМ
+            header.style.color = '#fff';
+            header.classList.add('expanded');
+            if (arrow) arrow.style.transform = 'rotate(180deg)';
+
+            // Важно: Сначала убираем hidden (чтобы убрать !important из CSS), потом ставим grid
+            grid.classList.remove('hidden');
+            grid.style.display = 'grid';
+
+            // Если сетка пустая, запускаем загрузку
+            if (grid.children.length === 0) {
+                loadMoreNFTs();
+            }
+        } else {
+            // СКРЫВАЕМ
+            header.style.color = 'var(--text-muted)';
+            header.classList.remove('expanded');
+            if (arrow) arrow.style.transform = 'rotate(0deg)';
+
+            grid.style.display = 'none';
+            grid.classList.add('hidden');
+        }
+    }
+
+    // 3. Загрузка данных
+    async function loadMoreNFTs() {
+        if (nftsState.isLoading || !nftsState.hasMore) return;
+
+        nftsState.isLoading = true;
+        const loader = document.getElementById('nfts-loading-indicator');
+        if (loader) {
+            loader.classList.remove('hidden');
+            loader.style.display = 'block';
+        }
+
+        const cleanBaseUrl = BASE_URL.replace(/\/$/, '');
+        const url = `${cleanBaseUrl}/api/ListGifts/SearchGifts/${nftsState.page}/${nftsState.pageSize}`;
+
+        const body = {
+            GiftName: nftsState.currentGift,
+            ModelName: nftsState.currentModel,
+            BackgroundName: nftsState.currentBg
+        };
+
+        try {
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Authorization': getApiAuthHeader(),
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(body)
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+
+                if (data && data.Items && data.Items.length > 0) {
+                    renderNFTs(data.Items);
+
+                    if (data.Items.length < nftsState.pageSize) {
+                        nftsState.hasMore = false;
+                    } else {
+                        nftsState.page++;
+                        setupNFTIntersectionObserver(); // Подключаем бесконечный скролл
+                    }
+                } else {
+                    nftsState.hasMore = false;
+                    // Если совсем ничего не найдено на первой странице
+                    if (nftsState.page === 1) {
+                        const grid = document.getElementById('nfts-grid-container');
+                        if (grid) grid.innerHTML = '<div style="grid-column: 1/-1; text-align:center; color: var(--text-muted); font-size: 0.9rem; padding: 10px;">NFT не найдены</div>';
+                    }
+                }
+            } else {
+                console.error("NFT API Error:", response.status);
+            }
+        } catch (error) {
+            console.error("Error loading NFTs:", error);
+        } finally {
+            nftsState.isLoading = false;
+            if (loader) {
+                loader.style.display = 'none';
+                loader.classList.add('hidden');
+            }
+        }
+    }
+
+    // 4. Рендеринг карточек
+    function renderNFTs(items) {
+        const grid = document.getElementById('nfts-grid-container');
+        const fragment = document.createDocumentFragment();
+
+        items.forEach(item => {
+            // Нормализация имени для URL картинки (удаляем пробелы, нижний регистр)
+            // Пример: "Santa Hat" -> "santahat"
+            const normalizedName = item.GiftName.toLowerCase().replace(/ /g, '');
+            // URL картинки: https://nft.fragment.com/gift/bdaycandle-4.medium.jpg
+            const imgUrl = `https://nft.fragment.com/gift/${normalizedName}-${item.Number}.medium.jpg`;
+
+            // Ссылка на Telegram: https://t.me/nft/StellarRocket-45773
+            // Обычно в ссылке пробелы убираются, но сохраняется регистр (или CamelCase). 
+            // Используем удаление пробелов как самое надежное.
+            const linkUrl = `https://t.me/nft/${item.GiftName.replace(/ /g, '')}-${item.Number}`;
+
+            const card = document.createElement('a');
+            card.className = 'nft-card';
+            card.href = linkUrl;
+            card.target = "_blank"; // Открывать в новой вкладке
+
+            card.innerHTML = `
+                <img src="${imgUrl}" alt="#${item.Number}" class="nft-image" loading="lazy">
+                <span class="nft-number">#${item.Number}</span>
+            `;
+
+            fragment.appendChild(card);
+        });
+
+        grid.appendChild(fragment);
+    }
+
+    // 5. Бесконечный скролл (Intersection Observer)
+    function setupNFTIntersectionObserver() {
+        if (nftsState.observer) nftsState.observer.disconnect();
+
+        const options = {
+            root: document.querySelector('.modal-scrollable-content'), // Скроллим внутри модалки
+            rootMargin: '100px',
+            threshold: 0.1
+        };
+
+        nftsState.observer = new IntersectionObserver((entries) => {
+            if (entries[0].isIntersecting && nftsState.hasMore && !nftsState.isLoading) {
+                loadMoreNFTs();
+            }
+        }, options);
+
+        // Следим за последним элементом в сетке
+        const grid = document.getElementById('nfts-grid-container');
+        if (grid.lastElementChild) {
+            nftsState.observer.observe(grid.lastElementChild);
+        }
+    }
+
     function setupInPageColorPicker() {
         const giftName = state.findBgs.selectedGift;
         const modelName = state.findBgs.selectedModel;
-        
+
         if (!giftName || !modelName) return;
 
-        // Clear placeholder and prepare for real content
+        // --- ИЗМЕНЕНИЕ: Сбрасываем флаг при загрузке новой модели ---
+        hasUserModifiedColors = false;
+        // -----------------------------------------------------------
+
         pickerContainer.innerHTML = `
             <img id="pickerPreviewImage" src="" alt="Gift Preview" crossorigin="anonymous">
             <canvas id="pickerColorCanvas" class="hidden"></canvas>`;
-        pickerTargetColorsDisplay.innerHTML = ''; // Clear placeholder swatches
-        
-        // Re-acquire references to the newly created elements
+        pickerTargetColorsDisplay.innerHTML = '';
+
         const pickerPreviewImg = document.getElementById('pickerPreviewImage');
         const pickerCanvas = document.getElementById('pickerColorCanvas');
         const pickerCtx = pickerCanvas.getContext('2d', { willReadFrequently: true });
-        
+
         const imageUrl = `${API_PHOTO_URL}/${encodeURIComponent(giftName)}/png/${encodeURIComponent(modelName)}.png`;
         pickerPreviewImg.src = imageUrl;
 
@@ -806,13 +1953,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const initialColors = await fetchAndParseMainColors(giftName, modelName);
             const naturalWidth = pickerPreviewImg.naturalWidth;
             const naturalHeight = pickerPreviewImg.naturalHeight;
-            
+
             state.findBgs.targetColors = initialColors.slice(0, 3).map(c => ({
                 hex: c.hex,
                 x: (c.x / naturalWidth) * 100,
                 y: (c.y / naturalHeight) * 100
             }));
-            
+
             pickerCanvas.width = naturalWidth;
             pickerCanvas.height = naturalHeight;
             pickerCtx.drawImage(pickerPreviewImg, 0, 0);
@@ -822,11 +1969,11 @@ document.addEventListener('DOMContentLoaded', () => {
             triggerDebouncedSearch();
         };
         pickerPreviewImg.onerror = () => {
-             console.error(`Failed to load image: ${imageUrl}`);
-             resetPickerAreaToPlaceholder();
+            console.error(`Failed to load image: ${imageUrl}`);
+            resetPickerAreaToPlaceholder();
         }
     }
-    
+
     function placePickers(container) {
         container.querySelectorAll('.color-picker').forEach(p => p.remove());
         state.findBgs.targetColors.forEach((colorData, index) => {
@@ -834,7 +1981,7 @@ document.addEventListener('DOMContentLoaded', () => {
             picker.className = 'color-picker';
             picker.style.left = `${colorData.x}%`;
             picker.style.top = `${colorData.y}%`;
-            
+
             const preview = document.createElement('div');
             preview.className = 'picker-color-preview';
             preview.style.backgroundColor = colorData.hex;
@@ -846,7 +1993,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function updatePickerTargetColorsDisplay() {
-        pickerTargetColorsDisplay.innerHTML = ''; // Clear old swatches
+        pickerTargetColorsDisplay.innerHTML = '';
         state.findBgs.targetColors.forEach(colorObj => {
             const swatch = document.createElement('div');
             swatch.className = 'color-swatch';
@@ -863,8 +2010,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const onMove = (clientX, clientY) => {
             if (!isDragging) return;
-            
-            // Добавлено: сбрасываем таймер при любом движении
+
             clearTimeout(searchTimeout);
 
             const rect = container.getBoundingClientRect();
@@ -872,13 +2018,13 @@ document.addEventListener('DOMContentLoaded', () => {
             let y = clientY - rect.top;
             x = Math.max(0, Math.min(rect.width, x));
             y = Math.max(0, Math.min(rect.height, y));
-            
+
             const percX = (x / rect.width) * 100;
             const percY = (y / rect.height) * 100;
 
             picker.style.left = `${percX}%`;
             picker.style.top = `${percY}%`;
-            
+
             updatePickerColor(picker, percX, percY, index, pickerCanvas, pickerCtx);
         };
 
@@ -886,11 +2032,14 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!isDragging) return;
             isDragging = false;
             picker.classList.remove('dragging');
-            
-            // Запускаем новый таймер только когда пользователь отпустил пипетку
+
+            // --- ИЗМЕНЕНИЕ: Пользователь закончил двигать, ставим флаг ---
+            hasUserModifiedColors = true;
+            // -------------------------------------------------------------
+
             triggerDebouncedSearch();
         };
-        
+
         picker.addEventListener('mousedown', e => { isDragging = true; picker.classList.add('dragging'); e.preventDefault(); });
         document.addEventListener('mousemove', e => onMove(e.clientX, e.clientY));
         document.addEventListener('mouseup', onEnd);
@@ -898,15 +2047,15 @@ document.addEventListener('DOMContentLoaded', () => {
         document.addEventListener('touchmove', e => onMove(e.touches[0].clientX, e.touches[0].clientY));
         document.addEventListener('touchend', onEnd);
     }
-    
+
     function updatePickerColor(picker, percX, percY, index, canvas, ctx) {
         if (!canvas.width || !canvas.height) return;
         const canvasX = Math.floor(percX / 100 * canvas.width);
         const canvasY = Math.floor(percY / 100 * canvas.height);
-        
+
         const [r, g, b, a] = ctx.getImageData(canvasX, canvasY, 1, 1).data;
-        
-        if (a > 250) { 
+
+        if (a > 250) {
             const hex = `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1).toUpperCase()}`;
             picker.querySelector('.picker-color-preview').style.background = hex;
 
@@ -918,11 +2067,9 @@ document.addEventListener('DOMContentLoaded', () => {
             updatePickerTargetColorsDisplay();
         }
     }
-    
+
     function triggerDebouncedSearch() {
         state.findBgs.lastResults = [];
-        // clearTimeout сбрасывает предыдущий таймер. 
-        // Если вы двигаете другую пипетку, новый отсчет начнется заново.
         clearTimeout(searchTimeout);
         searchTimeout = setTimeout(fetchMatchingBackgrounds, 800);
     }
@@ -933,8 +2080,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // --- EVENT LISTENERS ---
-    
     modeSwitcher.addEventListener('click', (e) => {
         const tab = e.target.closest('.mode-tab');
         if (tab && tab.dataset.mode !== state.currentMode) {
@@ -959,32 +2104,33 @@ document.addEventListener('DOMContentLoaded', () => {
     dropdowns.giftBgs.list.addEventListener('click', (e) => {
         const option = e.target.closest('.list-option');
         if (!option) return;
-        
+
         state.findBgs.lastResults = [];
         const selectedValue = option.dataset.value;
         state.findBgs.selectedGift = selectedValue;
         dropdowns.giftBgs.value.textContent = selectedValue;
-        
+
         dropdowns.giftBgs.input.value = '';
         dropdowns.giftBgs.header.classList.remove('value-active');
-        
-        // Добавлено: сброс списка к полному состоянию
+
         populateDropdown(dropdowns.giftBgs.options, state.giftNames, 'gift');
 
         state.findBgs.selectedModel = null;
         dropdowns.modelBgs.value.textContent = 'Выберите модель';
         displayMonocolorAlert(null);
+        updateModelThemes(null);
         resetPickerAreaToPlaceholder();
         clearResults();
-        
+
         fetchAllModelNames(selectedValue);
         toggleDropdown(null, true);
+        updateUrlState();
     });
-    
+
     dropdowns.modelBgs.list.addEventListener('click', (e) => {
         const option = e.target.closest('.list-option');
         if (!option) return;
-        
+
         state.findBgs.lastResults = [];
         const selectedValue = option.dataset.value;
         state.findBgs.selectedModel = selectedValue;
@@ -993,20 +2139,20 @@ document.addEventListener('DOMContentLoaded', () => {
         dropdowns.modelBgs.input.value = '';
         dropdowns.modelBgs.header.classList.remove('value-active');
 
-        // Добавлено: сброс списка к полному состоянию
-        populateDropdown(dropdowns.modelBgs.options, state.modelNames.map(m => m.name), 'model');
-        
+        populateDropdown(dropdowns.modelBgs.options, state.modelNames, 'model');
+
         displayMonocolorAlert(selectedValue);
-        
+        updateModelThemes(selectedValue);
         clearResults();
         setupInPageColorPicker();
         toggleDropdown(null, true);
+        updateUrlState();
     });
 
     dropdowns.giftModels.list.addEventListener('click', (e) => {
         const option = e.target.closest('.list-option');
         if (!option) return;
-        
+
         state.findModels.lastResults = [];
         const selectedValue = option.dataset.value;
         state.findModels.selectedGift = selectedValue;
@@ -1015,18 +2161,17 @@ document.addEventListener('DOMContentLoaded', () => {
         dropdowns.giftModels.input.value = '';
         dropdowns.giftModels.header.classList.remove('value-active');
 
-        // Добавлено: сброс списка к полному состоянию
         populateDropdown(dropdowns.giftModels.options, state.giftNames, 'gift');
 
         fetchAllModelNames(selectedValue, false);
         toggleDropdown(null, true);
         triggerModelSearchIfReady();
     });
-    
+
     dropdowns.colorModels.list.addEventListener('click', (e) => {
         const option = e.target.closest('.list-option');
         if (!option) return;
-        
+
         state.findModels.lastResults = [];
         const colorId = option.dataset.value;
         state.findModels.selectedColor = fixedColors.find(c => c.id === colorId);
@@ -1035,7 +2180,6 @@ document.addEventListener('DOMContentLoaded', () => {
         dropdowns.colorModels.input.value = '';
         dropdowns.colorModels.header.classList.remove('value-active');
 
-        // Добавлено: сброс списка к полному состоянию
         populateDropdown(dropdowns.colorModels.options, fixedColors, 'color');
 
         toggleDropdown(null, true);
@@ -1048,20 +2192,120 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // --- INITIALIZATION ---
-    function init() {
-        switchMode('findBgs');
+    // 🔥 ЗАМЕНИ ФУНКЦИЮ applyUrlParameters НА ЭТУ:
+    async function applyUrlParameters() {
+        const urlParams = new URLSearchParams(window.location.search);
+
+        // Считываем параметры
+        const mode = urlParams.get('mode');
+        const giftName = urlParams.get('gift');
+        const modelName = urlParams.get('model');
+        const colorId = urlParams.get('color');
+
+        // Параметры модалки
+        const view = urlParams.get('view');
+        const detailGift = urlParams.get('d_gift');
+        const detailModel = urlParams.get('d_model');
+        const detailBg = urlParams.get('d_bg');
+
+        // --- 1. Восстанавливаем фильтры на заднем фоне ---
+        if (mode === 'findModels') {
+            switchMode('findModels', false);
+
+            if (giftName) {
+                updateDropdownSelection(dropdowns.giftModels, giftName);
+                state.findModels.selectedGift = giftName;
+                // 🔥 ВАЖНО: true для обновления DOM
+                await fetchAllModelNames(giftName, true);
+            }
+
+            if (colorId) {
+                const foundColor = fixedColors.find(c => c.id === colorId);
+                if (foundColor) {
+                    updateDropdownSelection(dropdowns.colorModels, foundColor.name);
+                    state.findModels.selectedColor = foundColor;
+                }
+            }
+
+            // ❗️❗️❗️ ДОБАВЛЕНО: ЗАПУСК ПОИСКА ПОСЛЕ УСТАНОВКИ ПАРАМЕТРОВ ❗️❗️❗️
+            triggerModelSearchIfReady();
+
+        } else {
+            // По умолчанию findBgs
+            switchMode('findBgs', false);
+
+            if (giftName) {
+                updateDropdownSelection(dropdowns.giftBgs, giftName);
+                state.findBgs.selectedGift = giftName;
+                // 🔥 ВАЖНО: true для обновления DOM
+                await fetchAllModelNames(giftName, true);
+            }
+
+            if (modelName) {
+                updateDropdownSelection(dropdowns.modelBgs, modelName);
+                state.findBgs.selectedModel = modelName;
+
+                if (giftName) {
+                    setupInPageColorPicker();
+                    displayMonocolorAlert(modelName);
+                    // ❗️ Для findBgs поиск запускается внутри setupInPageColorPicker -> image.onload -> triggerDebouncedSearch
+                    // Но если нужно мгновенно, можно раскомментировать строку ниже:
+                    // fetchMatchingBackgrounds(); 
+                }
+            }
+        }
+
+        // --- 2. Открытие модалки ---
+        if (view === 'details' && detailGift && (detailModel || detailBg)) {
+
+            if (window.themesModal) {
+                let bgToPass = detailBg;
+
+                if (!bgToPass && state.findModels.selectedColor) {
+                    bgToPass = state.findModels.selectedColor.name;
+                }
+
+                window.themesModal.openModelDetail(
+                    detailGift,
+                    detailModel,
+                    bgToPass
+                );
+
+                if (window.updateTelegramBackButton) {
+                    window.updateTelegramBackButton('details');
+                }
+            }
+        } else {
+            if (window.updateTelegramBackButton) {
+                window.updateTelegramBackButton('list');
+            }
+        }
+    }
+    // 🔥 ЗАМЕНИ ФУНКЦИЮ init НА ЭТУ:
+    async function init() {
+        // Устанавливаем режим по умолчанию, но НЕ обновляем URL (false)
+        switchMode('findBgs', false);
         resetPickerAreaToPlaceholder();
-        fetchAllGiftNames();
+
         populateDropdown(dropdowns.colorModels.options, fixedColors, 'color');
-        
-        // ДОБАВИТЬ ЭТИ СТРОКИ
-        modalCloseBtn.addEventListener('click', closeDetailsModal);
+
+        // Сначала загружаем список подарков
+        await fetchAllGiftNames();
+
+        modalCloseBtn.addEventListener('click', () => closeDetailsModal(false));
         detailsModalOverlay.addEventListener('click', (e) => {
             if (e.target === detailsModalOverlay) {
                 closeDetailsModal();
             }
         });
+
+        // ❗️ ВАЖНО: Сначала инициализируем модалку (создаем HTML, находим кнопки)
+        if (window.themesModal && typeof window.themesModal.init === 'function') {
+            window.themesModal.init(SERVER_BASE_URL, API_PHOTO_URL, setupLazyLoading, fixedColors);
+        }
+
+        // ❗️ И только ПОТОМ применяем параметры из URL (которые могут вызвать открытие модалки)
+        await applyUrlParameters();
     }
 
     init();

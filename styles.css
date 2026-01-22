@@ -13,12 +13,8 @@
     --text-muted: #6b7fa7;
     --card-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.18);
     --radius: 0.8rem;
-    
-    --img-size-mobile-vertical-height: 8rem;
-    --img-size-mobile-horizontal: 8rem;
-    --img-size-desktop: 9rem;
+
     --image-background-color: rgb(45, 61, 87);
-    --lottie-card-bg-color: #a9a9a9;
 }
 
 body {
@@ -33,52 +29,55 @@ body {
     min-width: 350px;
 }
 
+/* ========================================= */
+/* ============== HEADER =================== */
+/* ========================================= */
+
 header {
     background-color: var(--surface-color);
     border-bottom-left-radius: var(--radius);
     border-bottom-right-radius: var(--radius);
     box-shadow: var(--card-shadow);
-    padding: 1rem 2rem;
+    padding: 0.5rem 1.2rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    position: relative;
+    z-index: 50;
+    height: auto;
+    transition: padding-top 0.3s ease;
 }
 
-.header-logo {
-    color: var(--text-primary);
-    font-size: 1.2rem;
-    font-weight: 700;
-    text-decoration: none;
-    line-height: 1.1;
-    white-space: normal;
-    text-align: center;
-    text-shadow: 0 0 8px rgba(255, 255, 255, 0.7);
+body.tg-fullscreen header {
+    padding-top: 25px;
 }
 
-header nav a {
+.header-logo-link {
     display: flex;
-    flex-direction: column;
     align-items: center;
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: var(--text-muted);
-    transition: color 200ms ease-in-out;
+    justify-content: center;
+    text-decoration: none;
 }
 
-header nav a:hover {
-    color: var(--text-primary);
+.header-icon-main {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+    display: block;
 }
 
-header nav a svg {
-    height: 1.5rem;
-    width: 1.5rem;
-    margin-bottom: 0.25rem;
-}
+/* ========================================= */
+/* ============== MAIN Layout ============== */
+/* ========================================= */
 
 main {
     display: flex;
     justify-content: center;
     padding: 1rem;
+    /* Учитываем Safe Area */
+    padding-top: 100px;
+    padding-bottom: 40px;
+    width: 100%;
 }
 
 .main-container {
@@ -87,313 +86,565 @@ main {
     background: var(--surface-color);
     border-radius: var(--radius);
     box-shadow: var(--card-shadow);
-    padding: 1.5rem;
-    margin-top: 0.5rem;
+    padding: 1rem;
+    margin-top: 0;
     margin-bottom: 3rem;
-}
-
-.top-section {
-    text-align: center;
-}
-
-.top-section h1 {
-    font-size: 1.8rem;
-    font-weight: 700;
-    margin-bottom: 1.5rem;
-}
-
-.top-section-info {
-    display: flex;
-    flex-direction: row;
-    align-items: center; /* UPDATED: Changed from 'stretch' to 'center' for vertical alignment */
-    gap: 1rem;
-}
-
-.top-section-text {
-    flex: 1;
-    font-size: 0.8rem;
-    color: var(--text-secondary);
-    line-height: 1.6;
-    text-align: left;
-    margin-left: 0.6rem; /* Убираем отступы у параграфа */
-}
-
-.top-lottie-container {
-    width: 120px;
-    height: 120px;
-    flex-shrink: 0;
-}
-
-/* Секция с инструментами */
-.tools-section {
-    margin-top: 1.5rem; /* Отступ сверху для отделения от верхнего блока */
-}
-
-.tools-title {
-    text-align: center;
-    font-size: 1.5rem;
-    font-weight: 700;
-    margin-bottom: 1.5rem;
-}
-
-.features-container {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1rem;
-    align-items: stretch;
-}
-
-.features-container .full-width-card {
-    grid-column: 1 / -1;
-}
-
-.feature-card {
-    display: flex;
-    border-radius: var(--radius);
-    text-decoration: none;
-    color: inherit;
-    overflow: hidden;
-    box-shadow: var(--card-shadow);
-    transition: transform 0.2s, box-shadow 0.2s;
-    background-color: var(--image-background-color);
-}
-
-.features-container .feature-card.full-width-card {
-    background-color: #2d3d57;
-
-}
-
-.feature-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
-}
-
-.card-image-wrapper {
     position: relative;
-    height: auto;
-    flex-shrink: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+/* ========================================= */
+/* ========= HERO SECTION ================== */
+/* ========================================= */
+
+.hero-section {
+    position: relative;
+    padding: 0 1rem 1rem 1rem;
+    text-align: center;
+    margin-bottom: 0;
+    z-index: 10;
+}
+
+/* --- CAROUSEL STYLES --- */
+.hero-carousel-wrapper {
+    position: relative;
+    width: 100%;
+    height: 70px;
+    /* Высота области карусели уменьшена */
+    overflow: hidden;
+    margin-bottom: 20px;
+    /* Маска для плавного исчезновения краев */
+    -webkit-mask-image: linear-gradient(to right, transparent 0%, black 15%, black 85%, transparent 100%);
+    mask-image: linear-gradient(to right, transparent 0%, black 15%, black 85%, transparent 100%);
+
+    /* Скрываем, пока JS не загрузит данные */
+    opacity: 1;
+    transition: opacity 0.5s ease;
+}
+
+.hero-carousel-wrapper.hidden {
+    display: none;
+    opacity: 0;
+}
+
+.hero-carousel-track {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    /* Расстояние между карточками */
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    cursor: grab;
+    touch-action: pan-x;
+    /* Разрешаем скролл по X для тача */
+    will-change: transform;
+}
+
+.hero-carousel-track:active {
+    cursor: grabbing;
+}
+
+.carousel-card {
+    flex: 0 0 auto;
+    width: 50px;
+    /* Уменьшен размер */
+    height: 50px;
+    /* Уменьшен размер */
+    border-radius: 12px;
+    /* Чуть меньше радиус */
     display: flex;
     align-items: center;
     justify-content: center;
+    position: relative;
     overflow: hidden;
-    border-radius: 0;
-    background-color: var(--image-background-color);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    user-select: none;
+    -webkit-user-select: none;
+    /* Фон задается в JS */
 }
 
-.features-container a:not(.full-width-card) {
-    flex-direction: column;
-}
-
-.features-container a:not(.full-width-card) .card-image-wrapper {
-    width: 100%;
-    height: var(--img-size-mobile-vertical-height);
-    border-top-left-radius: var(--radius);
-    border-top-right-radius: var(--radius);
-}
-
-.features-container a:not(.full-width-card) .card-content {
-    border-bottom-left-radius: var(--radius);
-    border-bottom-right-radius: var(--radius);
-}
-
-.features-container a.full-width-card {
-    flex-direction: row;
-    min-height: var(--img-size-mobile-horizontal);
-}
-
-.features-container a.full-width-card .card-image-wrapper {
-    width: var(--img-size-mobile-horizontal);
-    height: var(--img-size-mobile-horizontal);
-    border-radius: var(--radius) 0 0 var(--radius); /* ИЗМЕНЕНО */
-}
-
-.features-container a.full-width-card .card-content {
-    border-radius: 0 var(--radius) var(--radius) 0; /* ИЗМЕНЕНО */
-}
-
-.card-image-wrapper img {
+/* ЗАТЕМНЕНИЕ ФОНА (Overlay) */
+.carousel-card::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
     width: 100%;
     height: 100%;
-    display: block;
-    padding: 0;
-    object-fit: contain;
+    background: rgba(0, 0, 0, 0.25);
+    /* 25% затемнения */
+    z-index: 1;
+    pointer-events: none;
 }
 
-.lottie-bg {
-    background-color: #2d3d57;
-}
-.lottie-bg svg {
+.carousel-card img {
     width: 80%;
     height: 80%;
+    object-fit: contain;
+    z-index: 2;
+    /* Поверх затемнения */
+    filter: drop-shadow(0 4px 4px rgba(0, 0, 0, 0.2));
+    pointer-events: none;
 }
 
-.card-content {
-    padding: 1rem;
-    color: var(--text-primary);
+/* --- СВЕЧЕНИЕ (Опущено ниже и осветлено) --- */
+.glow-effect {
+    display: block;
+    position: absolute;
+    top: 140px;
+    width: 30px;
+    height: 250px;
+    background: #60a5fa;
+    /* Более светлый голубой */
+    filter: blur(45px);
+    opacity: 0.6;
+    /* Снижена яркость */
+    pointer-events: none;
+    z-index: 0;
+}
+
+.glow-left {
+    left: -20px;
+}
+
+.glow-right {
+    right: -20px;
+}
+
+
+/* --- Контент внутри Hero --- */
+.hero-content {
     position: relative;
-    cursor: pointer;
-    flex: 1;
+    z-index: 10;
+    max-width: 700px;
+    margin: 0 auto;
+}
+
+.hero-title {
+    font-size: 2.5rem;
+    font-weight: 800;
+    margin: 0 0 1.5rem 0;
+    color: #ffffff;
+    text-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+}
+
+.hero-description {
+    font-size: 0.8rem;
+    line-height: 1.5;
+    color: var(--text-primary);
+    max-width: 650px;
+    margin-left: auto;
+    margin-right: auto;
+    margin-bottom: 2rem;
+    font-weight: 500;
+    text-align: justify;
+    text-align-last: center;
+    padding: 0 1rem;
+    opacity: 0.9;
+}
+
+.hero-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    background-color: #1e2944;
+    color: #fff;
+    text-decoration: none;
+    padding: 0.6rem 1.2rem;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    transition: all 0.2s ease;
+    min-width: 160px;
+}
+
+.hero-btn:hover {
+    background-color: #263355;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+}
+
+.hero-btn .btn-icon {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+    display: block;
+}
+
+.hero-btn-text {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    justify-content: space-between;
+    line-height: 1.1;
 }
 
-.card-content h2 {
-    font-size: 1rem;
-    font-weight: 600;
-    margin: 0 0 0.45rem 0;
-    line-height: 1.2;
-}
-
-.card-content p {
+.hero-btn-text span:first-child {
     font-size: 0.75rem;
-    color: var(--text-secondary);
-    line-height: 1.4;
-    margin: 0;
-}
-
-.card-action {
-    width: 100%;
-    margin-top: 0.75rem;
-}
-
-.action-divider {
-    border: none;
-    height: 1px;
-    background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.3), transparent);
-    margin: 0 0 0.5rem 0;
-}
-
-.card-action span {
-    font-size: 0.875rem;
+    color: #aaa;
     font-weight: 500;
-    color: var(--accent-color);
-    text-align: center;
-    display: block;
+    padding-bottom: 0.3rem;
 }
 
-.features-container a:nth-child(1) .card-content {
-    background-color: #2d3d57;
-}
-.features-container a:nth-child(2) .card-content {
-    background-color: #2d3d57;
-}
-.features-container a:nth-child(3) .card-content {
-    background-color: #2d3d57;
-    justify-content: center;
-    align-items: center;
-}
-.features-container a:nth-child(3) h2 {
-    margin: 0;
+.hero-btn-text span.btn-sub {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #fff;
 }
 
-/* ------------------------------------------- */
-/* --- Media Queries для ПК --- */
-/* ------------------------------------------- */
 
-@media (min-width: 601px) {
-    
-    .top-section h1 {
-        font-size: 2.5rem;
-    }
-    .top-section-info {
-        gap: 2rem;
-    }
-    .top-lottie-container {
-        width: 220px;
-        height: 220px;
-    }
-    .top-section-text {
-        font-size: 1rem;
-    }
-    
-    .tools-title {
-        font-size: 2.2rem;
-    }
+/* ========================================= */
+/* ====== TOOLS SECTION (Wrapper) ========== */
+/* ========================================= */
 
-    .features-container {
-        grid-template-columns: 1fr;
-        gap: 1.5rem;
-    }
-
-    .features-container .full-width-card {
-        grid-column: auto;
-    }
-    
-    .feature-card {
-        flex-direction: row !important; /* UPDATED: Changed to 'row' to put image on the left */
-        min-height: var(--img-size-desktop);
-    }
-    
-    .feature-card .card-image-wrapper {
-        width: var(--img-size-desktop);
-        min-width: var(--img-size-desktop);
-        height: auto;
-        align-self: stretch;
-        /* UPDATED: Corrected border-radius for the left side */
-        border-radius: var(--radius) 0 0 var(--radius) !important;
-    }
-    
-    .feature-card .card-content {
-        /* UPDATED: Corrected border-radius for the right side */
-        border-radius: 0 var(--radius) var(--radius) 0 !important;
-        justify-content: center;
-        padding-left: 1.5rem;
-        padding-right: 1.5rem;
-    }
-
-    .card-action {
-        display: none;
-    }
-
-    .card-content h2 {
-        font-size: 1.25rem;
-        margin-bottom: 0.5rem;
-    }
-    .card-content p {
-        font-size: 0.9rem;
-    }
+.tools-wrapper-styled {
+    position: relative;
+    padding: 2rem 0.5rem 1rem 0.5rem;
 }
 
-.full-width-card .card-content h2 {
-    font-size: 1.8rem;
-    text-align: center;
+.tools-wrapper-styled::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 100%;
+    border-radius: 24px;
+    border: 2px solid #6b7fa7;
+    -webkit-mask-image: linear-gradient(to bottom, black 0px, black 1px, transparent 25px);
+    mask-image: linear-gradient(to bottom, black 0px, black 1px, transparent 25px);
+    opacity: 0.6;
+    pointer-events: none;
+    z-index: 0;
 }
 
-.lottie-bg {
+.tools-header-label {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: var(--surface-color);
+    padding: 0 16px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #6b7fa7;
+    white-space: nowrap;
+    z-index: 2;
+}
+
+
+/* ========================================= */
+/* ====== FEATURE CARDS (3 IN ROW) ========= */
+/* ========================================= */
+
+.features-container {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    align-items: stretch;
+    position: relative;
+    z-index: 1;
+}
+
+.feature-card-new {
     display: flex;
-    justify-content: center;
-    align-items: center;
-    width: 100%;
+    flex-direction: column;
+    text-decoration: none;
+    border-radius: 16px;
+    overflow: hidden;
+    background-color: #243049;
+    background-image: linear-gradient(180deg, #243049 0%, #65CAE9 100%);
+    background-size: 100% calc(100% - 40px);
+    background-repeat: no-repeat;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    border: none;
+    transition: transform 0.2s, box-shadow 0.2s;
     height: 100%;
 }
 
-#cardLottieAnimation {
-    width: 80%;
-    height: 80%;
+.feature-card-new:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
 }
 
-@media (max-width: 768px) {
-    .full-width-card .card-content h2 {
-        font-size: 1.3rem;
+.card-header-title {
+    background-color: transparent;
+    color: #fff;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-align: center;
+    padding: 8px 4px;
+    z-index: 2;
+}
+
+.card-body-gradient {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    padding: 10px;
+    background: transparent;
+}
+
+.card-body-gradient img {
+    width: 100%;
+    height: auto;
+    object-fit: contain;
+    transition: transform 0.2s;
+}
+
+.img-shadow {
+    filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.35));
+}
+
+.inner-blue-card {
+    background: radial-gradient(circle, rgb(93, 177, 203) 0%, rgb(68, 139, 171) 100%);
+    border-radius: 14px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.25);
+    width: 90%;
+    aspect-ratio: 1 / 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 5px;
+}
+
+.inner-blue-card img {
+    width: 100%;
+    height: 100%;
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
+}
+
+.feature-card-new:hover .card-body-gradient img {
+    transform: scale(1.05);
+}
+
+.card-footer-btn {
+    background-color: #243049;
+    color: #d1d5db;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-align: center;
+    padding: 10px 4px;
+    z-index: 2;
+    position: relative;
+    box-shadow: 0 -1px 0 #243049;
+    transition: color 0.2s, background-color 0.2s;
+}
+
+.feature-card-new:hover .card-footer-btn {
+    color: #fff;
+    background-color: #2d3d57;
+    box-shadow: 0 -1px 0 #2d3d57;
+}
+
+
+/* ========================================= */
+/* ====== INFO CARDS (API & SUPPORT) ======= */
+/* ========================================= */
+
+.info-cards-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    padding: 0 0.5rem;
+}
+
+.info-card {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    background-color: var(--surface-elevated);
+    border-radius: 16px;
+    padding: 1.2rem;
+    text-decoration: none;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s, box-shadow 0.2s;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.info-card:hover {
+    transform: translateY(-2px);
+    background-color: #263355;
+}
+
+/* Иконки */
+.info-card-icon {
+    flex-shrink: 0;
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    color: #fff;
+}
+
+.info-card-icon svg {
+    width: 28px;
+    height: 28px;
+}
+
+/* Текст */
+.info-card-text {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.info-card-text h3 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.info-card-text p {
+    margin: 0;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    line-height: 1.4;
+}
+
+/* --- СТИЛИ ДЛЯ API (Зеленое) --- */
+.card-api {
+    background-image: linear-gradient(90deg, rgba(16, 185, 129, 0.1) 0%, transparent 40%);
+    border-left: 2px solid #10b981;
+    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.1);
+}
+
+.card-api .info-card-icon {
+    color: #34d399;
+    background: rgba(16, 185, 129, 0.15);
+}
+
+.card-api:hover {
+    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.25);
+}
+
+/* --- СТИЛИ ДЛЯ ПОДДЕРЖКИ (Желтое) --- */
+.card-support {
+    background-image: linear-gradient(90deg, rgba(245, 158, 11, 0.1) 0%, transparent 40%);
+    border-left: 2px solid #f59e0b;
+    box-shadow: 0 4px 15px rgba(245, 158, 11, 0.1);
+}
+
+.card-support .info-card-icon {
+    color: #fbbf24;
+    background: rgba(245, 158, 11, 0.15);
+}
+
+.card-support:hover {
+    box-shadow: 0 6px 20px rgba(245, 158, 11, 0.25);
+}
+
+/* ========================================= */
+/* ========= FOOTER (Thanks API) =========== */
+/* ========================================= */
+
+.footer-credits {
+    margin-top: 2rem;
+    text-align: left;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--text-muted);
+}
+
+.footer-credits a {
+    color: var(--primary-color);
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.footer-credits a:hover {
+    text-decoration: underline;
+    color: var(--primary-hover);
+}
+
+
+/* ========================================= */
+/* ============= MEDIA QUERIES ============= */
+/* ========================================= */
+
+@media (min-width: 601px) {
+    .hero-title {
+        font-size: 3rem;
+    }
+
+    .hero-description {
+        font-size: 1rem;
+    }
+
+    .features-container {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 20px;
+    }
+
+    .card-header-title {
+        font-size: 1rem;
+        padding: 12px;
+    }
+
+    .card-footer-btn {
+        font-size: 1rem;
+        padding: 12px;
+    }
+
+    /* Медиа-запросы для карточек тоже удалены */
+
+    .glow-effect {
+        display: none;
+    }
+
+    .info-cards-wrapper {
+        flex-direction: row;
+    }
+
+    .info-card {
+        flex: 1;
     }
 }
 
-.body-gated {
-    overflow: hidden !important; /* Надежно блокируем прокрутку */
+@media (max-width: 360px) {
+    .features-container {
+        gap: 6px;
+    }
+
+    .card-header-title {
+        font-size: 0.7rem;
+    }
+
+    .card-footer-btn {
+        font-size: 0.75rem;
+        padding: 8px 2px;
+    }
 }
 
-/* Размываем и блокируем основной контент страницы */
+/* ========================================= */
+/* =========== TELEGRAM GATE =============== */
+/* ========================================= */
+
+.body-gated {
+    overflow: hidden !important;
+}
+
 .body-gated header,
 .body-gated main {
-    filter: blur(16px); /* <-- УВЕЛИЧИЛИ РАЗМЫТИЕ */
+    filter: blur(5px);
+    /* Reduced blur for performance */
     pointer-events: none;
     user-select: none;
     transition: filter 0.3s ease;
 }
 
-/* Сам оверлей теперь без backdrop-filter, он больше не нужен */
 .tg-gate-overlay {
     position: fixed;
     top: 0;
@@ -405,18 +656,16 @@ main {
     justify-content: center;
     align-items: center;
     padding: 1rem;
-    background-color: rgba(10, 16, 32, 0.5); /* Затемняем фон */
+    background-color: rgba(10, 16, 32, 0.5);
     opacity: 1;
     transition: opacity 0.3s ease;
 }
 
 .tg-gate-overlay.hidden {
-    /* Меняем display на none, чтобы оверлей полностью исчезал */
     display: none;
     opacity: 0;
 }
 
-/* Стили для модального окна остаются без изменений */
 .tg-gate-modal {
     background-color: var(--surface-elevated);
     border-radius: var(--radius);
@@ -426,21 +675,15 @@ main {
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
     display: flex;
     flex-direction: column;
-    align-items: center; /* <-- Центрируем блочные элементы (кнопку) */
-    text-align: center;  /* <-- Устанавливаем общее выравнивание по центру (для заголовка) */
+    align-items: center;
+    text-align: center;
     gap: 0.5rem;
-}
-
-.tg-gate-icon {
-    width: 64px;
-    height: 64px;
-    margin-bottom: 1rem;
 }
 
 .tg-gate-modal h2 {
     font-size: 1.4rem;
     font-weight: 700;
-    margin: 0 0 1rem 0; /* <-- ДОБАВИЛИ ОТСТУП СНИЗУ */
+    margin: 0 0 1rem 0;
     color: var(--text-primary);
 }
 
@@ -449,8 +692,8 @@ main {
     color: var(--text-secondary);
     line-height: 1.5;
     margin: 0 0 1.5rem 0;
-    width: 100%; /* <-- Растягиваем параграф на всю ширину */
-    text-align: left; /* <-- ПЕРЕОПРЕДЕЛЯЕМ выравнивание только для него */
+    width: 100%;
+    text-align: left;
 }
 
 .tg-gate-link {
@@ -468,4 +711,28 @@ main {
 
 .tg-gate-link:hover {
     background-color: var(--primary-hover);
+}
+
+/* ============================================= */
+/* ========== ШАПКА (SAFE AREA) ================ */
+/* ============================================= */
+
+header.safe-area-gradient {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 70px;
+    z-index: 10;
+    background: linear-gradient(180deg, #0a1020 20%, rgba(10, 16, 32, 0) 100%);
+    pointer-events: none;
+    padding: 0;
+    border: none;
+    backdrop-filter: none;
+}
+
+header .header-content,
+header nav,
+header a {
+    display: none;
 }

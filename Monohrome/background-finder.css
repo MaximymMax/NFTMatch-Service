@@ -1,7 +1,3 @@
-/* ============================================= */
-/* ========= СТИЛИ ИЗ GIFT-PAGE.CSS ============ */
-/* ============================================= */
-
 *, *::before, *::after {
     box-sizing: border-box;
 }
@@ -12,7 +8,7 @@
     --surface-elevated: #1e2944;
     --border-color: #22305a;
     --primary-color: #38bdf8;
-    --primary-muted: #227da9; /* Less bright color for switcher */
+    --primary-muted: #227da9; 
     --primary-hover: #0ea5e9;
     --accent-color: #c084fc;
     --accent-hover: #a464e1;
@@ -48,7 +44,7 @@ label {
     border: 0;
     height: 1px;
     background-image: linear-gradient(to right, rgba(0, 0, 0, 0), var(--border-color), rgba(0, 0, 0, 0));
-    margin: 1.5rem 0; /* Уменьшены отступы */
+    margin: 1.5rem 0; 
 }
 
 header {
@@ -78,7 +74,6 @@ header nav {
     line-height: 1.1;
     white-space: normal;
     text-align: center;
-    /* Свечение: белый цвет, небольшой радиус */
     text-shadow: 0 0 8px rgba(255, 255, 255, 0.7); 
 }
 
@@ -124,7 +119,7 @@ main {
 }
 
 .content-wrapper {
-    padding: 1.5rem 1.5rem 1.5rem; /* Уменьшен верхний отступ */
+    padding: 1.5rem 1.5rem 1.5rem; 
 }
 
 .page-title {
@@ -137,7 +132,7 @@ main {
 
 .page-title.centered-title {
     text-align: center;
-    margin: 0 auto 1.5rem auto; /* Уменьшен нижний отступ */
+    margin: 0 auto 1.5rem auto; 
     padding-top: 0.5rem;
     padding-bottom: 1rem;
     border-bottom: 1px solid var(--border-color);
@@ -147,7 +142,7 @@ main {
     display: flex;
     flex-direction: column;
     gap: 1rem;
-    margin-bottom: 1.5rem; /* Уменьшен нижний отступ */
+    margin-bottom: 1.5rem; 
 }
 
 
@@ -171,7 +166,6 @@ main {
 
 .dropdown-header.active {
     border-color: var(--primary-color);
-    /* box-shadow removed to disable glow */
     position: relative;
     z-index: 1200;
 }
@@ -325,6 +319,7 @@ main {
 }
 
 .results-grid {
+    position: relative;
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 20px;
@@ -396,7 +391,7 @@ main {
     flex-wrap: wrap;
     justify-content: center;
     gap: 1.5rem;
-    padding: 1rem 0;
+    padding-top: 2rem;
 }
 
 .color-swatch {
@@ -429,18 +424,13 @@ main {
     border-radius: 5px;
 }
 
-/* =================================================== */
-/* ==== СТИЛИ ИЗ BACKGROUND-FINDER.CSS (НОВЫЕ) ======= */
-/* =================================================== */
 .hidden {
     display: none !important;
 }
 
-/* --- Redesigned Mode Switcher --- */
 .mode-switcher-container {
     width: 100%;
     background-color: var(--surface-color);
-    /* border-bottom убран отсюда */
 }
 
 .mode-switcher {
@@ -460,7 +450,6 @@ main {
     position: absolute;
     top: 0;
     left: 0;
-    /* Возвращаем ширину ровно 50% */
     width: 50%;
     height: 100%;
     background-color: #4861a1;
@@ -470,7 +459,6 @@ main {
 }
 
 .mode-switcher.mode-models::before {
-    /* Возвращаем стандартный сдвиг на 100% */
     transform: translateX(100%);
     box-shadow: -2px 0 15px -4px rgba(72, 97, 161, 0.7);
     border-radius: 0 var(--radius) var(--radius) 0;
@@ -480,7 +468,7 @@ main {
     padding: 10px 16px;
     border: none;
     background-color: transparent;
-    color: #8a9dc3; /* Сделал неактивный текст светлее */
+    color: #8a9dc3; 
     font-weight: 600;
     cursor: pointer;
     font-size: 0.95rem;
@@ -494,7 +482,6 @@ main {
 
 .mode-tab.active {
     color: var(--text-primary);
-    /* У активной вкладки граница становится прозрачной */
     border-bottom-color: transparent;
 }
 
@@ -512,14 +499,12 @@ main {
     to { opacity: 1; transform: translateY(0); }
 }
 
-/* --- Picker Area & Placeholders --- */
 #picker-area {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 1.5rem;
     margin-top: 1rem;
-    margin-bottom: 1.5rem; /* Уменьшен нижний отступ */
+    margin-bottom: 1.5rem; 
 }
 
 .gift-preview-container {
@@ -564,13 +549,6 @@ main {
     object-fit: contain;
 }
 
-#results-wrapper {
-    background-color: transparent;
-    box-shadow: none;
-    padding: 0;
-    position: relative;
-}
-
 .result-card-bg {
     background-color: var(--surface-elevated);
     border-radius: var(--radius);
@@ -603,14 +581,14 @@ main {
 }
 
 .result-card-bg .info-container {
-    padding: 0.75rem 1rem; /* Добавлен отступ по бокам */
-    text-align: left; /* Выравнивание по левому краю */
+    padding: 0.75rem 1rem; 
+    text-align: left; 
 }
 
 .result-card-bg .bg-name {
-    font-size: 0.85rem; /* Изменен размер шрифта */
+    font-size: 0.85rem; 
     font-weight: 500;
-    color: var(--text-muted); /* Сделал цвет более приглушенным */
+    color: var(--text-muted); 
     margin: 0;
     white-space: nowrap;
     overflow: hidden;
@@ -618,10 +596,10 @@ main {
 }
 
 .result-card-bg .compat-value {
-    font-size: 1.2rem; /* Изменен размер шрифта */
+    font-size: 1.2rem; 
     font-weight: 700;
     color: var(--text-primary);
-    margin: 0 0 4px 0; /* Добавлен отступ снизу */
+    margin: 0 0 4px 0; 
 }
 
 .color-option .color-swatch-mini {
@@ -632,9 +610,8 @@ main {
     border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-/* ДОБАВИТЬ В КОНЕЦ ФАЙЛА */
 .monocolor-indicator {
-    background-color: #f87171; /* Красный фон */
+    background-color: #f87171; 
     border-radius: 50%;
     width: 22px;
     height: 22px;
@@ -642,14 +619,14 @@ main {
     justify-content: center;
     align-items: center;
     flex-shrink: 0;
-    margin-left: auto; /* Выравнивание вправо */
+    margin-left: auto; 
 }
 
 .monocolor-indicator svg {
     width: 14px;
     height: 14px;
-    color: var(--text-primary); /* Белый/светлый цвет для иконки */
-    stroke-width: 2.5; /* Немного толще, чтобы было видно */
+    color: var(--text-primary); 
+    stroke-width: 2.5; 
 }
 
 #monocolor-alert-wrapper {
@@ -661,9 +638,9 @@ main {
     align-items: center;
     gap: 10px;
     padding: 0.4rem 1rem;
-    background-color: rgba(248, 113, 113, 0.15); /* Светло-красный фон */
-    border: 1px solid #f87171; /* Красная рамка */
-    color: #f87171; /* Красный текст */
+    background-color: rgba(248, 113, 113, 0.15); 
+    border: 1px solid #f87171; 
+    color: #f87171; 
     border-radius: var(--radius);
     font-size: 0.9rem;
     font-weight: 500;
@@ -681,150 +658,317 @@ main {
     }
 }
 
-/* ДОБАВИТЬ В КОНЕЦ ФАЙЛА */
-/* -- НОВЫЙ БЛОК СТИЛЕЙ ДЛЯ МОДАЛЬНОГО ОКНА -- */
-/* -- НОВЫЙ БЛОК СТИЛЕЙ ДЛЯ МОДАЛЬНОГО ОКНА -- */
-.modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(10, 16, 32, 0.7);
-    backdrop-filter: blur(8px);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 2000;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.3s ease;
-    padding: 1rem;
-}
-.modal-overlay:not(.hidden) {
-    opacity: 1;
-    pointer-events: all;
-}
-
-.details-modal {
-    background-color: var(--surface-elevated);
-    border-radius: var(--radius);
-    width: 100%;
-    max-width: 350px;
-    border: 1px solid var(--border-color);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-    position: relative;
-    padding: 1rem; /* Уменьшен основной padding */
-    transform: scale(0.95);
-    transition: transform 0.3s ease;
-}
-
-.details-modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1rem;
-}
-
-.modal-overlay:not(.hidden) .details-modal {
-    transform: scale(1);
-}
-
-.modal-close-btn {
-    position: static; /* Убрано абсолютное позиционирование */
-    background: none;
-    border: none;
-    color: var(--text-muted);
-    font-size: 2rem;
-    cursor: pointer;
-    line-height: 1;
-    transition: color 0.2s;
-    padding: 0;
-    flex-shrink: 0; /* Кнопка не будет сжиматься */
-}
-
-.modal-close-btn:hover {
-    color: var(--text-primary);
-}
-
-.modal-title {
-    font-size: 1.2rem;
-    font-weight: 600;
-    color: var(--text-primary);
-    margin: 0; /* Убраны отступы */
-    flex-grow: 1; /* Заголовок занимает все доступное место */
-    text-align: left; /* Выравнивание по левому краю */
-}
-
-.modal-photo-container {
-    width: 100%;
-    aspect-ratio: 1 / 1;
-    background-color: var(--surface-color);
-    border-radius: var(--radius);
-    margin-bottom: 1.5rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
-}
-
-#modal-image {
-    max-width: 100%;
-    max-height: 100%;
-    object-fit: contain;
-}
-
-.modal-info {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem; /* Уменьшен отступ между строками */
-}
-
-
-.info-row {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 0.9rem;
-    /* Свойства padding-bottom и border-bottom удалены */
-}
-.info-row:last-child {
-    border-bottom: none;
-}
-
-.info-label {
-    color: var(--text-muted);
-    flex-shrink: 0;
-    font-weight: 700; /* Жирный шрифт для метки */
-}
-
-.info-value {
-    color: var(--text-primary); /* Белый цвет для значения */
-    font-weight: 400; /* Обычный шрифт для значения */
-    text-align: left;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.info-value.compat {
-    color: rgb(255, 255, 255);
-    font-size: 1.1rem;
-    font-weight: 600; /* Проценты снова жирные для акцента */
-}
-
-.modal-photo-container lottie-player {
-    width: 80% !important;
-    height: 80% !important;
-}
-
 .option-image, .model-image {
-    /* Начинаем с невидимости */
     opacity: 0;
     transition: opacity 0.4s ease-in-out;
 }
 
 .option-image.loaded, .model-image.loaded {
-    /* Плавное появление после загрузки */
     opacity: 1;
+}
+
+.loading-spinner-mini {
+    display: inline-block;
+    width: 18px;
+    height: 18px;
+    border: 2px solid var(--primary-muted);
+    border-top-color: var(--primary-color);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    vertical-align: middle;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.list-option .option-info-wrapper {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    overflow: hidden; 
+}
+
+.list-option .option-text {
+    flex-grow: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.list-option .option-theme-count {
+    font-size: 0.8rem; 
+    color: var(--text-muted);
+    font-weight: 500;
+    margin-top: 2px;
+    text-align: left; 
+    white-space: nowrap;
+}
+
+#model-themes-container {
+    margin-top: 1rem; 
+}
+
+#show-themes-link {
+    display: inline-flex; 
+    align-items: center;
+    gap: 0.5rem;
+    background-color: var(--surface-elevated);
+    border: 1px solid var(--border-color);
+    color: var(--primary-color);
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-decoration: none;
+    padding: 0.6rem 1rem;
+    border-radius: var(--radius);
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    cursor: pointer;
+}
+
+#show-themes-link:hover {
+    background-color: var(--surface-color);
+    border-color: var(--primary-color);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(56, 189, 248, 0.2);
+}
+
+#show-themes-link svg {
+    width: 18px;
+    height: 18px;
+    stroke-width: 2;
+}
+
+#modal-themes-container {
+    text-align: center;
+    margin-top: 1rem; 
+}
+
+body.modal-open {
+    overflow: hidden;
+}
+
+#modal-themes-container:empty {
+    margin-top: 0;
+    min-height: 0; 
+}
+
+#show-themes-link.similar-fallback-style {
+    position: relative;
+    overflow: hidden;
+    justify-content: center; 
+    gap: 0.6rem; 
+    --similar-color: var(--primary-color);
+}
+
+#show-themes-link.similar-fallback-style > svg {
+    display: none; 
+}
+
+#show-themes-link.similar-fallback-style span {
+    color: var(--text-primary); 
+}
+
+#show-themes-link.similar-fallback-style:hover {
+    border-color: var(--similar-color);
+}
+
+.fallback-glow {
+    position: absolute;
+    top: -2px; left: -2px; right: -2px; bottom: -2px;
+    box-shadow: inset 0 0 12px 3px var(--similar-color);
+    opacity: 0.7;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+    z-index: 1; 
+}
+
+#show-themes-link.similar-fallback-style:hover .fallback-glow {
+    opacity: 1;
+}
+
+.fallback-img {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+    opacity: 0.8;
+    pointer-events: none;
+    z-index: 2; 
+}
+
+
+#results-wrapper {
+    background-color: transparent;
+    box-shadow: none;
+    padding: 2rem 0.2rem 1rem 0.2rem; 
+    position: relative;
+    margin-top: 2.5rem;
+}
+
+#results-wrapper::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0; 
+    right: 0;
+    height: 100%;
+    border-radius: 24px; 
+    border: 2px solid #6b7fa7; 
+    -webkit-mask-image: linear-gradient(to bottom, black 0px, black 1px, transparent 25px);
+    mask-image: linear-gradient(to bottom, black 0px, black 1px, transparent 25px);
+    opacity: 0.6;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.results-header-label {
+    position: absolute;
+    top: 0; 
+    left: 50%;
+    transform: translate(-50%, -50%); 
+    background-color: #16213a; 
+    padding: 0 16px;
+    font-size: 0.95rem;
+    font-weight: 600; 
+    color: #6b7fa7; 
+    text-transform: none; 
+    letter-spacing: normal;
+    white-space: nowrap;
+    z-index: 2;
+}
+
+.sub-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(10, 16, 32, 0.9);
+    backdrop-filter: blur(10px);
+    z-index: 10000; 
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 1.5rem;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+.sub-modal-overlay.active {
+    opacity: 1;
+    pointer-events: all;
+}
+
+.sub-modal {
+    background-color: var(--surface-elevated);
+    border: 1px solid var(--border-color);
+    border-radius: 24px;
+    padding: 2rem;
+    width: 100%;
+    max-width: 400px;
+    text-align: center;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+    transform: scale(0.95);
+    transition: transform 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.sub-modal-overlay.active .sub-modal {
+    transform: scale(1);
+}
+
+.sub-icon {
+    width: 64px;
+    height: 64px;
+    background: rgba(56, 189, 248, 0.1);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--primary-color);
+}
+
+.sub-icon svg {
+    width: 32px;
+    height: 32px;
+}
+
+.sub-title {
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: #fff;
+    margin: 0;
+}
+
+.sub-text {
+    font-size: 1rem;
+    color: var(--text-muted);
+    line-height: 1.5;
+    margin: 0;
+}
+
+.sub-btn {
+    background: var(--primary-color);
+    color: #0a1020;
+    border: none;
+    padding: 14px 24px;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    text-decoration: none;
+    width: 100%;
+    transition: filter 0.2s, transform 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.sub-btn:hover {
+    filter: brightness(1.1);
+    transform: translateY(-2px);
+}
+
+.sub-btn.check-btn {
+    background: transparent;
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    margin-top: -0.5rem;
+}
+
+.sub-btn.check-btn:hover {
+    background: var(--surface-color);
+}
+
+header.safe-area-gradient {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 70px; 
+    z-index: 10;
+    background: linear-gradient(180deg, #0a1020 20%, rgba(10, 16, 32, 0) 100%);
+    pointer-events: none;
+    padding: 0;
+    border: none;
+    backdrop-filter: none;
+}
+
+header .header-logo, 
+header nav {
+    display: none;
+}
+
+main {
+    padding-top: 100px; 
+    padding-bottom: 80px;
+    width: 100%;
+    display: flex;
+    justify-content: center;
 }

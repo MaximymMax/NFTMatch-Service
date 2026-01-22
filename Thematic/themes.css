@@ -1,0 +1,542 @@
+/* ============================================= */
+/* 1. БАЗОВЫЕ СТИЛИ (ОСНОВА)                     */
+/* ============================================= */
+
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
+:root {
+    --bg-color: #0a1020;
+    --surface-color: #16213a;
+    --surface-elevated: #1e2944;
+    --border-color: #22305a;
+    --primary-color: #38bdf8;
+    --text-primary: #f1f5fa;
+    --text-secondary: #d8d8d8;
+    --text-muted: #6b7fa7;
+    --card-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.18);
+    --radius: 0.8rem;
+    --glow-color: rgba(56, 189, 248, 0.2);
+    --icon-bg: rgba(255, 255, 255, 0.1);
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    background: linear-gradient(180deg, #1a237e 0%, var(--bg-color) 100%);
+    color: var(--text-primary);
+    min-height: 100vh;
+    margin: 0; padding: 0;
+    overflow-x: hidden;
+    min-width: 350px;
+}
+
+/* ЗАГОЛОВОК */
+.page-main-title {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: #fff;
+    text-align: center;
+    margin: 1.5rem 0 0.5rem 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* HEADER */
+header {
+    background-color: var(--surface-color);
+    border-bottom-left-radius: var(--radius);
+    border-bottom-right-radius: var(--radius);
+    box-shadow: var(--card-shadow);
+    padding: 1rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+    z-index: 100;
+}
+
+.header-logo {
+    color: var(--text-primary);
+    font-size: 1.2rem;
+    font-weight: 700;
+    text-decoration: none;
+    line-height: 1.1;
+    text-align: center;
+    text-shadow: 0 0 8px rgba(255, 255, 255, 0.7); 
+}
+
+header nav a {
+    display: flex; flex-direction: column; align-items: center;
+    font-size: 0.875rem; font-weight: 500;
+    color: var(--text-muted); text-decoration: none;
+    transition: color 200ms ease-in-out;
+}
+header nav a:hover { color: var(--text-primary); }
+header nav a svg { height: 1.5rem; width: 1.5rem; margin-bottom: 0.25rem; }
+
+/* MAIN LAYOUT */
+main {
+    display: flex; justify-content: center;
+    padding: 1rem; overflow-x: hidden;
+    padding-top: 100px !important;
+}
+
+header .header-logo, 
+header nav {
+    display: none !important;
+}
+
+/* Стили для прозрачной шапки */
+header.safe-area-gradient {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 70px;
+    z-index: 10;
+    background: linear-gradient(180deg, #0a1020 20%, rgba(10, 16, 32, 0) 100%);
+    pointer-events: none;
+    border: none;
+    box-shadow: none;
+}
+
+.main-container {
+    width: 100%; max-width: 600px;
+    background: rgba(22, 33, 58, 0.95);
+    border-radius: var(--radius);
+    box-shadow: var(--card-shadow);
+    padding: 0; margin-top: 0.5rem; margin-bottom: 3rem;
+    min-height: 80vh; 
+    overflow: visible; 
+}
+
+.content-wrapper { padding: 0 1.5rem 1.5rem 1.5rem; }
+
+/* ============================================= */
+/* 2. ПАНЕЛЬ ИНСТРУМЕНТОВ                        */
+/* ============================================= */
+.toolbar-section {
+    padding: 1.5rem;
+    padding-bottom: 2rem;
+    margin-top: 0.5rem;
+    display: flex; flex-direction: column; gap: 1.5rem;
+    background-color: transparent;
+}
+
+label.control-label {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    font-weight: 500;
+    margin-bottom: 0.4rem;
+    padding-left: 10px;
+    display: block;
+}
+
+.sort-row {
+    display: flex; gap: 10px; width: 100%;
+    position: relative; 
+    z-index: 20; 
+}
+
+.custom-dropdown-container {
+    position: relative; 
+    width: 100%;
+    flex-grow: 1;
+}
+
+/* Дропдауны и инпуты */
+.dropdown-header, 
+.input-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1rem;
+    background-color: var(--surface-elevated);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    color: var(--text-secondary);
+    position: relative;
+    height: auto;
+    min-height: 3rem;
+}
+
+.dropdown-header.active,
+.dropdown-header.open,
+.input-wrapper:focus-within {
+    border-color: var(--primary-color);
+    z-index: 30;
+}
+
+.dropdown-header .arrow {
+    width: 10px;
+    height: 10px;
+    border-right: 2px solid var(--text-muted);
+    border-bottom: 2px solid var(--text-muted);
+    transition: transform 0.2s;
+    position: absolute;
+    right: 1rem;
+    top: 45%; 
+    transform: translateY(-50%) rotate(45deg); 
+}
+
+.dropdown-header.active .arrow,
+.dropdown-header.open .arrow {
+    transform: translateY(-50%) rotate(225deg);
+}
+
+.dropdown-header.with-search {
+    padding: 0;
+    display: flex;
+    align-items: center;
+    position: relative;
+}
+
+.dropdown-search {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: transparent; border: none; outline: none; z-index: 20;
+    opacity: 0; transition: opacity 0.2s;
+    color: var(--text-primary); font-size: 0.95rem;
+    padding: 0.75rem 2.5rem 0.75rem 1rem;
+    pointer-events: none;
+}
+
+.selected-value-placeholder {
+    position: static;
+    font-size: 0.95rem;
+    color: var(--text-secondary);
+    padding: 0.75rem 2.5rem 0.75rem 1rem;
+    overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+    flex-grow: 1; z-index: 10; pointer-events: auto; transition: opacity 0.2s;
+}
+
+.dropdown-header.open .dropdown-search,
+.dropdown-header.value-active .dropdown-search {
+    opacity: 1; pointer-events: auto;
+}
+.dropdown-header.open .selected-value-placeholder,
+.dropdown-header.value-active .selected-value-placeholder {
+    opacity: 0; pointer-events: none;
+}
+
+.theme-search-input {
+    width: 100%; background: transparent; border: none; outline: none;
+    color: var(--text-primary); font-size: 0.95rem;
+}
+.theme-search-input::placeholder { color: var(--text-muted); }
+.input-wrapper .search-icon {
+    margin-right: 10px; color: var(--text-muted); display: flex;
+}
+
+.dropdown-list {
+    position: absolute; top: calc(100% + 3px); left: 0; right: 0;
+    width: 100%;
+    background-color: var(--surface-elevated);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    box-shadow: var(--card-shadow);
+    z-index: 1000; padding: 0.5rem; max-height: 250px; overflow-y: auto;
+    display: block;
+}
+.dropdown-list.hidden { display: none; }
+.dropdown-list::-webkit-scrollbar { width: 8px; background: transparent; }
+.dropdown-list::-webkit-scrollbar-thumb { background-color: var(--border-color); border-radius: 4px; }
+
+.list-option {
+    padding: 0.75rem 1rem; border-radius: 0.5rem;
+    display: flex; align-items: center; gap: 12px;
+    cursor: pointer; color: var(--text-primary);
+    font-size: 1rem; font-weight: 500; transition: background 0.1s;
+}
+.list-option:hover { background-color: var(--surface-color); }
+
+.color-swatch-mini {
+    width: 24px; height: 24px; border-radius: 50%;
+    flex-shrink: 0; border: 1px solid rgba(255,255,255,0.1);
+}
+
+.direction-btn {
+    width: 3.5rem; min-width: 3.5rem; flex-shrink: 0;
+    justify-content: center; cursor: pointer; 
+    color: var(--primary-color); background-color: var(--surface-elevated);
+    border: 1px solid var(--border-color); border-radius: var(--radius);
+    padding: 0;
+}
+.direction-btn:hover { border-color: var(--primary-color); }
+.direction-btn svg { width: 24px; height: 24px; transition: transform 0.3s ease; }
+.direction-btn.rotated svg { transform: scaleY(-1); }
+
+/* ============================================= */
+/* 3. СЕТКА И КАРТОЧКИ (ОСНОВА)                  */
+/* ============================================= */
+
+.themes-page-grid-container { 
+    display: flex; flex-direction: column; gap: 1.5rem; 
+}
+
+.themes-page-grid {
+    display: grid;
+    /* FIX: Используем min(100%, 280px), чтобы карточка сжималась на очень узких экранах */
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
+    gap: 1rem; padding-bottom: 0;
+}
+
+.letter-section {
+    position: relative;  
+    padding: 1.5rem 1rem 1rem 1rem; 
+    /* FIX: Добавляем box-sizing явно, чтобы паддинги не ломали ширину */
+    box-sizing: border-box; 
+    width: 100%;
+}
+
+@media (max-width: 400px) {
+    .letter-section {
+        padding: 1.5rem 0.5rem 1rem 0.5rem; /* Меньше отступов по бокам */
+    }
+}
+
+.letter-section::before {
+    content: ''; position: absolute; inset: 0;
+    border-radius: 20px; border: 2px solid #3b4c70;
+    pointer-events: none;
+    -webkit-mask-image: linear-gradient(to bottom, black 0px, black 15px, transparent 40px, transparent calc(100% - 40px), black calc(100% - 15px), black 100%);
+    mask-image: linear-gradient(to bottom, black 0px, black 15px, transparent 40px, transparent calc(100% - 40px), black calc(100% - 15px), black 100%);
+    opacity: 0.6;
+}
+
+.letter-header {
+    position: absolute; 
+    top: 0; left: 24px; transform: translateY(-50%); 
+    background-color: rgba(22, 33, 58, 1); 
+    padding: 0 8px; font-size: 1.1rem; font-weight: 800; 
+    color: #5c74a1; z-index: 2; 
+    white-space: nowrap; text-transform: uppercase;
+}
+
+/* --- КАРТОЧКА --- */
+
+.theme-page-card {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    
+    background: rgba(30, 41, 68, 0.6);
+    
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 20px;
+    height: 110px;
+    padding: 0 0.5rem 0 1.2rem; /* Уменьшил правый паддинг */
+    
+    cursor: pointer;
+    overflow: hidden;
+    transition: transform 0.2s, background 0.2s, border-color 0.2s;
+    z-index: 1;
+}
+
+.theme-page-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(255, 255, 255, 0.2);
+    background: rgba(40, 55, 90, 0.8);
+}
+
+/* ЛЕВАЯ ЧАСТЬ (ТЕКСТ) */
+.tpc-left-side {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    flex: 1;
+    min-width: 0;
+    z-index: 2;
+    padding-right: 5px;
+}
+
+.tpc-title {
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: #fff;
+    margin-bottom: 6px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.tpc-meta {
+    display: flex; flex-direction: column; align-items: flex-start; gap: 6px;
+}
+
+.tpc-count {
+    font-size: 0.85rem; color: #6b7fa7; font-weight: 600;
+}
+
+.tpc-percent-badge {
+    display: inline-block;
+    background-color: rgba(30, 41, 68, 0.8);
+    color: #38bdf8;
+    padding: 3px 10px; border-radius: 8px;
+    font-size: 0.9rem; font-weight: 800;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    border: 1px solid rgba(56, 189, 248, 0.1);
+}
+
+/* СТРЕЛКА (Прижата к правому краю) */
+.tpc-arrow {
+    width: 24px; display: flex; justify-content: center;
+    color: rgba(255,255,255,0.3); 
+    z-index: 3; 
+    margin-left: 0;
+    position: relative;
+    right: 5px; /* Чуть отступ от края */
+}
+.theme-page-card:hover .tpc-arrow { color: #fff; }
+.tpc-arrow svg { width: 20px; height: 20px; }
+
+/* СВЕЧЕНИЕ */
+.tpc-glow {
+    position: absolute; top: -50px; right: -20px;
+    width: 200px; height: 200px;
+    background: radial-gradient(circle, var(--glow-color) 0%, transparent 70%);
+    opacity: 0.3; pointer-events: none; filter: blur(40px); z-index: 0;
+}
+
+/* ================================================== */
+/* --- ПРАВАЯ ЧАСТЬ: ИКОНКИ (MAXIMUM CONTROL) --- */
+/* ================================================== */
+
+/* Контейнер для иконок */
+.tpc-visuals {
+    position: relative;
+    width: 140px; 
+    height: 100%;
+    z-index: 2;
+    flex-shrink: 0; 
+    margin-right: -10px; 
+}
+
+/* СИСТЕМА УПРАВЛЕНИЯ ЧЕРЕЗ F12 
+   Используйте: --s (size), --x (right), --y (top), --r (rotate), --z (z-index)
+*/
+.tpc-icon-box {
+    position: absolute;
+    
+    /* РАЗМЕР ЗАДАЕТСЯ ПЕРЕМЕННОЙ --s */
+    width: var(--s, 34px); 
+    height: var(--s, 34px);
+    
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    border: 1px solid rgba(255,255,255,0.15);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+    overflow: hidden;
+    
+    /* ПОЗИЦИОНИРОВАНИЕ */
+    right: var(--x, 0px);
+    top: var(--y, 50%);
+    transform: translateY(-50%) rotate(var(--r, 0deg));
+    z-index: var(--z, 1);
+    
+    transition: all 0.2s ease-out; 
+}
+
+.tpc-img {
+    width: 80%; height: 80%;
+    object-fit: contain;
+    filter: drop-shadow(0 2px 3px rgba(0,0,0,0.3));
+}
+
+/* --- КОНФИГУРАЦИИ (1-5 ИКОНОК) --- */
+
+/* 1. ОДНА ИКОНКА (Крупная) */
+.tpc-visuals.items-1 .tpc-icon-box.pos-0 {
+    --s: 60px; 
+    --x: 40px; --y: 50%; --r: -5deg;
+}
+
+/* 2. ДВЕ ИКОНКИ (Средние) */
+.tpc-visuals.items-2 .tpc-icon-box.pos-0 { --s: 50px; --x: 75px; --y: 50%; --r: -8deg; --z: 1; }
+.tpc-visuals.items-2 .tpc-icon-box.pos-1 { --s: 45px; --x: 22px; --y: 46%; --r: 8deg;  --z: 2; }
+
+/* 3. ТРИ ИКОНКИ (Чуть меньше) */
+.tpc-visuals.items-3 .tpc-icon-box.pos-0 { --s: 34px; --x: 100px; --y: 57%; --r: -5deg; --z: 1; }
+.tpc-visuals.items-3 .tpc-icon-box.pos-1 { --s: 35px; --x: 18px; --y: 55%; --r: -5deg;  --z: 2; }
+.tpc-visuals.items-3 .tpc-icon-box.pos-2 { --s: 40px; --x: 56px; --y: 45%; --r: 7deg;   --z: 3; }
+
+/* 4. ЧЕТЫРЕ ИКОНКИ (Компактные) */
+.tpc-visuals.items-4 .tpc-icon-box.pos-0 { --s: 37px; --x: 72px; --y: 30%; --r: 5deg;   --z: 1; }
+.tpc-visuals.items-4 .tpc-icon-box.pos-1 { --s: 37px; --x: 75px; --y: 75%; --r: -6deg; --z: 2; }
+.tpc-visuals.items-4 .tpc-icon-box.pos-2 { --s: 35px; --x: 25px; --y: 30%; --r: 10deg;  --z: 2; }
+.tpc-visuals.items-4 .tpc-icon-box.pos-3 { --s: 37px; --x: 30px; --y: 75%; --r: 5deg;   --z: 3; }
+
+/* 5. ПЯТЬ ИКОНОК (Мелкие, плотная куча) */
+/* Верхний ряд */
+.tpc-visuals.items-5 .tpc-icon-box.pos-0 { --s: 32px; --x: 85px; --y: 30%; --r: -12deg; --z: 1; }
+.tpc-visuals.items-5 .tpc-icon-box.pos-1 { --s: 32px; --x: 35px; --y: 30%; --r: 12deg;  --z: 1; }
+
+/* Нижний ряд */
+.tpc-visuals.items-5 .tpc-icon-box.pos-2 { --s: 32px; --x: 100px; --y: 70%; --r: -15deg; --z: 2; }
+.tpc-visuals.items-5 .tpc-icon-box.pos-3 { --s: 32px; --x: 60px; --y: 65%; --r: 0deg;   --z: 3; }
+.tpc-visuals.items-5 .tpc-icon-box.pos-4 { --s: 32px; --x: 20px; --y: 70%; --r: 15deg;  --z: 2; }
+
+
+/* ============================================= */
+/* АДАПТИВНОСТЬ */
+/* ============================================= */
+
+/* Если экран меньше 400px (стандартный телефон вертикально) */
+@media (max-width: 400px) {
+    .tpc-visuals {
+        /* Уменьшаем весь блок с иконками визуально */
+        transform: scale(0.85); 
+        /* Прижимаем к правому краю при уменьшении */
+        transform-origin: right center; 
+        
+        /* ВАЖНО: Уменьшаем реальную ширину блока в верстке.
+           Так как мы уменьшили масштаб, иконки занимают меньше места.
+           Было 140px -> Ставим 110px. Это даст тексту слева +30px пространства. */
+        width: 110px; 
+        
+        /* Корректируем отступ, чтобы иконки визуально были ближе к стрелке */
+        margin-right: -8px; 
+    }
+    
+    .theme-page-card {
+        padding-left: 0.8rem; 
+        /* Добавляем явный зазор между текстом и правой частью, чтобы не слипалось */
+        gap: 6px; 
+    }
+    
+    /* Чуть поправим стрелку, чтобы она не наезжала на иконки */
+    .tpc-arrow {
+        right: 2px;
+    }
+}
+
+/* Если экран совсем узкий (iPhone SE 1st gen и т.д.) */
+@media (max-width: 340px) {
+    .tpc-visuals {
+        transform: scale(0.75);
+        width: 95px; /* Еще сильнее уменьшаем ширину блока */
+        margin-right: -12px;
+    }
+}
+
+/* UTIL */
+.hidden { display: none !important; }
+.loading-container { display: flex; justify-content: center; padding: 2rem; }
+.spinner { 
+    width: 24px; height: 24px; 
+    border: 3px solid rgba(255, 255, 255, 0.3); 
+    border-top: 3px solid var(--primary-color); 
+    border-radius: 50%; 
+    animation: spin 1s linear infinite; 
+}
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+@media (max-width: 480px) {
+    .sort-row { gap: 8px; }
+    .dropdown-header, .input-wrapper { padding-left: 0.8rem; padding-right: 0.8rem; }
+}

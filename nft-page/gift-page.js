@@ -1,12 +1,12 @@
-// URL API
 const SERVER_BASE_URL = 'https://nftmatchbot20250730152328.azurewebsites.net/';
 const API_PHOTO_URL = 'https://cdn.changes.tg/gifts/models';
-const API_GIFT_ORIGINALS_URL = 'https://cdn.changes.tg/gifts/originals'; 
+const API_GIFT_ORIGINALS_URL = 'https://cdn.changes.tg/gifts/originals';
 import { initColorPicker } from './ColorPicker/color-picker-modal.js';
 import { initNftDetailsModal } from './nft-details-modal.js';
-
+import '../Monohrome/themes-modal.js';
 let observerMap = new Map();
 
+const tg = window.Telegram.WebApp;
 
 const GIFT_NAME_TO_ID = {
     "Santa Hat": "5983471780763796287",
@@ -104,33 +104,59 @@ const GIFT_NAME_TO_ID = {
     "Artisan Brick": "6005797617768858105",
     "Clover Pin": "5960747083030856414",
     "Sky Stilettos": "5870947077877400011",
-    "Fresh Socks": "5895603153683874485"
+    "Fresh Socks": "5895603153683874485",
+    "Happy Brownie": "6006064678835323371",
+    "Ice Cream": "5900177027566142759",
+    "Spring Basket": "5773725897517433693",
+    "Instant Ramen": "6005564615793050414",
+    "Faith Amulet": "6003456431095808759",
+    "Mousse Cake": "5935877878062253519"
 };
 
+function setupTelegramBackButton() {
+    const tg = window.Telegram.WebApp;
+    tg.BackButton.show();
+    tg.BackButton.offClick(); // Очистка старых событий
+
+    tg.BackButton.onClick(() => {
+        // Если открыта любая модалка — кнопка ТГ на неё НЕ влияет (по вашему ТЗ)
+        // Она работает ТОЛЬКО как браузерная навигация между страницами
+        if (window.history.length > 1) {
+            window.history.back();
+        } else {
+            window.location.href = '../index.html';
+        }
+    });
+}
+
+// Внутри DOMContentLoaded удалите лишние переопределения onClick:
 document.addEventListener('DOMContentLoaded', () => {
-    // --- Элементы интерфейса ---
-    
-    // Элементы для первого выпадающего списка (Подарки)
+    setupTelegramBackButton(); // Вызвать один раз
+
+    // Удалите все блоки вида:
+    // tg.BackButton.onClick(() => { window.NFTDetailsModal.close(); });
+    // Кнопка ТГ больше не должна закрывать модалки.
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+
     const giftDropdownHeader = document.getElementById('gift-dropdown-header');
     const giftDropdownList = document.getElementById('gift-dropdown-list');
     const giftSearchInput = document.getElementById('gift-search');
     const giftListOptions = document.getElementById('gift-list-options');
     const giftSelectedValue = document.getElementById('gift-selected-value');
 
-    // Элементы для второго выпадающего списка (Модели)
     const modelDropdownHeader = document.getElementById('model-dropdown-header');
     const modelDropdownList = document.getElementById('model-dropdown-list');
     const modelSearchInput = document.getElementById('model-search');
     const modelListOptions = document.getElementById('model-list-options');
     const modelSelectedValue = document.getElementById('model-selected-value');
 
-    // Элементы для секции с фото и цветами
     const detailsContent = document.getElementById('details-content');
     const giftPhoto = document.getElementById('gift-photo');
     const colorsList = document.getElementById('colors-list');
     const changeColorBtn = document.getElementById('change-color-btn');
 
-    // Элементы для мульти-селекта
     const multiSelectHeader = document.getElementById('multi-select-header');
     const multiSelectContent = document.getElementById('multi-select-content');
     const multiGiftSearch = document.getElementById('multi-gift-search');
@@ -138,61 +164,139 @@ document.addEventListener('DOMContentLoaded', () => {
     const multiSelectedSummary = document.getElementById('multi-selected-summary');
     const clearAllBtn = document.getElementById('clear-all-btn');
     const selectAllBtn = document.getElementById('select-all-btn');
-    
-    // Элементы для функционала
+
     const submitBtn = document.getElementById('submit-btn');
     const sortSelectDesktop = document.getElementById('sort-order-desktop');
     const sortMobileButton = document.getElementById('sort-mobile-button');
     const sortModalOverlay = document.getElementById('sort-modal-overlay');
     const sortModalOptions = document.getElementById('sort-modal-options');
     const resultsGrid = document.getElementById('results-grid');
-    const contentSection = document.getElementById('results-wrapper'); 
+    const contentSection = document.getElementById('results-wrapper');
 
     const giftContainer = document.getElementById('gift-container');
-    // Замените 'model-container' на фактический ID контейнера, если он другой
-    const modelContainer = document.getElementById('model-container'); 
-    // Замените 'multi-select-wrapper' на фактический ID контейнера мультивыбора
+    const modelContainer = document.getElementById('model-container');
     const multiSelectWrapper = document.getElementById('multi-select-wrapper');
 
     const loadingContainer = document.getElementById('loading-container');
-    const nftDetailsModalTitle = document.getElementById('nftDetailsModalTitle'); // <-- ДОБАВЬТЕ ЭТУ СТРОКУ
-    let currentAbortController = null; 
-    
+    const nftDetailsModalTitle = document.getElementById('nftDetailsModalTitle');
+    let currentAbortController = null;
 
-     // 💡 Выбираем все кнопки и инпуты внутри мульти-селекта для блокировки
     const filterControls = document.querySelectorAll('.multi-select-container button, .multi-select-container input');
 
-
-    const displayModeButton = document.getElementById('display-mode-button'); // Мобильная
+    const displayModeButton = document.getElementById('display-mode-button');
     const displayModeModalOverlay = document.getElementById('display-mode-modal-overlay');
     const displayModeOptions = document.querySelector('.display-mode-options');
 
-    // 💡 NEW: Десктопная кнопка вида
-    const displayModeButtonDesktop = document.getElementById('display-mode-button-desktop'); 
-    
-     // 🔥 ИСПРАВЛЕНИЕ: Преобразуем NodeList в Array
-    const multiSelectControls = Array.from(document.querySelectorAll('.multi-select-container button, .multi-select-container input'));
+    const displayModeButtonDesktop = document.getElementById('display-mode-button-desktop');
 
-    // 🔥 ИСПРАВЛЕНИЕ: Преобразуем NodeList в Array
+    const multiSelectControls = Array.from(document.querySelectorAll('.multi-select-container button, .multi-select-container input'));
     const mainDropdownHeaders = Array.from(document.querySelectorAll('.custom-dropdown-container .dropdown-header'));
 
+    const INIT_DATA_KEY = 'tgInitData';
+    const BYPASS_KEY_STORAGE = 'apiBypassKey';
+
+    if (window.Telegram && window.Telegram.WebApp) {
+        const tg = window.Telegram.WebApp;
+        tg.BackButton.show();
+
+        tg.BackButton.onClick(() => {
+            // Проверяем, есть ли история браузера, чтобы вернуться назад
+            // history.length > 1 обычно значит, что мы перешли сюда с другой страницы
+            if (window.history.length > 1) {
+                window.history.back(); // Возвращает на Themes (или Finder) и восстановит там состояние
+            } else {
+                // Если истории нет (например, открыли по прямой ссылке), идем на главную
+                window.location.href = '../index.html';
+            }
+        });
+    }
+
+    async function checkUrlParamsAndOpenModal() {
+        const params = new URLSearchParams(window.location.search);
+        const view = params.get('view');
+        const dGift = params.get('d_gift');
+        const dModel = params.get('d_model');
+
+        if (view === 'details' && dGift && dModel) {
+
+            const restoredItem = {
+                giftName: dGift,
+                modelName: dModel,
+                imageUrl: `https://cdn.changes.tg/gifts/models/${encodeURIComponent(dGift)}/png/${encodeURIComponent(dModel)}.png`
+            };
+
+            if (window.NFTDetailsModal) {
+                window.NFTDetailsModal.open(restoredItem);
+
+                if (window.Telegram && window.Telegram.WebApp) {
+                    const tg = window.Telegram.WebApp;
+                    tg.BackButton.show();
+                    tg.BackButton.onClick(() => {
+                        window.NFTDetailsModal.close();
+                    });
+                }
+            }
+        }
+    }
+
+    window.onModalClose = function () {
+        updateUrlState(null);
+
+        // ВМЕСТО того, чтобы жестко слать на index.html, 
+        // восстанавливаем стандартную логику "Назад по истории"
+        setupTelegramBackButton();
+    };
+
+    function updateUrlState(modalData = null) {
+        const params = new URLSearchParams(window.location.search);
+
+        if (modalData) {
+            params.set('view', 'details');
+            params.set('d_gift', modalData.giftName);
+            params.set('d_model', modalData.modelName);
+        } else {
+            params.delete('view');
+            params.delete('d_gift');
+            params.delete('d_model');
+        }
+
+        const newUrl = `${window.location.pathname}?${params.toString()}`;
+        window.history.replaceState({ path: newUrl }, '', newUrl);
+    }
+
+    function getApiAuthHeader() {
+        try {
+            const initData = sessionStorage.getItem(INIT_DATA_KEY);
+            if (initData) return `Tma ${initData}`;
+        } catch (e) { }
+
+        try {
+            const bypassKey = sessionStorage.getItem(BYPASS_KEY_STORAGE);
+            if (bypassKey) return `Tma ${bypassKey}`;
+        } catch (e) { }
+
+        if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData) {
+            const directInitData = window.Telegram.WebApp.initData;
+            try { sessionStorage.setItem(INIT_DATA_KEY, directInitData); } catch (e) { }
+            return `Tma ${directInitData}`;
+        }
+
+        return 'Tma invalid';
+    }
+
     const controlsToDisableOnEmpty = [
-        sortSelectDesktop, 
-        sortMobileButton, 
-        displayModeButton, 
+        sortSelectDesktop,
+        sortMobileButton,
+        displayModeButton,
         displayModeButtonDesktop
     ].filter(el => el != null);
 
-// 💡 Глобальная переменная для текущего режима
-let currentDisplayMode = 'top-3'; // По умолчанию: Топ 3 модели
-
-    //const contentSection = document.getElementById('results-container-wrapper');
+    let currentDisplayMode = 'top-3';
 
     const selectedItemsList = document.getElementById('selected-items-list');
     const unselectedItemsList = document.getElementById('unselected-items-list');
     const listDivider = document.getElementById('list-divider')
 
-    // --- Глобальные переменные ---
     let selectedGift = null;
     let selectedModel = null;
     let giftNames = [];
@@ -200,28 +304,44 @@ let currentDisplayMode = 'top-3'; // По умолчанию: Топ 3 моде�
     let currentMainColors = [];
     let currentColorIndex = 0;
     let selectedMultiItems = new Set();
-    let similarNFTsData = []; 
-    // ...
-    // 🔥 ДОБАВЬТЕ ЭТО:
-    const state = { 
+    let similarNFTsData = [];
+    const state = {
         bgFinder: {
             giftTypeId: null, modelId: null,
-            // 🔥 ИЗМЕНЕНИЕ: targetColors теперь массив объектов {hex: string, x: number, y: number}
-            targetColors: [], 
+            targetColors: [],
             activeTargetIndex: 0
         }
     };
-
-    
-    let colorPickerInstance; // Переменная для хранения экземпляра модуля
+    let hasUserModifiedColors = false;
+    let colorPickerInstance;
     let nftDetailsModalInstance;
     let observerMap = new Map();
 
-const lazyLoadCallback = (entries, observer) => {
+
+    function selectRandomGifts(count, allGiftNames, currentTargetGift) {
+        if (isNaN(count) || count <= 0 || allGiftNames.length === 0) {
+            return;
+        }
+
+        const availableGifts = allGiftNames.filter(name => name !== currentTargetGift);
+
+        const shuffled = [...availableGifts];
+        for (let i = shuffled.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        }
+
+        const selected = shuffled.slice(0, Math.min(count, shuffled.length));
+
+        selectedMultiItems.clear();
+        selected.forEach(name => selectedMultiItems.add(name));
+    }
+
+    const lazyLoadCallback = (entries, observer) => {
         entries.forEach(entry => {
             if (entry.isIntersecting) {
                 const img = entry.target;
-                observer.unobserve(img); // Сразу отписываемся
+                observer.unobserve(img);
                 img.classList.remove('lazy-load');
                 img.src = img.dataset.src;
                 img.onload = () => {
@@ -231,37 +351,27 @@ const lazyLoadCallback = (entries, observer) => {
         });
     };
 
-    /**
-     * Настраивает и запускает ленивую загрузку для изображений.
-     * Создает или переиспользует IntersectionObserver для конкретного scroll-контейнера.
-     * @param {HTMLElement} contentElement - Элемент, содержащий изображения (e.g., #gift-list-options).
-     * @param {HTMLElement | null} scrollRoot - Элемент с прокруткой. Если null, используется viewport.
-     * @param {'list' | 'grid'} type - Определяет, какой rootMargin использовать.
-     */
     function setupLazyLoading(contentElement, scrollRoot, type) {
         if (!contentElement) return;
 
-        // Определяем ключ для карты наблюдателей. Для viewport используем специальный ключ.
         const observerKey = scrollRoot || 'viewport';
         let observer = observerMap.get(observerKey);
 
-        // Если наблюдателя для этого контейнера еще нет, создаем его
         if (!observer) {
             const options = {
-                root: scrollRoot, // 🔥 Вот ключевое изменение!
+                root: scrollRoot,
                 rootMargin: type === 'list' ? '300px' : '400px'
             };
             observer = new IntersectionObserver(lazyLoadCallback, options);
-            observerMap.set(observerKey, observer); // Сохраняем в карту для переиспользования
+            observerMap.set(observerKey, observer);
         }
 
-        // Находим все ленивые изображения внутри контента и начинаем наблюдение
         const lazyImages = contentElement.querySelectorAll('img.lazy-load');
         lazyImages.forEach(img => {
             observer.observe(img);
         });
     }
-    
+
     function updateListDividerVisibility() {
         const isFiltering = multiGiftSearch.value.trim().length > 0;
         const hasSelected = selectedItemsList.children.length > 0;
@@ -274,7 +384,6 @@ const lazyLoadCallback = (entries, observer) => {
         }
     }
 
-    // Функция для сортировки элементов внутри списка
     function sortList(listElement) {
         const items = Array.from(listElement.children);
         items.sort((a, b) => {
@@ -285,75 +394,53 @@ const lazyLoadCallback = (entries, observer) => {
         items.forEach(item => listElement.appendChild(item));
     }
 
-    // 💡 Новая асинхронная функция для загрузки и инициализации модалки
-    // --- ФУНКЦИИ-УТИЛИТЫ ДЛЯ МОДУЛЯ (Заглушки) ---
-    // 💡 Примечание: Эти функции должны быть определены для передачи в модуль. 
-    // Поскольку их код не предоставлен, используем консольный вывод.
     function findAndDisplayBackgrounds() {
-        console.log("findAndDisplayBackgrounds: Запуск поиска по новым цветам.");
-        fetchSimilarNFTs(); 
+        fetchSimilarNFTs();
     }
-    
+
     function updateTargetColorsDisplay() {
-        console.log("updateTargetColorsDisplay: Обновление цветов на главной странице.");
-        
-        // 💡 Используем существующую функцию displayColors
-        // Преобразуем массив объектов в массив, понятный displayColors (который ожидает {hex: '...', ...})
+        hasUserModifiedColors = true;
         displayColors(state.bgFinder.targetColors);
     }
-    // --- Конец Функций-утилит для модуля ---
-    
-    
-
-    // --- Функции-утилиты ---
 
     function clearResults() {
-        resultsGrid.innerHTML = ''; // Очищаем сетку
-        contentSection.classList.add('results-initial-hide'); // Скрываем всю секцию
-        contentSection.classList.remove('visible');
-        similarNFTsData = []; // Очищаем данные
+        resultsGrid.innerHTML = '';
+
+        similarNFTsData = [];
         if (currentAbortController) {
-            currentAbortController.abort(); // Отменяем текущий запрос, если он есть
+            currentAbortController.abort();
             currentAbortController = null;
-            handleSearchCompletion(true); // Сброс UI-блокировок
+            handleSearchCompletion(true);
         }
-        console.log("Результаты поиска очищены.");
     }
 
     function getCardData(element) {
-        // Проходим вверх до главного контейнера карточки
         const card = element.closest('.result-card');
         if (!card) return null;
 
-        // Извлекаем данные, которые были сохранены при рендере
         return {
             giftName: card.dataset.giftName,
-            modelName: card.dataset.modelName // Это model1Name из рендера
+            modelName: card.dataset.modelName
         };
     }
 
     function updateControlAvailability() {
         const isGiftSelected = selectedGift && selectedGift.length > 0;
         const isModelSelected = selectedModel && selectedModel.length > 0;
-        
-        // 1. Управление текстом в заголовке Модели:
+
         if (modelDropdownHeader) {
             if (isGiftSelected) {
-                // Если подарок выбран, показываем выбранную модель или стандартный плейсхолдер
-                modelSelectedValue.textContent = selectedModel || 'Выберите модель'; 
-                // 🔥 Убедимся, что модель сброшена, если подарок только что выбрали
+                modelSelectedValue.textContent = selectedModel || 'Выберите модель';
                 if (!selectedModel) {
-                     modelSelectedValue.textContent = 'Выберите модель';
+                    modelSelectedValue.textContent = 'Выберите модель';
                 }
             } else {
-                // 🔥 ЕСЛИ ПОДАРОК НЕ ВЫБРАН: Устанавливаем текст по умолчанию "Выберите модель"
                 selectedModel = null;
-                modelSelectedValue.textContent = 'Выберите модель'; // <-- ИСПРАВЛЕНИЕ ТЕКСТА
-                detailsContent.classList.remove('visible'); 
+                modelSelectedValue.textContent = 'Выберите модель';
+                detailsContent.classList.remove('visible');
             }
         }
-        
-        // 2. Управление доступностью Мультивыбора (зависит от Модели) - ОСТАВЛЯЕМ КАК ЕСТЬ
+
         if (multiSelectWrapper) {
             if (isModelSelected) {
                 multiSelectWrapper.classList.remove('disabled');
@@ -362,46 +449,41 @@ const lazyLoadCallback = (entries, observer) => {
                 if (selectedMultiItems) {
                     selectedMultiItems.clear();
                     updateMultiSelectedSummary();
-                    populateMultiSelectDropdown(giftNames); 
+                    populateMultiSelectDropdown(giftNames);
                 }
             }
         }
     }
 
-     function toggleDropdown(listToToggle) {
+    function toggleDropdown(listToToggle) {
         const allDropdowns = [
-            { list: giftDropdownList, header: giftDropdownHeader, input: giftSearchInput, items: giftNames, type: 'gift' }, 
-            { list: modelDropdownList, header: modelDropdownHeader, input: modelSearchInput, items: modelNames, type: 'model' }, 
-            { list: multiSelectContent, header: multiSelectHeader, input: multiGiftSearch, items: giftNames, type: 'multi' } 
+            { list: giftDropdownList, header: giftDropdownHeader, input: giftSearchInput, items: giftNames, type: 'gift' },
+            { list: modelDropdownList, header: modelDropdownHeader, input: modelSearchInput, items: modelNames, type: 'model' },
+            { list: multiSelectContent, header: multiSelectHeader, input: multiGiftSearch, items: giftNames, type: 'multi' }
         ].filter(item => item.list && item.header);
 
         allDropdowns.forEach(({ list, header, input, items, type }) => {
-            
+
             const isClosing = list !== listToToggle || !list.classList.contains('hidden');
 
             if (isClosing) {
                 list.classList.add('hidden');
                 header.classList.remove('open', 'value-active');
-                list.classList.remove('stretch-dropdown'); // Убираем класс при закрытии
+                list.classList.remove('stretch-dropdown');
 
                 if (input) {
                     input.blur();
                     input.value = '';
-                    
+
                     if (type === 'gift') {
                         const optionsContainer = list.querySelector('#gift-list-options');
                         if (optionsContainer) {
                             populateDropdown(optionsContainer, items, type);
                         }
                     } else if (type === 'model') {
-                        // 🔥 ИСПРАВЛЕНО: УБРАЛИ лишний вызов fetchAllModelNames.
-                        // При закрытии восстанавливаем полный список моделей (без фильтрации), 
-                        // если они были загружены.
                         if (modelNames.length > 0) {
-                            // 🔥 КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Передаем только имена моделей (массив строк)
                             populateDropdown(modelListOptions, modelNames.map(m => m.name), 'model');
                         } else if (!selectedGift) {
-                            // Если подарок не выбран, восстанавливаем плейсхолдер
                             fetchAllModelNames(null);
                         }
                     } else if (type === 'multi') {
@@ -409,34 +491,29 @@ const lazyLoadCallback = (entries, observer) => {
                         populateMultiSelectDropdown(items);
                     }
                 }
-            } 
-            
-            // 🔥 ИСПРАВЛЕНИЕ: Заменили 'if' на 'else if', чтобы предотвратить мгновенное повторное открытие.
+            }
+
             else if (list === listToToggle && list.classList.contains('hidden')) {
-                
-                // ВНИМАНИЕ: Если это список Моделей и Подарок НЕ выбран, мы НЕ открываем его!
+
                 if (type === 'model' && (!selectedGift || selectedGift.trim() === '')) {
-                    // Мы уже установили плейсхолдер, просто не открываем список.
-                    return; 
+                    return;
                 }
 
-                // --- ЛОГИКА РАСТЯГИВАНИЯ (stretch-dropdown) - ПРИМЕНЯЕМ ТОЛЬКО К gift И model ---
-                if (type !== 'multi') { 
+                if (type !== 'multi') {
                     const headerRect = header.getBoundingClientRect();
                     const spaceBelow = window.innerHeight - headerRect.bottom;
 
                     const maxHeightStyle = window.getComputedStyle(list).maxHeight;
                     const maxHeight = parseFloat(maxHeightStyle) || Infinity;
-                    
+
                     const listHeight = Math.min(list.scrollHeight, maxHeight);
-                    
+
                     if (spaceBelow < (listHeight + 20)) {
                         list.classList.add('stretch-dropdown');
                     } else {
                         list.classList.remove('stretch-dropdown');
                     }
                 }
-                // ^^^^ КОНЕЦ ЛОГИКИ СТЯГИВАНИЯ ^^^^
 
                 list.classList.remove('hidden');
                 header.classList.add('open');
@@ -444,9 +521,9 @@ const lazyLoadCallback = (entries, observer) => {
                 if (type === 'multi') {
                     populateMultiSelectDropdown(items);
                 }
-                
+
                 if (input) {
-                    setTimeout(() => input.focus(), 50); 
+                    setTimeout(() => input.focus(), 50);
                 }
             }
         });
@@ -455,24 +532,18 @@ const lazyLoadCallback = (entries, observer) => {
     function handleDropdownHeaderClick(e, dropdownList, searchInput) {
         const isDropdownOpen = !dropdownList.classList.contains('hidden');
         const isClickOnSearchInput = e.target === searchInput;
-        
-        // 1. Если список уже открыт, мы его закрываем, независимо от того, куда кликнули
-        // (кроме инпута для обычных дропдаунов, чтобы разрешить ввод)
+
         if (isDropdownOpen) {
             const isMultiSelect = searchInput.id === 'multi-gift-search';
-            
-            // 🔥 ДЛЯ ОБЫЧНЫХ ДРОПДАУНОВ: Если клик на инпуте, не закрываем, позволяем вводить.
+
             if (!isMultiSelect && isClickOnSearchInput) {
-                 // Оставляем открытым, чтобы пользователь мог продолжать вводить
-                 return; 
+                return;
             }
-            
-            // 🔥 ДЛЯ МУЛЬТИВЫБОРА ИЛИ КЛИК ПО СТРЕЛКЕ/ЗАГОЛОВКУ: Закрываем.
+
             toggleDropdown(dropdownList);
             return;
         }
 
-        // 2. Если список закрыт, мы его открываем.
         toggleDropdown(dropdownList);
     }
 
@@ -480,14 +551,12 @@ const lazyLoadCallback = (entries, observer) => {
         const isGiftSearch = container === giftListOptions;
         const items = isGiftSearch ? giftNames : modelNames;
         const type = isGiftSearch ? 'gift' : 'model';
-        
-        // 🔥 КЛЮЧЕВОЕ ИСПРАВЛЕНИЕ 1: Доступ к имени через .name, если это модель
+
         const filtered = items.filter(item => {
             const name = (type === 'model') ? item.name : item;
             return name.toLowerCase().includes(searchText.toLowerCase());
         });
-        
-        // 🔥 КЛЮЧЕВОЕ ИСПРАВЛЕНИЕ 2: Передаем в populateDropdown только имена моделей
+
         const itemsToDisplay = (type === 'model') ? filtered.map(m => m.name) : filtered;
 
         populateDropdown(container, itemsToDisplay, type);
@@ -496,21 +565,19 @@ const lazyLoadCallback = (entries, observer) => {
     function createDropdownOption(name, type, isPreload = false) {
         const option = document.createElement('div');
         option.classList.add('list-option');
-        
+
         const placeholderImg = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
         let imageHtml = '';
         let statusHtml = '';
 
         const generateImageTag = (url) => {
             if (isPreload) {
-                // Упреждающая загрузка: устанавливаем src напрямую и добавляем класс 'loaded'
                 return `<img src="${url}" alt="${name}" class="option-image loaded">`;
             } else {
-                // Ленивая загрузка: используем data-src и класс 'lazy-load'
                 return `<img src="${placeholderImg}" data-src="${url}" alt="${name}" class="option-image lazy-load">`;
             }
         };
-        
+
         if (type === 'gift') {
             const giftId = GIFT_NAME_TO_ID[name];
             if (giftId) {
@@ -520,10 +587,10 @@ const lazyLoadCallback = (entries, observer) => {
         } else if (type === 'model' && selectedGift) {
             const imageUrl = `${API_PHOTO_URL}/${encodeURIComponent(selectedGift)}/png/${encodeURIComponent(name)}.png`;
             imageHtml = generateImageTag(imageUrl);
-            
+
             const modelData = modelNames.find(m => m.name === name);
             if (modelData && modelData.isMonochrome === false) {
-                 statusHtml = `
+                statusHtml = `
                     <div class="monocolor-indicator">
                          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.398 16c-.77 1.333.192 3 1.732 3z"/>
@@ -531,25 +598,25 @@ const lazyLoadCallback = (entries, observer) => {
                     </div>
                  `;
             }
-        } 
+        }
 
         option.innerHTML = `
             ${imageHtml}
             <span class="option-text">${name}</span>
             ${statusHtml} 
         `;
-        
+
         return option;
     }
 
     function createMultiSelectOption(name, isSelected, isPreload = false) {
         const label = document.createElement('label');
         label.className = 'multi-list-option-label';
-        
+
         const placeholderImg = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
         let imageHtml = '';
         const giftId = GIFT_NAME_TO_ID[name];
-        
+
         if (giftId) {
             const imageUrl = `${API_GIFT_ORIGINALS_URL}/${giftId}/Original.png`;
             if (isPreload) {
@@ -558,7 +625,7 @@ const lazyLoadCallback = (entries, observer) => {
                 imageHtml = `<img src="${placeholderImg}" data-src="${imageUrl}" alt="${name}" class="option-image lazy-load">`;
             }
         }
-        
+
         label.innerHTML = `
             <input type="checkbox" value="${name}" class="multi-select-checkbox" ${isSelected ? 'checked' : ''}>
             ${imageHtml}
@@ -567,48 +634,39 @@ const lazyLoadCallback = (entries, observer) => {
         return label;
     }
 
-
     function handleSearchCompletion(wasCancelled) {
-    // 🔥 ВОССТАНОВЛЕНИЕ: Локальное определение массивов контролов (ОБЯЗАТЕЛЬНО!)
-    const controlsWithDisabledAttr = [sortSelectDesktop, submitBtn];
-    const controlsWithDisabledClass = [sortMobileButton, displayModeButton, displayModeButtonDesktop, ...mainDropdownHeaders, ...multiSelectControls];
-    
-    // 1. Сброс кнопки Submit
-    if (submitBtn) {
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = `
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-            <span>Поиск NFT</span>
-        `;
-    }
-    
-    // 2. Разблокировка элементов через удаление класса и атрибута
-    controlsWithDisabledClass.forEach(control => {
-        if (control) { control.classList.remove('disabled-control'); }
-    });
-    
-    controlsWithDisabledAttr.forEach(control => {
-        if (control) { control.disabled = false; }
-    });
-    
-    // 3. Сброс контроллера
-    currentAbortController = null; 
-    
-    // 🔥 ФИНАЛЬНОЕ ИСПРАВЛЕНИЕ: Скрываем контейнер загрузки И ОЧИЩАЕМ его содержимое
-    loadingContainer.classList.add('hidden');
-    loadingContainer.innerHTML = ''; 
-    resultsGrid.classList.remove('hidden'); // Показываем саму сетку
-    
-    // 4. Скрытие результатов при отмене
-    if (wasCancelled) {
-        contentSection.classList.remove('visible'); 
-        contentSection.classList.add('results-initial-hide'); 
-        resultsGrid.innerHTML = '';
-    }
-}
+        const controlsWithDisabledAttr = [sortSelectDesktop, submitBtn];
+        const controlsWithDisabledClass = [sortMobileButton, displayModeButton, displayModeButtonDesktop, ...mainDropdownHeaders, ...multiSelectControls];
 
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                <span>Поиск NFT</span>
+            `;
+        }
+
+        controlsWithDisabledClass.forEach(control => {
+            if (control) { control.classList.remove('disabled-control'); }
+        });
+
+        controlsWithDisabledAttr.forEach(control => {
+            if (control) { control.disabled = false; }
+        });
+
+        currentAbortController = null;
+
+        loadingContainer.classList.add('hidden');
+        loadingContainer.innerHTML = '';
+        resultsGrid.classList.remove('hidden');
+
+        if (wasCancelled) {
+
+            resultsGrid.innerHTML = '';
+        }
+    }
 
     function toggleSortAndDisplayControls(enable = true) {
         const controls = [sortSelectDesktop, sortMobileButton, displayModeButton, displayModeButtonDesktop].filter(el => el);
@@ -623,41 +681,30 @@ const lazyLoadCallback = (entries, observer) => {
         });
     }
 
-
     async function fetchSimilarNFTs() {
-        // 🔥 ВОССТАНОВЛЕНИЕ: Локальное определение массивов контролов (ОБЯЗАТЕЛЬНО!)
+        updateSearchUrlState();
+
         const controlsWithDisabledAttr = [sortSelectDesktop, submitBtn];
         const controlsWithDisabledClass = [sortMobileButton, displayModeButton, displayModeButtonDesktop, ...mainDropdownHeaders, ...multiSelectControls];
-        
-        
-        // 💡 ПОДГОТОВКА ЦВЕТОВ
+
         const currentColors = state.bgFinder.targetColors.slice(0, 3).map(c => c.hex.toUpperCase());
-        
-        // 💡 ПРОВЕРКА ОБЯЗАТЕЛЬНЫХ ПОЛЕЙ
+
         if (currentColors.length === 0 || selectedMultiItems.size === 0) {
             if (!selectedGift || !selectedModel || selectedMultiItems.size === 0) {
-                console.error("Не все обязательные поля заполнены для запроса. Требуются либо 3 цвета ИЛИ выбранные модель и подарки.");
                 return;
             }
         }
-        
-        // 1. Инициализация AbortController
+
         if (currentAbortController) {
             currentAbortController.abort();
         }
         currentAbortController = new AbortController();
         const signal = currentAbortController.signal;
 
-        // --- Отображение секции результатов сразу ---
-        contentSection.classList.remove('results-initial-hide'); 
-        contentSection.classList.add('visible');
-        
-        // 🔥 ТОЧКИ КОНТРОЛЯ ВИДИМОСТИ:
-        resultsGrid.innerHTML = ''; 
-        resultsGrid.classList.add('hidden'); 
-        loadingContainer.classList.remove('hidden'); 
-        
-        // 🚀 ГЕНЕРИРУЕМ И ВСТАВЛЯЕМ КОНТЕНТ ЗАГРУЗКИ
+        resultsGrid.innerHTML = '';
+        resultsGrid.classList.add('hidden');
+        loadingContainer.classList.remove('hidden');
+
         loadingContainer.innerHTML = `
             <div class="col-span-full loading-indicator">
                 <p style="display: flex; align-items: center; justify-content: center; gap: 10px;">
@@ -668,84 +715,86 @@ const lazyLoadCallback = (entries, observer) => {
             </div>
         `;
 
+        controlsWithDisabledAttr.forEach(control => { if (control) control.disabled = true; });
+        controlsWithDisabledClass.forEach(control => { if (control) control.classList.add('disabled-control'); });
 
-        // 🚀 БЛОКИРОВКА UI ПЕРЕД ЗАПРОСОМ
-        controlsWithDisabledAttr.forEach(control => {
-            if (control) { control.disabled = true; }
-        });
-        controlsWithDisabledClass.forEach(control => {
-            if (control) { control.classList.add('disabled-control'); }
-        });
-
-
-        // 2. Сообщение о загрузке и кнопка отмены
         if (submitBtn) {
             submitBtn.innerHTML = '<span class="spinner"></span> <span>Идет поиск NFT...</span>';
         }
-        
-        // 💡 Привязываем обработчик для кнопки отмены
+
         const cancelBtnElement = document.getElementById('cancel-search-btn');
         if (cancelBtnElement) {
             cancelBtnElement.addEventListener('click', () => {
                 if (currentAbortController) {
                     currentAbortController.abort();
-                    handleSearchCompletion(true); 
+                    handleSearchCompletion(true);
                 }
             });
         }
 
-        // 💡 НОВОЕ: Функция для получения данных пользователя Telegram
         const getTelegramUserData = () => {
-            // Используем optional chaining (?.) для безопасного доступа к объектам
-            const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
+            let masterUserData = null;
+            try {
+                const cachedUserData = sessionStorage.getItem('tgUser');
+                if (cachedUserData) masterUserData = JSON.parse(cachedUserData);
+            } catch (e) { }
 
-            if (tgUser) {
-                // Если мы внутри Telegram Web App, возвращаем реальные данные
-                console.log("Telegram user data found:", tgUser);
-                return {
-                    telegramId: tgUser.id,
-                    username: tgUser.username || null,
-                    firstName: tgUser.first_name || null,
-                    lastName: tgUser.last_name || null,
-                };
+            if (!masterUserData) {
+                const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
+                if (tgUser) {
+                    masterUserData = { telegramId: tgUser.id, username: tgUser.username || null };
+                    try {
+                        const dataToSave = { ...masterUserData, telegramId: parseInt(tgUser.id, 10) };
+                        sessionStorage.setItem('tgUser', JSON.stringify(dataToSave));
+                    } catch (e) { }
+                }
             }
-            
-            // Если мы не в Telegram, возвращаем пустые значения
-            console.log("Not running in Telegram Web App, sending null user data.");
-            return {
-                telegramId: null,
-                username: null,
-                firstName: null,
-                lastName: null,
-            };
+
+            if (masterUserData) {
+                let numericId = null;
+                if (masterUserData.telegramId !== null && masterUserData.telegramId !== undefined) {
+                    numericId = parseInt(masterUserData.telegramId, 10);
+                    if (isNaN(numericId)) numericId = null;
+                }
+                return { id: numericId, Username: masterUserData.username };
+            }
+            return { id: null, Username: null };
         };
 
         const userData = getTelegramUserData();
 
-        // 🔥 ТЕЛО ЗАПРОСА С ДАННЫМИ ПОЛЬЗОВАТЕЛЯ
-        const requestBody = {
-            ...userData, // Добавляем данные пользователя в начало объекта
-            "colors": currentColors, 
-            "nameTargetGift": currentColors.length > 0 ? null : selectedGift, 
-            "nameTargetModel": currentColors.length > 0 ? null : selectedModel,
-            "namesGift": Array.from(selectedMultiItems),
-            "monohromeModelsOnly": true
-        };
-        
-        if (currentColors.length > 0 && requestBody.colors.length === 0) {
-            console.error("Не удалось сформировать массив цветов для запроса.");
-            handleSearchCompletion(true);
-            return;
+        let requestColors = [];
+        let requestTargetGift = null;
+        let requestTargetModel = null;
+
+        if (hasUserModifiedColors) {
+            requestColors = currentColors;
+            requestTargetGift = null;
+            requestTargetModel = null;
+        } else {
+            requestColors = [];
+            requestTargetGift = selectedGift;
+            requestTargetModel = selectedModel;
         }
 
-        console.log("Sending request body:", JSON.stringify(requestBody));
+        const requestBody = {
+            ...userData,
+            "Colors": requestColors,
+            "NameTargetGift": requestTargetGift,
+            "NameTargetModel": requestTargetModel,
+            "NamesGift": Array.from(selectedMultiItems),
+            "MonohromeModelsOnly": true
+        };
 
         try {
             const response = await fetch(`${SERVER_BASE_URL}/api/MonoCoof/SimilarNFTs`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': getApiAuthHeader()
+                },
                 body: JSON.stringify(requestBody),
-                signal: signal 
+                signal: signal
             });
 
             if (!response.ok) {
@@ -753,59 +802,54 @@ const lazyLoadCallback = (entries, observer) => {
                 throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
             }
 
-            const dataObject = await response.json(); 
+            const dataObject = await response.json();
             similarNFTsData = [];
 
-            console.log(dataObject);
-            
-            // 🔥 ПАРСИНГ ДАННЫХ (ФИНАЛЬНОЕ ИСПРАВЛЕНИЕ: ИСПОЛЬЗУЕМ floorPrice)
             if (dataObject && typeof dataObject === 'object') {
                 Object.entries(dataObject).forEach(([giftName, result]) => {
-                    
-                    // Проверка наличия всех ключевых свойств (PascalCase)
-                    if (!result || !result.SimilarModels || result.SimilarModels.length < 3 || result.FloorPrice === undefined || !result.AverageColor) {
+
+                    if (!result || !result.SimilarModels || result.SimilarModels.length < 3 || !result.AverageColor) {
                         return;
                     }
-                    
+
+                    let rawCount = (result.Count !== undefined && result.Count !== null) ? result.Count : result.count;
+                    const countVal = parseInt(rawCount, 10);
+                    const finalCount = isNaN(countVal) ? 0 : countVal;
+
                     const modelsArray = result.SimilarModels;
-                    const colorString = result.AverageColor;    // 🔥 Теперь это строка "R, G, B"
-                    const floorPrice = result.FloorPrice || 0; 
-                    
-                    // 🔥 КОРРЕКЦИЯ: Парсинг строки цвета
-                    const rgbComponents = colorString.split(',').map(c => parseInt(c.trim(), 10));
-                    
-                    const r = rgbComponents[0];
-                    const g = rgbComponents[1];
-                    const b = rgbComponents[2];
-                    
-                    if (isNaN(r) || isNaN(g) || isNaN(b)) {
-                        console.warn(`Пропущен подарок ${giftName}: Не удалось распарсить строку цвета: ${colorString}.`);
+                    const colorInput = result.AverageColor;
+
+                    let r, g, b;
+
+                    if (Array.isArray(colorInput)) {
+                        [r, g, b] = colorInput;
+                    } else if (typeof colorInput === 'string') {
+                        const parts = colorInput.split(',').map(c => parseInt(c.trim(), 10));
+                        [r, g, b] = parts;
+                    } else if (typeof colorInput === 'object' && colorInput !== null) {
+                        r = colorInput.R !== undefined ? colorInput.R : colorInput.r;
+                        g = colorInput.G !== undefined ? colorInput.G : colorInput.g;
+                        b = colorInput.B !== undefined ? colorInput.B : colorInput.b;
+                    }
+
+                    if (isNaN(r) || isNaN(g) || isNaN(b) || r === undefined) {
                         return;
                     }
 
-                    // Конвертируем Color в HEX
                     const colorHex = `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
-                    
-                    // Извлекаем топ 3 модели, используя Key и Value (с большой буквы)
-                    const model1 = modelsArray[0]; 
-                    const model2 = modelsArray[1]; 
-                    const model3 = modelsArray[2]; 
 
-                    // 🔥 КОРРЕКЦИЯ: Используем model.Value и model.Key
-                    const coefficient = model1.Value; 
-                    const model1Name = model1.Key;
-                    const model2Name = model2.Key;
-                    const model3Name = model3.Key;
+                    const model1 = modelsArray[0];
+                    const model2 = modelsArray[1];
+                    const model3 = modelsArray[2];
 
                     similarNFTsData.push({
                         giftName: giftName,
-                        coefficient: coefficient,
+                        coefficient: model1.Value,
                         colorHex: colorHex,
-                        avgPrice: floorPrice, 
-                        
-                        model1Name: model1Name, 
-                        model2Name: model2Name, 
-                        model3Name: model3Name
+                        count: finalCount,
+                        model1Name: model1.Key,
+                        model2Name: model2.Key,
+                        model3Name: model3.Key
                     });
                 });
             }
@@ -818,10 +862,8 @@ const lazyLoadCallback = (entries, observer) => {
 
         } catch (error) {
             if (error.name === 'AbortError') {
-                console.log('Поиск успешно отменен пользователем.');
-                return; 
+                return;
             }
-            console.error('Ошибка при получении данных о похожих NFT:', error);
             resultsGrid.innerHTML = `<p class="col-span-full text-center text-danger" style="padding: 2rem;">Не удалось загрузить данные. Попробуйте снова. (${error.message})</p>`;
         } finally {
             handleSearchCompletion(false);
@@ -829,14 +871,11 @@ const lazyLoadCallback = (entries, observer) => {
     }
 
     function updateSubmitButtonState() {
-        // Проверка, что все три условия выполнены
         const isReadyForSearch = selectedGift && selectedModel && selectedMultiItems.size > 0;
-        
+
         if (submitBtn) {
-            // Установка атрибута disabled
             submitBtn.disabled = !isReadyForSearch;
-            
-            // Установка класса для визуального отключения (если нужно)
+
             if (!isReadyForSearch) {
                 submitBtn.classList.add('disabled-button');
             } else {
@@ -845,27 +884,25 @@ const lazyLoadCallback = (entries, observer) => {
         }
     }
 
-    // --- Функции рендеринга и логика ---
     function populateDropdown(container, items, type) {
         container.innerHTML = '';
-        const PRELOAD_COUNT = 15; // Количество элементов для предзагрузки
+        const PRELOAD_COUNT = 15;
 
         items.forEach((item, index) => {
-            // Для первых 15 элементов isPreload будет true
             const isPreload = index < PRELOAD_COUNT;
-            const option = createDropdownOption(item, type, isPreload); 
+            const option = createDropdownOption(item, type, isPreload);
             container.appendChild(option);
         });
-        
+
         setupLazyLoading(container, container.parentElement, 'list');
     }
 
     function populateMultiSelectDropdown(allItems) {
         selectedItemsList.innerHTML = '';
         unselectedItemsList.innerHTML = '';
-        
+
         const filterText = multiGiftSearch.value.toLowerCase().trim();
-        const PRELOAD_COUNT = 15; // Количество элементов для предзагрузки в каждом списке
+        const PRELOAD_COUNT = 15;
 
         const filteredItems = allItems.filter(name => {
             return name.toLowerCase().includes(filterText);
@@ -873,7 +910,7 @@ const lazyLoadCallback = (entries, observer) => {
 
         const selectedItems = filteredItems.filter(item => selectedMultiItems.has(item));
         const unselectedItems = filteredItems.filter(item => !selectedMultiItems.has(item));
-        
+
         selectedItems.sort((a, b) => a.localeCompare(b));
         unselectedItems.sort((a, b) => a.localeCompare(b));
 
@@ -887,7 +924,7 @@ const lazyLoadCallback = (entries, observer) => {
         });
 
         const isFiltering = filterText.length > 0;
-        
+
         if (!isFiltering && selectedItems.length > 0 && unselectedItems.length > 0) {
             listDivider.classList.remove('hidden');
         } else {
@@ -895,26 +932,25 @@ const lazyLoadCallback = (entries, observer) => {
         }
 
         updateMultiSelectedSummary();
-        
+
         const scrollWrapper = multiListOptions.closest('.multi-list-scroll-wrapper');
         setupLazyLoading(multiListOptions, scrollWrapper, 'list');
     }
 
-     function showDetails(giftName, modelName) {
+    async function showDetails(giftName, modelName) {
         const photoUrl = `${API_PHOTO_URL}/${encodeURIComponent(giftName)}/png/${encodeURIComponent(modelName)}.png`;
         giftPhoto.src = photoUrl;
-        
+
         detailsContent.classList.add('visible');
         if (selectedMultiItems.size > 0) {
             submitBtn.classList.remove('hidden');
         }
 
-        // 🔥 НОВАЯ ЛОГИКА: Проверка монохромности и рендеринг предупреждения
         const monocolorAlertWrapper = document.getElementById('monocolor-alert-wrapper');
         const modelData = modelNames.find(m => m.name === modelName);
-        
+
         if (modelData && modelData.isMonochrome === false) {
-             monocolorAlertWrapper.innerHTML = `
+            monocolorAlertWrapper.innerHTML = `
                 <div class="monocolor-alert">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.398 16c-.77 1.333.192 3 1.732 3z"/>
@@ -923,45 +959,50 @@ const lazyLoadCallback = (entries, observer) => {
                 </div>
              `;
         } else {
-            monocolorAlertWrapper.innerHTML = ''; // Очищаем, если модель монохромна или не найдена
+            monocolorAlertWrapper.innerHTML = '';
         }
 
-
-        // 🔥 КЛЮЧЕВОЕ ИСПРАВЛЕНИЕ: Ждем, пока изображение загрузится...
         const tempImg = new Image();
         tempImg.crossOrigin = 'anonymous';
-        
-        tempImg.onload = async () => {
-             const naturalWidth = tempImg.naturalWidth;
-             const naturalHeight = tempImg.naturalHeight;
-             
-             // 1. Получаем оригинальные координаты и HEX с сервера
-             const colors = await fetchAndParseMainColors(giftName, modelName);
 
-             currentMainColors = colors;
-             currentColorIndex = 0;
-            
-             state.bgFinder.targetColors = []; // Очищаем state
-            
-             // 2. ИНИЦИАЛИЗАЦИЯ STATE: Сохраняем X/Y как ПРОЦЕНТЫ, используя натуральные размеры
-             state.bgFinder.targetColors = colors.map(c => ({
-                 hex: c.hex,
-                 // X (в пикселях) / Ширина (в пикселях) * 100 = Процент X
-                 x: (c.x / naturalWidth) * 100, 
-                 y: (c.y / naturalHeight) * 100
-             }));
-            
-             displayColors(state.bgFinder.targetColors); 
-            
-             if (currentMainColors.length > 1) {
-                 changeColorBtn.classList.remove('hidden');
-             } else {
-                 changeColorBtn.classList.add('hidden');
-             }
-        };
-        
-        // Запускаем загрузку изображения через временный объект
-        tempImg.src = photoUrl;
+        await new Promise((resolve, reject) => {
+            tempImg.onload = async () => {
+                const naturalWidth = tempImg.naturalWidth;
+                const naturalHeight = tempImg.naturalHeight;
+
+                const colors = await fetchAndParseMainColors(giftName, modelName);
+
+                currentMainColors = colors;
+                currentColorIndex = 0;
+
+                state.bgFinder.targetColors = [];
+
+                state.bgFinder.targetColors = colors.map(c => ({
+                    hex: c.hex,
+                    x: (c.x / naturalWidth) * 100,
+                    y: (c.y / naturalHeight) * 100
+                }));
+
+                hasUserModifiedColors = false;
+
+                displayColors(state.bgFinder.targetColors);
+
+                if (currentMainColors.length > 1) {
+                    changeColorBtn.classList.remove('hidden');
+                } else {
+                    changeColorBtn.classList.add('hidden');
+                }
+
+                resolve();
+            };
+
+            tempImg.onerror = (err) => {
+                console.error("Ошибка загрузки изображения для showDetails", err);
+                reject(err);
+            };
+
+            tempImg.src = photoUrl;
+        });
     }
 
     function displayColors(colors) {
@@ -970,7 +1011,7 @@ const lazyLoadCallback = (entries, observer) => {
             colorsList.innerHTML = '<p class="placeholder-text">Цвета не найдены</p>';
             return;
         }
-        
+
         colors.forEach(color => {
             const colorItem = document.createElement('div');
             colorItem.className = 'color-item';
@@ -994,168 +1035,142 @@ const lazyLoadCallback = (entries, observer) => {
             }
         }
     }
-    
-   function renderResults() {
-    if (!Array.isArray(similarNFTsData) || similarNFTsData.length === 0) {
-        resultsGrid.innerHTML = '<p class="col-span-full text-center text-muted" style="padding: 2rem;">Подходящих NFT не найдено.</p>';
-        toggleSortAndDisplayControls(false); 
-        return;
+
+    function updateSearchUrlState() {
+        const params = new URLSearchParams(window.location.search);
+
+        if (selectedGift) params.set('giftName', selectedGift);
+        if (selectedModel) params.set('modelName', selectedModel);
+
+        // ИСПРАВЛЕНИЕ: Вместо списка имен сохраняем только количество
+        if (selectedMultiItems.size > 0) {
+            params.set('randomGiftsCount', selectedMultiItems.size);
+            params.delete('targets'); // Удаляем длинный список, если он там был
+        } else {
+            params.delete('randomGiftsCount');
+            params.delete('targets');
+        }
+
+        const newUrl = `${window.location.pathname}?${params.toString()}`;
+        window.history.replaceState({ path: newUrl }, '', newUrl);
     }
-    
-    toggleSortAndDisplayControls(true); 
 
-    const currentMode = currentDisplayMode; 
-    
-    // 🚀 Применяем классы для управления сеткой (CSS)
-    resultsGrid.classList.remove('grid-top-1', 'grid-top-3');
-    resultsGrid.classList.add(`grid-${currentMode}`);
+    function renderResults() {
+        if (!Array.isArray(similarNFTsData) || similarNFTsData.length === 0) {
+            resultsGrid.innerHTML = '<p class="col-span-full text-center text-muted" style="padding: 2rem;">Подходящих NFT не найдено.</p>';
+            toggleSortAndDisplayControls(false);
+            return;
+        }
 
-    // --- Логика сортировки ---
-    const sortElement = sortSelectDesktop || { value: 'percent-desc' };
-    const sortValue = sortElement.value;
-    
-    let sortedData = [...similarNFTsData]; 
-    
-    if (sortValue === 'percent-desc') {
-        sortedData.sort((a, b) => b.coefficient - a.coefficient);
-    } else if (sortValue === 'price-asc') {
-        sortedData.sort((a, b) => {
-            const priceA = a.avgPrice || Infinity;
-            const priceB = b.avgPrice || Infinity;
-            
-            if (priceA === Infinity && priceB === Infinity) {
-                 return a.giftName.localeCompare(b.giftName);
+        const fragment = document.createDocumentFragment();
+
+        toggleSortAndDisplayControls(true);
+
+        const currentMode = currentDisplayMode;
+
+        resultsGrid.classList.remove('grid-top-1', 'grid-top-3');
+        resultsGrid.classList.add(`grid-${currentMode}`);
+
+        const sortElement = sortSelectDesktop || { value: 'percent-desc' };
+        const sortValue = sortElement.value;
+
+        let sortedData = [...similarNFTsData];
+
+        if (sortValue === 'percent-desc') {
+            sortedData.sort((a, b) => b.coefficient - a.coefficient);
+        } else if (sortValue === 'count-desc') {
+            sortedData.sort((a, b) => b.count - a.count);
+        } else if (sortValue === 'count-asc') {
+            sortedData.sort((a, b) => a.count - b.count);
+        } else {
+            sortedData.sort((a, b) => {
+                const nameA = `${a.giftName} - ${a.model1Name}`;
+                return nameA.localeCompare(b.model1Name);
+            });
+        }
+
+        function formatCountShort(num) {
+            const n = parseInt(num, 10);
+            if (isNaN(n) || n <= 0) return '0';
+            if (n >= 1000) {
+                return (n / 1000).toFixed(1).replace(/\.0$/, '') + 'к';
             }
-            if (priceA === Infinity) return 1;
-            if (priceB === Infinity) return -1;
-            
-            return priceA - priceB;
-        });
-    } else { // name
-        sortedData.sort((a, b) => {
-            const nameA = `${a.giftName} - ${a.model1Name}`;
-            const nameB = `${b.giftName} - ${b.model1Name}`;
-            return nameA.localeCompare(b.model1Name);
-        });
-    }
-    // --- Конец логики сортировки ---
-
-    function formatPrice(price) {
-        const num = parseFloat(price);
-        
-        if (isNaN(num) || num <= 0) {
-            return 'not sale';
+            return n.toString();
         }
 
-        if (num > 1000) {
-            const divided = num / 1000;
-            return `${divided.toFixed(2)}k`;
-        }
+        resultsGrid.innerHTML = '';
 
-        return num.toFixed(2).replace(/\.00$/, '');
-    }
+        sortedData.forEach(item => {
+            const card = document.createElement('div');
+            card.className = 'result-card modern-card';
 
+            card.dataset.giftName = item.giftName;
+            card.dataset.modelName = item.model1Name;
 
-    resultsGrid.innerHTML = '';
-    sortedData.forEach(item => {
-        const card = document.createElement('div');
-        card.className = 'result-card';
-        
-        card.dataset.giftName = item.giftName;
-        card.dataset.modelName = item.model1Name;
+            const url1 = `${API_PHOTO_URL}/${encodeURIComponent(item.giftName)}/png/${encodeURIComponent(item.model1Name)}.png`;
+            const url2 = `${API_PHOTO_URL}/${encodeURIComponent(item.giftName)}/png/${encodeURIComponent(item.model2Name)}.png`;
+            const url3 = `${API_PHOTO_URL}/${encodeURIComponent(item.giftName)}/png/${encodeURIComponent(item.model3Name)}.png`;
 
-        // --- Данные для карточки ---
-        const url1 = `${API_PHOTO_URL}/${encodeURIComponent(item.giftName)}/png/${encodeURIComponent(item.model1Name)}.png`;
-        const url2 = `${API_PHOTO_URL}/${encodeURIComponent(item.giftName)}/png/${encodeURIComponent(item.model2Name)}.png`;
-        const url3 = `${API_PHOTO_URL}/${encodeURIComponent(item.giftName)}/png/${encodeURIComponent(item.model3Name)}.png`;
-        
-        const coefficient = (item.coefficient * 100).toFixed(2);
-        const gradientColor = item.colorHex || '#1e2944'; 
-        const actualPrice = item.avgPrice; 
-        
-        // 🔥 ИСПРАВЛЕНИЕ: Заменяем символ на тег img
-        const tonIcon = '<img src="./ton_symbol.png" alt="TON" class="ton-icon">'; 
+            const coefficient = (item.coefficient * 100).toFixed(1);
+            const gradientColor = item.colorHex || '#283754';
+            const countText = formatCountShort(item.count);
 
-        let imageContent = '';
-        let imageWrapperClass = 'result-card-image-wrapper';
-        let imageWrapperStyle = '';
-        
-        // 🔥 ИЗМЕНЕНИЕ: Используем data-src для lazy loading
-        if (currentMode === 'top-1') {
-             imageWrapperClass += ' image-wrapper-single';
-             imageWrapperStyle = `background: linear-gradient(to top, ${gradientColor} 0%, rgba(30, 41, 68, 0.6) 40%, rgba(30, 41, 68, 0.9) 100%);`; 
-             
-             imageContent = `<img data-src="${url1}" alt="${item.model1Name}" class="card-model-main model-single lazy-load">`;
-        } else {
-             imageWrapperClass += ' image-wrapper-three';
-             imageWrapperStyle = `background: linear-gradient(to top, ${gradientColor} 0%, rgba(30, 41, 68, 0.6) 40%, rgba(30, 41, 68, 0.9) 100%);`;
+            let imageContent = '';
 
-             imageContent = `
-                <img data-src="${url1}" alt="${item.model1Name}" class="card-model-main lazy-load">
-                <img data-src="${url2}" alt="${item.model2Name}" class="card-model-side model-left lazy-load">
-                <img data-src="${url3}" alt="${item.model3Name}" class="card-model-side model-right lazy-load">
-             `;
-        }
-        
-        // 🔥 ОПРЕДЕЛЕНИЕ ТЕКСТА ЦЕНЫ
-        let priceText;
-        const formattedDisplayPrice = formatPrice(actualPrice); 
-        
-        if (formattedDisplayPrice === 'not sale') {
-             priceText = formattedDisplayPrice;
-        } else {
-             priceText = `<span class="price-value">${formattedDisplayPrice}</span> <span class="currency-symbol">${tonIcon}</span>`;
-        }
-        // ФОРМИРОВАНИЕ БЛОКА ИНФОРМАЦИИ
-        card.innerHTML = `
-            <div class="${imageWrapperClass}" style="${imageWrapperStyle}">
-                ${imageContent}
-            </div>
-            <div class="result-card-info">
-                <h2 class="similarity-percent">${coefficient}%</h2>
-                <h3 class="gift-name">${item.giftName}</h3>
-                <p class="model-name">${item.model1Name}</p>
-                <div class="info-details">
-                    <p class="price-info">Price: ${priceText}</p>
+            if (currentMode === 'top-1') {
+                imageContent = `<img data-src="${url1}" alt="${item.model1Name}" class="card-model-main model-single lazy-load">`;
+            } else {
+                imageContent = `
+                    <img data-src="${url1}" alt="${item.model1Name}" class="card-model-main lazy-load">
+                    <img data-src="${url2}" alt="${item.model2Name}" class="card-model-side model-left lazy-load">
+                    <img data-src="${url3}" alt="${item.model3Name}" class="card-model-side model-right lazy-load">
+                 `;
+            }
+
+            const bgStyle = `background: linear-gradient(180deg, ${gradientColor} -10%, rgba(30, 41, 68, 0) 70%), #1e2944;`;
+
+            card.innerHTML = `
+                <div class="card-visual-wrapper" style="${bgStyle}">
+                    <div class="card-header-zone">
+                        <div class="card-top-title">${item.giftName}</div>
+                    </div>
+                    <div class="card-image-zone">
+                        ${imageContent}
+                    </div>
+                    <div class="card-bottom-info">
+                        <div class="percent-big">${coefficient}%</div>
+                        <div class="count-small">${countText} шт</div>
+                    </div>
                 </div>
-            </div>
-        `;
+            `;
 
-        card.addEventListener('click', (e) => {
-             // 1. Данные из карточки (для API и списка)
-             const cardGiftName = e.currentTarget.dataset.giftName;
-             
-             // 2. Данные с главной страницы (для правого фото - целевого)
-             const targetGiftNameFromMain = selectedGift;
-             const targetModelNameFromMain = selectedModel;
+            card.addEventListener('click', (e) => {
+                const cardGiftName = e.currentTarget.dataset.giftName;
+                const cardModelName = e.currentTarget.dataset.modelName;
+                const targetGiftNameFromMain = selectedGift;
+                const targetModelNameFromMain = selectedModel;
+                const currentTargetColors = state.bgFinder.targetColors.map(c => c.hex);
 
-             // 🔥 ИСПРАВЛЕНИЕ: Создаем переменную currentTargetColors, извлекая hex-коды из глобального состояния.
-             const currentTargetColors = state.bgFinder.targetColors.map(c => c.hex);
-             
-             if (cardGiftName && nftDetailsModalInstance && targetGiftNameFromMain && targetModelNameFromMain) {
-                 
-                 // Теперь мы передаем существующую переменную
-                 nftDetailsModalInstance.openNftDetailsModal(
-                     cardGiftName, 
-                     targetGiftNameFromMain, 
-                     targetModelNameFromMain,
-                     currentTargetColors 
-                 );
-             } else {
-                 console.error("Не удалось открыть модальное окно: Отсутствуют данные или цвета.");
-             }
+                if (cardGiftName && nftDetailsModalInstance && targetGiftNameFromMain && targetModelNameFromMain) {
+                    nftDetailsModalInstance.openNftDetailsModal(
+                        cardGiftName,
+                        cardModelName,
+                        targetGiftNameFromMain,
+                        targetModelNameFromMain,
+                        currentTargetColors
+                    );
+                }
+            });
+
+            resultsGrid.appendChild(card);
+            fragment.appendChild(card);
         });
-
-        resultsGrid.appendChild(card);
-    });
-    
-    // 🔥 ВЫЗОВ: Запускаем ленивую загрузку для только что созданных изображений
-    setupLazyLoading(resultsGrid, null, 'grid');
-
-
-}
-
-    // --- Обработчики событий ---
+        requestAnimationFrame(() => {
+            resultsGrid.innerHTML = '';
+            resultsGrid.appendChild(fragment);
+            setupLazyLoading(resultsGrid, null, 'grid');
+        });
+    }
 
     giftDropdownHeader.addEventListener('click', (e) => {
         handleDropdownHeaderClick(e, giftDropdownList, giftSearchInput);
@@ -1163,12 +1178,8 @@ const lazyLoadCallback = (entries, observer) => {
 
     modelDropdownHeader.addEventListener('click', (e) => {
         const isGiftSelected = selectedGift && selectedGift.length > 0;
-        
-        // 🚀 НОВАЯ ПРОВЕРКА: Если подарок не выбран, не даем открыться
+
         if (!isGiftSelected) {
-            // Если подарок не выбран, мы просто ничего не делаем, 
-            // так как в fetchAllModelNames уже установлен плейсхолдер в списке.
-            // Заголовок остается "Выберите модель".
             return;
         }
 
@@ -1183,96 +1194,81 @@ const lazyLoadCallback = (entries, observer) => {
                 const container = isGift ? giftListOptions : modelListOptions;
                 const items = isGift ? giftNames : modelNames;
                 const type = isGift ? 'gift' : 'model';
-                
-                // Управляем классом для скрытия выбранного значения/плейсхолдера
+
                 if (input.value.trim() !== '') {
                     header.classList.add('value-active');
                 } else {
-                    // 🔥 КОРРЕКЦИЯ: При сбросе поиска показываем полный список
-                    // ВАЖНО: modelNames - массив объектов, передаем ТОЛЬКО имена
                     const namesToDisplay = isGift ? items : items.map(m => m.name);
-                    
+
                     populateDropdown(container, namesToDisplay, type);
-                    
+
                     header.classList.remove('value-active');
                 }
-                
-                // 🔥 КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Вызываем handleSearch
-                // Вызываем handleSearch только при наличии текста, иначе уже показали полный список выше
+
                 if (input.value.trim() !== '') {
-                     handleSearch(container, input.value);
+                    handleSearch(container, input.value);
                 }
             });
         }
     });
 
     giftListOptions.addEventListener('click', (e) => {
-        // 🔥 ИСПРАВЛЕНИЕ: Используем closest() для надежности и безопасности (устранение ReferenceError)
         const listItem = e.target.closest('.list-option');
-        
-        if (listItem) { // Проверяем, что был клик по опции
+
+        if (listItem) {
             const selectedItem = listItem.querySelector('.option-text').textContent.trim();
-            
+
             giftSelectedValue.textContent = selectedItem;
             selectedGift = selectedItem;
-            selectedModel = null; // Сброс модели при смене подарка
+            selectedModel = null;
 
-            giftSearchInput.value = ''; 
+            giftSearchInput.value = '';
             giftDropdownHeader.classList.remove('value-active');
-            giftDropdownHeader.classList.remove('open'); // <-- ЯВНО ЗАКРЫВАЕМ
-            
+            giftDropdownHeader.classList.remove('open');
+
             modelSelectedValue.textContent = 'Выберите модель';
             detailsContent.classList.remove('visible');
             submitBtn.classList.add('hidden');
-            toggleDropdown(null); // Закрываем все списки (вместо giftDropdownList)
-            
-            // 🔥 Теперь fetchAllModelNames получает чистую строку
-            fetchAllModelNames(selectedGift); 
+            toggleDropdown(null);
 
-            clearResults(); 
-            
-            // 🔥 МЕСТО ВСТАВКИ 1: После обновления selectedGift и сброса selectedModel
-            updateControlAvailability(); 
+            fetchAllModelNames(selectedGift);
+
+            clearResults();
+
+            updateControlAvailability();
             updateSubmitButtonState();
         }
     });
 
     modelListOptions.addEventListener('click', (e) => {
-        // 🔥 ИСПРАВЛЕНИЕ: Используем closest() для надежности и безопасности (устранение ReferenceError)
         const listItem = e.target.closest('.list-option');
 
-        if (listItem) { // Проверяем, что был клик по опции
-            // Берем текст из внутреннего span, чтобы избежать лишних символов
-
+        if (listItem) {
             if (listItem.classList.contains('list-placeholder')) {
-                // Если кликнули по плейсхолдеру, просто закрываем список и выходим
-                toggleDropdown(modelDropdownHeader); 
-                return; 
+                toggleDropdown(modelDropdownHeader);
+                return;
             }
 
             const selectedItem = listItem.querySelector('.option-text').textContent.trim();
-            
+
             modelSelectedValue.textContent = selectedItem;
             selectedModel = selectedItem;
-            modelSearchInput.value = ''; 
+            modelSearchInput.value = '';
             modelDropdownHeader.classList.remove('value-active');
-            modelDropdownHeader.classList.remove('open'); // <-- ЯВНО ЗАКРЫВАЕМ
-            
-            toggleDropdown(null); // Закрываем все списки
-            
-            // showDetails должен подгрузить фото с чистой selectedModel
-            showDetails(selectedGift, selectedModel); 
+            modelDropdownHeader.classList.remove('open');
 
-            clearResults(); 
-            
-            // 🔥 МЕСТО ВСТАВКИ 2: После обновления selectedModel
+            toggleDropdown(null);
+
+            showDetails(selectedGift, selectedModel);
+
+            clearResults();
+
             updateControlAvailability();
             updateSubmitButtonState();
         }
     });
 
     multiSelectHeader.addEventListener('click', (e) => {
-        // 🔥 ПЕРЕДАЕМ АРГУМЕНТЫ ДЛЯ КОРРЕКТНОЙ РАБОТЫ handleDropdownHeaderClick
         handleDropdownHeaderClick(e, multiSelectContent, multiGiftSearch);
     });
 
@@ -1282,10 +1278,7 @@ const lazyLoadCallback = (entries, observer) => {
         populateDropdown(giftListOptions, filtered, 'gift');
     });
 
-
     multiGiftSearch.addEventListener('input', () => {
-        // Мы вызываем populateMultiSelectDropdown с полным списком.
-        // Функция сама считает значение multiGiftSearch.value и отфильтрует список.
         populateMultiSelectDropdown(giftNames);
     });
 
@@ -1294,40 +1287,34 @@ const lazyLoadCallback = (entries, observer) => {
             const checkbox = e.target;
             const value = checkbox.value;
             const isChecked = checkbox.checked;
-            
-            // Обновляем наш Set с выбранными элементами
+
             if (isChecked) {
                 selectedMultiItems.add(value);
             } else {
                 selectedMultiItems.delete(value);
             }
 
-            // 🔥 ЛОГИКА ПРОТИВ МИГАНИЯ 🔥
             const isFiltering = multiGiftSearch.value.trim().length > 0;
 
-            // Если пользователь что-то ищет, используем старый метод полной перерисовки,
-            // чтобы фильтрация работала корректно.
             if (isFiltering) {
                 populateMultiSelectDropdown(giftNames);
             } else {
-                // Если поиска нет, просто перемещаем элемент - это быстро и без миганий.
                 const labelElement = checkbox.closest('.multi-list-option-label');
                 if (labelElement) {
                     if (isChecked) {
                         selectedItemsList.appendChild(labelElement);
-                        sortList(selectedItemsList); // Сортируем список выбранных
+                        sortList(selectedItemsList);
                     } else {
                         unselectedItemsList.appendChild(labelElement);
-                        sortList(unselectedItemsList); // Сортируем список невыбранных
+                        sortList(unselectedItemsList);
                     }
                 }
             }
-            
-            // Обновляем счётчик, кнопку и разделитель
+
             updateMultiSelectedSummary();
             updateSubmitButtonState();
             updateListDividerVisibility();
-            
+
             checkbox.blur();
         }
     });
@@ -1345,88 +1332,69 @@ const lazyLoadCallback = (entries, observer) => {
         populateMultiSelectDropdown(giftNames);
         updateSubmitButtonState();
     });
-    
-    if (sortSelectDesktop) {
-        // При изменении десктопного select запускаем сортировку
-        sortSelectDesktop.addEventListener('change', renderResults);
-    }
-    
-    // 1. Привязка для ПК-сортировки (стандартный select)
+
     if (sortSelectDesktop) {
         sortSelectDesktop.addEventListener('change', renderResults);
     }
 
-    // 2. Привязка для мобильной сортировки (открытие модального окна)
+    if (sortSelectDesktop) {
+        sortSelectDesktop.addEventListener('change', renderResults);
+    }
+
     if (sortMobileButton) {
         sortMobileButton.addEventListener('click', () => {
-            // Здесь открывается модальное окно сортировки
             sortModalOverlay.classList.remove('hidden');
         });
     }
 
     document.addEventListener('click', (e) => {
-        // Проверяем, был ли клик вне всех элементов, которые должны оставаться открытыми
         const isClickedOutsideDropdowns = !e.target.closest('.custom-dropdown-container') && !e.target.closest('.multi-select-container');
-        
-        // 🔥 КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Проверяем, что клик НЕ внутри модалок
+
         const isClickedInsideSortModal = e.target.closest('.sort-modal');
         const isClickedInsideDisplayModal = e.target.closest('.display-mode-modal');
-        
+
         const isModalActive = !sortModalOverlay.classList.contains('hidden') || !displayModeModalOverlay.classList.contains('hidden');
-        
-        // 1. Закрываем ВСЕ открытые дропдауны
+
         if (isClickedOutsideDropdowns) {
-            // Передаем null, чтобы закрыть все открытые списки
-            toggleDropdown(null); 
+            toggleDropdown(null);
         }
 
-        // 2. Закрываем модалки, если клик был на оверлее (подложке), а не на самом окне
         if (!isClickedInsideSortModal && e.target === sortModalOverlay) {
-             sortModalOverlay.classList.add('hidden');
+            sortModalOverlay.classList.add('hidden');
         }
         if (!isClickedInsideDisplayModal && e.target === displayModeModalOverlay) {
-             displayModeModalOverlay.classList.add('hidden');
+            displayModeModalOverlay.classList.add('hidden');
         }
-        
+
     });
 
-    // --- API запросы ---
     async function fetchAllGiftNames() {
-        const cacheKey = 'giftNamesCache'; // Ключ для хранения в sessionStorage
+        const cacheKey = 'giftNamesCache';
 
-        // 1. Пытаемся получить данные из кэша
         try {
             const cachedData = sessionStorage.getItem(cacheKey);
             if (cachedData) {
                 giftNames = JSON.parse(cachedData);
-                console.log("Названия подарков загружены из кэша sessionStorage.", giftNames);
-                // Если данные успешно получены из кэша, отображаем их и выходим
                 populateDropdown(giftListOptions, giftNames, 'gift');
                 populateMultiSelectDropdown(giftNames);
-                return; 
+                return;
             }
         } catch (error) {
-            console.error('Ошибка при чтении кэша названий подарков:', error);
-            // Если кэш поврежден, лучше его очистить
             sessionStorage.removeItem(cacheKey);
         }
 
-        // 2. Если в кэше пусто, загружаем с сервера
         try {
-            const response = await fetch(`${SERVER_BASE_URL}/api/ListGifts/AllGiftNames`);
+            const response = await fetch(`${SERVER_BASE_URL}/api/ListGifts/AllGiftNames`, {
+                headers: { 'Authorization': getApiAuthHeader() }
+            });
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
             giftNames = await response.json();
-            console.log("Названия подарков получены с сервера:", giftNames);
 
-            // 3. Сохраняем полученные данные в кэш для этой сессии
             try {
                 sessionStorage.setItem(cacheKey, JSON.stringify(giftNames));
-                console.log("Названия подарков сохранены в кэш sessionStorage.");
             } catch (error) {
-                console.error('Не удалось сохранить названия подарков в кэш:', error);
             }
-            
-            // 4. Отображаем данные
+
             populateDropdown(giftListOptions, giftNames, 'gift');
             populateMultiSelectDropdown(giftNames);
         } catch (error) {
@@ -1437,14 +1405,11 @@ const lazyLoadCallback = (entries, observer) => {
     async function fetchAllModelNames(giftName) {
 
         if (!giftName || giftName.trim() === '') {
-            // 🔥 КЛЮЧЕВОЕ ИСПРАВЛЕНИЕ: Установка плейсхолдера в списке
             const placeholderHTML = `<li class="list-option list-placeholder"><span class="option-text">Сначала выберите подарок</span></li>`;
             modelListOptions.innerHTML = placeholderHTML;
-            
-            // 🔥 ОЧИЩАЕМ modelNames, чтобы логика работы с полным списком не срабатывала
+
             modelNames = [];
-            
-            // Если список моделей был открыт, мы его закрываем
+
             if (modelDropdownHeader.classList.contains('open')) {
                 toggleDropdown(modelDropdownHeader);
             }
@@ -1452,25 +1417,24 @@ const lazyLoadCallback = (entries, observer) => {
         }
 
         try {
-            const response = await fetch(`${SERVER_BASE_URL}/api/ListGifts/${encodeURIComponent(giftName)}/AllModelNames`);
+            const response = await fetch(`${SERVER_BASE_URL}/api/ListGifts/${encodeURIComponent(giftName)}/AllModelNames`, {
+                headers: { 'Authorization': getApiAuthHeader() }
+            });
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-            const modelsDict = await response.json();
-            console.log(modelsDict);
-            
-            // 🔥 ИЗМЕНЕНИЕ: Храним объекты { name, isMonochrome }
-            modelNames = Object.entries(modelsDict).map(([name, isMonochrome]) => ({
-                name: name, 
-                isMonochrome: isMonochrome
+
+            const modelsList = await response.json();
+
+            modelNames = modelsList.map(item => ({
+                name: item.NameModel,
+                isMonochrome: item.IsMonochrome
             }));
-            
-            console.log(`Получены модели для ${giftName}:`, modelNames);
-            // 🔥 ПЕРЕДАЕМ ТОЛЬКО ИМЕНА В populateDropdown
-            populateDropdown(modelListOptions, modelNames.map(m => m.name), 'model'); 
+
+            populateDropdown(modelListOptions, modelNames.map(m => m.name), 'model');
+
         } catch (error) {
             console.error(`Ошибка при загрузке моделей для ${giftName}:`, error);
             modelNames = [];
             modelSelectedValue.textContent = 'Выберите модель';
-            // В случае ошибки, также показываем плейсхолдер в списке
             const placeholderHTML = `<li class="list-option list-placeholder"><span class="option-text">Модели не найдены</span></li>`;
             modelListOptions.innerHTML = placeholderHTML;
         }
@@ -1479,13 +1443,13 @@ const lazyLoadCallback = (entries, observer) => {
     async function fetchAndParseMainColors(giftName, modelName) {
         let mainColorsData = [];
         try {
-            const colorsResponse = await fetch(`${SERVER_BASE_URL}/api/ListGifts/${encodeURIComponent(giftName)}/${encodeURIComponent(modelName)}/MainColors`);
+            const colorsResponse = await fetch(`${SERVER_BASE_URL}/api/ListGifts/${encodeURIComponent(giftName)}/${encodeURIComponent(modelName)}/MainColors`, {
+                headers: { 'Authorization': getApiAuthHeader() }
+            });
             if (!colorsResponse.ok) {
                 throw new Error(`Ошибка HTTP при получении основных цветов: ${colorsResponse.status} ${colorsResponse.statusText}`);
             }
-             console.log(colorsResponse);
             const colorsString = await colorsResponse.text();
-            console.log(colorsString);
             if (colorsString) {
                 const cleanedString = colorsString.trim().replace(/^['"]|['"]$/g, '');
                 mainColorsData = cleanedString.split(';').map(item => {
@@ -1493,7 +1457,6 @@ const lazyLoadCallback = (entries, observer) => {
                     if (!trimmedItem) return null;
                     const parts = trimmedItem.split(':');
                     if (parts.length !== 2) {
-                        console.warn(`Неверный формат элемента цвета: "${trimmedItem}"`);
                         return null;
                     }
                     const posPart = parts[0];
@@ -1506,7 +1469,6 @@ const lazyLoadCallback = (entries, observer) => {
                     return { x, y, hex };
                 }).filter(item => item !== null);
             }
-            console.log("Получены и распарсены основные цвета:", mainColorsData);
             return mainColorsData;
         } catch (error) {
             console.error('Ошибка при загрузке основных цветов модели:', error);
@@ -1514,24 +1476,19 @@ const lazyLoadCallback = (entries, observer) => {
         }
     }
 
-    // Начальная загрузка данных
     fetchAllGiftNames();
 
     async function initPage() {
-        // 1. Прямая инициализация модуля JS
         colorPickerInstance = initColorPicker({
-            state: state, 
+            state: state,
             fetchAndParseMainColors: fetchAndParseMainColors,
             findAndDisplayBackgrounds: findAndDisplayBackgrounds,
             updateTargetColorsDisplay: updateTargetColorsDisplay,
             API_PHOTO_URL: API_PHOTO_URL,
         });
-        
-        nftDetailsModalInstance = initNftDetailsModal(); 
-        console.log('Модуль Color Picker инициализирован.');
-        console.log('Модуль NFT Details Modal инициализирован.');
 
-        // 2. Привязка кнопки
+        nftDetailsModalInstance = initNftDetailsModal();
+
         if (changeColorBtn) {
             changeColorBtn.addEventListener('click', () => {
                 state.bgFinder.giftTypeId = selectedGift;
@@ -1541,21 +1498,57 @@ const lazyLoadCallback = (entries, observer) => {
         }
 
         await fetchAllGiftNames();
-        fetchAllModelNames(null); 
-        updateControlAvailability();
-        updateSubmitButtonState();
-        
-        // 4. Логика для сортировки и вида (которая была в конце файла)
+
+        checkUrlAndRestoreState();
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const paramGiftName = urlParams.get('giftName');
+        const paramModelName = urlParams.get('modelName');
+        const paramRandomCount = parseInt(urlParams.get('randomGiftsCount'), 10);
+        const paramTargets = urlParams.get('targets');
+
+        if (paramGiftName && giftNames.includes(paramGiftName)) {
+            selectedGift = paramGiftName;
+            giftSelectedValue.textContent = paramGiftName;
+            await fetchAllModelNames(selectedGift);
+
+            if (paramModelName && modelNames.some(m => m.name === paramModelName)) {
+                selectedModel = paramModelName;
+                modelSelectedValue.textContent = paramModelName;
+                await showDetails(selectedGift, selectedModel);
+            }
+
+            // ИСПРАВЛЕНИЕ: Если есть количество в URL, выбираем рандомные подарки
+            if (!isNaN(paramRandomCount) && paramRandomCount > 0) {
+                selectedMultiItems.clear();
+                // Вызываем вашу функцию рандома, она заполнит selectedMultiItems
+                selectRandomGifts(paramRandomCount, giftNames, selectedGift);
+            }
+
+            populateMultiSelectDropdown(giftNames);
+            updateMultiSelectedSummary();
+            updateControlAvailability();
+            updateSubmitButtonState();
+
+            if (!submitBtn.disabled) {
+                fetchSimilarNFTs();
+            }
+        } else {
+            await fetchAllModelNames(null);
+            updateControlAvailability();
+            updateSubmitButtonState();
+        }
+
         if (sortMobileButton && sortModalOverlay && sortModalOptions && sortSelectDesktop) {
-            
-            // 🔥 ОПРЕДЕЛЕНИЕ НОВЫХ ОПЦИЙ
+
+            // --- ОБНОВЛЕННЫЕ ОПЦИИ СОРТИРОВКИ ---
             const NEW_SORT_OPTIONS = [
-                { value: 'percent-desc', text: 'По совпадению (убыв.)' },
-                { value: 'price-asc',    text: 'По цене (возр.)' }, // 🔥 НОВАЯ ОПЦИЯ
-                { value: 'name',         text: 'По имени' }
+                { value: 'percent-desc', text: 'По совпадению' },
+                { value: 'count-desc', text: 'По количеству (убыв.)' },
+                { value: 'count-asc', text: 'По количеству (возр.)' },
+                { value: 'name', text: 'По имени' }
             ];
 
-            // 💡 ОБНОВЛЕНИЕ ДЕСКТОПНОГО SELECT (ОЧИЩАЕМ И ЗАПОЛНЯЕМ)
             sortSelectDesktop.innerHTML = '';
             NEW_SORT_OPTIONS.forEach(opt => {
                 const option = document.createElement('option');
@@ -1563,15 +1556,14 @@ const lazyLoadCallback = (entries, observer) => {
                 option.textContent = opt.text;
                 sortSelectDesktop.appendChild(option);
             });
-            
-            // 💡 ОБНОВЛЕНИЕ МОДАЛКИ СОРТИРОВКИ (ОЧИЩАЕМ И ЗАПОЛНЯЕМ)
-            sortModalOptions.innerHTML = ''; 
-            
+
+            sortModalOptions.innerHTML = '';
+
             NEW_SORT_OPTIONS.forEach(opt => {
                 const btn = document.createElement('button');
                 btn.textContent = opt.text;
-                btn.dataset.sort = opt.value; 
-                btn.classList.add('sort-select-btn'); 
+                btn.dataset.sort = opt.value;
+                btn.classList.add('sort-select-btn');
 
                 btn.addEventListener('click', () => {
                     if (sortSelectDesktop) {
@@ -1580,7 +1572,7 @@ const lazyLoadCallback = (entries, observer) => {
                     sortModalOverlay.classList.add('hidden');
                     renderResults();
                 });
-                sortModalOptions.appendChild(btn); 
+                sortModalOptions.appendChild(btn);
             });
         }
 
@@ -1608,7 +1600,7 @@ const lazyLoadCallback = (entries, observer) => {
                     if (selectedButton) {
                         currentDisplayMode = selectedButton.dataset.mode;
                         displayModeModalOverlay.classList.add('hidden');
-                        renderResults(); 
+                        renderResults();
                     }
                 });
             }
@@ -1622,9 +1614,44 @@ const lazyLoadCallback = (entries, observer) => {
             submitBtn.addEventListener('click', fetchSimilarNFTs);
         }
 
-        toggleSortAndDisplayControls(false); 
+        if (window.themesModal && typeof window.themesModal.init === 'function') {
+            window.themesModal.init(SERVER_BASE_URL, API_PHOTO_URL, setupLazyLoading, []);
+        }
+
+        toggleSortAndDisplayControls(similarNFTsData.length > 0);
+        checkUrlAndRestoreState();
+
     }
 
-    // 5. Запускаем общую функцию инициализации
+    function checkUrlAndRestoreState() {
+        const params = new URLSearchParams(window.location.search);
+        const urlGift = params.get('gift');
+        const urlModel = params.get('model');
+
+        // Проверяем наличие параметров для открытия модалки
+        if (urlGift && urlModel && nftDetailsModalInstance) {
+
+            // 1. Берем сырые данные цветов (могут быть объектами или пустыми)
+            const rawColors = state.bgFinder.targetColors || [];
+
+            // 2. ВАЖНО: Преобразуем объекты {hex, x, y} в массив строк ["#ABCDEF", ...]
+            // Если цвета уже строки, оставляем как есть
+            const hexColors = rawColors.map(c => (typeof c === 'object' && c.hex) ? c.hex : c);
+
+            // 3. Если selectedGift (контекст) еще не задан (например, прямая ссылка), 
+            // попробуем взять его из URL params 'giftName', если он там есть
+            const contextGift = selectedGift || params.get('giftName');
+            const contextModel = selectedModel || params.get('modelName');
+
+            nftDetailsModalInstance.openNftDetailsModal(
+                urlGift,       // Карточка, которую открываем
+                urlModel,      // Карточка, которую открываем
+                contextGift,   // С ЧЕМ сравниваем (Target Gift)
+                contextModel,  // С ЧЕМ сравниваем (Target Model)
+                hexColors      // Массив строк-цветов
+            );
+        }
+    }
+
     initPage();
 });

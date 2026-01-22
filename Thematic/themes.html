@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>THEMES COLLECTION</title>
+    
+    <link rel="stylesheet" href="./themes.css">
+    <link rel="stylesheet" href="../Monohrome/themes-modal.css">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
+</head>
+<body>
+
+    <header class="safe-area-gradient"></header>
+
+    <main>
+        <div class="main-container">
+            
+            <h1 class="page-main-title">Тематики</h1>
+
+           <div class="toolbar-section">
+                
+                <div class="toolbar-group">
+                    <label class="control-label">Способ сортировки</label>
+                    <div class="sort-row">
+                        
+                        <div class="custom-dropdown-container" id="sort-dropdown-container">
+                            <div class="dropdown-header" id="sort-dropdown-header">
+                                <span id="sort-selected-value">По названию</span>
+                                <div class="arrow"></div>
+                            </div>
+                            <div class="dropdown-list hidden" id="sort-dropdown-list">
+                                <div class="list-option" data-value="name">По названию</div>
+                                <div class="list-option" data-value="count">По количеству</div>
+                                <div class="list-option" data-value="color">По цвету</div>
+                            </div>
+                        </div>
+
+                        <button id="sort-direction-btn" class="direction-btn" title="Изменить направление">
+                            <svg id="dir-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M3 4.5h14.25M3 9h9.75M3 13.5h9.75m4.5-4.5v12m0 0l-3.75-3.75M17.25 21L21 17.25" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="toolbar-group bottom-group">
+                    
+                    <div id="text-input-container" class="custom-dropdown-container">
+                        <label class="control-label" for="theme-text-search">Поиск</label>
+                        <div class="input-wrapper">
+                            <div class="search-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                </svg>
+                            </div>
+                            <input type="text" id="theme-text-search" class="theme-search-input" placeholder="Поиск тематики..." autocomplete="off">
+                        </div>
+                    </div>
+
+                    <div id="color-input-container" class="custom-dropdown-container hidden">
+                        <label class="control-label">Задний фон:</label>
+                        <div class="dropdown-header with-search" id="color-dropdown-header">
+                            <input type="text" id="color-search-input" class="dropdown-search" autocomplete="off">
+                            <span id="color-selected-value" class="selected-value-placeholder">Выберите цвет...</span>
+                            <div class="arrow"></div>
+                        </div>
+                        <div class="dropdown-list hidden" id="color-dropdown-list">
+                            <div class="list-options" id="color-list-options"></div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+            
+            <div class="content-wrapper">
+                <div id="themes-grid-wrapper">
+                    <div id="themes-loading" class="loading-container hidden">
+                        <div class="spinner"></div> 
+                        <span style="margin-left: 10px; color: var(--text-muted);">Загрузка...</span>
+                    </div>
+                    <div id="themes-grid" class="themes-page-grid-container"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <script type="module" src="../Monohrome/themes-modal.js"></script> 
+    <script type="module" src="./themes.js"></script> 
+</body>
+</html>

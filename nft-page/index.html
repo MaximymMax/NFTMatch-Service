@@ -5,22 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GIFT SELECTION</title>
     <link rel="stylesheet" href="gift-page.css">
+    <link rel="stylesheet" href="../Monohrome/themes-modal.css">
+
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
 </head>
 <body>
 
-    <header>
-        <a href="/index.html" class="header-logo">
-            NFT<br>Match
-        </a>
-        <nav>
-            <a href="index.html">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
-                </svg>
-                API
-            </a>
-        </nav>
-    </header>
+    <header class="safe-area-gradient"></header>
 
     <main>
         <div class="main-container">
@@ -93,49 +85,51 @@
                 </div>
             </div>
 
-            <hr class="divider">
-            
-            <div class="action-and-sort-controls">
-                <button id="submit-btn" class="btn-icon-search disabled-button">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
-                    <span>Поиск NFT</span>
-                </button>
+            <div id="results-wrapper" class="content-section"> 
                 
-                <div class="sort-and-display-group">
+                <div class="results-header-label">
+                    Похожие по цвету
+                </div>
+
+                <div class="action-and-sort-controls" style="margin-top: 10px; margin-bottom: 20px;">
+                    <button id="submit-btn" class="btn-icon-search disabled-button">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                        <span>Поиск NFT</span>
+                    </button>
                     
-                    <button id="display-mode-button-desktop" class="btn-icon-display-mode desktop-only" title="Вид">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
-                        </svg>
-                    </button>
-                    <button id="display-mode-button" class="btn-icon-display-mode mobile-only" title="Вид">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
-                        </svg>
-                    </button>
+                    <div class="sort-and-display-group">
+                        
+                        <button id="display-mode-button-desktop" class="btn-icon-display-mode desktop-only" title="Вид">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                            </svg>
+                        </button>
+                        <button id="display-mode-button" class="btn-icon-display-mode mobile-only" title="Вид">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                            </svg>
+                        </button>
 
-                    <button id="sort-mobile-button" class="btn-icon-sort-mobile" title="Сортировка">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h13M3 8h9m-9 4h16m-16 4h9m-9 4h13" />
-                        </svg>
-                    </button>
+                        <button id="sort-mobile-button" class="btn-icon-sort-mobile" title="Сортировка">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h13M3 8h9m-9 4h16m-16 4h9m-9 4h13" />
+                            </svg>
+                        </button>
 
-                    <div id="sort-desktop-wrapper" class="sort-control-group">
-                        <label for="sort-order-desktop">Сортировка:</label>
-                        <select id="sort-order-desktop">
-                            <option value="percent-desc">По совпадению (убыв.)</option>
-                            <option value="percent-asc">По совпадению (возр.)</option>
-                            <option value="name">По имени</option>
-                        </select>
+                        <div id="sort-desktop-wrapper" class="sort-control-group">
+                            <label for="sort-order-desktop">Сортировка:</label>
+                            <select id="sort-order-desktop">
+                                <option value="percent-desc">По совпадению (убыв.)</option>
+                                <option value="percent-asc">По совпадению (возр.)</option>
+                                <option value="name">По имени</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
-            </div>
-            
-            <div id="results-wrapper" class="content-section results-initial-hide"> 
-                <div id="loading-container" class="hidden">
-                    </div>
+                
+                <div id="loading-container" class="hidden"></div>
                 
                 <div class="results-grid" id="results-grid">
                 </div>
@@ -183,11 +177,12 @@
         </div>
     </div>
 
-    <div id="nftDetailsModalOverlay" class="modal-overlay hidden">
+   <div id="nftDetailsModalOverlay" class="modal-overlay hidden">
         <div class="card-modal nft-details-modal">
             <div class="modal-header">
-                <button class="close-modal-btn" id="closeNftDetailsModalBtn" aria-label="Закрыть">&times;</button>
+                <div></div> 
                 <h3 id="nftDetailsModalTitle">Подарок</h3> 
+                <button class="close-modal-btn" id="closeNftDetailsModalBtn" aria-label="Закрыть">&times;</button>
             </div>
             
             <div class="modal-body nft-details-modal-body">
@@ -202,15 +197,21 @@
                     </div>
                 </div>
                 
-                <h4 class="similar-models-title">Похожие модели этого подарка:</h4>
-                <div class="similar-models-list-wrapper" id="similarModelsListWrapper">
-                    <div class="similar-models-list" id="similarModelsList">
-                        </div>
+                <div class="similar-models-cluster">
+                    <div class="similar-models-title">Похожие модели</div>
+                    
+                    <div class="similar-models-list-wrapper" id="similarModelsListWrapper">
+                        <div class="similar-models-list" id="similarModelsList">
+                            </div>
+                    </div>
                 </div>
+
             </div>
         </div>
     </div>
 
     <script type="module" src="./gift-page.js"></script> 
+    <script type="module" src="../Monohrome/themes-modal.js"></script>
+
 </body>
 </html>

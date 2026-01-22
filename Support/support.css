@@ -1,0 +1,230 @@
+:root {
+    --bg-dark: #0a1020;
+    --surface-color: #16213a;
+    --surface-elevated: #1e2944;
+    --text-primary: #f1f5fa;
+    --text-secondary: #d8d8d8;
+    --text-muted: #6b7fa7;
+    --primary: #2563eb;
+    --accent-orange: #f59e0b;
+    --accent-blue: #3b82f6;
+    --accent-ton: #0098EA;
+    --border-dim: rgba(255, 255, 255, 0.08);
+    --radius: 16px;
+    --card-shadow: 0 8px 32px 0 rgba(10, 16, 32, 0.4);
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Inter', sans-serif;
+    background: linear-gradient(180deg, #1a237e 0%, #0a1020 100%);
+    color: var(--text-primary);
+    min-height: 100vh;
+}
+
+main {
+    padding: 1rem;
+    padding-top: 90px; /* Отступ под WebApp кнопки */
+    padding-bottom: 60px;
+    display: flex;
+    justify-content: center;
+}
+
+.container {
+    width: 100%;
+    max-width: 600px;
+    background: var(--surface-color);
+    border-radius: var(--radius);
+    padding: 2rem 1.5rem;
+    box-shadow: var(--card-shadow);
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    text-align: left;
+}
+
+/* --- HERO --- */
+.support-hero {
+    /* Контейнер остается с выравниванием по левому краю для текста */
+    text-align: left;
+    border-bottom: 1px solid var(--border-dim);
+    margin-bottom: 1.5rem;
+}
+
+.support-hero h1 {
+    /* Центрируем заголовок и применяем градиент */
+    text-align: center;
+    font-size: 2rem;
+    font-weight: 800;
+    margin: 0 0 0.5rem 0;
+    background: linear-gradient(90deg, #fff, #a5b4fc);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.support-hero p {
+    font-size: 1rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    margin-top: 1rem;
+    text-align: left;
+}
+
+.heart-icon {
+    display: inline-block;
+    color: #f87171;
+    animation: heartbeat 1.5s infinite;
+}
+
+@keyframes heartbeat {
+    0% { transform: scale(1); }
+    10% { transform: scale(1.1); }
+    20% { transform: scale(1); }
+    30% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+/* --- SECTIONS --- */
+.support-section {
+    position: relative;
+    padding: 2rem 1.5rem;
+    background: rgba(30, 41, 68, 0.3);
+    border-radius: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    margin-top: 1rem;
+}
+
+/* Градиентная рамка */
+.support-section::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 24px; 
+    border: 2px solid #6b7fa7; 
+    -webkit-mask-image: linear-gradient(to bottom, black 0px, black 1px, transparent 20px, transparent calc(100% - 20px), black calc(100% - 1px), black 100%);
+    mask-image: linear-gradient(to bottom, black 0px, black 1px, transparent 20px, transparent calc(100% - 20px), black calc(100% - 1px), black 100%);
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+.section-label {
+    position: absolute;
+    top: 0; 
+    left: 50%;
+    transform: translate(-50%, -50%); 
+    background-color: var(--surface-color); 
+    padding: 0 16px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #6b7fa7; 
+    white-space: nowrap;
+    z-index: 2;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* --- NFT ELEMENTS --- */
+.nft-full-image {
+    width: 100%;
+    height: auto;
+    border-radius: 16px;
+    display: block;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    margin-bottom: 1.5rem;
+}
+
+.nft-info-block {
+    text-align: left;
+    margin-bottom: 1.5rem;
+}
+
+.nft-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #fff;
+    margin: 0 0 0.5rem 0;
+}
+
+.nft-desc {
+    font-size: 1rem;
+    color: var(--text-muted);
+    line-height: 1.6;
+    margin: 0;
+}
+
+.donate-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--surface-elevated);
+    color: var(--text-primary);
+    text-decoration: none;
+    padding: 14px 24px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 1rem;
+    border: 1px solid var(--border-dim);
+    transition: all 0.2s;
+    width: 100%;
+    box-sizing: border-box;
+    margin-bottom: 2.5rem;
+}
+
+.donate-btn:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+}
+
+/* --- CRYPTO SECTION --- */
+.ton-desc {
+    color: var(--text-muted);
+    font-size: 1rem;
+    line-height: 1.6;
+    margin: 0;
+    text-align: left;
+}
+
+.wallet-box {
+    background: var(--surface-elevated);
+    border: 1px solid var(--border-dim);
+    border-radius: 12px;
+    padding: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    position: relative;
+    overflow: hidden;
+}
+
+.wallet-address {
+    font-family: 'Consolas', monospace;
+    font-size: 0.9rem;
+    color: var(--text-primary);
+    word-break: break-all;
+    text-align: left;
+    line-height: 1.4;
+}
+
+.copy-btn-large {
+    background: rgba(59, 130, 246, 0.15);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    color: #60a5fa;
+    border-radius: 10px;
+    padding: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.copy-btn-large:active {
+    transform: scale(0.95);
+    background: rgba(59, 130, 246, 0.3);
+}

@@ -1,0 +1,291 @@
+/* === ОБЩИЙ СТИЛЬ МОДАЛОК === */
+
+/* Оверлей */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(10, 16, 32, 0.7);
+    backdrop-filter: blur(8px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 3000;
+    will-change: opacity;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+.modal-overlay:not(.hidden) {
+    opacity: 1;
+    pointer-events: all;
+}
+
+/* Единое тело окна */
+.universal-modal {
+    background-color: var(--surface-elevated);
+    border-radius: 32px;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+
+    /* 🔥 ЖЕСТКИЕ РАЗМЕРЫ 🔥 */
+    width: 350px !important;
+    height: 680px !important;
+    max-height: 90vh !important;
+    max-width: 95vw !important;
+
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+    transform: scale(0.95);
+    will-change: transform;
+    backface-visibility: hidden;
+    transition: transform 0.3s ease;
+    padding: 0;
+}
+
+.modal-overlay:not(.hidden) .universal-modal {
+    transform: scale(1);
+}
+
+/* Шапка */
+.u-modal-header {
+    flex-shrink: 0;
+    display: grid;
+    /* [Назад] [Заголовок] [Закрыть] */
+    grid-template-columns: 40px 1fr 40px;
+    align-items: center;
+    padding: 1rem 1.2rem;
+    min-height: 60px;
+    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.2) 0%, rgba(0, 0, 0, 0) 100%);
+    z-index: 10;
+    position: relative;
+}
+
+.u-modal-title {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: #fff;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+    text-align: center;
+    grid-column: 2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Кнопки в шапке */
+.u-modal-btn {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    width: 40px;
+    height: 40px;
+}
+
+.u-modal-btn:hover {
+    color: #fff;
+}
+
+.u-btn-close {
+    font-size: 2rem;
+    line-height: 1;
+    padding-bottom: 4px;
+    grid-column: 3;
+    justify-self: end;
+}
+
+.u-btn-back {
+    grid-column: 1;
+    justify-self: start;
+}
+
+.u-btn-back.hidden {
+    visibility: hidden;
+    pointer-events: none;
+}
+
+/* Тело контента */
+.u-modal-body {
+    flex-grow: 1;
+    padding: 1rem;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+.u-modal-body::-webkit-scrollbar {
+    display: none;
+}
+
+/* --- Элементы внутри (Сравнение) --- */
+.comparison-container {
+    display: flex;
+    gap: 8px;
+    justify-content: space-between;
+    width: 100%;
+    flex-shrink: 0;
+}
+
+.comp-column {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.comp-box {
+    width: 100%;
+    aspect-ratio: 1/1;
+    background: rgba(30, 41, 68, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    padding: 6px;
+}
+
+.comp-box img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.comp-btn {
+    width: 100%;
+    padding: 6px 0;
+    background: rgba(56, 189, 248, 0.15);
+    border: 1px solid rgba(56, 189, 248, 0.3);
+    color: var(--primary-color);
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-radius: 12px;
+    cursor: pointer;
+    text-align: center;
+}
+
+.comp-btn:hover {
+    background: var(--primary-color);
+    color: #fff;
+}
+
+/* --- Список похожих --- */
+.similar-list-wrapper {
+    flex-grow: 1;
+    min-height: 0;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+.similar-list {
+    flex-grow: 1;
+    overflow-y: auto;
+    padding-right: 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding-top: 5px;
+}
+
+/* Карточка в списке */
+.model-item {
+    height: 64px;
+    flex-shrink: 0;
+    background: rgba(30, 41, 68, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
+    gap: 12px;
+    cursor: pointer;
+}
+
+.model-item.selected {
+    background: rgba(40, 55, 90, 0.9);
+    border-color: var(--primary-color);
+}
+
+.model-info {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.model-name-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #fff;
+}
+
+.model-coof {
+    color: var(--primary-color);
+}
+
+.price-value {
+    color: #fff;
+    font-weight: 600;
+    font-size: 0.8rem;
+}
+
+/* --- Инфо таблица (из Item Details) --- */
+.info-table {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    overflow: hidden;
+    margin-bottom: 1rem;
+}
+
+.info-row {
+    display: grid;
+    grid-template-columns: 130px 1fr;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.info-row:last-child {
+    border-bottom: none;
+}
+
+.info-label {
+    background: var(--surface-color);
+    padding: 0.7rem;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    font-weight: 600;
+    border-right: 1px solid var(--border-color);
+}
+
+.info-value {
+    padding: 0.7rem;
+    color: #fff;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.link-style {
+    color: var(--primary-color);
+    cursor: pointer;
+}

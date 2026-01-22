@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Circular Gradient Validator</title>
+    <style>
+        :root {
+            --bg-color: #0a1020;
+            --surface-color: #16213a;
+            --surface-elevated: #1e2944;
+            --primary-color: #38bdf8;
+            --primary-hover: #0ea5e9;
+            --text-primary: #f1f5fa;
+            --text-secondary: #d8d8d8;
+            --text-muted: #6b7fa7;
+            --radius: 12px;
+            --card-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow-x: hidden; /* Чтобы круг не расширял страницу вправо */
+        }
+
+        h1 { margin-bottom: 10px; font-weight: 800; }
+        p { color: var(--text-muted); margin-bottom: 20px; max-width: 600px; text-align: center; }
+
+        /* --- CONTROLS --- */
+        .controls {
+            background: var(--surface-color);
+            padding: 20px;
+            border-radius: var(--radius);
+            width: 100%;
+            max-width: 1200px;
+            box-shadow: var(--card-shadow);
+            margin-bottom: 30px;
+            z-index: 100;
+            position: relative;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        input[type="number"] {
+            background: var(--surface-elevated);
+            border: 1px solid #2d3d5e;
+            color: white;
+            padding: 10px;
+            border-radius: 8px;
+            width: 80px;
+            font-size: 1rem;
+        }
+
+        button.action-btn {
+            background: var(--primary-color);
+            color: #09090b;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        button.action-btn:hover { background: var(--primary-hover); transform: translateY(-2px); }
+
+        /* --- COLLECTION SELECTOR --- */
+        .collection-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            max-height: 150px;
+            overflow-y: auto;
+            padding: 10px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 8px;
+            border: 1px solid #2d3d5e;
+        }
+
+        .chip {
+            background: var(--surface-elevated);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            user-select: none;
+            border: 1px solid transparent;
+            transition: all 0.15s;
+            color: var(--text-secondary);
+        }
+
+        .chip:hover { background: #2d3d5e; }
+        .chip.active {
+            background: rgba(56, 189, 248, 0.2);
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+
+        /* --- CIRCLE CONTAINER --- */
+        .wheel-container {
+            position: relative;
+            /* Размеры будут задаваться JS динамически */
+            width: 800px; 
+            height: 800px;
+            border-radius: 50%;
+            /* Пунктирная линия для обозначения круга */
+            border: 2px dashed rgba(255, 255, 255, 0.1); 
+            margin-top: 50px;
+            margin-bottom: 100px;
+            flex-shrink: 0;
+            transition: width 0.5s, height 0.5s;
+        }
+
+        /* Элемент в круге (Абсолютное позиционирование) */
+        .nft-item {
+            position: absolute;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 80px; /* Ширина карточки */
+            
+            /* Центрирование точки трансформации */
+            transform-origin: center center;
+            
+            transition: transform 0.2s, z-index 0.2s;
+            cursor: pointer;
+        }
+        
+        .nft-item:hover {
+            z-index: 1000 !important; /* Поверх всех при наведении */
+            /* При наведении увеличиваем и убираем поворот, чтобы прочитать текст */
+            /* Но так как transform задан инлайново в JS, 
+               мы будем менять масштаб внутри hover через !important или вложенный элемент */
+        }
+        
+        /* Хак для увеличения при наведении с сохранением угла поворота:
+           Увеличиваем внутренний контейнер */
+        .nft-item:hover .nft-content-wrapper {
+            transform: scale(1.5);
+            background: var(--surface-color);
+            box-shadow: 0 10px 30px black;
+            border-radius: 12px;
+            z-index: 1000;
+        }
+
+        .nft-content-wrapper {
+            padding: 5px;
+            border-radius: 8px;
+            transition: transform 0.2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .nft-img-box {
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 2px;
+        }
+
+        .nft-img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
+        }
+
+        .color-bar {
+            width: 100%;
+            height: 15px;
+            border-radius: 4px;
+            margin-top: 2px;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .info-box {
+            font-size: 0.6rem;
+            text-align: center;
+            color: var(--text-muted);
+            margin-top: 2px;
+            line-height: 1.1;
+            white-space: nowrap; /* Чтобы текст не ехал при повороте */
+        }
+        
+        .dominance {
+            font-weight: bold;
+            color: var(--text-primary);
+        }
+
+        .loading {
+            color: var(--primary-color);
+            font-weight: bold;
+            display: none;
+            margin-top: 20px;
+        }
+
+        /* Центр круга */
+        .wheel-center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            text-align: center;
+            opacity: 0.5;
+        }
+
+    </style>
+</head>
+<body>
+
+    <h1>Gradient Color Wheel</h1>
+    <p>Проверка замыкания градиента в круговом формате.</p>
+
+    <div class="controls">
+        <div style="margin-bottom: 10px; display: flex; justify-content: space-between;">
+            <span style="font-size: 0.9rem; font-weight: 600;">Collections:</span>
+            <div>
+                <button onclick="selectRandom(5)" style="background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:0.8rem; margin-right:10px;">Random 5</button>
+                <button onclick="selectAll()" style="background:none; border:none; color:var(--primary-color); cursor:pointer; font-size:0.8rem;">Select All</button>
+            </div>
+        </div>
+        
+        <div class="collection-grid" id="collectionGrid"></div>
+
+        <div class="input-group" style="margin-top: 20px;">
+            <label>Circle Length:</label>
+            <input type="number" id="lengthInput" value="60" min="10" max="360">
+            <button class="action-btn" onclick="generateGradient()">Build Wheel</button>
+        </div>
+        
+        <div id="loadingIndicator" class="loading">Calculating & Building Wheel...</div>
+        <div id="errorMsg" style="color: #f87171; text-align: center; margin-top:10px;"></div>
+    </div>
+
+    <div class="wheel-container" id="wheelContainer">
+        <div class="wheel-center">Start<br>⬇️</div>
+        </div>
+
+    <script>
+        const SERVER_BASE_URL = 'https://nftmatchbot20250730152328.azurewebsites.net';
+        const API_PHOTO_URL = 'https://cdn.changes.tg/gifts/models';
+        const BYPASS_KEY = 'UserOwnerKey759-jrpf'; 
+
+        const GIFT_NAMES = [
+            "Santa Hat", "Signet Ring", "Precious Peach", "Plush Pepe", "Spiced Wine", 
+            "Jelly Bunny", "Durov's Cap", "Perfume Bottle", "Eternal Rose", "Berry Box", 
+            "Vintage Cigar", "Magic Potion", "Kissed Frog", "Hex Pot", "Evil Eye", 
+            "Sharp Tongue", "Trapped Heart", "Skull Flower", "Scared Cat", "Spy Agaric", 
+            "Homemade Cake", "Genie Lamp", "Lunar Snake", "Party Sparkler", "Jester Hat", 
+            "Witch Hat", "Hanging Star", "Love Candle", "Cookie Heart", "Desk Calendar", 
+            "Jingle Bells", "Snow Mittens", "Voodoo Doll", "Mad Pumpkin", "Hypno Lollipop", 
+            "B-Day Candle", "Bunny Muffin", "Astral Shard", "Flying Broom", "Crystal Ball", 
+            "Eternal Candle", "Swiss Watch", "Ginger Cookie", "Mini Oscar", "Lol Pop", 
+            "Ion Gem", "Star Notepad", "Loot Bag", "Love Potion", "Toy Bear", 
+            "Diamond Ring", "Sakura Flower", "Sleigh Bell", "Top Hat", "Record Player", 
+            "Winter Wreath", "Snow Globe", "Electric Skull", "Tama Gadget", "Candy Cane", 
+            "Neko Helmet", "Jack-in-the-Box", "Easter Egg", "Bonded Ring", "Pet Snake", 
+            "Snake Box", "Xmas Stocking", "Big Year", "Holiday Drink", "Gem Signet", 
+            "Light Sword", "Restless Jar", "Nail Bracelet", "Heroic Helmet", "Bow Tie", 
+            "Heart Locket", "Lush Bouquet", "Whip Cupcake", "Joyful Bundle", "Cupid Charm", 
+            "Valentine Box", "Snoop Dogg", "Swag Bag", "Snoop Cigar", "Low Rider", 
+            "Westside Sign", "Stellar Rocket", "Jolly Chimp", "Moon Pendant", "Ionic Dryer", 
+            "Input Key", "Mighty Arm", "Artisan Brick", "Clover Pin", "Sky Stilettos", 
+            "Fresh Socks", "Happy Brownie", "Ice Cream", "Spring Basket", "Instant Ramen", 
+            "Faith Amulet", "Mousse Cake"
+        ];
+
+        const selectedCollections = new Set(["Snow Mittens"]); 
+
+        document.addEventListener('DOMContentLoaded', () => {
+            renderCollections();
+        });
+
+        function renderCollections() {
+            const grid = document.getElementById('collectionGrid');
+            grid.innerHTML = '';
+            GIFT_NAMES.sort().forEach(name => {
+                const chip = document.createElement('div');
+                chip.className = 'chip';
+                if(selectedCollections.has(name)) chip.classList.add('active');
+                chip.textContent = name;
+                chip.onclick = () => toggleCollection(name, chip);
+                grid.appendChild(chip);
+            });
+        }
+
+        function toggleCollection(name, element) {
+            if (selectedCollections.has(name)) {
+                selectedCollections.delete(name);
+                element.classList.remove('active');
+            } else {
+                selectedCollections.add(name);
+                element.classList.add('active');
+            }
+        }
+
+        function selectAll() {
+            GIFT_NAMES.forEach(name => selectedCollections.add(name));
+            renderCollections();
+        }
+
+        function selectRandom(count) {
+            selectedCollections.clear();
+            const shuffled = GIFT_NAMES.sort(() => 0.5 - Math.random());
+            shuffled.slice(0, count).forEach(name => selectedCollections.add(name));
+            renderCollections();
+        }
+
+        async function generateGradient() {
+            const length = parseInt(document.getElementById('lengthInput').value) || 50;
+            const container = document.getElementById('wheelContainer');
+            const loader = document.getElementById('loadingIndicator');
+            const errorMsg = document.getElementById('errorMsg');
+
+            if (selectedCollections.size === 0) {
+                errorMsg.textContent = "Please select at least one collection.";
+                return;
+            }
+
+            // Очищаем всё, кроме центра
+            const center = container.querySelector('.wheel-center');
+            container.innerHTML = '';
+            if(center) container.appendChild(center);
+            
+            errorMsg.textContent = '';
+            loader.style.display = 'block';
+
+            // Динамический размер контейнера в зависимости от количества элементов
+            // Чем больше элементов, тем больше радиус, чтобы они не слиплись.
+            // База: 600px для 50 элементов.
+            let wheelSize = 600;
+            if (length > 50) wheelSize = 800;
+            if (length > 100) wheelSize = 1200;
+            if (length > 200) wheelSize = 1800;
+
+            container.style.width = `${wheelSize}px`;
+            container.style.height = `${wheelSize}px`;
+
+            const payload = { CollectionNames: Array.from(selectedCollections) };
+            const url = `${SERVER_BASE_URL}/api/MonoCoof/GetCollectionGradient/${length}`;
+
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Tma ${BYPASS_KEY}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) throw new Error(`Server Error: ${response.status}`);
+
+                const data = await response.json();
+                renderWheel(data, wheelSize);
+
+            } catch (error) {
+                console.error(error);
+                errorMsg.textContent = `Error: ${error.message}`;
+            } finally {
+                loader.style.display = 'none';
+            }
+        }
+
+        function renderWheel(data, containerSize) {
+            const container = document.getElementById('wheelContainer');
+            const radius = (containerSize / 2) - 60; // Отступ от края (60px = половина ширины карточки + запас)
+            const centerX = containerSize / 2;
+            const centerY = containerSize / 2;
+            
+            const totalItems = data.length;
+            const angleStep = (2 * Math.PI) / totalItems;
+
+            if (totalItems === 0) {
+                document.getElementById('errorMsg').textContent = "No models found.";
+                return;
+            }
+
+            data.forEach((item, index) => {
+                const div = document.createElement('div');
+                div.className = 'nft-item';
+
+                // --- МАТЕМАТИКА КРУГА ---
+                // Начинаем с -90 градусов (верхняя точка, 12 часов)
+                const angle = (index * angleStep) - (Math.PI / 2);
+                
+                // Координаты X и Y
+                const x = centerX + radius * Math.cos(angle);
+                const y = centerY + radius * Math.sin(angle);
+
+                // Угол поворота самого элемента (чтобы смотрел центром внутрь или наружу)
+                // angle * (180/PI) переводит радианы в градусы.
+                // +90 градусов поворачивает элемент так, чтобы "низ" карточки смотрел в центр.
+                const rotation = (angle * (180 / Math.PI)) + 90;
+
+                // Применяем стили позиционирования
+                // Вычитаем половину ширины элемента (40px), чтобы центрировать его в точке x,y
+                div.style.left = `${x - 40}px`; 
+                div.style.top = `${y - 40}px`;
+                div.style.transform = `rotate(${rotation}deg)`;
+
+                // Контент
+                const imgUrl = `${API_PHOTO_URL}/${encodeURIComponent(item.GiftName)}/png/${encodeURIComponent(item.ModelName)}.png`;
+                const domPercent = (item.DominanceScore * 100).toFixed(0);
+
+                div.innerHTML = `
+                    <div class="nft-content-wrapper">
+                        <div class="nft-img-box">
+                            <img src="${imgUrl}" class="nft-img" loading="lazy" alt="${item.ModelName}">
+                        </div>
+                        <div class="color-bar" style="background-color: ${item.ColorHex};" title="${item.ColorHex}"></div>
+                        <div class="info-box">
+                            <div style="font-weight:600">${item.ModelName}</div>
+                            <div class="dominance">${domPercent}%</div>
+                            <div style="opacity:0.5;">#${index + 1}</div>
+                        </div>
+                    </div>
+                `;
+
+                container.appendChild(div);
+            });
+        }
+    </script>
+</body>
+</html>
