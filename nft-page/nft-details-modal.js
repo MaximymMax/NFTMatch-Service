@@ -206,7 +206,6 @@ export function initNftDetailsModal() {
                     if (cachedUserData) masterUserData = JSON.parse(cachedUserData);
                 } catch (e) { }
 
-                // Если нет в кэше, пробуем взять из WebApp
                 if (!masterUserData && window.Telegram?.WebApp?.initDataUnsafe?.user) {
                     const tgUser = window.Telegram.WebApp.initDataUnsafe.user;
                     masterUserData = { telegramId: tgUser.id, username: tgUser.username };
@@ -222,14 +221,14 @@ export function initNftDetailsModal() {
 
             const requestBody = {
                 ...userData,
-                "Colors": apiColors, // Теперь здесь точно массив строк
+                "Colors": apiColors,
                 "NameTargetGift": targetGiftName || null,
                 "NameTargetModel": targetModelName || null,
-                "NameGift": cardGiftName,
+                "NameGift": cardGiftName, // API может ожидать NamesGift (массив), но проверим ответ
                 "MonohromeModelsOnly": true
             };
 
-            // ИСПРАВЛЕНИЕ URL: убираем двойной слеш, если SERVER_BASE_URL заканчивается на /
+            // URL
             const baseUrl = SERVER_BASE_URL.endsWith('/') ? SERVER_BASE_URL.slice(0, -1) : SERVER_BASE_URL;
             const finalUrl = `${baseUrl}${API_SIMILAR_MODELS}`;
 
@@ -244,29 +243,44 @@ export function initNftDetailsModal() {
 
             if (!response.ok) {
                 const errorText = await response.text();
-                // Логируем для отладки, если снова будет 400
-                console.error("API Error Body:", requestBody);
                 throw new Error(`HTTP error! Status: ${response.status} - ${errorText}`);
             }
 
             const data = await response.json();
 
-            // API возвращает объект { "GiftName": { SimilarModels: [...] } }, а не массив
-            currentSimilarModels = [];
+            // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
 
-            if (data && typeof data === 'object') {
-                // Ищем ключ, соответствующий нашему подарку (cardGiftName)
-                // Или берем первый ключ, если имя не совпадает точно
-                const giftData = data[cardGiftName] || Object.values(data)[0];
+            let rawModelsList = [];
 
+            // 1. Проверяем, является ли data объектом (словарем), как в gift-page.js
+            if (data && typeof data === 'object' && !Array.isArray(data)) {
+                // Пытаемся найти данные по имени подарка
+                let giftData = data[cardGiftName];
+
+                // Если по ключу не нашли, берем первое значение (так как мы запрашивали только один подарок)
+                if (!giftData) {
+                    const values = Object.values(data);
+                    if (values.length > 0) giftData = values[0];
+                }
+
+                // Внутри объекта ищем массив SimilarModels
                 if (giftData && Array.isArray(giftData.SimilarModels)) {
-                    currentSimilarModels = giftData.SimilarModels.map(item => ({
-                        name: item.Key,   // В этом API модель называется Key
-                        coof: item.Value, // Коэффициент называется Value
-                        count: 0          // Count может не быть в этом ответе
-                    }));
+                    rawModelsList = giftData.SimilarModels;
                 }
             }
+            // 2. На случай, если API вернет сразу массив (маловероятно, но для страховки)
+            else if (Array.isArray(data)) {
+                rawModelsList = data;
+            }
+
+            // Маппинг данных с учетом разных названий полей (API возвращает Key/Value, а не Name/Coof)
+            currentSimilarModels = rawModelsList.map(item => ({
+                name: item.Name || item.Key || 'Unknown', // Обычно API возвращает 'Key' в списке моделей
+                coof: (item.Coof !== undefined) ? item.Coof : (item.Value !== undefined ? item.Value : 0),
+                count: item.Count || 0 // Count может не приходить для отдельных моделей в этом эндпоинте
+            }));
+
+            // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
             renderSimilarModelsList();
 
