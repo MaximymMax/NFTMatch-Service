@@ -109,10 +109,18 @@ export function initNftDetailsModal() {
         if (!gift || !model) return;
 
         if (window.themesModal && typeof window.themesModal.openModelDetail === 'function') {
-            modalOverlay.classList.add('hidden');
+            // Скрываем текущую модалку (убираем класс visible для анимации)
+            modalOverlay.classList.remove('visible');
+            setTimeout(() => {
+                modalOverlay.classList.add('hidden');
+            }, 300);
 
             window.themesModal.openModelDetail(gift, model, () => {
+                // Callback при возврате назад
                 modalOverlay.classList.remove('hidden');
+                requestAnimationFrame(() => {
+                    modalOverlay.classList.add('visible');
+                });
                 document.body.classList.add('modal-open');
             });
         }
@@ -224,11 +232,10 @@ export function initNftDetailsModal() {
                 "Colors": apiColors,
                 "NameTargetGift": targetGiftName || null,
                 "NameTargetModel": targetModelName || null,
-                "NameGift": cardGiftName, // API может ожидать NamesGift (массив), но проверим ответ
+                "NameGift": cardGiftName,
                 "MonohromeModelsOnly": true
             };
 
-            // URL
             const baseUrl = SERVER_BASE_URL.endsWith('/') ? SERVER_BASE_URL.slice(0, -1) : SERVER_BASE_URL;
             const finalUrl = `${baseUrl}${API_SIMILAR_MODELS}`;
 
@@ -247,40 +254,28 @@ export function initNftDetailsModal() {
             }
 
             const data = await response.json();
-
-            // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
-
             let rawModelsList = [];
 
-            // 1. Проверяем, является ли data объектом (словарем), как в gift-page.js
+            // Обработка данных (Object vs Array)
             if (data && typeof data === 'object' && !Array.isArray(data)) {
-                // Пытаемся найти данные по имени подарка
                 let giftData = data[cardGiftName];
-
-                // Если по ключу не нашли, берем первое значение (так как мы запрашивали только один подарок)
                 if (!giftData) {
                     const values = Object.values(data);
                     if (values.length > 0) giftData = values[0];
                 }
-
-                // Внутри объекта ищем массив SimilarModels
                 if (giftData && Array.isArray(giftData.SimilarModels)) {
                     rawModelsList = giftData.SimilarModels;
                 }
             }
-            // 2. На случай, если API вернет сразу массив (маловероятно, но для страховки)
             else if (Array.isArray(data)) {
                 rawModelsList = data;
             }
 
-            // Маппинг данных с учетом разных названий полей (API возвращает Key/Value, а не Name/Coof)
             currentSimilarModels = rawModelsList.map(item => ({
-                name: item.Name || item.Key || 'Unknown', // Обычно API возвращает 'Key' в списке моделей
+                name: item.Name || item.Key || 'Unknown',
                 coof: (item.Coof !== undefined) ? item.Coof : (item.Value !== undefined ? item.Value : 0),
-                count: item.Count || 0 // Count может не приходить для отдельных моделей в этом эндпоинте
+                count: item.Count || 0
             }));
-
-            // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
             renderSimilarModelsList();
 
@@ -299,8 +294,6 @@ export function initNftDetailsModal() {
             targetGiftName = mainTargetGift;
             targetModelName = mainTargetModel;
 
-            // ЗАЩИТА: Если передали null или undefined, делаем пустой массив. 
-            // Если передали объекты (вдруг), вытаскиваем hex.
             if (Array.isArray(colors)) {
                 apiColors = colors.map(c => (typeof c === 'object' && c.hex) ? c.hex : c);
             } else {
@@ -314,7 +307,14 @@ export function initNftDetailsModal() {
             updatePhotoContainers();
 
             if (modalOverlay) {
+                // 1. Сначала убираем hidden (становится display: flex, но opacity: 0)
                 modalOverlay.classList.remove('hidden');
+
+                // 2. Через RAF добавляем класс visible для запуска анимации opacity
+                requestAnimationFrame(() => {
+                    modalOverlay.classList.add('visible');
+                });
+
                 document.body.classList.add('modal-open');
             }
 
@@ -334,12 +334,24 @@ export function initNftDetailsModal() {
         window.history.replaceState({ path: newUrl.href }, '', newUrl.href);
 
         if (modalOverlay) {
-            modalOverlay.classList.add('hidden');
+            // 1. Убираем класс видимости (запускается fade-out анимация)
+            modalOverlay.classList.remove('visible');
+
+            // 2. Ждем окончания анимации (0.3s в CSS), затем скрываем полностью
+            setTimeout(() => {
+                modalOverlay.classList.add('hidden');
+            }, 300);
         }
+
         document.body.classList.remove('modal-open');
 
         const content = document.getElementById('similarModelsList');
         if (content) content.innerHTML = '';
+
+        // Вызываем глобальный коллбек закрытия для обновления URL в gift-page.js
+        if (window.onModalClose && typeof window.onModalClose === 'function') {
+            window.onModalClose();
+        }
 
         selectedModelName = null;
         currentSimilarModels = [];
@@ -359,6 +371,10 @@ export function initNftDetailsModal() {
 
     return {
         openNftDetailsModal: openNftDetailsModal,
-        closeNftDetailsModal: closeNftDetailsModal
+        closeNftDetailsModal: closeNftDetailsModal,
+        // Для обратной совместимости, если gift-page вызывает open
+        open: (data) => {
+            // Логика совместимости, если нужно
+        }
     };
 }
