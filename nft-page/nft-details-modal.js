@@ -251,11 +251,22 @@ export function initNftDetailsModal() {
 
             const data = await response.json();
 
-            currentSimilarModels = data.map(item => ({
-                name: item.Name,
-                coof: item.Coof,
-                count: item.Count
-            }));
+            // API возвращает объект { "GiftName": { SimilarModels: [...] } }, а не массив
+            currentSimilarModels = [];
+
+            if (data && typeof data === 'object') {
+                // Ищем ключ, соответствующий нашему подарку (cardGiftName)
+                // Или берем первый ключ, если имя не совпадает точно
+                const giftData = data[cardGiftName] || Object.values(data)[0];
+
+                if (giftData && Array.isArray(giftData.SimilarModels)) {
+                    currentSimilarModels = giftData.SimilarModels.map(item => ({
+                        name: item.Key,   // В этом API модель называется Key
+                        coof: item.Value, // Коэффициент называется Value
+                        count: 0          // Count может не быть в этом ответе
+                    }));
+                }
+            }
 
             renderSimilarModelsList();
 
