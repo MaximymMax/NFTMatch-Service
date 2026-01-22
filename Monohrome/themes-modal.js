@@ -1714,7 +1714,6 @@ async function loadMoreNFTs() {
     if (nftsState.isLoading || !nftsState.hasMore) return;
 
     nftsState.isLoading = true;
-    // 🔥 ИЗМЕНЕНИЕ: Новый ID лоадера
     const loader = document.getElementById('tm-nfts-loading-indicator');
     if (loader) {
         loader.classList.remove('hidden');
@@ -1736,6 +1735,51 @@ async function loadMoreNFTs() {
             body: JSON.stringify(body)
         });
 
+        // --- ❗️ ДОБАВЛЕННЫЙ БЛОК ПРОВЕРКИ ПОДПИСКИ ---
+        if (response.status === 403) {
+            try {
+                const errorData = await response.json();
+                if (errorData.error === 'subscription_required') {
+                    console.warn('[NFTs] Требуется подписка. Channel ID:', errorData.channelId);
+                    
+                    // 1. Показываем модалку (функция должна быть доступна глобально из themes-modal-nfts.js)
+                    if (typeof window.showSubscriptionModal === 'function') {
+                        window.showSubscriptionModal(errorData.channelId);
+                    }
+
+                    // 2. Принудительно закрываем (сворачиваем) секцию
+                    const header = document.getElementById('tm-nfts-toggle-header');
+                    const grid = document.getElementById('tm-nfts-grid-container');
+                    const arrow = document.getElementById('tm-nfts-arrow');
+
+                    nftsState.isExpanded = false;
+                    nftsState.isLoading = false; // Снимаем флаг загрузки
+
+                    // Скрываем лоадер
+                    if (loader) {
+                        loader.style.display = 'none';
+                        loader.classList.add('hidden');
+                    }
+
+                    // Визуально сворачиваем элементы
+                    if (header) {
+                        header.style.color = 'var(--text-muted)';
+                        header.classList.remove('expanded');
+                    }
+                    if (arrow) arrow.style.transform = 'rotate(0deg)';
+                    if (grid) {
+                        grid.style.display = 'none';
+                        grid.classList.add('hidden');
+                    }
+
+                    return; // Прерываем выполнение
+                }
+            } catch (e) {
+                console.error("Error parsing 403 response", e);
+            }
+        }
+        // --- КОНЕЦ ДОБАВЛЕННОГО БЛОКА ---
+
         if (response.ok) {
             const data = await response.json();
 
@@ -1751,7 +1795,6 @@ async function loadMoreNFTs() {
             } else {
                 nftsState.hasMore = false;
                 if (nftsState.page === 1) {
-                    // 🔥 ИЗМЕНЕНИЕ: Новый ID сетки
                     const grid = document.getElementById('tm-nfts-grid-container');
                     if (grid) grid.innerHTML = '<div style="grid-column: 1/-1; text-align:center; color: var(--text-muted); font-size: 0.9rem; padding: 10px;">Ничего не найдено</div>';
                 }
