@@ -17,8 +17,8 @@
 
 #themes-modal-overlay .modal-visual-area {
     width: 100%;
-    aspect-ratio: 1 / 0.85;
-    /* Немного увеличил высоту контейнера (было 0.75) */
+    /* Соотношение сторон, чтобы вместить анимацию */
+    aspect-ratio: 1 / 0.8;
     background: transparent;
     border-bottom-left-radius: 2.5rem;
     border-bottom-right-radius: 2.5rem;
@@ -26,17 +26,16 @@
     align-items: center;
     justify-content: center;
 
-    /* Настройки отступов */
-    padding-top: 4rem;
-    /* Увеличил отступ сверху */
+    /* Добавляем паддинг сверху, чтобы центр анимации был чуть ниже заголовка */
+    padding-top: 2rem;
     padding-bottom: 1rem;
-    /* Убрал отступ снизу полностью */
 
     box-sizing: border-box;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
     position: relative;
     z-index: 1;
     overflow: hidden;
+    margin-top: 0;
 }
 
 #themes-modal-overlay .themes-modal-content.details-mode {
@@ -752,14 +751,13 @@ body.modal-open {
 }
 
 .themes-modal .modal-visual-area lottie-player {
-    width: 110% !important;
-    /* Увеличил размер анимации (было 85-90%) */
-    height: 110% !important;
+    width: 90% !important;
+    height: 90% !important;
     object-fit: contain;
     margin: 0;
     padding: 0;
-    transform: translateY(10px);
-    /* Небольшой сдвиг вниз для визуального центра */
+    transform: none;
+    /* Убрали сдвиг вверх */
 }
 
 .tm-info-table {
@@ -872,20 +870,32 @@ body.modal-open {
 }
 
 .details-modal-header {
-    position: sticky;
+    position: absolute;
+    /* Было sticky, стало absolute */
     top: 0;
     left: 0;
     width: 100%;
     z-index: 20;
-    margin-bottom: -70px;
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 1.2rem 1.5rem;
     box-sizing: border-box !important;
+    /* Градиент, чтобы текст читался на фоне картинки */
     background: linear-gradient(to bottom, rgba(0, 0, 0, 0.6) 0%, rgba(0, 0, 0, 0) 100%);
-    backdrop-filter: blur(2px);
     pointer-events: none;
+}
+
+.details-modal-header>* {
+    pointer-events: auto;
+}
+
+.modal-title {
+    text-align: center;
+    flex-grow: 1;
+    color: #fff;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.6);
+    margin: 0;
 }
 
 #themes-modal-overlay .tm-sort-controls {

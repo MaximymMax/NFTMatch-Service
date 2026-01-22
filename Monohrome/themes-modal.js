@@ -44,7 +44,7 @@ async function fetchAndParseMainColors(giftName, modelName) {
     try {
         const response = await fetch(url, { headers: { 'Authorization': getApiAuthHeader() } });
         if (!response.ok) return [];
-        
+
         const colorsString = await response.text();
         if (!colorsString) return [];
 
@@ -95,12 +95,12 @@ function getApiAuthHeader() {
             return `Tma ${bypassKey}`;
         }
     } catch (e) { /* sessionStorage может быть недоступен */ }
-    
+
     if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData) {
         const directInitData = window.Telegram.WebApp.initData;
         if (directInitData) {
             console.warn('[AUTH Themes] Using direct initData (fallback) and saving to sessionStorage.');
-            try { sessionStorage.setItem(INIT_DATA_KEY, directInitData); } catch(e) {}
+            try { sessionStorage.setItem(INIT_DATA_KEY, directInitData); } catch (e) { }
             return `Tma ${directInitData}`;
         }
     }
@@ -130,9 +130,9 @@ function showLoadingState() {
     if (modalContent) {
         modalContent.classList.remove('details-mode');
         // ❗️ ДОБАВИТЬ ЭТУ СТРОКУ: Возвращаем стандартные отступы
-        modalContent.classList.remove('no-padding'); 
+        modalContent.classList.remove('no-padding');
     }
-    
+
     modalContent.innerHTML = '<div class="themes-modal-spinner"></div>';
     modalContent.classList.add('loading');
 }
@@ -146,12 +146,12 @@ function hideLoadingState() {
 function createModelCard(gift, sortMode) {
     const card = document.createElement('div');
     card.className = 'model-in-theme-card';
-    
+
     const imageUrl = `${PHOTO_URL}/${encodeURIComponent(gift.GiftName)}/png/${encodeURIComponent(gift.ModelName)}.png`;
-    
+
     let statsHtml = '';
     // priceIcon теперь <img>
-    const priceIcon = tonIconSvg;    
+    const priceIcon = tonIconSvg;
     const countIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 4a1 1 0 00-1 1v1a1 1 0 001 1h14a1 1 0 001-1V5a1 1 0 00-1-1H3zM2 9.5A1.5 1.5 0 013.5 8h13A1.5 1.5 0 0118 9.5v6.042a1.5 1.5 0 01-1.5 1.5h-13A1.5 1.5 0 012 15.542V9.5z" clip-rule="evenodd" /></svg>`;
 
     switch (sortMode) {
@@ -163,7 +163,7 @@ function createModelCard(gift, sortMode) {
                 </span>`;
             break;
         case 'count':
-             statsHtml = `
+            statsHtml = `
                 <span class="model-stat-count" title="Количество">
                     ${countIcon}
                     ${gift.Count}
@@ -171,10 +171,10 @@ function createModelCard(gift, sortMode) {
             break;
         case 'group':
         default:
-            statsHtml = ''; 
+            statsHtml = '';
             break;
     }
-    
+
     card.innerHTML = `
         <div class="img-wrapper">
             <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" 
@@ -190,17 +190,17 @@ function createModelCard(gift, sortMode) {
             </div>
         </div>
     `;
-    
+
     // ❗️ Клик удален
-    
+
     return card;
 }
 
 // ❗️ НОВАЯ ФУНКЦИЯ: Заполняет сетку (Исправлены проценты и рамка)
 function populateModelGrid() {
     const container = document.getElementById('tm-models-grid-container');
-    container.innerHTML = ''; 
-    
+    container.innerHTML = '';
+
     if (currentThemeGifts.length === 0) {
         container.innerHTML = '<p style="text-align:center; color:var(--text-muted);">Нет подарков.</p>';
         return;
@@ -209,7 +209,7 @@ function populateModelGrid() {
     // 1. Рисуем плашку с выбранным фоном
     if (currentBgName && currentSortMode !== 'count') {
         const bgObj = GLOBAL_COLORS.find(c => c.name === currentBgName || c.id === currentBgName);
-        
+
         if (bgObj) {
             const bgHeader = document.createElement('div');
             bgHeader.className = 'selected-bg-header';
@@ -233,7 +233,7 @@ function populateModelGrid() {
         sortedGifts.forEach(gift => grid.appendChild(createCountGiftCard(gift)));
         wrapper.appendChild(grid);
         container.appendChild(wrapper);
-    } 
+    }
     // Режим "По цвету" (Кластеры)
     else {
         const groupsMap = {};
@@ -243,8 +243,8 @@ function populateModelGrid() {
             groupsMap[gId].push(gift);
         });
 
-        const sortedGroups = currentThemeGroups; 
-        
+        const sortedGroups = currentThemeGroups;
+
         if (groupsMap[0] && !sortedGroups.find(g => g.GroupId === 0)) {
             sortedGroups.push({ GroupId: 0, AverageColorHex: null, MatchPercentage: 0 });
         }
@@ -254,18 +254,18 @@ function populateModelGrid() {
             if (!giftsInGroup || giftsInGroup.length === 0) return;
 
             const colorHex = groupInfo.AverageColorHex;
-            
+
             // ❗️ ФИКС: Получаем сырое значение (например 0.95)
-            const rawVal = (groupInfo.MatchPercentage !== undefined) 
-                            ? groupInfo.MatchPercentage 
-                            : (groupInfo.matchPercentage || 0);
-            
+            const rawVal = (groupInfo.MatchPercentage !== undefined)
+                ? groupInfo.MatchPercentage
+                : (groupInfo.matchPercentage || 0);
+
             // Умножаем на 100 для процентов (например 95.0)
             const percentVal = rawVal * 100;
 
             const clusterDiv = document.createElement('div');
-            clusterDiv.className = 'theme-group-cluster'; 
-            
+            clusterDiv.className = 'theme-group-cluster';
+
             if (colorHex) {
                 // 1. ЛЕВЫЙ БЛОК
                 const leftHeader = document.createElement('div');
@@ -290,7 +290,7 @@ function populateModelGrid() {
 
             const gridDiv = document.createElement('div');
             gridDiv.className = 'models-in-theme-grid';
-            
+
             giftsInGroup.sort((a, b) => b.Count - a.Count);
             giftsInGroup.forEach(gift => {
                 gridDiv.appendChild(createColorGiftCard(gift, colorHex));
@@ -304,13 +304,13 @@ function populateModelGrid() {
 function createColorGiftCard(gift, gradientColorHex) {
     const card = document.createElement('div');
     card.className = 'model-card-color-mode';
-    
+
     if (gradientColorHex) {
         card.style.setProperty('--card-gradient-color', gradientColorHex);
     } else {
         card.style.setProperty('--card-gradient-color', 'rgba(255,255,255,0.05)');
     }
-    
+
     const imgUrl = `${PHOTO_URL}/${encodeURIComponent(gift.GiftName)}/png/${encodeURIComponent(gift.ModelName)}.png`;
 
     card.innerHTML = `
@@ -321,12 +321,12 @@ function createColorGiftCard(gift, gradientColorHex) {
             <h4 class="mcs-model-name">${gift.ModelName}</h4>
         </div>
     `;
-    
+
     // Передаем 'card' в функцию клика
     card.addEventListener('click', () => {
         onModelCardClick(gift, card);
     });
-    
+
     return card;
 }
 
@@ -346,24 +346,24 @@ function createCountGiftCard(gift) {
             </div>
         </div>
     `;
-    
+
     // Передаем 'card' в функцию клика
     card.addEventListener('click', () => {
         onModelCardClick(gift, card);
     });
-    
+
     return card;
 }
 
 function createSimpleGiftCard(gift, gradientColorHex) {
     const card = document.createElement('div');
     card.className = 'model-card-simple';
-    
+
     // ❗️ Устанавливаем переменную CSS для градиента
     if (gradientColorHex) {
         card.style.setProperty('--card-gradient-color', gradientColorHex);
     }
-    
+
     const imgUrl = `${PHOTO_URL}/${encodeURIComponent(gift.GiftName)}/png/${encodeURIComponent(gift.ModelName)}.png`;
 
     card.innerHTML = `
@@ -375,9 +375,9 @@ function createSimpleGiftCard(gift, gradientColorHex) {
             <p class="mcs-gift-name">${gift.GiftName}</p>
         </div>
     `;
-    
+
     // ❗️ Клик удален
-    
+
     return card;
 }
 
@@ -385,10 +385,10 @@ function createSimpleGiftCard(gift, gradientColorHex) {
 function renderModelListViewUI() {
     hideLoadingState();
     toggleMainHeader(true);
-    
+
     // ❗️ ДОБАВИТЬ ЭТУ СТРОКУ: Убираем паддинг у контейнера
     modalContent.classList.add('no-padding');
-    
+
     modalContent.innerHTML = `
         <div class="tm-sort-controls">
             <div class="tm-buttons-wrapper">
@@ -399,7 +399,7 @@ function renderModelListViewUI() {
         <div id="tm-models-grid-container">
         </div>
     `;
-    
+
     // Логика переключения кнопок
     const btns = modalContent.querySelectorAll('.tm-sort-button');
     btns.forEach(btn => {
@@ -407,7 +407,7 @@ function renderModelListViewUI() {
             // UI Update
             btns.forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
-            
+
             // Logic Update
             currentSortMode = btn.dataset.sort;
             populateModelGrid();
@@ -440,14 +440,14 @@ async function loadAndRenderModelView(collectionName, bgName = null, restoreScro
     modalTitle.textContent = collectionName;
     currentView = 'models';
     currentThemeName = collectionName;
-    currentBgName = bgName; 
-    
+    currentBgName = bgName;
+
     const footer = document.querySelector('#themes-modal-overlay .themes-modal-footer');
     if (footer) footer.style.display = 'none';
 
     let url = `${BASE_URL}/api/Thematic/GetGiftsByCollection/${encodeURIComponent(collectionName)}/WithParameters`;
     if (bgName) url += `/${encodeURIComponent(bgName)}`;
-    
+
     try {
         let data;
         if (collectionCache.has(url)) {
@@ -457,19 +457,19 @@ async function loadAndRenderModelView(collectionName, bgName = null, restoreScro
             data = await response.json();
             collectionCache.set(url, data);
         }
-        
+
         currentThemeGifts = data.Gifts || [];
         currentThemeGroups = data.Groups || [];
-        currentSortMode = 'group'; 
-        
+        currentSortMode = 'group';
+
         renderModelListViewUI();
-        populateModelGrid();     
-        
+        populateModelGrid();
+
         // ❗️ ФИКС СКРОЛЛА: 
         if (modalContent) {
             // 1. Убираем класс режима деталей
             modalContent.classList.remove('details-mode');
-            
+
             // 2. Очищаем инлайн-стили, чтобы работал CSS (min-height: 0)
             modalContent.style.removeProperty('display');
             modalContent.style.removeProperty('overflow-y');
@@ -483,7 +483,7 @@ async function loadAndRenderModelView(collectionName, bgName = null, restoreScro
                 modalContent.scrollTop = 0;
             }
         }
-        
+
     } catch (e) {
         console.error('[loadAndRenderModelView] Error:', e);
         modalContent.innerHTML = '<p style="text-align:center; margin-top:2rem;">Ошибка загрузки коллекции</p>';
@@ -504,7 +504,7 @@ async function onModelCardClick(gift, cardElement) {
         const themesUrl = `${BASE_URL}/api/Thematic/GetCollectionByGift/${encodeURIComponent(gift.GiftName)}/${encodeURIComponent(gift.ModelName)}/WithParameters`;
         const similarUrl = `${BASE_URL}/api/MonoCoof/SimilarNFTs`;
         const colorsUrl = `${BASE_URL}/api/ListGifts/${encodeURIComponent(gift.GiftName)}/${encodeURIComponent(gift.ModelName)}/MainColors`;
-        
+
         const similarBody = {
             NameTargetGift: gift.GiftName,
             NameTargetModel: gift.ModelName,
@@ -522,9 +522,9 @@ async function onModelCardClick(gift, cardElement) {
 
         if (currentBgName) {
             const bgScoreUrl = `${BASE_URL}/api/MonoCoof/TopBackgroundColorsByNFT`;
-            const bgScoreBody = { 
-                NameGift: gift.GiftName, 
-                NameModel: gift.ModelName 
+            const bgScoreBody = {
+                NameGift: gift.GiftName,
+                NameModel: gift.ModelName
             };
             bgScorePromise = fetch(bgScoreUrl, {
                 method: 'POST',
@@ -561,12 +561,12 @@ async function onModelCardClick(gift, cardElement) {
 
         pushToHistory(() => {
             // Передаем сохраненную позицию обратно в функцию рендера
-            loadAndRenderModelView(currentThemeName, currentBgName, currentScrollPos); 
+            loadAndRenderModelView(currentThemeName, currentBgName, currentScrollPos);
         });
 
         // --- ЛОГИКА ФОНА И ПРОЦЕНТОВ ---
         let bgDataForDetails = null;
-        let finalCount = gift.Count; 
+        let finalCount = gift.Count;
 
         if (currentBgName) {
             const colorObj = GLOBAL_COLORS.find(c => c.name === currentBgName || c.id === currentBgName);
@@ -574,7 +574,7 @@ async function onModelCardClick(gift, cardElement) {
             if (bgScoreData && Array.isArray(bgScoreData)) {
                 const exactMatch = bgScoreData.find(x => x.Key === currentBgName || x.Key === colorObj?.id);
                 if (exactMatch) {
-                    matchPercent = (exactMatch.Value * 100).toFixed(1); 
+                    matchPercent = (exactMatch.Value * 100).toFixed(1);
                 }
             }
             if (countData && typeof countData.TotalCount === 'number') {
@@ -584,14 +584,14 @@ async function onModelCardClick(gift, cardElement) {
                 bgDataForDetails = {
                     name: colorObj.name,
                     gradient: colorObj.gradient,
-                    matchPercent: matchPercent 
+                    matchPercent: matchPercent
                 };
             }
-        } 
+        }
 
         const modelDataWithExactCount = {
             ...gift,
-            Count: finalCount 
+            Count: finalCount
         };
 
         // В renderModelDetailView уже есть logic: modalContent.scrollTop = 0;
@@ -622,11 +622,11 @@ function renderThemeListView() {
     toggleMainHeader(true);
     modalTitle.textContent = `${currentGift} - ${currentModel}`; // Заголовок
     currentView = 'themes';
-    
+
     // Подвал можно показать
     const footer = document.querySelector('#themes-modal-overlay .themes-modal-footer');
     if (footer) footer.style.display = 'block';
-    
+
     hideLoadingState();
     updateBackButtonState(); // Обновляем кнопку
 
@@ -636,21 +636,21 @@ function renderThemeListView() {
     currentThemes.forEach(collection => {
         // ... (код создания карточки theme-card-modern остается тем же) ...
         // ВАЖНО: Копируем весь код создания карточки из предыдущего ответа
-        
+
         const card = document.createElement('div');
         card.className = 'theme-card-modern';
-        const clusterHex = collection.ClusterAverageColorHex || '#38bdf8'; 
+        const clusterHex = collection.ClusterAverageColorHex || '#38bdf8';
         card.style.setProperty('--glow-color', clusterHex);
-        
+
         // ... генерация HTML карточки ...
         // (Оставил сокращенно для читаемости, используйте ваш код генерации HTML)
         const count = collection.CountGiftsInTheme;
         let iconsHtml = '';
         collection.TopGifts.slice(0, 3).forEach(g => {
-             const imgUrl = `${PHOTO_URL}/${encodeURIComponent(g.GiftName)}/png/${encodeURIComponent(g.ModelName)}.png`;
-             iconsHtml += `<div class="tc-icon-box" style="--icon-bg: ${clusterHex};"><img src="${imgUrl}" class="tc-icon-img"></div>`;
+            const imgUrl = `${PHOTO_URL}/${encodeURIComponent(g.GiftName)}/png/${encodeURIComponent(g.ModelName)}.png`;
+            iconsHtml += `<div class="tc-icon-box" style="--icon-bg: ${clusterHex};"><img src="${imgUrl}" class="tc-icon-img"></div>`;
         });
-        
+
         card.innerHTML = `
             <div class="tc-left">
                 <div class="tc-title">${collection.CollectionName}</div>
@@ -675,10 +675,10 @@ function renderThemeListView() {
             // Переходим дальше
             loadAndRenderModelView(collection.CollectionName);
         });
-        
+
         grid.appendChild(card);
     });
-    
+
     modalContent.appendChild(grid);
 }
 
@@ -692,7 +692,7 @@ async function renderSimilarGiftsButtonForDetailView(container, giftName, modelN
             Загрузка...
         </span>`;
 
-        let bgColor = 'linear-gradient(135deg, #f6d365 0%, #fda085 100%)';
+    let bgColor = 'linear-gradient(135deg, #f6d365 0%, #fda085 100%)';
     let textColor = '#ffffff';
     let textShadowStyle = '0 1px 2px rgba(0,0,0,0.4)';
     let customBoxShadow = '';
@@ -700,10 +700,10 @@ async function renderSimilarGiftsButtonForDetailView(container, giftName, modelN
     if (mainColors && mainColors.length > 0) {
         // Считаем средний цвет
         let rSum = 0, gSum = 0, bSum = 0, count = 0;
-        
+
         // Берем до 3х цветов
         const colorsToUse = mainColors.slice(0, 3);
-        
+
         colorsToUse.forEach(c => {
             const hex = c.hex.replace('#', '');
             if (hex.length === 6) {
@@ -722,7 +722,7 @@ async function renderSimilarGiftsButtonForDetailView(container, giftName, modelN
             // Считаем яркость по стандарту W3C (более точная формула)
             // Brightness = (R * 299 + G * 587 + B * 114) / 1000
             const brightness = Math.round(((r * 299) + (g * 587) + (b * 114)) / 1000);
-            
+
             // Порог 128 - граница. Если ярче 128, текст темный.
             if (brightness > 140) { // Чуть выше порог для уверенности
                 textColor = '#1e2944'; // Темно-синий текст
@@ -734,7 +734,7 @@ async function renderSimilarGiftsButtonForDetailView(container, giftName, modelN
             }
 
             // Градиент из среднего цвета в чуть более темный/насыщенный
-            bgColor = `linear-gradient(180deg, rgba(${r},${g},${b}, 1) 0%, rgba(${Math.max(0, r-30)},${Math.max(0, g-30)},${Math.max(0, b-30)}, 1) 100%)`;
+            bgColor = `linear-gradient(180deg, rgba(${r},${g},${b}, 1) 0%, rgba(${Math.max(0, r - 30)},${Math.max(0, g - 30)},${Math.max(0, b - 30)}, 1) 100%)`;
         }
     }
 
@@ -751,9 +751,9 @@ async function renderSimilarGiftsButtonForDetailView(container, giftName, modelN
         const [responseData, mainColors] = await Promise.all([
             fetch(similarUrl, {
                 method: 'POST',
-                headers: { 
+                headers: {
                     'Authorization': getApiAuthHeader(),
-                    'Content-Type': 'application/json' 
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify(body)
             }).then(r => r.json()),
@@ -761,9 +761,9 @@ async function renderSimilarGiftsButtonForDetailView(container, giftName, modelN
         ]);
 
         // --- ЛОГИКА ЦВЕТА КНОПКИ (из background-finder.js) ---
-        let bgColor = 'linear-gradient(135deg, #f6d365 0%, #fda085 100%)'; 
-        let textColor = '#ffffff'; 
-        let textShadowStyle = '0 1px 2px rgba(0,0,0,0.4)'; 
+        let bgColor = 'linear-gradient(135deg, #f6d365 0%, #fda085 100%)';
+        let textColor = '#ffffff';
+        let textShadowStyle = '0 1px 2px rgba(0,0,0,0.4)';
         let customBoxShadow = '';
         let customBorder = '';
 
@@ -772,16 +772,16 @@ async function renderSimilarGiftsButtonForDetailView(container, giftName, modelN
             const r = parseInt(hex.slice(1, 3), 16);
             const g = parseInt(hex.slice(3, 5), 16);
             const b = parseInt(hex.slice(5, 7), 16);
-            
+
             const luminance = (0.2126 * r + 0.7152 * g + 0.0722 * b);
-            
+
             if (luminance > 160) {
                 textColor = '#1e2944'; // Темный текст для светлого фона
-                textShadowStyle = 'none'; 
+                textShadowStyle = 'none';
                 customBoxShadow = '0 4px 12px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255,255,255,0.4)';
                 customBorder = '1px solid rgba(0, 0, 0, 0.1)';
             } else {
-                textColor = '#f1f5fa'; 
+                textColor = '#f1f5fa';
             }
             bgColor = `linear-gradient(180deg, rgba(${r},${g},${b}, 1) 0%, rgba(${r},${g},${b}, 0.85) 100%)`;
         }
@@ -801,7 +801,7 @@ async function renderSimilarGiftsButtonForDetailView(container, giftName, modelN
         }
 
         if (allCandidates.length === 0) {
-            container.innerHTML = ''; 
+            container.innerHTML = '';
             return;
         }
 
@@ -812,26 +812,26 @@ async function renderSimilarGiftsButtonForDetailView(container, giftName, modelN
         if (topCandidates.length > 0) {
             const idx1 = Math.floor(Math.random() * topCandidates.length);
             item1 = topCandidates[idx1];
-            
+
             // Пытаемся найти из другой коллекции или хотя бы другую модель
             const diffColl = topCandidates.filter(c => c.gift !== item1.gift);
             if (diffColl.length > 0) {
                 item2 = diffColl[Math.floor(Math.random() * diffColl.length)];
             } else {
-                 const diffMod = topCandidates.filter(c => c.model !== item1.model);
-                 if (diffMod.length > 0) item2 = diffMod[Math.floor(Math.random() * diffMod.length)];
+                const diffMod = topCandidates.filter(c => c.model !== item1.model);
+                if (diffMod.length > 0) item2 = diffMod[Math.floor(Math.random() * diffMod.length)];
             }
         }
 
         // --- РЕНДЕРИНГ ---
         const href = `../nft-page/index.html?giftName=${encodeURIComponent(giftName)}&modelName=${encodeURIComponent(modelName)}&randomGiftsCount=100`;
         const btn = document.createElement('a');
-        btn.className = 'similar-color-btn'; 
+        btn.className = 'similar-color-btn';
         btn.href = href;
-        
+
         btn.style.background = bgColor;
         btn.style.color = textColor + ' !important';
-        btn.style.textShadow = textShadowStyle; 
+        btn.style.textShadow = textShadowStyle;
         if (customBoxShadow) btn.style.boxShadow = customBoxShadow;
         if (customBorder) btn.style.border = customBorder;
 
@@ -843,18 +843,18 @@ async function renderSimilarGiftsButtonForDetailView(container, giftName, modelN
             Похожие по цвету
             ${img2}
         `;
-        
+
         btn.addEventListener('click', (e) => {
             e.preventDefault();
             window.location.href = href;
         });
-        
-        container.innerHTML = ''; 
+
+        container.innerHTML = '';
         container.appendChild(btn);
 
     } catch (error) {
         console.warn("[Similar Button] Error:", error);
-        container.innerHTML = ''; 
+        container.innerHTML = '';
     }
 }
 
@@ -862,7 +862,7 @@ function updateThemesRowUI(themesValEl, themes, modelData, fullData) {
     if (themes && themes.length > 0) {
         const count = themes.length;
         const plural = getPlural(count, 'тематика', 'тематики', 'тематик');
-        
+
         themesValEl.innerHTML = `${count} ${plural} <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width:14px; height:14px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>`;
         themesValEl.classList.add('link-style');
         themesValEl.style.cursor = 'pointer';
@@ -871,9 +871,9 @@ function updateThemesRowUI(themesValEl, themes, modelData, fullData) {
         themesValEl.onclick = () => {
             // ❗️ ВАЖНО: Передаем fullData в renderModelDetailView при возврате.
             // Теперь при нажатии "Назад" из списка тем, fetch не сработает, так как данные уже есть.
-            pushToHistory(() => renderModelDetailView(modelData, fullData)); 
-            
-            currentThemes = themes; 
+            pushToHistory(() => renderModelDetailView(modelData, fullData));
+
+            currentThemes = themes;
             currentGift = modelData.GiftName;
             currentModel = modelData.ModelName;
             renderThemeListView();
@@ -894,7 +894,7 @@ async function renderModelDetailView(modelData, preloadedData = null) {
     modalContent.innerHTML = '';
     modalContent.classList.remove('loading');
     modalContent.classList.add('details-mode');
-    toggleMainHeader(false); 
+    toggleMainHeader(false);
     const footer = document.querySelector('#themes-modal-overlay .themes-modal-footer');
     if (footer) footer.style.display = 'none';
 
@@ -908,20 +908,20 @@ async function renderModelDetailView(modelData, preloadedData = null) {
 
     if (preloadedData && preloadedData.bgData) {
         const bg = preloadedData.bgData;
-        
+
         if (bg.gradient) {
             bgStyle = `background: ${bg.gradient};`;
         }
-        
+
         if (bg.name) {
-            bgNameForNFTs = bg.name; 
+            bgNameForNFTs = bg.name;
             const bgLinkUrl = `./background-finder.html?mode=findModels&gift=${encodeURIComponent(modelData.GiftName)}&color=${encodeURIComponent(bg.name)}`;
             bgNameDisplay = `<a href="${bgLinkUrl}" class="info-value link-style" title="Искать модели для этого фона">${bg.name} ${searchIconSvg}</a>`;
-            
+
             if (bg.matchPercent && parseFloat(bg.matchPercent) > 0) {
                 compatDisplay = `<span class="info-value compat">${bg.matchPercent}%</span>`;
             } else {
-                 compatDisplay = '<span class="info-value dash" style="color: var(--text-muted); font-weight: 400;">—</span>';
+                compatDisplay = '<span class="info-value dash" style="color: var(--text-muted); font-weight: 400;">—</span>';
             }
         }
     }
@@ -947,19 +947,19 @@ async function renderModelDetailView(modelData, preloadedData = null) {
     }
 
     modalContent.innerHTML = `
-        <div style="padding-bottom: 2rem; position: relative;"> 
-            <div class="details-modal-header" style="position: sticky; top: 0; left: 0; width: 100%; z-index: 20; padding: 1.2rem 1.5rem; display: flex; justify-content: space-between; align-items: center; background: linear-gradient(to bottom, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0) 100%); backdrop-filter: blur(2px); margin-bottom: -70px; pointer-events: none;">
-                <button id="dm-back-btn" class="themes-modal-back-btn" style="pointer-events: auto;">
+        <div class="details-content-wrapper"> 
+            <div class="details-modal-header">
+                <button id="dm-back-btn" class="themes-modal-back-btn">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" /></svg>
                 </button>
-                <h3 class="modal-title" style="text-align: center; flex-grow: 1; color: #fff; text-shadow: 0 2px 4px rgba(0,0,0,0.6); margin: 0; pointer-events: auto;">${modelData.ModelName}</h3>
-                <button id="dm-close-btn" class="themes-modal-close-btn" style="pointer-events: auto;">
+                <h3 class="modal-title">${modelData.ModelName}</h3>
+                <button id="dm-close-btn" class="themes-modal-close-btn">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
             </div>
             
-            <div class="modal-visual-area" style="${bgStyle} margin-top: 0;">
-                <lottie-player src="${lottieUrl}" background="transparent" speed="1" loop autoplay style="width: 85%; height: 85%;"></lottie-player>
+            <div class="modal-visual-area" style="${bgStyle}">
+                <lottie-player src="${lottieUrl}" background="transparent" speed="1" loop autoplay></lottie-player>
             </div>
             
             <div class="modal-info info-table">
@@ -1024,13 +1024,13 @@ async function renderModelDetailView(modelData, preloadedData = null) {
                 }).filter(Boolean);
             }
             currentFullData = { themes, similar, colors: parsedColors, bgData: preloadedData ? preloadedData.bgData : null };
-        } catch(e) { console.error(e); }
+        } catch (e) { console.error(e); }
     }
 
     updateThemesRowUI(themesValEl, currentFullData.themes, modelData, currentFullData);
     renderSimilarButtonWithData(btnContainer, modelData.GiftName, modelData.ModelName, currentFullData.similar, currentFullData.colors);
-    
-   if (bgNameForNFTs) {
+
+    if (bgNameForNFTs) {
         setTimeout(() => {
             initNFTsSection(modelData.GiftName, modelData.ModelName, bgNameForNFTs);
         }, 0);
@@ -1050,12 +1050,12 @@ async function openModelDetail(giftName, modelName, bgName = null, onBack = null
         bgName = null;
     }
 
-    onBackCallback = onBack; 
-    navigationStack = []; 
-    
+    onBackCallback = onBack;
+    navigationStack = [];
+
     currentGift = giftName;
     currentModel = modelName;
-    currentBgName = bgName; 
+    currentBgName = bgName;
 
     // ❗️ СБРОС СОСТОЯНИЯ NFT ПРИ ОТКРЫТИИ НОВОЙ МОДАЛКИ
     nftsState = {
@@ -1072,8 +1072,8 @@ async function openModelDetail(giftName, modelName, bgName = null, onBack = null
 
     document.body.classList.add('modal-open');
     if (modalOverlay) modalOverlay.classList.remove('hidden');
-    
-    updateBackButtonState(); 
+
+    updateBackButtonState();
     showLoadingState();
     toggleMainHeader(false);
 
@@ -1101,9 +1101,9 @@ async function openModelDetail(giftName, modelName, bgName = null, onBack = null
         let countVal = 0;
         if (countData) {
             if (typeof countData === 'object' && countData.Count !== undefined) {
-                 countVal = countData.Count;
+                countVal = countData.Count;
             } else if (typeof countData === 'number') {
-                 countVal = countData;
+                countVal = countData;
             }
         }
 
@@ -1139,7 +1139,7 @@ async function openModelDetail(giftName, modelName, bgName = null, onBack = null
         const targetGiftData = {
             GiftName: giftName,
             ModelName: modelName,
-            Count: countVal, 
+            Count: countVal,
         };
 
         renderModelDetailView(targetGiftData, {
@@ -1148,7 +1148,7 @@ async function openModelDetail(giftName, modelName, bgName = null, onBack = null
             colors: parsedColors,
             bgData: bgDataForDetails
         });
-        
+
     } catch (e) {
         console.error("openModelDetail Error:", e);
         modalContent.innerHTML = `<div style="padding:2rem; text-align:center; color:#f87171;">Не удалось загрузить данные</div>`;
@@ -1160,14 +1160,14 @@ async function openModelDetail(giftName, modelName, bgName = null, onBack = null
 // --- ЗАМЕНИТЬ ФУНКЦИЮ ПОЛНОСТЬЮ: renderSimilarButtonWithData ---
 function renderSimilarButtonWithData(container, giftName, modelName, responseData, mainColors) {
     // Значения по умолчанию
-    let bgColor = 'linear-gradient(135deg, #f6d365 0%, #fda085 100%)'; 
-    let textColor = '#ffffff'; 
+    let bgColor = 'linear-gradient(135deg, #f6d365 0%, #fda085 100%)';
+    let textColor = '#ffffff';
     let customBorder = '';
 
     if (mainColors && mainColors.length > 0) {
         let rSum = 0, gSum = 0, bSum = 0, count = 0;
-        const colorsToUse = mainColors.slice(0, 3); 
-        
+        const colorsToUse = mainColors.slice(0, 3);
+
         colorsToUse.forEach(c => {
             const hex = c.hex.replace('#', '');
             if (hex.length === 6) {
@@ -1182,33 +1182,33 @@ function renderSimilarButtonWithData(container, giftName, modelName, responseDat
             const r = Math.round(rSum / count);
             const g = Math.round(gSum / count);
             const b = Math.round(bSum / count);
-            
+
             // Яркость фона
             const brightness = Math.round(((r * 299) + (g * 587) + (b * 114)) / 1000);
-            
+
             // --- СМЯГЧЕННАЯ ЛОГИКА ЦВЕТОВ ---
-            
-            if (brightness > 140) { 
+
+            if (brightness > 140) {
                 // === ФОН СВЕТЛЫЙ ===
                 // Было 0.35 (очень темно). Стало 0.45 (чуть мягче, но читаемо)
                 const factor = 0.45;
                 const tr = Math.round(r * factor);
                 const tg = Math.round(g * factor);
                 const tb = Math.round(b * factor);
-                textColor = `rgb(${tr}, ${tg}, ${tb})`; 
+                textColor = `rgb(${tr}, ${tg}, ${tb})`;
                 customBorder = 'none';
             } else {
                 // === ФОН ТЕМНЫЙ ===
                 // Было 0.85 (почти белый). Стало 0.7 (более цветной, "пастельный")
-                const mix = 0.70; 
+                const mix = 0.70;
                 const tr = Math.round(r + (255 - r) * mix);
                 const tg = Math.round(g + (255 - g) * mix);
                 const tb = Math.round(b + (255 - b) * mix);
                 textColor = `rgb(${tr}, ${tg}, ${tb})`;
             }
-            
+
             // Градиент фона
-            bgColor = `linear-gradient(180deg, rgba(${r},${g},${b}, 1) 0%, rgba(${Math.max(0, r-20)},${Math.max(0, g-20)},${Math.max(0, b-20)}, 1) 100%)`;
+            bgColor = `linear-gradient(180deg, rgba(${r},${g},${b}, 1) 0%, rgba(${Math.max(0, r - 20)},${Math.max(0, g - 20)},${Math.max(0, b - 20)}, 1) 100%)`;
         }
     }
 
@@ -1227,7 +1227,7 @@ function renderSimilarButtonWithData(container, giftName, modelName, responseDat
     }
 
     if (allCandidates.length === 0) {
-        container.innerHTML = ''; 
+        container.innerHTML = '';
         return;
     }
 
@@ -1242,26 +1242,26 @@ function renderSimilarButtonWithData(container, giftName, modelName, responseDat
         if (diffColl.length > 0) {
             item2 = diffColl[Math.floor(Math.random() * diffColl.length)];
         } else {
-             const diffMod = topCandidates.filter(c => c.model !== item1.model);
-             if (diffMod.length > 0) item2 = diffMod[Math.floor(Math.random() * diffMod.length)];
+            const diffMod = topCandidates.filter(c => c.model !== item1.model);
+            if (diffMod.length > 0) item2 = diffMod[Math.floor(Math.random() * diffMod.length)];
         }
     }
 
     // --- РЕНДЕРИНГ ---
     const href = `../nft-page/index.html?giftName=${encodeURIComponent(giftName)}&modelName=${encodeURIComponent(modelName)}&randomGiftsCount=100`;
     const btn = document.createElement('a');
-    btn.className = 'similar-color-btn'; 
+    btn.className = 'similar-color-btn';
     btn.href = href;
-    
+
     btn.style.background = bgColor;
-    btn.style.setProperty('color', textColor, 'important'); 
-    btn.style.textShadow = 'none'; 
-    
+    btn.style.setProperty('color', textColor, 'important');
+    btn.style.textShadow = 'none';
+
     if (customBorder) btn.style.border = customBorder;
 
     // --- ФИКС ВЫРАВНИВАНИЯ ---
     // 1. Добавляем display:block для картинок, чтобы они не ломали строку
-    const imgStyle = 'display:block; margin:0;'; 
+    const imgStyle = 'display:block; margin:0;';
     const img1 = item1 ? `<img src="${PHOTO_URL}/${encodeURIComponent(item1.gift)}/png/${encodeURIComponent(item1.model)}.png" class="similar-btn-icon" style="${imgStyle}" alt="">` : '';
     const img2 = item2 ? `<img src="${PHOTO_URL}/${encodeURIComponent(item2.gift)}/png/${encodeURIComponent(item2.model)}.png" class="similar-btn-icon" style="${imgStyle}" alt="">` : '';
 
@@ -1271,13 +1271,13 @@ function renderSimilarButtonWithData(container, giftName, modelName, responseDat
         <span style="display:inline-block; line-height:1; padding-top:1px;">Похожие по цвету</span>
         ${img2}
     `;
-    
+
     btn.addEventListener('click', (e) => {
         e.preventDefault();
         window.location.href = href;
     });
-    
-    container.innerHTML = ''; 
+
+    container.innerHTML = '';
     container.appendChild(btn);
 }
 // --- Публичные методы ---
@@ -1291,54 +1291,54 @@ function toggleMainHeader(show) {
 
 async function openCollection(collectionName, bgName = null) {
     navigationStack = []; // Очищаем историю
-    
+
     document.body.classList.add('modal-open');
     if (modalOverlay) modalOverlay.classList.remove('hidden');
-    
-    updateBackButtonState(); 
-    
+
+    updateBackButtonState();
+
     // Передаем фон в функцию загрузки
     await loadAndRenderModelView(collectionName, bgName);
 }
 
 async function open(giftName, modelName, onBack) {
-    onBackCallback = onBack; 
+    onBackCallback = onBack;
     navigationStack = []; // ❗️ Очищаем историю при новом открытии
-    
+
     currentGift = giftName;
     currentModel = modelName;
 
     document.body.classList.add('modal-open');
     if (!modalOverlay) return;
-    
+
     modalOverlay.classList.remove('hidden');
-    updateBackButtonState(); 
-    
+    updateBackButtonState();
+
     // Показываем лоадер
     showLoadingState();
     modalTitle.textContent = modelName;
 
     const url = `${BASE_URL}/api/Thematic/GetCollectionByGift/${encodeURIComponent(giftName)}/${encodeURIComponent(modelName)}/WithParameters`;
-    
+
     try {
         const response = await fetch(url, { headers: { 'Authorization': getApiAuthHeader() } });
         if (!response.ok) throw new Error('API Error');
         const themes = await response.json();
-        
+
         // Сохраняем глобально
-        currentThemes = themes; 
-        
+        currentThemes = themes;
+
         // --- ИЗМЕНЕНИЕ: ЛОГИКА АВТОПЕРЕХОДА ---
         if (themes && themes.length === 1) {
             // Если тема одна — сразу открываем её
             const singleThemeName = themes[0].CollectionName;
-            
+
             // Важно: Не пушим в историю (stack), чтобы кнопка "Назад" 
             // закрывала модалку, а не возвращала на пропущенный список.
             loadAndRenderModelView(singleThemeName);
         } else {
             // Если тем несколько или 0 — показываем список как обычно
-            renderThemeListView(); 
+            renderThemeListView();
         }
         // -------------------------------------
 
@@ -1351,7 +1351,7 @@ async function open(giftName, modelName, onBack) {
 function renderThemes(themes) {
     modalContent.innerHTML = '';
     modalContent.classList.remove('loading');
-    
+
     const container = document.createElement('div');
     container.className = 'themes-list-container';
 
@@ -1363,10 +1363,10 @@ function renderThemes(themes) {
     themes.forEach(theme => {
         const card = document.createElement('div');
         card.className = 'theme-card-modern';
-        
+
         // Исходный цвет (Hex)
-        const clusterHex = theme.ClusterAverageColorHex || '#38bdf8'; 
-        
+        const clusterHex = theme.ClusterAverageColorHex || '#38bdf8';
+
         // Свечение используем сразу (Hex с прозрачностью в CSS)
         card.style.setProperty('--glow-color', clusterHex);
 
@@ -1376,7 +1376,7 @@ function renderThemes(themes) {
         // Формируем иконки. Изначально ставим --icon-bg = Hex
         let iconsHtml = '';
         const displayGifts = theme.TopGifts.slice(0, 3);
-        
+
         displayGifts.forEach(gift => {
             const imgUrl = `${PHOTO_URL}/${encodeURIComponent(gift.GiftName)}/png/${encodeURIComponent(gift.ModelName)}.png`;
             iconsHtml += `
@@ -1434,16 +1434,16 @@ async function fetchAndApplyThemeGradient(cardElement, hexColor) {
 
     // URL: MonoCoof/TopBackgroundColorsByColors?top=1
     const url = `${BASE_URL}/api/MonoCoof/TopBackgroundColorsByColors?top=1`;
-    
+
     // Тело запроса: список цветов
     const body = {
-        Colors: [hexColor] 
+        Colors: [hexColor]
     };
 
     try {
         const response = await fetch(url, {
             method: 'POST',
-            headers: { 
+            headers: {
                 'Authorization': getApiAuthHeader(),
                 'Content-Type': 'application/json'
             },
@@ -1451,15 +1451,15 @@ async function fetchAndApplyThemeGradient(cardElement, hexColor) {
         });
 
         if (response.ok) {
-            const data = await response.json(); 
+            const data = await response.json();
             // Ожидаем массив: [{ Key: "Amber", Value: 0.99 }]
-            
+
             if (data && data.length > 0) {
                 const bgName = data[0].Key; // Название фона, например "Amber"
-                
+
                 // Ищем этот фон в глобальном списке цветов (он передан в init)
                 const colorObj = GLOBAL_COLORS.find(c => c.name === bgName || c.id === bgName);
-                
+
                 if (colorObj && colorObj.gradient) {
                     // 2. Сохраняем в кэш
                     gradientCache.set(hexColor, colorObj.gradient);
@@ -1486,7 +1486,7 @@ async function fetchAndApplyBackground(cardElement, giftName, modelName) {
     try {
         const userData = JSON.parse(sessionStorage.getItem('tgUser'));
         if (userData) { telegramId = userData.telegramId; username = userData.username; }
-    } catch(e){}
+    } catch (e) { }
 
     const url = `${BASE_URL}/api/MonoCoof/TopBackgroundColorsByNFT?top=1`;
     const body = {
@@ -1499,7 +1499,7 @@ async function fetchAndApplyBackground(cardElement, giftName, modelName) {
     try {
         const response = await fetch(url, {
             method: 'POST',
-            headers: { 
+            headers: {
                 'Authorization': getApiAuthHeader(),
                 'Content-Type': 'application/json'
             },
@@ -1525,8 +1525,8 @@ async function fetchAndApplyBackground(cardElement, giftName, modelName) {
 function close(keepScrollLock = false) {
     if (!modalOverlay) return;
     modalOverlay.classList.add('hidden');
-    hideLoadingState(); 
-    
+    hideLoadingState();
+
     // ❗️ ФИКС: Проверяем строго на true. 
     // Если функцию вызвал EventListener, keepScrollLock будет объектом Event (что равно true),
     // и скролл не разблокируется. Эта проверка исправляет баг.
@@ -1579,11 +1579,11 @@ function init(baseUrl, photoUrl, lazyLoadFunc, fixedColors) {
             </div>
         </div>
     `;
-    
+
     if (!document.getElementById('themes-modal-overlay')) {
         document.body.insertAdjacentHTML('beforeend', modalHtml);
     }
-    
+
     // (Дальше без изменений)
     modalOverlay = document.getElementById('themes-modal-overlay');
     modalContent = document.getElementById('themes-modal-content');
@@ -1606,11 +1606,11 @@ function handleBackNavigation() {
     if (navigationStack.length > 0) {
         const restoreState = navigationStack.pop();
         updateBackButtonState();
-        restoreState(); 
+        restoreState();
     } else {
         if (onBackCallback) {
             // ❗️ ФИКС: Передаем false, чтобы разблокировать скролл основной страницы
-            close(false); 
+            close(false);
             onBackCallback();
         } else {
             close(false);
@@ -1625,11 +1625,11 @@ function updateBackButtonState() {
     } else {
         // Если есть внешний callback (мы пришли из деталей), кнопку оставляем
         if (onBackCallback) {
-             modalBackButton.classList.remove('hidden');
-             modalBackButton.style.display = 'flex';
+            modalBackButton.classList.remove('hidden');
+            modalBackButton.style.display = 'flex';
         } else {
-             modalBackButton.classList.add('hidden');
-             modalBackButton.style.display = 'none';
+            modalBackButton.classList.add('hidden');
+            modalBackButton.style.display = 'none';
         }
     }
 }
@@ -1661,19 +1661,19 @@ function initNFTsSection(giftName, modelName, bgName) {
     const header = document.getElementById('tm-nfts-toggle-header');
     const grid = document.getElementById('tm-nfts-grid-container');
     const arrow = document.getElementById('tm-nfts-arrow');
-    
+
     if (!header || !grid) return;
 
     header.style.color = 'var(--text-muted)';
     header.classList.remove('expanded');
-    
+
     if (arrow) arrow.style.transform = 'rotate(0deg)';
-    
+
     grid.style.display = 'none';
     grid.classList.add('hidden');
     grid.innerHTML = '';
-    
-    header.onclick = function(e) {
+
+    header.onclick = function (e) {
         if (e) e.stopPropagation();
         if (document.activeElement) document.activeElement.blur();
         toggleNFTsSection();
@@ -1685,19 +1685,19 @@ function toggleNFTsSection() {
     const header = document.getElementById('tm-nfts-toggle-header');
     const grid = document.getElementById('tm-nfts-grid-container');
     const arrow = document.getElementById('tm-nfts-arrow');
-    
+
     if (!header || !grid) return;
 
     nftsState.isExpanded = !nftsState.isExpanded;
-    
+
     if (nftsState.isExpanded) {
         header.style.color = '#fff';
         header.classList.add('expanded');
         if (arrow) arrow.style.transform = 'rotate(180deg)';
-        
+
         grid.style.display = 'grid';
         grid.classList.remove('hidden');
-        
+
         if (grid.children.length === 0) {
             loadMoreNFTs();
         }
@@ -1712,7 +1712,7 @@ function toggleNFTsSection() {
 
 async function loadMoreNFTs() {
     if (nftsState.isLoading || !nftsState.hasMore) return;
-    
+
     nftsState.isLoading = true;
     // 🔥 ИЗМЕНЕНИЕ: Новый ID лоадера
     const loader = document.getElementById('tm-nfts-loading-indicator');
@@ -1722,7 +1722,7 @@ async function loadMoreNFTs() {
     }
 
     const url = `${BASE_URL}/api/ListGifts/SearchGifts/${nftsState.page}/${nftsState.pageSize}`;
-    
+
     const body = {
         GiftName: nftsState.currentGift,
         ModelName: nftsState.currentModel,
@@ -1741,7 +1741,7 @@ async function loadMoreNFTs() {
 
             if (data && data.Items && data.Items.length > 0) {
                 renderNFTs(data.Items);
-                
+
                 if (data.Items.length < nftsState.pageSize) {
                     nftsState.hasMore = false;
                 } else {
@@ -1772,7 +1772,7 @@ function renderNFTs(items) {
     // 🔥 ИЗМЕНЕНИЕ: Новый ID сетки
     const grid = document.getElementById('tm-nfts-grid-container');
     if (!grid) return;
-    
+
     const fragment = document.createDocumentFragment();
 
     items.forEach(item => {
@@ -1784,7 +1784,7 @@ function renderNFTs(items) {
         card.className = 'nft-card';
         card.href = linkUrl;
         card.target = "_blank";
-        
+
         card.style.position = 'relative';
         card.style.display = 'block';
         card.style.width = '100%';
@@ -1808,10 +1808,10 @@ function renderNFTs(items) {
 
 const SCROLL_POS_KEY = 'themesModalScrollPos';
 
-window.updateTelegramBackButton = function(mode) {
+window.updateTelegramBackButton = function (mode) {
     if (!window.Telegram || !window.Telegram.WebApp) return;
     const tg = window.Telegram.WebApp;
-    
+
     // Снимаем старые клики, чтобы не дублировались
     tg.BackButton.offClick();
     tg.BackButton.show();
@@ -1834,7 +1834,7 @@ function setupNFTIntersectionObserver() {
     // Мы скроллим сам контейнер модалки, а не .modal-scrollable-content, т.к. в themes-modal.js структура чуть другая
     // Но давайте попробуем привязаться к modalContent
     const rootTarget = document.getElementById('themes-modal-content');
-    
+
     if (!rootTarget) return;
 
     const options = {

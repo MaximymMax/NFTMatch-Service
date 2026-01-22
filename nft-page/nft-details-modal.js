@@ -1,7 +1,7 @@
 const SERVER_BASE_URL = 'https://nftmatchbot20250730152328.azurewebsites.net/';
 const API_PHOTO_MODEL_URL = 'https://cdn.changes.tg/gifts/models';
-// Используем актуальный эндпоинт (с 's' на конце, так как сервер обновился)
-const API_SIMILAR_MODELS = '/api/MonoCoof/SimilarNFTs';
+// Используем актуальный эндпоинт для получения всех похожих моделей
+const API_SIMILAR_MODELS = '/api/MonoCoof/SimilarNFT';
 
 export function initNftDetailsModal() {
 
@@ -249,6 +249,8 @@ export function initNftDetailsModal() {
             const baseUrl = SERVER_BASE_URL.endsWith('/') ? SERVER_BASE_URL.slice(0, -1) : SERVER_BASE_URL;
             const finalUrl = `${baseUrl}${API_SIMILAR_MODELS}`;
 
+            console.log('Запрос похожих моделей:', { url: finalUrl, body: requestBody });
+
             const response = await fetch(finalUrl, {
                 method: 'POST',
                 headers: {
@@ -266,32 +268,45 @@ export function initNftDetailsModal() {
             }
 
             const data = await response.json();
+            console.log('Ответ API похожих моделей:', data);
 
-            // --- ЛОГИКА ПАРСИНГА (Fix для зависания данных) ---
+            // --- ЛОГИКА ПАРСИНГА: Получаем все похожие модели ---
             let rawModelsList = [];
 
-            // 1. Если это Словарь (Объект)
-            if (data && typeof data === 'object' && !Array.isArray(data)) {
-                let giftData = data[cardGiftName];
-                if (!giftData) {
-                    const values = Object.values(data);
-                    if (values.length > 0) giftData = values[0];
-                }
-                if (giftData && Array.isArray(giftData.SimilarModels)) {
-                    rawModelsList = giftData.SimilarModels;
-                }
-            }
-            // 2. Если это Массив (старый формат API)
-            else if (Array.isArray(data)) {
+            // API возвращает простой массив [{Name, Coof, Count}, ...]
+            if (Array.isArray(data)) {
                 rawModelsList = data;
             }
+            // На случай, если API вернет объект со вложенным массивом
+            else if (data && typeof data === 'object') {
+                // Пытаемся найти массив SimilarModels
+                if (Array.isArray(data.SimilarModels)) {
+                    rawModelsList = data.SimilarModels;
+                }
+                // Или ищем первый массив в значениях объекта
+                else {
+                    const values = Object.values(data);
+                    for (const val of values) {
+                        if (Array.isArray(val)) {
+                            rawModelsList = val;
+                            break;
+                        }
+                        if (val && typeof val === 'object' && Array.isArray(val.SimilarModels)) {
+                            rawModelsList = val.SimilarModels;
+                            break;
+                        }
+                    }
+                }
+            }
 
+            // Преобразуем в единый формат
             currentSimilarModels = rawModelsList.map(item => ({
-                name: item.Name || item.Key || 'Unknown',
+                name: item.Name || item.Key || item.name || 'Unknown',
                 coof: (item.Coof !== undefined) ? item.Coof : (item.Value !== undefined ? item.Value : 0),
-                count: item.Count || 0
+                count: item.Count !== undefined ? item.Count : (item.count !== undefined ? item.count : 0)
             }));
 
+            console.log(`Загружено ${currentSimilarModels.length} похожих моделей`);
             renderSimilarModelsList();
 
         } catch (error) {
