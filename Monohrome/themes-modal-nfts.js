@@ -20,6 +20,11 @@ window.initNFTsSection = function (giftName, modelName, bgName) {
             window.nftsState.isExpanded = false;
             gridContainer.classList.add('hidden');
             if (arrowEl) arrowEl.style.transform = 'rotate(0deg)';
+
+            // Оптимизация: Возобновление Lottie
+            const lottie = document.querySelector('lottie-player');
+            if (lottie && lottie.play) lottie.play();
+
             return;
         }
 
@@ -36,6 +41,10 @@ window.initNFTsSection = function (giftName, modelName, bgName) {
         gridContainer.innerHTML = '';
         loadingInd.classList.remove('hidden');
         window.nftsState.isLoading = true;
+
+        // Оптимизация: Пауза Lottie
+        const lottie = document.querySelector('lottie-player');
+        if (lottie && lottie.pause) lottie.pause();
 
         try {
             // Формируем запрос для загрузки NFT
@@ -72,6 +81,10 @@ window.initNFTsSection = function (giftName, modelName, bgName) {
                         if (arrowEl) arrowEl.style.transform = 'rotate(0deg)';
                         loadingInd.classList.add('hidden');
                         window.nftsState.isLoading = false;
+
+                        const lottie = document.querySelector('lottie-player');
+                        if (lottie && lottie.play) lottie.play();
+
                         return;
                     }
                 } catch (e) {

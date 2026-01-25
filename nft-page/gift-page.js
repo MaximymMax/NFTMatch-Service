@@ -259,7 +259,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const newUrl = `${window.location.pathname}?${params.toString()}`;
-        window.history.pushState({ path: newUrl }, '', newUrl);
+        window.history.replaceState({ path: newUrl }, '', newUrl);
     }
 
     function getApiAuthHeader() {

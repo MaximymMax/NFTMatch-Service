@@ -108,6 +108,7 @@ function getApiAuthHeader() {
     console.error("[AUTH Themes] Не удалось получить initData или ключ обхода.");
     return 'Tma invalid';
 }
+window.getApiAuthHeader = getApiAuthHeader;
 
 function getModelPlural(count) {
     return getPlural(count, 'модель', 'модели', 'моделей');
@@ -1550,6 +1551,7 @@ let modalCloseBtn;      // Ссылка на кнопку закрытия
  */
 function init(baseUrl, photoUrl, lazyLoadFunc, fixedColors) {
     BASE_URL = baseUrl;
+    window.BASE_URL = baseUrl;
     PHOTO_URL = photoUrl;
     lazyLoadSetup = lazyLoadFunc;
     GLOBAL_COLORS = fixedColors || [];
@@ -1741,7 +1743,7 @@ async function loadMoreNFTs() {
                 const errorData = await response.json();
                 if (errorData.error === 'subscription_required') {
                     console.warn('[NFTs] Требуется подписка. Channel ID:', errorData.channelId);
-                    
+
                     // 1. Показываем модалку (функция должна быть доступна глобально из themes-modal-nfts.js)
                     if (typeof window.showSubscriptionModal === 'function') {
                         window.showSubscriptionModal(errorData.channelId);
