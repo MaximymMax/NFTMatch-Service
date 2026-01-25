@@ -571,17 +571,20 @@ async function onModelCardClick(gift, cardElement) {
 
         if (currentBgName) {
             const colorObj = GLOBAL_COLORS.find(c => c.name === currentBgName || c.id === currentBgName);
-            let matchPercent = 0;
-            if (bgScoreData && Array.isArray(bgScoreData)) {
-                const exactMatch = bgScoreData.find(x => x.Key === currentBgName || x.Key === colorObj?.id);
-                if (exactMatch) {
-                    matchPercent = (exactMatch.Value * 100).toFixed(1);
-                }
-            }
-            if (countData && typeof countData.TotalCount === 'number') {
-                finalCount = countData.TotalCount;
-            }
+
+            // Всегда создаем bgDataForDetails, если есть colorObj
             if (colorObj) {
+                let matchPercent = 0;
+                if (bgScoreData && Array.isArray(bgScoreData)) {
+                    const exactMatch = bgScoreData.find(x => x.Key === currentBgName || x.Key === colorObj?.id);
+                    if (exactMatch) {
+                        matchPercent = (exactMatch.Value * 100).toFixed(1);
+                    }
+                }
+                if (countData && typeof countData.TotalCount === 'number') {
+                    finalCount = countData.TotalCount;
+                }
+
                 bgDataForDetails = {
                     name: colorObj.name,
                     gradient: colorObj.gradient,
