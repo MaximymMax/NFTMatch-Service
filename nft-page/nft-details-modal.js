@@ -351,23 +351,13 @@ export function initNftDetailsModal() {
 
             fetchSimilarModels();
 
-            const newUrl = new URL(window.location);
-            newUrl.searchParams.set('view', 'details');
-            newUrl.searchParams.set('d_gift', cardGiftName);
-            newUrl.searchParams.set('d_model', selectedModelName);
-            window.history.pushState({ path: newUrl.href }, '', newUrl.href);
+            // НЕ добавляем модальное окно в историю браузера
+            // Модалка - это UI состояние, а не навигация между страницами
         });
     }
 
     function closeNftDetailsModal() {
-        const newUrl = new URL(window.location);
-        newUrl.searchParams.delete('view');
-        newUrl.searchParams.delete('d_gift');
-        newUrl.searchParams.delete('d_model');
-        newUrl.searchParams.delete('gift'); // Чистим старые параметры
-        newUrl.searchParams.delete('model');
-
-        window.history.replaceState({ path: newUrl.href }, '', newUrl.href);
+        // Модальное окно закрывается без изменения URL
 
         if (modalOverlay) {
             // FIX: Сначала убираем видимость (анимация исчезновения)
