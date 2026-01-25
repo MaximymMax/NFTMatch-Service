@@ -1036,7 +1036,12 @@ async function renderModelDetailView(modelData, preloadedData = null) {
 
     if (bgNameForNFTs) {
         setTimeout(() => {
-            initNFTsSection(modelData.GiftName, modelData.ModelName, bgNameForNFTs);
+            // Используем глобальную функцию из themes-modal-nfts.js с проверкой подписки
+            if (typeof window.initNFTsSection === 'function') {
+                window.initNFTsSection(modelData.GiftName, modelData.ModelName, bgNameForNFTs);
+            } else {
+                initNFTsSection(modelData.GiftName, modelData.ModelName, bgNameForNFTs);
+            }
         }, 0);
     }
 }
