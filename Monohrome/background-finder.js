@@ -16,12 +16,13 @@ document.addEventListener('DOMContentLoaded', () => {
             tg.BackButton.show();
 
             tg.BackButton.onClick(() => {
-                // Если есть история переходов (мы пришли с другой страницы) -> возвращаемся назад.
-                // Состояние той страницы (скролл, табы) браузер восстановит сам.
-                if (window.history.length > 1) {
+                // Проверяем, открыта ли модалка деталей
+                const detailsModal = document.getElementById('details-modal-overlay');
+                if (detailsModal && !detailsModal.classList.contains('hidden')) {
+                    // Если модалка открыта - закрываем её через браузерную историю
                     window.history.back();
                 } else {
-                    // Если истории нет (открыли по прямой ссылке) -> идем в корень
+                    // Если модалки нет - возвращаемся на главную
                     window.location.href = '../index.html';
                 }
             });

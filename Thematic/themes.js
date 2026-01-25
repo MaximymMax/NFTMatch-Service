@@ -303,11 +303,16 @@ document.addEventListener('DOMContentLoaded', () => {
             tg.expand();
 
             tg.BackButton.show();
+            tg.BackButton.offClick(); // Очищаем предыдущие обработчики
+
             tg.BackButton.onClick(() => {
-                // Логика кнопки "Назад"
-                if (window.history.length > 1) {
+                // Проверяем, открыта ли модалка
+                if (state.openedCollection) {
+                    // Если модалка открыта - просто возвращаемся назад по истории браузера
+                    // closeCollectionModal() вызовется автоматически через popstate
                     window.history.back();
                 } else {
+                    // Если модалки нет, идем на главную страницу
                     window.location.href = '../index.html';
                 }
             });
@@ -824,6 +829,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (window.themesModal && window.themesModal.init) {
             window.themesModal.init(SERVER_BASE_URL, API_PHOTO_URL, null, fixedColors);
         }
+
+        // Инициализация для работы модального окна подписки
+        // Функция showSubscriptionModal уже определена в themes-modal-nfts.js
+        window.BASE_URL = SERVER_BASE_URL;
     }
 
     init();
