@@ -4,11 +4,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (window.Telegram && window.Telegram.WebApp) {
         const tg = window.Telegram.WebApp;
         
-        // 1. ПРОВЕРЯЕМ ПЛАТФОРМУ
-        // Раскрываем только если это мобильное устройство
-        if (tg.platform === 'android' || tg.platform === 'ios') {
-            tg.expand(); 
-        }
+        // 1. ВСЕГДА РАСКРЫВАЕМ НА ВЕСЬ ЭКРАН
+        // Убрали проверку платформы для надежности
+        tg.expand(); 
         
         tg.BackButton.hide(); 
 
@@ -49,24 +47,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     saveInitData();
 
-    // Вспомогательная функция для раскрытия только на мобильных
-    const expandIfMobile = () => {
-        if (window.Telegram && window.Telegram.WebApp) {
-            const platform = window.Telegram.WebApp.platform;
-            if (platform === 'android' || platform === 'ios') {
-                window.Telegram.WebApp.expand();
-            }
-        }
-    };
-
     const checkEnvironmentAndGate = () => {
         if (saveInitData()) {
             if (tgGateOverlay) tgGateOverlay.classList.add('hidden');
             body.classList.remove('body-gated');
             body.classList.add('tg-fullscreen');
             
-            // Пытаемся раскрыть (но только если телефон)
-            expandIfMobile();
+            // Повторно вызываем expand, чтобы убедиться, что приложение развернуто
+            if (window.Telegram?.WebApp) window.Telegram.WebApp.expand();
             
             return true;
         } else {
@@ -82,8 +70,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             if (window.Telegram?.WebApp) {
                 window.Telegram.WebApp.ready();
-                // Даже на экране заглушки раскрываем, но только на телефоне
-                expandIfMobile();
+                window.Telegram.WebApp.expand(); // Раскрываем даже на экране заглушки
             }
             return false;
         }
