@@ -3,11 +3,28 @@ document.addEventListener('DOMContentLoaded', () => {
     // === ИНИЦИАЛИЗАЦИЯ TELEGRAM ===
     if (window.Telegram && window.Telegram.WebApp) {
         const tg = window.Telegram.WebApp;
+
+        // 1. Сообщаем, что приложение готово (важно вызвать до расширения)
+        tg.ready();
         
-        // 1. ВСЕГДА РАСКРЫВАЕМ НА ВЕСЬ ЭКРАН
-        // Убрали проверку платформы для надежности
-        tg.expand(); 
+        // 2. Пытаемся включить ПОЛНОЦЕННЫЙ полноэкранный режим (API 8.0+)
+        try {
+            if (typeof tg.requestFullscreen === 'function') {
+                tg.requestFullscreen();
+            } else {
+                // Фолбэк для старых версий
+                tg.expand();
+            }
+        } catch (e) {
+            console.error('[Fullscreen] Error:', e);
+            tg.expand(); // Если что-то пошло не так, просто расширяем
+        }
         
+        // 3. Отключаем свайп вниз для закрытия (чтобы случайно не закрыли)
+        if (tg.isVersionAtLeast && tg.isVersionAtLeast('7.7')) {
+             tg.disableVerticalSwipes();
+        }
+
         tg.BackButton.hide(); 
 
         if (tg.initData) {
@@ -47,14 +64,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
     saveInitData();
 
+    // Функция жесткого форсирования полного экрана при проверке окружения
+    const forceFullscreen = () => {
+        if (window.Telegram && window.Telegram.WebApp) {
+            const tg = window.Telegram.WebApp;
+            try {
+                if (typeof tg.requestFullscreen === 'function') {
+                    tg.requestFullscreen();
+                }
+                tg.expand();
+            } catch(e) {}
+        }
+    };
+
     const checkEnvironmentAndGate = () => {
         if (saveInitData()) {
             if (tgGateOverlay) tgGateOverlay.classList.add('hidden');
             body.classList.remove('body-gated');
             body.classList.add('tg-fullscreen');
             
-            // Повторно вызываем expand, чтобы убедиться, что приложение развернуто
-            if (window.Telegram?.WebApp) window.Telegram.WebApp.expand();
+            forceFullscreen();
             
             return true;
         } else {
@@ -70,7 +99,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             if (window.Telegram?.WebApp) {
                 window.Telegram.WebApp.ready();
-                window.Telegram.WebApp.expand(); // Раскрываем даже на экране заглушки
+                forceFullscreen();
             }
             return false;
         }
@@ -82,7 +111,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ====== DEEP LINKING ROUTER (UNIVERSAL) ======
     function handleDeepLink() {
-        const PROCESSED_KEY = 'deepLinkProcessed_v3'; 
+        const PROCESSED_KEY = 'deepLinkProcessed_v4'; 
 
         if (sessionStorage.getItem(PROCESSED_KEY)) {
             console.log('[DeepLink] Already processed.');
@@ -117,7 +146,6 @@ document.addEventListener('DOMContentLoaded', () => {
             case 'api':
                 targetUrl = './API_info/api.html';
                 break;
-                
             case 'support': 
                 targetUrl = './Support/support.html';
                 break;
