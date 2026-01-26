@@ -120,6 +120,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         console.log('[DeepLink] Processing action:', action);
 
+        // Очищаем URL от параметров deep link, чтобы избежать повторной обработки при возврате назад
+        clearDeepLinkParams();
+
         // Показываем индикатор загрузки
         showLoadingIndicator();
 
@@ -154,6 +157,33 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.warn('[DeepLink] Unknown action:', action);
                 hideLoadingIndicator();
                 break;
+        }
+    }
+
+    // Функция для очистки параметров deep link из URL
+    function clearDeepLinkParams() {
+        const url = new URL(window.location.href);
+        const params = new URLSearchParams(url.search);
+
+        // Удаляем все параметры, связанные с deep linking
+        const deepLinkParams = ['action', 'startapp', 'gift', 'color', 'model', 'count', 'theme'];
+        let hasChanges = false;
+
+        deepLinkParams.forEach(param => {
+            if (params.has(param)) {
+                params.delete(param);
+                hasChanges = true;
+            }
+        });
+
+        if (hasChanges) {
+            // Обновляем URL без перезагрузки страницы
+            const newUrl = params.toString()
+                ? `${url.pathname}?${params.toString()}`
+                : url.pathname;
+
+            window.history.replaceState({}, '', newUrl);
+            console.log('[DeepLink] URL cleaned:', newUrl);
         }
     }
 
