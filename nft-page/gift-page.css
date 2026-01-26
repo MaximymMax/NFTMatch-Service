@@ -1,4 +1,4 @@
-/*
+﻿/*
 ======================================
 1. CORE & GLOBALS
 ======================================
@@ -177,18 +177,20 @@ header.safe-area-gradient {
 }
 
 .page-title {
-    font-size: clamp(1.4rem, 4vw, 1.8rem);
-    font-weight: 700;
+    font-size: 2rem;
+    font-weight: 900;
     color: var(--text-primary);
     margin: 0;
     line-height: 1.2;
+    text-transform: uppercase;
 }
+
 
 .page-title.centered-title {
     text-align: center;
-    margin: 0 auto 2rem auto;
-    padding-bottom: 1rem;
-    border-bottom: 1px solid var(--border-color);
+    margin: 1.5rem auto 1rem auto;
+    padding-bottom: 0;
+    
 }
 
 .selection-block {
@@ -685,7 +687,7 @@ header.safe-area-gradient {
     z-index: 10;
     background-color: var(--surface-elevated);
     padding: 0.5rem 0.4rem;
-    border-bottom: 1px solid var(--border-color);
+    
 }
 
 .dropdown-controls-buttons {
@@ -1451,8 +1453,8 @@ header.safe-area-gradient {
     margin-bottom: 1rem;
     text-align: center;
     line-height: 1.4;
-    border-bottom: 1px solid var(--border-color);
-    padding-bottom: 1rem;
+    
+    padding-bottom: 0;
 }
 
 #saveColorsBtn {
@@ -2045,7 +2047,7 @@ header.safe-area-gradient {
         flex-direction: row;
         align-items: stretch;
         max-width: 400px;
-        margin: 0 auto 2rem auto;
+        margin: 1.5rem auto 1rem auto;
         width: 100%;
     }
 

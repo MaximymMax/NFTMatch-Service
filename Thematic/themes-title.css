@@ -1,0 +1,41 @@
+/* Секция для заголовка и кредитов */
+.title-section {
+    display: inline-block;
+    margin: 1.5rem auto 1rem auto;
+    width: fit-content;
+}
+
+/* Центрируем саму секцию */
+.main-container>.title-section {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    width: fit-content;
+}
+
+/* Заголовок - в центре секции */
+.page-main-title {
+    font-size: 2rem;
+    font-weight: 900;
+    color: #fff;
+    text-align: center;
+    margin: 0 0 0.3rem 0;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* Кредиты - по левой стороне секции */
+.page-credits {
+    text-align: left;
+    font-size: 0.85rem;
+    color: #fff;
+    margin: 0;
+    text-align: center;
+}
+
+.page-credits a {
+    color: #63ccf8;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
