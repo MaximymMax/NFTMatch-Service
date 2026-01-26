@@ -100,21 +100,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ====== DEEP LINKING ROUTER (FIXED) ======
     function handleDeepLink() {
-        // Создаем копию параметров, чтобы работать с ними после очистки URL
+        const PROCESSED_KEY = 'deepLinkProcessed_v1';
+
+        // 1. ВАЖНО: Если мы уже обработали диплинк в этой сессии, 
+        // игнорируем его при возврате назад.
+        if (sessionStorage.getItem(PROCESSED_KEY)) {
+            console.log('[DeepLink] Already processed. Skipping to avoid loop.');
+            return;
+        }
+
         let urlParams = new URLSearchParams(window.location.search);
         let action = urlParams.get('action');
 
-        // 1. Проверяем Telegram startapp (если action нет в URL)
         if (!action) {
             const startapp = urlParams.get('startapp');
-            // Важно: берем start_param из initDataUnsafe, это надежнее внутри Telegram
             const tgStartParam = window.Telegram?.WebApp?.initDataUnsafe?.start_param;
             const deepLinkString = startapp || tgStartParam;
 
             if (deepLinkString) {
                 console.log('[DeepLink] Telegram startapp detected:', deepLinkString);
                 const parsedParams = parseStartAppParams(deepLinkString);
-                // Объединяем параметры
                 parsedParams.forEach((value, key) => urlParams.set(key, value));
                 action = urlParams.get('action');
             }
@@ -124,14 +129,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
         console.log('[DeepLink] Processing action:', action);
 
-        // 2. ВАЖНО: Сначала очищаем URL текущей страницы (Index), 
-        // чтобы кнопка "Назад" возвращала на "чистую" главную, а не в редирект-петлю.
-        cleanCurrentUrlHistory();
+        // 2. Ставим метку, что диплинк отработал.
+        // При нажатии "Назад" этот код больше не выполнится.
+        sessionStorage.setItem(PROCESSED_KEY, 'true');
 
-        // 3. Показываем лоадер
+        cleanCurrentUrlHistory();
         showLoadingIndicator();
 
-        // 4. Формируем целевой URL
         let targetUrl = '';
 
         switch (action) {
@@ -181,10 +185,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
         }
 
-        // 5. Выполняем переход, если URL сформирован
         if (targetUrl) {
-            // Используем href (или assign), чтобы СОЗДАТЬ новую запись в истории.
-            // Т.к. мы очистили предыдущую запись (шаг 2), кнопка назад вернет на чистый Index.
             setTimeout(() => {
                 window.location.href = targetUrl;
             }, 100); 

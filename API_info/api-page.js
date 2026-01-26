@@ -44,8 +44,10 @@ document.addEventListener('DOMContentLoaded', () => {
         tg.BackButton.show();
 
         tg.BackButton.onClick(() => {
-            // Всегда возвращаемся на главную страницу
-            window.location.href = '../index.html';
+            // Используем history.back(). 
+            // Так как в main-page.js мы очистили URL и поставили флаг PROCESSED_KEY,
+            // мы вернемся на чистую главную страницу и скрипт редиректа нас проигнорирует.
+            window.history.back();
         });
 
         if (tg.setHeaderColor) {
