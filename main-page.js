@@ -100,8 +100,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ====== DEEP LINKING ROUTER ======
     function handleDeepLink() {
-        const urlParams = new URLSearchParams(window.location.search);
-        const action = urlParams.get('action');
+        let urlParams = new URLSearchParams(window.location.search);
+        let action = urlParams.get('action');
+
+        // Если нет обычного параметра action, проверяем Telegram startapp
+        if (!action) {
+            const startapp = urlParams.get('startapp');
+            const tgStartParam = window.Telegram?.WebApp?.initDataUnsafe?.start_param;
+            const deepLinkString = startapp || tgStartParam;
+
+            if (deepLinkString) {
+                console.log('[DeepLink] Telegram startapp detected:', deepLinkString);
+                urlParams = parseStartAppParams(deepLinkString);
+                action = urlParams.get('action');
+            }
+        }
 
         if (!action) return; // Нет deep link параметров
 
@@ -142,6 +155,38 @@ document.addEventListener('DOMContentLoaded', () => {
                 hideLoadingIndicator();
                 break;
         }
+    }
+
+    // Парсим параметры из Telegram startapp
+    function parseStartAppParams(startappString) {
+        const params = new URLSearchParams();
+        const parts = startappString.split('-');
+        const action = parts[0];
+
+        params.set('action', action);
+
+        switch (action) {
+            case 'monochrome_color':
+                if (parts[1]) params.set('gift', parts[1].replace(/_/g, ' '));
+                if (parts[2]) params.set('color', parts[2].replace(/_/g, ' '));
+                break;
+            case 'monochrome_model':
+                if (parts[1]) params.set('gift', parts[1].replace(/_/g, ' '));
+                if (parts[2]) params.set('model', parts[2].replace(/_/g, ' '));
+                break;
+            case 'similar':
+                if (parts[1]) params.set('gift', parts[1].replace(/_/g, ' '));
+                if (parts[2]) params.set('model', parts[2].replace(/_/g, ' '));
+                if (parts[3]) params.set('count', parts[3]);
+                break;
+            case 'theme':
+                if (parts[1]) params.set('gift', parts[1].replace(/_/g, ' '));
+                if (parts[2]) params.set('model', parts[2].replace(/_/g, ' '));
+                if (parts[3]) params.set('theme', parts[3].replace(/_/g, ' '));
+                break;
+        }
+
+        return params;
     }
 
     function showLoadingIndicator() {
