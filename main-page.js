@@ -1,8 +1,16 @@
 document.addEventListener('DOMContentLoaded', () => {
 
+    // === ИНИЦИАЛИЗАЦИЯ TELEGRAM ===
     if (window.Telegram && window.Telegram.WebApp) {
         const tg = window.Telegram.WebApp;
-        tg.BackButton.hide(); // Скрываем кнопку назад на главной
+        
+        // 1. ПРОВЕРЯЕМ ПЛАТФОРМУ
+        // Раскрываем только если это мобильное устройство
+        if (tg.platform === 'android' || tg.platform === 'ios') {
+            tg.expand(); 
+        }
+        
+        tg.BackButton.hide(); 
 
         if (tg.initData) {
             sessionStorage.setItem('tgInitData', tg.initData);
@@ -19,58 +27,47 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function saveInitData() {
         if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData) {
-            const initData = window.Telegram.WebApp.initData;
-            if (initData) {
-                try {
-                    sessionStorage.setItem(INIT_DATA_KEY, initData);
-                } catch (e) {
-                    console.error(e);
+            try {
+                sessionStorage.setItem(INIT_DATA_KEY, window.Telegram.WebApp.initData);
+                const tgUser = window.Telegram.WebApp.initDataUnsafe?.user;
+                if (tgUser) {
+                    const userData = {
+                        telegramId: parseInt(tgUser.id, 10),
+                        username: tgUser.username || null,
+                        firstName: tgUser.first_name || null,
+                        lastName: tgUser.last_name || null,
+                    };
+                    sessionStorage.setItem('tgUser', JSON.stringify(userData));
                 }
-
-                try {
-                    const tgUser = window.Telegram.WebApp.initDataUnsafe?.user;
-                    if (tgUser) {
-                        const userData = {
-                            telegramId: parseInt(tgUser.id, 10),
-                            username: tgUser.username || null,
-                            firstName: tgUser.first_name || null,
-                            lastName: tgUser.last_name || null,
-                        };
-                        sessionStorage.setItem('tgUser', JSON.stringify(userData));
-                    }
-                } catch (e) { }
-
                 return true;
-            }
+            } catch (e) { console.error(e); }
         }
-
-        const cachedInitData = sessionStorage.getItem(INIT_DATA_KEY);
-        if (cachedInitData) {
-            return true;
-        }
-
-        const bypassKey = sessionStorage.getItem(BYPASS_KEY_STORAGE);
-        if (bypassKey) {
-            return true;
-        }
-
+        if (sessionStorage.getItem(INIT_DATA_KEY)) return true;
+        if (sessionStorage.getItem(BYPASS_KEY_STORAGE)) return true;
         return false;
     }
 
     saveInitData();
 
-    const checkEnvironmentAndGate = () => {
-        const isAuthAvailable = saveInitData();
-
-        if (isAuthAvailable) {
-            if (tgGateOverlay) tgGateOverlay.classList.add('hidden');
-            body.classList.remove('body-gated');
-
-            body.classList.add('tg-fullscreen');
-
-            if (window.Telegram && window.Telegram.WebApp) {
+    // Вспомогательная функция для раскрытия только на мобильных
+    const expandIfMobile = () => {
+        if (window.Telegram && window.Telegram.WebApp) {
+            const platform = window.Telegram.WebApp.platform;
+            if (platform === 'android' || platform === 'ios') {
                 window.Telegram.WebApp.expand();
             }
+        }
+    };
+
+    const checkEnvironmentAndGate = () => {
+        if (saveInitData()) {
+            if (tgGateOverlay) tgGateOverlay.classList.add('hidden');
+            body.classList.remove('body-gated');
+            body.classList.add('tg-fullscreen');
+            
+            // Пытаемся раскрыть (но только если телефон)
+            expandIfMobile();
+            
             return true;
         } else {
             const urlParams = new URLSearchParams(window.location.search);
@@ -80,32 +77,28 @@ document.addEventListener('DOMContentLoaded', () => {
                 window.location.reload();
                 return true;
             }
-
             if (tgGateOverlay) tgGateOverlay.classList.remove('hidden');
             body.classList.add('body-gated');
-
-            if (window.Telegram && window.Telegram.WebApp) {
+            
+            if (window.Telegram?.WebApp) {
                 window.Telegram.WebApp.ready();
+                // Даже на экране заглушки раскрываем, но только на телефоне
+                expandIfMobile();
             }
-
             return false;
         }
     };
 
     const signalTelegramAppReady = () => {
-        if (window.Telegram && window.Telegram.WebApp) {
-            window.Telegram.WebApp.ready();
-        }
+        if (window.Telegram?.WebApp) window.Telegram.WebApp.ready();
     };
 
-    // ====== DEEP LINKING ROUTER (FIXED) ======
+    // ====== DEEP LINKING ROUTER (UNIVERSAL) ======
     function handleDeepLink() {
-        const PROCESSED_KEY = 'deepLinkProcessed_v1';
+        const PROCESSED_KEY = 'deepLinkProcessed_v3'; 
 
-        // 1. ВАЖНО: Если мы уже обработали диплинк в этой сессии, 
-        // игнорируем его при возврате назад.
         if (sessionStorage.getItem(PROCESSED_KEY)) {
-            console.log('[DeepLink] Already processed. Skipping to avoid loop.');
+            console.log('[DeepLink] Already processed.');
             return;
         }
 
@@ -113,26 +106,21 @@ document.addEventListener('DOMContentLoaded', () => {
         let action = urlParams.get('action');
 
         if (!action) {
-            const startapp = urlParams.get('startapp');
             const tgStartParam = window.Telegram?.WebApp?.initDataUnsafe?.start_param;
-            const deepLinkString = startapp || tgStartParam;
+            const deepLinkString = tgStartParam || urlParams.get('startapp');
 
             if (deepLinkString) {
-                console.log('[DeepLink] Telegram startapp detected:', deepLinkString);
+                console.log('[DeepLink] Param detected:', deepLinkString);
                 const parsedParams = parseStartAppParams(deepLinkString);
                 parsedParams.forEach((value, key) => urlParams.set(key, value));
                 action = urlParams.get('action');
             }
         }
 
-        if (!action) return; // Нет действий — остаемся на главной
+        if (!action) return; 
 
-        console.log('[DeepLink] Processing action:', action);
-
-        // 2. Ставим метку, что диплинк отработал.
-        // При нажатии "Назад" этот код больше не выполнится.
+        console.log('[DeepLink] Executing action:', action);
         sessionStorage.setItem(PROCESSED_KEY, 'true');
-
         cleanCurrentUrlHistory();
         showLoadingIndicator();
 
@@ -142,43 +130,55 @@ document.addEventListener('DOMContentLoaded', () => {
             case 'api':
                 targetUrl = './API_info/api.html';
                 break;
-            case 'donate':
-            case 'support':
+                
+            case 'support': 
                 targetUrl = './Support/support.html';
                 break;
-            case 'monochrome_color':
-                const giftColor = urlParams.get('gift');
-                const color = urlParams.get('color');
-                if (giftColor && color) {
-                    targetUrl = `./Monohrome/background-finder.html?mode=findModels&gift=${encodeURIComponent(giftColor)}&color=${encodeURIComponent(color)}`;
-                }
-                break;
+
+            case 'monochrome':
             case 'monochrome_model':
-                const giftModel = urlParams.get('gift');
-                const modelMono = urlParams.get('model');
-                if (giftModel && modelMono) {
-                    targetUrl = `./Monohrome/background-finder.html?mode=findBgs&gift=${encodeURIComponent(giftModel)}&model=${encodeURIComponent(modelMono)}`;
+                const mGift = urlParams.get('gift');
+                const mModel = urlParams.get('model');
+                if (mGift && mModel) {
+                    targetUrl = `./Monohrome/background-finder.html?mode=findBgs&gift=${encodeURIComponent(mGift)}&model=${encodeURIComponent(mModel)}`;
+                } else {
+                    targetUrl = `./Monohrome/background-finder.html`;
                 }
                 break;
+
+            case 'monochrome_color':
+                const cGift = urlParams.get('gift');
+                const cColor = urlParams.get('color');
+                if (cGift && cColor) {
+                    targetUrl = `./Monohrome/background-finder.html?mode=findModels&gift=${encodeURIComponent(cGift)}&color=${encodeURIComponent(cColor)}`;
+                } else {
+                    targetUrl = `./Monohrome/background-finder.html`;
+                }
+                break;
+
             case 'similar':
-                const giftSim = urlParams.get('gift');
-                const modelSim = urlParams.get('model');
+                const sGift = urlParams.get('gift');
+                const sModel = urlParams.get('model');
                 const count = urlParams.get('count') || '100';
-                if (giftSim && modelSim) {
-                    targetUrl = `./nft-page/index.html?giftName=${encodeURIComponent(giftSim)}&modelName=${encodeURIComponent(modelSim)}&randomGiftsCount=${count}`;
+                if (sGift && sModel) {
+                    targetUrl = `./nft-page/index.html?giftName=${encodeURIComponent(sGift)}&modelName=${encodeURIComponent(sModel)}&randomGiftsCount=${count}`;
+                } else {
+                    targetUrl = `./nft-page/index.html`;
                 }
                 break;
+
             case 'theme':
-                const giftTheme = urlParams.get('gift');
-                const modelTheme = urlParams.get('model');
-                const themeName = urlParams.get('theme');
-                if (giftTheme && modelTheme) {
-                    targetUrl = `./Thematic/themes.html?gift=${encodeURIComponent(giftTheme)}&model=${encodeURIComponent(modelTheme)}`;
-                    if (themeName) targetUrl += `&theme=${encodeURIComponent(themeName)}`;
+                const tGift = urlParams.get('gift');
+                const tModel = urlParams.get('model');
+                const tName = urlParams.get('theme');
+                if (tGift && tModel) {
+                    targetUrl = `./Thematic/themes.html?gift=${encodeURIComponent(tGift)}&model=${encodeURIComponent(tModel)}`;
+                    if (tName) targetUrl += `&theme=${encodeURIComponent(tName)}`;
                 } else {
                     targetUrl = './Thematic/themes.html';
                 }
                 break;
+
             default:
                 console.warn('[DeepLink] Unknown action:', action);
                 hideLoadingIndicator();
@@ -194,26 +194,24 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Функция жесткой очистки URL текущей страницы без перезагрузки
     function cleanCurrentUrlHistory() {
         const url = new URL(window.location.href);
-        // Оставляем только чистый путь (без query params)
         const cleanPath = url.protocol + "//" + url.host + url.pathname;
-        
-        // replaceState ЗАМЕНЯЕТ текущую запись "с мусором" на чистую запись.
-        // Теперь в истории браузера на этом месте лежит чистый index.html
         window.history.replaceState({ path: cleanPath }, '', cleanPath);
-        console.log('[DeepLink] Current history cleaned:', cleanPath);
     }
 
-    // Парсинг startapp параметров
     function parseStartAppParams(startappString) {
         const params = new URLSearchParams();
-        // Защита от undefined
         if(!startappString) return params;
 
         const parts = startappString.split('-');
-        const action = parts[0];
+        let rawAction = parts[0].toLowerCase(); 
+
+        let action = rawAction;
+        if (rawAction === 'donate') action = 'support';
+        if (rawAction === 'thematic') action = 'theme';
+        if (rawAction === 'similiar') action = 'similar';
+        if (rawAction === 'mono') action = 'monochrome';
 
         params.set('action', action);
 
@@ -222,15 +220,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (parts[1]) params.set('gift', parts[1].replace(/_/g, ' '));
                 if (parts[2]) params.set('color', parts[2].replace(/_/g, ' '));
                 break;
+
+            case 'monochrome': 
             case 'monochrome_model':
                 if (parts[1]) params.set('gift', parts[1].replace(/_/g, ' '));
                 if (parts[2]) params.set('model', parts[2].replace(/_/g, ' '));
                 break;
+
             case 'similar':
                 if (parts[1]) params.set('gift', parts[1].replace(/_/g, ' '));
                 if (parts[2]) params.set('model', parts[2].replace(/_/g, ' '));
                 if (parts[3]) params.set('count', parts[3]);
                 break;
+
             case 'theme':
                 if (parts[1]) params.set('gift', parts[1].replace(/_/g, ' '));
                 if (parts[2]) params.set('model', parts[2].replace(/_/g, ' '));
@@ -241,45 +243,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function showLoadingIndicator() {
-        const existingLoader = document.getElementById('deeplink-loader');
-        if (existingLoader) return;
-
+        if (document.getElementById('deeplink-loader')) return;
         const loader = document.createElement('div');
         loader.id = 'deeplink-loader';
-        loader.style.cssText = `
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(22, 33, 58, 0.95);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 10000;
-            backdrop-filter: blur(10px);
-        `;
-
-        loader.innerHTML = `
-            <div style="text-align: center; color: #fff;">
-                <div style="width: 50px; height: 50px; border: 3px solid rgba(56, 189, 248, 0.3); border-top-color: #38bdf8; border-radius: 50%; margin: 0 auto 20px; animation: spin 0.8s linear infinite;"></div>
-                <p style="font-size: 16px; font-weight: 500; margin: 0;">Загрузка...</p>
-            </div>
-            <style>
-                @keyframes spin {
-                    to { transform: rotate(360deg); }
-                }
-            </style>
-        `;
-
+        loader.style.cssText = `position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(22, 33, 58, 0.95); display: flex; align-items: center; justify-content: center; z-index: 10000; backdrop-filter: blur(10px);`;
+        loader.innerHTML = `<div style="text-align: center; color: #fff;"><div style="width: 50px; height: 50px; border: 3px solid #38bdf8; border-top-color: transparent; border-radius: 50%; margin: 0 auto 20px; animation: spin 0.8s linear infinite;"></div><p style="font-weight: 500;">Загрузка...</p></div><style>@keyframes spin {to{transform: rotate(360deg);}}</style>`;
         document.body.appendChild(loader);
     }
 
     function hideLoadingIndicator() {
         const loader = document.getElementById('deeplink-loader');
-        if (loader) {
-            loader.remove();
-        }
+        if (loader) loader.remove();
     }
     // ====== END DEEP LINKING ROUTER ======
 
@@ -296,137 +270,63 @@ document.addEventListener('DOMContentLoaded', () => {
             if (bypass) authHeader = `Tma ${bypass}`;
         }
 
-        const TARGET_COLLECTION = [
-            "Santa Hat",
-            "Holiday Drink",
-            "Candy Cane",
-            "Xmas Stocking",
-            "Ginger Cookie",
-            "Jingle Bells",
-            "Winter Wreath",
-            "Snow Globe",
-            "Snow Mittens",
-            "Sleigh Bell",
-            "Tama Gadget"
-        ];
+        const TARGET_COLLECTION = ["Santa Hat", "Holiday Drink", "Candy Cane", "Xmas Stocking", "Ginger Cookie", "Jingle Bells", "Winter Wreath", "Snow Globe", "Snow Mittens", "Sleigh Bell", "Tama Gadget"];
 
         try {
             const response = await fetch(`${SERVER_BASE_URL}/api/MonoCoof/GetCollectionGradient/40`, {
                 method: 'POST',
-                headers: {
-                    'Authorization': authHeader,
-                    'Content-Type': 'application/json'
-                },
+                headers: { 'Authorization': authHeader, 'Content-Type': 'application/json' },
                 body: JSON.stringify({ "CollectionNames": TARGET_COLLECTION })
             });
 
             if (!response.ok) throw new Error('API Error');
             const data = await response.json();
-
-            if (!data || data.length === 0) {
-                return;
-            }
+            if (!data || data.length === 0) return;
 
             const createCard = (item) => {
                 const card = document.createElement('div');
                 card.className = 'carousel-card';
                 card.style.backgroundColor = item.ColorHex || '#333';
-
                 const img = document.createElement('img');
-                const safeGiftName = encodeURIComponent(item.GiftName);
-                const safeModelName = encodeURIComponent(item.ModelName);
-                img.src = `https://cdn.changes.tg/gifts/models/${safeGiftName}/png/${safeModelName}.png`;
+                img.src = `https://cdn.changes.tg/gifts/models/${encodeURIComponent(item.GiftName)}/png/${encodeURIComponent(item.ModelName)}.png`;
                 img.alt = item.ModelName;
-
                 card.appendChild(img);
                 return card;
             };
 
             track.innerHTML = '';
-            const itemsToRender = [...data];
-
             for (let i = 0; i < 4; i++) {
-                itemsToRender.forEach(item => {
-                    track.appendChild(createCard(item));
-                });
+                data.forEach(item => track.appendChild(createCard(item)));
             }
 
             wrapper.classList.remove('hidden');
 
-            let x = 0;
-            let speed = 0.4;
-            const baseSpeed = 0.4;
-            let isDragging = false;
-            let startX = 0;
-            let currentTranslateX = 0;
-            let animationId;
-
-            const cardFullWidth = 50 + 15;
-            const singleSetWidth = data.length * cardFullWidth;
-
-            let recoveryTimeout;
+            let x = 0, speed = 0.4, baseSpeed = 0.4, isDragging = false, startX = 0, currentTranslateX = 0;
+            const singleSetWidth = data.length * 65; 
 
             const update = () => {
                 if (!isDragging) {
-                    if (Math.abs(speed - baseSpeed) > 0.01) {
-                        speed += (baseSpeed - speed) * 0.05;
-                    } else {
-                        speed = baseSpeed;
-                    }
-
+                    speed += (baseSpeed - speed) * 0.05;
                     x -= speed;
                 }
-
-                if (Math.abs(x) >= singleSetWidth) {
-                    x += singleSetWidth;
-                }
-                if (x > 0) {
-                    x -= singleSetWidth;
-                }
-
+                if (Math.abs(x) >= singleSetWidth) x += singleSetWidth;
+                if (x > 0) x -= singleSetWidth;
                 track.style.transform = `translate3d(${x}px, 0, 0)`;
-                animationId = requestAnimationFrame(update);
+                requestAnimationFrame(update);
             };
 
-            const startDrag = (e) => {
-                isDragging = true;
-                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-                startX = clientX;
-                currentTranslateX = x;
-
-                clearTimeout(recoveryTimeout);
-                speed = 0;
-
-                track.style.cursor = 'grabbing';
-            };
-
-            const moveDrag = (e) => {
-                if (!isDragging) return;
-                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-                const delta = clientX - startX;
-                x = currentTranslateX + delta;
-            };
-
-            const endDrag = () => {
-                if (!isDragging) return;
-                isDragging = false;
-                track.style.cursor = 'grab';
-
-                recoveryTimeout = setTimeout(() => {
-                }, 50);
-            };
+            const startDrag = (e) => { isDragging = true; startX = (e.touches ? e.touches[0].clientX : e.clientX); currentTranslateX = x; speed = 0; track.style.cursor = 'grabbing'; };
+            const moveDrag = (e) => { if (!isDragging) return; const clientX = (e.touches ? e.touches[0].clientX : e.clientX); x = currentTranslateX + (clientX - startX); };
+            const endDrag = () => { if (!isDragging) return; isDragging = false; track.style.cursor = 'grab'; };
 
             track.addEventListener('mousedown', startDrag);
             track.addEventListener('touchstart', startDrag, { passive: true });
-
             window.addEventListener('mousemove', moveDrag);
             window.addEventListener('touchmove', moveDrag, { passive: true });
-
             window.addEventListener('mouseup', endDrag);
             window.addEventListener('touchend', endDrag);
 
             update();
-
         } catch (e) {
             console.error(e);
             wrapper.classList.add('hidden');
@@ -435,48 +335,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const preloadGiftNames = async () => {
         try {
-            const cachedData = sessionStorage.getItem(CACHE_KEY);
-            if (cachedData) {
-                await initCarousel();
-                signalTelegramAppReady();
-                return;
-            }
-        } catch (error) {
-            console.error(error);
-        }
+            if (sessionStorage.getItem(CACHE_KEY)) { await initCarousel(); signalTelegramAppReady(); return; }
+        } catch (error) { console.error(error); }
 
-        let authHeader = 'Tma invalid';
-        const initData = sessionStorage.getItem(INIT_DATA_KEY);
-        if (initData) authHeader = `Tma ${initData}`;
-        else {
-            const bypass = sessionStorage.getItem(BYPASS_KEY_STORAGE);
-            if (bypass) authHeader = `Tma ${bypass}`;
-        }
+        let authHeader = sessionStorage.getItem(INIT_DATA_KEY) ? `Tma ${sessionStorage.getItem(INIT_DATA_KEY)}` : (sessionStorage.getItem(BYPASS_KEY_STORAGE) ? `Tma ${sessionStorage.getItem(BYPASS_KEY_STORAGE)}` : 'Tma invalid');
 
         try {
-            const response = await fetch(`${SERVER_BASE_URL}/api/ListGifts/AllGiftNames`, {
-                headers: { 'Authorization': authHeader }
-            });
-
-            if (!response.ok) {
-                throw new Error(`Status: ${response.status}`);
-            }
-            const giftNames = await response.json();
-            sessionStorage.setItem(CACHE_KEY, JSON.stringify(giftNames));
-        } catch (error) {
-            console.error(error);
-        } finally {
-            await initCarousel();
-            signalTelegramAppReady();
-        }
+            const response = await fetch(`${SERVER_BASE_URL}/api/ListGifts/AllGiftNames`, { headers: { 'Authorization': authHeader } });
+            if (response.ok) sessionStorage.setItem(CACHE_KEY, JSON.stringify(await response.json()));
+        } catch (error) { console.error(error); } 
+        finally { await initCarousel(); signalTelegramAppReady(); }
     };
 
-    const isAuthorized = checkEnvironmentAndGate();
-
-    if (isAuthorized) {
+    if (checkEnvironmentAndGate()) {
         preloadGiftNames();
-
-        // Обрабатываем deep links после инициализации
         handleDeepLink();
     }
 });
