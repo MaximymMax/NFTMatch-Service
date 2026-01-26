@@ -38,17 +38,19 @@ label {
     color: var(--text-muted);
     font-weight: 500;
     /* Убираем нижний отступ, чтобы прижать к дропдауну */
-    margin-bottom: 0; 
+    margin-bottom: 0;
 }
 
-.custom-dropdown-container label[for="gift-search"]{
-    padding-left: 10px; 
+.custom-dropdown-container label[for="gift-search"] {
+    padding-left: 10px;
 }
-.custom-dropdown-container label[for="model-search"]{
-    padding-left: 10px; 
+
+.custom-dropdown-container label[for="model-search"] {
+    padding-left: 10px;
 }
+
 .multi-select-container label[for="multi-gift-search"] {
-    padding-left: 10px; 
+    padding-left: 10px;
 }
 
 .divider {
@@ -96,7 +98,7 @@ header nav {
     white-space: normal;
     text-align: center;
     /* Свечение: белый цвет, небольшой радиус */
-    text-shadow: 0 0 8px rgba(255, 255, 255, 0.7); 
+    text-shadow: 0 0 8px rgba(255, 255, 255, 0.7);
 }
 
 header nav a {
@@ -135,31 +137,34 @@ main {
     justify-content: center;
     padding: 1rem;
     overflow-x: hidden;
-    padding-top: 100px !important; 
+    padding-top: 100px !important;
 }
 
 
-header .header-logo, 
+header .header-logo,
 header nav {
     display: none !important;
 }
 
 header.safe-area-gradient {
-    position: absolute; /* Чтобы контент скроллился под ней */
+    position: absolute;
+    /* Чтобы контент скроллился под ней */
     top: 0;
     left: 0;
     width: 100%;
-    height: 70px; /* Высота градиента */
+    height: 70px;
+    /* Высота градиента */
     z-index: 10;
-    
+
     /* Прозрачный градиент сверху вниз */
     background: linear-gradient(180deg, #0a1020 20%, rgba(10, 16, 32, 0) 100%);
-    
+
     /* Убираем тени и фон старой шапки */
     box-shadow: none;
     border: none;
     padding: 0;
-    pointer-events: none; /* Пропускаем клики сквозь градиент */
+    pointer-events: none;
+    /* Пропускаем клики сквозь градиент */
 }
 
 
@@ -188,9 +193,9 @@ header.safe-area-gradient {
 
 .page-title.centered-title {
     text-align: center;
-    margin: 1.5rem auto 1rem auto;
+    margin: 1.5rem auto 1.5rem auto;
     padding-bottom: 0;
-    
+
 }
 
 .selection-block {
@@ -211,7 +216,8 @@ header.safe-area-gradient {
 */
 
 .monocolor-indicator {
-    background-color: #f87171; /* Красный фон */
+    background-color: #f87171;
+    /* Красный фон */
     border-radius: 50%;
     width: 22px;
     height: 22px;
@@ -219,14 +225,17 @@ header.safe-area-gradient {
     justify-content: center;
     align-items: center;
     flex-shrink: 0;
-    margin-left: auto; /* Выравнивание вправо */
+    margin-left: auto;
+    /* Выравнивание вправо */
 }
 
 .monocolor-indicator svg {
     width: 14px;
     height: 14px;
-    color: var(--text-primary); /* Белый/светлый цвет для иконки */
-    stroke-width: 2.5; /* Немного толще, чтобы было видно */
+    color: var(--text-primary);
+    /* Белый/светлый цвет для иконки */
+    stroke-width: 2.5;
+    /* Немного толще, чтобы было видно */
 }
 
 .custom-dropdown-container {
@@ -244,7 +253,8 @@ header.safe-area-gradient {
     cursor: pointer;
     transition: all 0.2s ease-in-out;
     color: var(--text-secondary);
-    position: relative; /* <<<< ДОБАВЬ ЭТО */
+    position: relative;
+    /* <<<< ДОБАВЬ ЭТО */
 }
 
 .dropdown-header.active {
@@ -272,7 +282,7 @@ header.safe-area-gradient {
     position: absolute;
     right: 1rem;
     top: 50%;
-    transform: translateY(-50%) rotate(45deg); 
+    transform: translateY(-50%) rotate(45deg);
 }
 
 .dropdown-header.active .arrow {
@@ -281,8 +291,10 @@ header.safe-area-gradient {
 }
 
 .dropdown-list {
-    position: absolute; /* <<<< ВЕРНИ ABSOLUTE */
-    top: calc(100% + 3px); /* <<<< ВЕРНИ ЭТИ СТРОКИ */
+    position: absolute;
+    /* <<<< ВЕРНИ ABSOLUTE */
+    top: calc(100% + 3px);
+    /* <<<< ВЕРНИ ЭТИ СТРОКИ */
     left: 0;
     right: 0;
     background-color: var(--surface-elevated);
@@ -384,7 +396,7 @@ header.safe-area-gradient {
     pointer-events: auto;
     z-index: 21;
     /* Уменьшаем ширину, чтобы оставить место для стрелки */
-    width: 90%; 
+    width: 90%;
     padding: 0.5rem 0.75rem;
     font-size: 1rem;
 }
@@ -396,12 +408,16 @@ header.safe-area-gradient {
 }
 
 #multi-select-content {
-    position: absolute; /* Делаем его плавающим */
-    top: calc(100% + 3px); /* Отступ всего 1px от заголовка */
+    position: absolute;
+    /* Делаем его плавающим */
+    top: calc(100% + 3px);
+    /* Отступ всего 1px от заголовка */
     left: 0;
     right: 0;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.45); /* Используем "всплывающую" тень */
-    margin-top: 0; /* Убираем отступ */
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+    /* Используем "всплывающую" тень */
+    margin-top: 0;
+    /* Убираем отступ */
     overflow: hidden;
     /* Копируем базовые стили из .multi-select-content */
     background-color: var(--surface-elevated);
@@ -472,9 +488,12 @@ header.safe-area-gradient {
     align-items: center;
     gap: 10px;
     padding: 0.4rem 1rem;
-    background-color: rgba(248, 113, 113, 0.15); /* Светло-красный фон */
-    border: 1px solid #f87171; /* Красная рамка */
-    color: #f87171; /* Красный текст */
+    background-color: rgba(248, 113, 113, 0.15);
+    /* Светло-красный фон */
+    border: 1px solid #f87171;
+    /* Красная рамка */
+    color: #f87171;
+    /* Красный текст */
     border-radius: var(--radius);
     font-size: 0.9rem;
     font-weight: 500;
@@ -593,7 +612,7 @@ header.safe-area-gradient {
     margin-bottom: 2rem;
     z-index: 10;
     /* 🔥 КОРРЕКЦИЯ ШИРИНЫ 1: Даем контейнеру 100% ширину родителя */
-    width: 100%; 
+    width: 100%;
 }
 
 .multi-select-dropdown {
@@ -602,7 +621,7 @@ header.safe-area-gradient {
 
 .multi-select-container .custom-dropdown-container {
     width: 100%;
-    display: block; 
+    display: block;
 }
 
 .multi-select-header {
@@ -626,34 +645,42 @@ header.safe-area-gradient {
 }
 
 .list-option.list-placeholder {
-    pointer-events: none; /* Запрещаем клик по плейсхолдеру */
-    color: var(--text-muted); /* Делаем текст приглушенным */
+    pointer-events: none;
+    /* Запрещаем клик по плейсхолдеру */
+    color: var(--text-muted);
+    /* Делаем текст приглушенным */
     font-style: italic;
     cursor: default;
-    background-color: var(--surface-default); /* Используем нейтральный фон */
-    padding-left: 1.5rem; /* Немного отступа для лучшей читаемости */
+    background-color: var(--surface-default);
+    /* Используем нейтральный фон */
+    padding-left: 1.5rem;
+    /* Немного отступа для лучшей читаемости */
 }
+
 .list-option.list-placeholder:hover {
-    background-color: var(--surface-default); /* Отключаем эффект наведения */
+    background-color: var(--surface-default);
+    /* Отключаем эффект наведения */
 }
 
 /* MULTI-SELECT DROPDOWN: поверх контента, если есть место, иначе раздвигает main-container вниз */
 .multi-select-content {
-    position: absolute; 
-    top: calc(100% + 1px); /* Новый отступ */
+    position: absolute;
+    top: calc(100% + 1px);
+    /* Новый отступ */
     left: 0;
     right: 0;
     background-color: var(--surface-elevated);
     border: 1px solid var(--border-color);
     border-radius: 0.75rem;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.45);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
     z-index: 120;
     padding: 0.4rem;
     width: 100%;
     min-height: 160px;
     overflow: hidden;
     -webkit-overflow-scrolling: touch;
-    margin-top: 0; /* Убираем отступ */
+    margin-top: 0;
+    /* Убираем отступ */
 }
 
 /* Минимальная высота для открытого dropdown-header с поиском */
@@ -666,11 +693,15 @@ header.safe-area-gradient {
 }
 
 .multi-list-scroll-wrapper {
-    max-height: 350px; /* <--- Фиксированная высота для скролла */
-    overflow-y: auto; /* <--- Скролл для всего контента под контролами */
-    padding-right: 5px; /* <--- Отступ для скроллбара */
+    max-height: 350px;
+    /* <--- Фиксированная высота для скролла */
+    overflow-y: auto;
+    /* <--- Скролл для всего контента под контролами */
+    padding-right: 5px;
+    /* <--- Отступ для скроллбара */
     margin-top: 5px;
 }
+
 .multi-list-scroll-wrapper::-webkit-scrollbar {
     width: 8px;
     background-color: transparent;
@@ -687,7 +718,7 @@ header.safe-area-gradient {
     z-index: 10;
     background-color: var(--surface-elevated);
     padding: 0.5rem 0.4rem;
-    
+
 }
 
 .dropdown-controls-buttons {
@@ -730,7 +761,7 @@ header.safe-area-gradient {
     margin: 10px 0;
 }
 
-.list-divider.hidden { 
+.list-divider.hidden {
     display: none;
 }
 
@@ -773,7 +804,8 @@ header.safe-area-gradient {
     left: 2.8rem;
     top: 50%;
     transform: translateY(-50%);
-    transition: opacity 0.2s; /* Можно оставить короткий transition для hover-эффектов */
+    transition: opacity 0.2s;
+    /* Можно оставить короткий transition для hover-эффектов */
 }
 
 .option-image.loaded {
@@ -815,7 +847,8 @@ header.safe-area-gradient {
     position: absolute;
     top: 50%;
     /* Позиционирование чекбокса */
-    left: 0.75rem; /* Начальная позиция чекбокса */
+    left: 0.75rem;
+    /* Начальная позиция чекбокса */
     transform: translateY(-50%);
     box-sizing: border-box;
     z-index: 2;
@@ -826,43 +859,45 @@ header.safe-area-gradient {
 /* ====================================== */
 
 /* 🔥 ИЗМЕНЕНИЕ 3: Выбранный чекбокс - Заливка круга и цвет рамки */
-.multi-select-checkbox:checked + .option-image + span::before {
+.multi-select-checkbox:checked+.option-image+span::before {
     background-color: var(--primary-color);
     border-color: var(--primary-color);
 }
 
 /* 🔥 ИЗМЕНЕНИЕ 4: Выбранный чекбокс - Появление галочки */
-.multi-select-checkbox:checked + .option-image + span::after {
+.multi-select-checkbox:checked+.option-image+span::after {
     opacity: 1;
     color: var(--text-primary);
 }
 
 /* 🔥 ИЗМЕНЕНИЕ 5: Выбранный чекбокс - Цвет текста */
-.multi-select-checkbox:checked + .option-image + span {
+.multi-select-checkbox:checked+.option-image+span {
     color: var(--primary-color);
     font-weight: 600;
 }
 
 /* 🔥 ИЗМЕНЕНИЕ 6: Выбранный чекбокс - Стиль метки-контейнера */
-.multi-select-checkbox:checked + .option-image {
-    opacity: 1; /* Полная непрозрачность иконки при выборе */
+.multi-select-checkbox:checked+.option-image {
+    opacity: 1;
+    /* Полная непрозрачность иконки при выборе */
 }
 
 /* 🔥 ИЗМЕНЕНИЕ 7: Изменение фонового цвета всей метки-контейнера при выборе (необязательно) */
 .multi-list-option-label.checked-style {
-    background-color: var(--surface-color); /* Более темный фон для выбранных элементов */
+    background-color: var(--surface-color);
+    /* Более темный фон для выбранных элементов */
 }
 
 /* Custom Checkbox ::after (Checkmark) */
 .multi-list-option-label span::after {
-    content: '✓'; 
+    content: '✓';
     position: absolute;
     top: 50%;
     /* Позиционирование галочки */
-    left: 0.75rem; 
-    transform: translate(2px, -50%); 
+    left: 0.75rem;
+    transform: translate(2px, -50%);
     font-size: 14px;
-    color: var(--text-primary); 
+    color: var(--text-primary);
     opacity: 0;
     transition: opacity 0.2s ease-in-out;
     pointer-events: none;
@@ -872,12 +907,12 @@ header.safe-area-gradient {
 }
 
 
-.multi-select-checkbox:checked + span::after {
+.multi-select-checkbox:checked+span::after {
     opacity: 1;
     color: var(--text-primary);
 }
 
-.multi-select-checkbox:checked + span {
+.multi-select-checkbox:checked+span {
     color: var(--primary-color);
     font-weight: 600;
 }
@@ -986,8 +1021,13 @@ header.safe-area-gradient {
 }
 
 @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
 }
 
 .disabled-control,
@@ -1010,7 +1050,10 @@ header.safe-area-gradient {
 
 .modal-overlay {
     position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
     background: rgba(20, 28, 48, 0.55);
     backdrop-filter: blur(8px);
     display: flex;
@@ -1026,7 +1069,7 @@ header.safe-area-gradient {
 .card-modal {
     background-color: var(--surface-elevated);
     border-radius: var(--radius);
-    box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
     padding: 0;
     position: relative;
     width: 450px;
@@ -1044,18 +1087,24 @@ header.safe-area-gradient {
 }
 
 .modal-header .close-modal-btn {
-    align-self: flex-end; /* Прижимаем крестик к правому краю */
-    margin-bottom: 0.5rem; /* Добавляем отступ снизу от крестика */
+    align-self: flex-end;
+    /* Прижимаем крестик к правому краю */
+    margin-bottom: 0.5rem;
+    /* Добавляем отступ снизу от крестика */
 }
 
 .nft-details-modal .modal-header {
-    flex-direction: column; /* Ставим элементы друг под друга */
-    align-items: stretch;   /* Растягиваем их по ширине */
-    padding-bottom: 0;      /* Убираем нижний отступ у контейнера */
+    flex-direction: column;
+    /* Ставим элементы друг под друга */
+    align-items: stretch;
+    /* Растягиваем их по ширине */
+    padding-bottom: 0;
+    /* Убираем нижний отступ у контейнера */
 }
 
 .nft-details-modal .modal-header .close-modal-btn {
-    align-self: flex-end; /* Крестик прижимаем вправо */
+    align-self: flex-end;
+    /* Крестик прижимаем вправо */
 }
 
 
@@ -1070,6 +1119,7 @@ header.safe-area-gradient {
     line-height: 1;
     padding: 0;
 }
+
 .card-modal .close-modal-btn:hover {
     color: #f87171;
 }
@@ -1385,11 +1435,13 @@ header.safe-area-gradient {
     transition: box-shadow 0.2s, border-color 0.2s, transform 0.2s;
     z-index: 20;
 }
+
 .color-picker.dragging {
     border-color: var(--primary-color);
     box-shadow: 0 0 0 5px rgba(56, 189, 248, 0.33);
     transform: scale(1.15) translate(-50%, -50%);
 }
+
 .color-picker.invalid {
     animation: shake 0.3s;
     border-color: #f87171;
@@ -1426,7 +1478,7 @@ header.safe-area-gradient {
     flex-direction: column;
     justify-content: flex-end;
     align-items: center;
-    box-shadow: 0 2px 8px 0 rgba(56,189,248,0.08);
+    box-shadow: 0 2px 8px 0 rgba(56, 189, 248, 0.08);
     position: relative;
     overflow: hidden;
 }
@@ -1453,7 +1505,7 @@ header.safe-area-gradient {
     margin-bottom: 1rem;
     text-align: center;
     line-height: 1.4;
-    
+
     padding-bottom: 0;
 }
 
@@ -1485,16 +1537,18 @@ header.safe-area-gradient {
 
 .nft-details-modal {
     background-color: var(--surface-elevated);
-    border-radius: 32px; /* Как у themes-modal */
+    border-radius: 32px;
+    /* Как у themes-modal */
     border: 1px solid var(--border-color);
-    box-shadow: 0 20px 50px rgba(0,0,0,0.5);
-    
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+
     /* 🔥 РАЗМЕРЫ КАК У THEMES MODAL 🔥 */
     width: 350px !important;
     height: 680px !important;
     max-height: 90vh !important;
-    max-width: 95vw !important; /* Чтобы на совсем мелких экранах не вылезало */
-    
+    max-width: 95vw !important;
+    /* Чтобы на совсем мелких экранах не вылезало */
+
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -1507,24 +1561,25 @@ header.safe-area-gradient {
     flex-shrink: 0;
     display: grid;
     /* Три колонки: [пусто] [заголовок] [крестик] */
-    grid-template-columns: 40px 1fr 40px; 
-    align-items: center; /* Центрируем всё по вертикали */
-    
+    grid-template-columns: 40px 1fr 40px;
+    align-items: center;
+    /* Центрируем всё по вертикали */
+
     /* 🔥 Вернул отступы (padding), чтобы было просторно */
-    padding: 1.2rem 1rem 0.8rem 1rem; 
-    
+    padding: 1.2rem 1rem 0.8rem 1rem;
+
     /* Убрал фиксированную высоту, теперь высота зависит от контента + padding */
-    height: auto; 
+    height: auto;
     min-height: 60px;
-    
-    background: linear-gradient(to bottom, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0) 100%);
+
+    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.2) 0%, rgba(0, 0, 0, 0) 100%);
     z-index: 10;
-    flex-direction: row !important; 
+    flex-direction: row !important;
     border-bottom: none;
 }
 
 .nft-details-modal .modal-header h3 {
-    grid-column: 2; 
+    grid-column: 2;
     align-self: center;
     justify-self: center;
     margin: 0;
@@ -1532,7 +1587,7 @@ header.safe-area-gradient {
     font-size: 1.1rem;
     font-weight: 800;
     color: #fff;
-    text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
     text-align: center;
     white-space: nowrap;
     overflow: hidden;
@@ -1543,44 +1598,47 @@ header.safe-area-gradient {
 .nft-details-modal .modal-header .close-modal-btn {
     grid-column: 3;
     justify-self: end;
-    
+
     /* 🔥 ВАЖНО: align-self: center !important, чтобы перебить старые стили */
-    align-self: center !important; 
+    align-self: center !important;
     /* 🔥 ВАЖНО: margin: 0 !important, чтобы убрать отступ снизу из общих стилей */
-    margin: 0 !important; 
-    
+    margin: 0 !important;
+
     width: 40px;
     height: 40px;
     display: flex;
     align-items: center;
     justify-content: center;
-    
+
     background: none;
     border: none;
     cursor: pointer;
     padding: 0;
-    
+
     color: var(--text-secondary);
     font-size: 2rem;
-    padding-bottom: 4px; /* Оптическая поправка для символа крестика */
+    padding-bottom: 4px;
+    /* Оптическая поправка для символа крестика */
     line-height: 1;
 }
 
 /* --- Тело модалки --- */
 .nft-details-modal-body {
     flex-grow: 1;
-    padding: 0 1rem 1rem 1rem; /* Отступы по бокам */
+    padding: 0 1rem 1rem 1rem;
+    /* Отступы по бокам */
     display: flex;
     flex-direction: column;
     gap: 1rem;
-    overflow: hidden; 
+    overflow: hidden;
 }
 
 /* --- Блок сравнения (два квадрата) --- */
 .comparison-container {
     display: flex;
     flex-direction: row;
-    gap: 8px; /* Уменьшил gap, чтобы влезло в 350px */
+    gap: 8px;
+    /* Уменьшил gap, чтобы влезло в 350px */
     justify-content: space-between;
     width: 100%;
     flex-shrink: 0;
@@ -1590,20 +1648,23 @@ header.safe-area-gradient {
     flex: 1;
     /* Убираем жесткое соотношение сторон, так как теперь там контента больше (кнопка) */
     /* aspect-ratio: 1 / 1;  <-- УДАЛИТЬ ИЛИ ЗАКОММЕНТИРОВАТЬ */
-    
+
     background-color: rgba(30, 41, 68, 0.6);
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 20px;
-    
+
     display: flex;
-    flex-direction: column; /* Вертикальное расположение */
+    flex-direction: column;
+    /* Вертикальное расположение */
     align-items: center;
-    justify-content: space-between; /* Распределяем пространство */
-    
+    justify-content: space-between;
+    /* Распределяем пространство */
+
     overflow: hidden;
     position: relative;
     padding: 8px;
-    height: 180px; /* Фиксируем высоту, чтобы было ровно */
+    height: 180px;
+    /* Фиксируем высоту, чтобы было ровно */
 }
 
 .comparison-photo-box .photo-wrapper {
@@ -1620,11 +1681,11 @@ header.safe-area-gradient {
     width: 100%;
     height: 100%;
     object-fit: contain;
-    filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
+    filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.3));
 }
 
 .box-label {
-    display: none; 
+    display: none;
 }
 
 .box-label {
@@ -1637,7 +1698,7 @@ header.safe-area-gradient {
     color: var(--text-muted);
     pointer-events: none;
     margin: 0;
-    text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
 }
 
 .more-details-btn {
@@ -1654,7 +1715,8 @@ header.safe-area-gradient {
     transition: all 0.2s;
     width: 100%;
     justify-content: center;
-    margin-top: auto; /* Прижимаем к низу */
+    margin-top: auto;
+    /* Прижимаем к низу */
 }
 
 .more-details-btn:hover {
@@ -1671,8 +1733,10 @@ header.safe-area-gradient {
 .similar-models-cluster {
     display: flex;
     flex-direction: column;
-    flex-grow: 1;        /* Занимает все свободное место */
-    min-height: 0;       /* Критично для работы скролла */
+    flex-grow: 1;
+    /* Занимает все свободное место */
+    min-height: 0;
+    /* Критично для работы скролла */
     gap: 8px;
     margin-top: 12px;
 }
@@ -1685,6 +1749,7 @@ header.safe-area-gradient {
     margin: 0.5rem 0 0 0;
     flex-shrink: 0;
 }
+
 .similar-models-list-wrapper {
     flex-grow: 1;
     min-height: 0;
@@ -1692,21 +1757,21 @@ header.safe-area-gradient {
     display: flex;
     flex-direction: column;
     /* 🔥 ВАЖНО: Убрали overflow: hidden, чтобы градиенты могли выходить за границы и закрывать щели */
-    overflow: visible; 
+    overflow: visible;
 }
 
 .similar-models-list-wrapper.can-scroll-up::before {
     content: '';
     position: absolute;
     /* 🔥 Сдвигаем на 1 пиксель вверх, чтобы закрыть щель */
-    top: -1px; 
+    top: -1px;
     left: 0;
     right: 0;
-    height: 40px; 
+    height: 40px;
     /* Градиент от цвета фона к прозрачному */
     background: linear-gradient(to bottom, var(--surface-elevated) 20%, transparent 100%);
     z-index: 5;
-    pointer-events: none; 
+    pointer-events: none;
     transition: opacity 0.2s;
 }
 
@@ -1715,14 +1780,14 @@ header.safe-area-gradient {
     content: '';
     position: absolute;
     /* 🔥 Сдвигаем на 1 пиксель вниз, чтобы закрыть щель */
-    bottom: -1px; 
+    bottom: -1px;
     left: 0;
     right: 0;
-    height: 40px; 
+    height: 40px;
     /* Градиент от прозрачного к цвету фона */
     background: linear-gradient(to top, var(--surface-elevated) 20%, transparent 100%);
     z-index: 5;
-    pointer-events: none; 
+    pointer-events: none;
     transition: opacity 0.2s;
 }
 
@@ -1734,7 +1799,7 @@ header.safe-area-gradient {
     flex-direction: column;
     gap: 8px;
     /* Добавляем отступы сверху и снизу, чтобы контент не перекрывался градиентами полностью при скролле */
-    padding-top: 5px; 
+    padding-top: 5px;
     padding-bottom: 5px;
 }
 
@@ -1742,9 +1807,11 @@ header.safe-area-gradient {
 .similar-models-list::-webkit-scrollbar {
     width: 4px;
 }
+
 .similar-models-list::-webkit-scrollbar-track {
     background: transparent;
 }
+
 .similar-models-list::-webkit-scrollbar-thumb {
     background-color: var(--border-color);
     border-radius: 4px;
@@ -1752,7 +1819,8 @@ header.safe-area-gradient {
 
 /* --- Карточка внутри списка --- */
 .model-item {
-    height: 64px; /* Чуть компактнее */
+    height: 64px;
+    /* Чуть компактнее */
     background: rgba(30, 41, 68, 0.6);
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 16px;
@@ -1968,25 +2036,31 @@ header.safe-area-gradient {
     #sort-desktop-wrapper {
         display: none;
     }
+
     .btn-icon-sort-mobile {
         display: block;
     }
+
     .btn-icon-display-mode.desktop-only {
         display: none;
     }
+
     .btn-icon-display-mode.mobile-only {
         display: block;
     }
 }
 
 @media (min-width: 769px) {
+
     .btn-icon-sort-mobile,
     .btn-icon-display-mode.mobile-only {
         display: none;
     }
+
     .btn-icon-display-mode.desktop-only {
         display: block;
     }
+
     #sort-desktop-wrapper {
         display: flex;
     }
@@ -2011,17 +2085,21 @@ header.safe-area-gradient {
     .results-grid.grid-top-1 .result-card-info h2.similarity-percent {
         font-size: 1.2rem;
     }
+
     .results-grid.grid-top-1 .result-card-info h3.gift-name {
         font-size: 0.85rem;
         line-height: 1.1;
     }
+
     .results-grid.grid-top-1 .result-card-info p.model-name {
         font-size: 0.7rem;
         margin-bottom: 5px;
     }
+
     .results-grid.grid-top-1 .result-card-info .info-details p {
         font-size: 0.75rem;
     }
+
     .results-grid.grid-top-1 .ton-icon {
         width: 13px;
         height: 13px;
@@ -2037,6 +2115,7 @@ header.safe-area-gradient {
         width: 50%;
         height: 90%;
     }
+
     .card-model-side {
         width: 35%;
         height: 75%;
@@ -2106,12 +2185,12 @@ header.safe-area-gradient {
     }
 
     .nft-details-modal {
-         max-width: 90%;
+        max-width: 90%;
     }
 
     .comparison-container {
-         max-width: 100%;
-         gap: 0.5rem;
+        max-width: 100%;
+        gap: 0.5rem;
     }
 
     .model-item {
@@ -2127,11 +2206,12 @@ header.safe-area-gradient {
     background-color: transparent;
     box-shadow: none;
     /* 🔥 ВАЖНО: Добавил отступы, чтобы карточки не липли к краям */
-    padding: 15px; 
+    padding: 15px;
     position: relative;
     margin-top: 1.5rem;
     display: block;
-    box-sizing: border-box; /* Чтобы padding не увеличивал ширину */
+    box-sizing: border-box;
+    /* Чтобы padding не увеличивал ширину */
 }
 
 /* Градиентная линия сверху (маска) */
@@ -2139,11 +2219,11 @@ header.safe-area-gradient {
     content: '';
     position: absolute;
     top: 0;
-    left: 0; 
+    left: 0;
     right: 0;
     height: 100%;
-    border-radius: 24px; 
-    border: 2px solid #6b7fa7; 
+    border-radius: 24px;
+    border: 2px solid #6b7fa7;
     -webkit-mask-image: linear-gradient(to bottom, black 0px, black 1px, transparent 25px);
     mask-image: linear-gradient(to bottom, black 0px, black 1px, transparent 25px);
     opacity: 0.6;
@@ -2154,14 +2234,14 @@ header.safe-area-gradient {
 /* Заголовок на границе */
 .results-header-label {
     position: absolute;
-    top: 0; 
+    top: 0;
     left: 50%;
-    transform: translate(-50%, -50%); 
-    background-color: rgba(22, 33, 58, 1); 
+    transform: translate(-50%, -50%);
+    background-color: rgba(22, 33, 58, 1);
     padding: 0 16px;
     font-size: 0.95rem;
-    font-weight: 600; 
-    color: #6b7fa7; 
+    font-weight: 600;
+    color: #6b7fa7;
     white-space: nowrap;
     z-index: 2;
     border-radius: 10px;
@@ -2169,7 +2249,8 @@ header.safe-area-gradient {
 
 /* Скрываем старый класс, если он остался где-то в CSS */
 .results-initial-hide {
-    display: block !important; /* Принудительно показываем, так как там теперь кнопки */
+    display: block !important;
+    /* Принудительно показываем, так как там теперь кнопки */
 }
 
 /* ======================================
@@ -2183,11 +2264,11 @@ header.safe-area-gradient {
     box-shadow: none !important;
     border-radius: 0;
     overflow: visible;
-    height: 100%; 
+    height: 100%;
     display: flex;
     flex-direction: column;
     /* 🔥 ВАЖНО для фикса вылезания на мобилках */
-    min-width: 0; 
+    min-width: 0;
 }
 
 /* 2. Обертка (Визуал) */
@@ -2195,23 +2276,24 @@ header.safe-area-gradient {
     position: relative;
     width: 100%;
     /* Занимаем всю высоту родителя (.result-card) */
-    flex-grow: 1; 
+    flex-grow: 1;
     display: flex;
     flex-direction: column;
-    
+
     border-radius: 20px;
-    overflow: hidden; 
-    
-    border: 1px solid #334155; 
-    box-shadow: 0 4px 12px rgba(0,0,0,0.25);
-    background-color: #202c44; 
+    overflow: hidden;
+
+    border: 1px solid #334155;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+    background-color: #202c44;
     transition: transform 0.2s, box-shadow 0.2s;
-    box-sizing: border-box; /* Чтобы border не ломал размеры */
+    box-sizing: border-box;
+    /* Чтобы border не ломал размеры */
 }
 
 .result-card.modern-card:hover .card-visual-wrapper {
     transform: translateY(-4px);
-    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
     border-color: #475569;
 }
 
@@ -2224,7 +2306,7 @@ header.safe-area-gradient {
     align-items: center;
     justify-content: center;
     padding: 0 10px;
-    z-index: 5; 
+    z-index: 5;
     position: relative;
     width: 100%;
     box-sizing: border-box;
@@ -2235,8 +2317,8 @@ header.safe-area-gradient {
     font-weight: 700;
     color: #fff;
     text-align: center;
-    text-shadow: 0 1px 3px rgba(0,0,0,0.5);
-    
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -2251,9 +2333,9 @@ header.safe-area-gradient {
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 1; 
-    overflow: visible !important; 
-    flex-grow: 1; 
+    z-index: 1;
+    overflow: visible !important;
+    flex-grow: 1;
 }
 
 /* НИЗ */
@@ -2264,7 +2346,7 @@ header.safe-area-gradient {
     justify-content: flex-end;
     padding: 10px 20px;
     z-index: 5;
-    background: transparent; 
+    background: transparent;
     position: relative;
     width: 100%;
     box-sizing: border-box;
@@ -2275,7 +2357,7 @@ header.safe-area-gradient {
     color: #fff;
     line-height: 1;
     margin-bottom: 5px;
-    text-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    text-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
 }
 
 .count-small {
@@ -2288,10 +2370,11 @@ header.safe-area-gradient {
    🔥 ТОП-3 (НАСТРОЙКИ)
    ================================================== */
 .grid-top-3 .card-header-zone {
-    height: 40px;      
+    height: 40px;
     margin-top: 5px;
-    margin-bottom: 10px; 
+    margin-bottom: 10px;
 }
+
 .grid-top-3 .card-top-title {
     font-size: 1.1rem;
 }
@@ -2300,47 +2383,61 @@ header.safe-area-gradient {
     height: 115px;
     min-height: 115px;
     padding: 0 0 5px 0;
-    margin-bottom: 12px; 
+    margin-bottom: 12px;
 }
 
 /* --- ГЛАВНАЯ КАРТИНКА (Центр) --- */
 .grid-top-3 .card-model-main:not(.model-single) {
-    height: 100%; 
+    height: 100%;
     /* Было 60%, сделал больше, чтобы выделялась */
-    max-width: 75%; 
+    max-width: 75%;
     object-fit: contain;
     z-index: 10;
-    filter: drop-shadow(0 5px 15px rgba(0,0,0,0.6));
-    opacity: 1; /* Она остается непрозрачной */
+    filter: drop-shadow(0 5px 15px rgba(0, 0, 0, 0.6));
+    opacity: 1;
+    /* Она остается непрозрачной */
 }
 
 /* --- БОКОВЫЕ КАРТИНКИ (Фон) --- */
 .grid-top-3 .card-model-side {
     /* Было 75%, сделал больше */
-    height: 85%; 
+    height: 85%;
     /* Было 35%, сделал шире */
     max-width: 45%;
-    
+
     bottom: 0;
     /* Было 0.9, сделал прозрачнее, чтобы уходили на задний план */
-    opacity: 0.5; 
-    
+    opacity: 0.5;
+
     position: absolute;
     z-index: 5;
-    filter: drop-shadow(0 4px 10px rgba(0,0,0,0.5));
+    filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.5));
 }
 
 /* Углы поворота оставил, они норм */
-.grid-top-3 .model-left { left: 2%; transform: rotate(-8deg); }
-.grid-top-3 .model-right { right: 2%; transform: rotate(8deg); }
+.grid-top-3 .model-left {
+    left: 2%;
+    transform: rotate(-8deg);
+}
+
+.grid-top-3 .model-right {
+    right: 2%;
+    transform: rotate(8deg);
+}
 
 .grid-top-3 .card-bottom-info {
     height: 65px;
     min-height: 65px;
-    margin-top: 10px; 
+    margin-top: 10px;
 }
-.grid-top-3 .percent-big { font-size: 1.8rem; }
-.grid-top-3 .count-small { font-size: 0.95rem; }
+
+.grid-top-3 .percent-big {
+    font-size: 1.8rem;
+}
+
+.grid-top-3 .count-small {
+    font-size: 0.95rem;
+}
 
 /* ==================================================
    🔥 ТОП-1 (НАСТРОЙКИ)
@@ -2352,10 +2449,13 @@ header.safe-area-gradient {
     min-height: auto !important;
 
     /* 2. Настраиваем отступы */
-    padding-top: 15px;      /* Отступ от верхнего края карточки до текста */
-    padding-bottom: 5px;    
-    margin-bottom: 10px;    /* 🔥 РАССТОЯНИЕ ОТ ТЕКСТА ДО ФОТО (меняй это) */
+    padding-top: 15px;
+    /* Отступ от верхнего края карточки до текста */
+    padding-bottom: 5px;
+    margin-bottom: 10px;
+    /* 🔥 РАССТОЯНИЕ ОТ ТЕКСТА ДО ФОТО (меняй это) */
 }
+
 .grid-top-1 .card-top-title {
     font-size: 1.1rem;
     line-height: 1.2;
@@ -2363,29 +2463,32 @@ header.safe-area-gradient {
 
 .grid-top-1 .card-image-zone {
     /* Зона фото тоже резиновая, но с минимумом, чтобы фото не исчезло */
-    height: auto !important; 
-    min-height: 140px;      /* Базовая высота зоны фото */
-    
+    height: auto !important;
+    min-height: 140px;
+    /* Базовая высота зоны фото */
+
     padding: 0;
-    margin: 0;              /* Можно добавить margin, если нужно еще подвинуть */
-    
+    margin: 0;
+    /* Можно добавить margin, если нужно еще подвинуть */
+
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
 }
 
 .grid-top-1 .card-model-main.model-single {
-    position: static !important; 
+    position: static !important;
     transform: none !important;
     margin: auto !important;
-    
+
     width: auto !important;
     height: auto !important;
-    max-width: 80% !important; /* Было 85%, уменьшили само фото */
-    max-height: 90% !important; 
-    
+    max-width: 80% !important;
+    /* Было 85%, уменьшили само фото */
+    max-height: 90% !important;
+
     object-fit: contain;
-    filter: drop-shadow(0 15px 30px rgba(0,0,0,0.5));
+    filter: drop-shadow(0 15px 30px rgba(0, 0, 0, 0.5));
     opacity: 1;
 }
 
@@ -2395,59 +2498,86 @@ header.safe-area-gradient {
     min-height: auto !important;
 
     /* Настройки отступов */
-    margin-top: 10px;       
+    margin-top: 10px;
     padding-top: 5px;
     padding-bottom: 15px;
-    
+
     /* 🔥 ЦЕНТРИРОВАНИЕ ТЕКСТА */
     display: flex !important;
     flex-direction: column !important;
-    align-items: center !important; /* Центрирует по горизонтали */
+    align-items: center !important;
+    /* Центрирует по горизонтали */
     justify-content: flex-end !important;
     text-align: center !important;
 }
-.grid-top-1 .percent-big { 
-    font-size: 2rem; 
+
+.grid-top-1 .percent-big {
+    font-size: 2rem;
     width: 100%;
     text-align: center;
 }
-.grid-top-1 .count-small { 
-    font-size: 1rem; 
+
+.grid-top-1 .count-small {
+    font-size: 1rem;
     width: 100%;
     text-align: center;
-    opacity: 0.8; /* Чуть приглушил, чтобы не спорило с процентом */
+    opacity: 0.8;
+    /* Чуть приглушил, чтобы не спорило с процентом */
 }
 
 /* --- Адаптив --- */
 @media (max-width: 600px) {
+
     /* Добавляем отступы самой сетке на мобильных */
     #results-wrapper {
-        padding: 10px; 
+        padding: 10px;
     }
-    
+
     .results-grid {
-        gap: 10px; /* Чуть меньше gap, чтобы больше места карточкам */
+        gap: 10px;
+        /* Чуть меньше gap, чтобы больше места карточкам */
     }
 
     /* Топ-3 Мобилка */
-    .grid-top-3 .card-image-zone { 
-        height: 120px; 
-        min-height: 100px; 
-        margin-bottom: 20px; /* Отступ на мобиле */
+    .grid-top-3 .card-image-zone {
+        height: 120px;
+        min-height: 100px;
+        margin-bottom: 20px;
+        /* Отступ на мобиле */
     }
-    .grid-top-3 .percent-big { font-size: 1.5rem; }
-    .grid-top-3 .card-header-zone { height: 35px; min-height: 35px; }
-    .grid-top-3 .card-bottom-info { height: 55px; min-height: 55px; }
-    
+
+    .grid-top-3 .percent-big {
+        font-size: 1.5rem;
+    }
+
+    .grid-top-3 .card-header-zone {
+        height: 35px;
+        min-height: 35px;
+    }
+
+    .grid-top-3 .card-bottom-info {
+        height: 55px;
+        min-height: 55px;
+    }
+
     /* Топ-1 Мобилка */
-    .grid-top-1 .card-header-zone { height: 35px; min-height: 35px; }
-    
-    .grid-top-1 .card-image-zone { 
-        /* 🔥 Сильно уменьшаем высоту для мобилок, чтобы не вылезало */
-        height: 110px; 
-        min-height: 110px; 
+    .grid-top-1 .card-header-zone {
+        height: 35px;
+        min-height: 35px;
     }
-    
-    .grid-top-1 .percent-big { font-size: 1.4rem; }
-    .grid-top-1 .card-bottom-info { height: 50px; min-height: 50px; }
+
+    .grid-top-1 .card-image-zone {
+        /* 🔥 Сильно уменьшаем высоту для мобилок, чтобы не вылезало */
+        height: 110px;
+        min-height: 110px;
+    }
+
+    .grid-top-1 .percent-big {
+        font-size: 1.4rem;
+    }
+
+    .grid-top-1 .card-bottom-info {
+        height: 50px;
+        min-height: 50px;
+    }
 }

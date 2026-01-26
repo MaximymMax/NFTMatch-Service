@@ -1,4 +1,4 @@
-document.addEventListener('DOMContentLoaded', () => {
+﻿document.addEventListener('DOMContentLoaded', () => {
 
     const SERVER_BASE_URL = 'https://nftmatchbot20250730152328.azurewebsites.net';
     const API_PHOTO_URL = 'https://cdn.changes.tg/gifts/models';
@@ -392,7 +392,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <h3 class="sub-title">Требуется подписка</h3>
                         <p class="sub-text">Для использования поиска необходимо подписаться на наш Telegram канал.</p>
                         
-                        <a href="https://t.me/NFTMatchChannel" target="_blank" class="sub-btn">
+                        <a href="https://t.me/NFTstyler" target="_blank" class="sub-btn">
                             Подписаться
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
