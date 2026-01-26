@@ -213,7 +213,19 @@ export function initNftDetailsModal() {
     }
 
     async function fetchSimilarModels() {
-        if (!similarModelsList) return;
+        console.log('[NFT Details Modal] 🔵 fetchSimilarModels вызвана');
+        console.log('[NFT Details Modal] Текущие переменные:', {
+            cardGiftName,
+            selectedModelName,
+            targetGiftName,
+            targetModelName,
+            apiColors
+        });
+
+        if (!similarModelsList) {
+            console.error('[NFT Details Modal] ❌ similarModelsList не найден!');
+            return;
+        }
         similarModelsList.innerHTML = '<div class="list-loading"><span class="spinner" style="display:inline-block; width:16px; height:16px; border:2px solid #6b7fa7; border-top-color:#fff; border-radius:50%; animation:spin 1s linear infinite; margin-right:8px;"></span> Загрузка...</div>';
 
         try {
@@ -221,21 +233,27 @@ export function initNftDetailsModal() {
                 let masterUserData = null;
                 try {
                     const cachedUserData = sessionStorage.getItem('tgUser');
+                    console.log('[NFT Details Modal] sessionStorage.tgUser:', cachedUserData);
                     if (cachedUserData) masterUserData = JSON.parse(cachedUserData);
-                } catch (e) { }
+                } catch (e) {
+                    console.warn('[NFT Details Modal] Ошибка чтения tgUser из sessionStorage:', e);
+                }
 
                 if (!masterUserData && window.Telegram?.WebApp?.initDataUnsafe?.user) {
                     const tgUser = window.Telegram.WebApp.initDataUnsafe.user;
+                    console.log('[NFT Details Modal] Получены данные из Telegram.WebApp:', tgUser);
                     masterUserData = { telegramId: tgUser.id, username: tgUser.username };
                 }
 
                 if (masterUserData) {
                     return { id: parseInt(masterUserData.telegramId, 10) || null, Username: masterUserData.username };
                 }
+                console.warn('[NFT Details Modal] ⚠️ Данные пользователя не найдены');
                 return { id: null, Username: null };
             };
 
             const userData = getTelegramUserData();
+            console.log('[NFT Details Modal] userData:', userData);
 
             const requestBody = {
                 ...userData,
@@ -249,7 +267,7 @@ export function initNftDetailsModal() {
             const baseUrl = SERVER_BASE_URL.endsWith('/') ? SERVER_BASE_URL.slice(0, -1) : SERVER_BASE_URL;
             const finalUrl = `${baseUrl}${API_SIMILAR_MODELS}`;
 
-            console.log('Запрос похожих моделей:', { url: finalUrl, body: requestBody });
+            console.log('[NFT Details Modal] 📤 Отправляем запрос:', { url: finalUrl, body: requestBody });
 
             const response = await fetch(finalUrl, {
                 method: 'POST',
@@ -260,15 +278,26 @@ export function initNftDetailsModal() {
                 body: JSON.stringify(requestBody)
             });
 
+            console.log('[NFT Details Modal] 📥 Статус ответа:', response.status, response.statusText);
+
             if (!response.ok) {
                 const errorText = await response.text();
-                // Логируем для отладки, если снова будет 400
-                console.error("API Error Body:", requestBody);
+                console.error('[NFT Details Modal] ❌ Ошибка API:', {
+                    status: response.status,
+                    statusText: response.statusText,
+                    errorText,
+                    requestBody
+                });
                 throw new Error(`HTTP error! Status: ${response.status} - ${errorText}`);
             }
 
             const data = await response.json();
-            console.log('Ответ API похожих моделей:', data);
+            console.log('[NFT Details Modal] ✅ Получены данные:', data);
+            console.log('[NFT Details Modal] Структура данных:', {
+                isArray: Array.isArray(data),
+                dataKeys: typeof data === 'object' ? Object.keys(data) : 'not an object',
+                dataLength: Array.isArray(data) ? data.length : 'not array'
+            });
 
             // --- ЛОГИКА ПАРСИНГА: Получаем все похожие модели ---
             let rawModelsList = [];
@@ -306,7 +335,8 @@ export function initNftDetailsModal() {
                 count: item.Count !== undefined ? item.Count : (item.count !== undefined ? item.count : 0)
             }));
 
-            console.log(`Загружено ${currentSimilarModels.length} похожих моделей`);
+            console.log(`[NFT Details Modal] ✅ Загружено ${currentSimilarModels.length} похожих моделей`);
+            console.log('[NFT Details Modal] Первые 3 модели:', currentSimilarModels.slice(0, 3));
             renderSimilarModelsList();
 
         } catch (error) {
@@ -318,6 +348,14 @@ export function initNftDetailsModal() {
     }
 
     function openNftDetailsModal(clickedGift, clickedModel, mainTargetGift, mainTargetModel, colors) {
+        console.log('[NFT Details Modal] 🟢 openNftDetailsModal вызвана с параметрами:', {
+            clickedGift,
+            clickedModel,
+            mainTargetGift,
+            mainTargetModel,
+            colors
+        });
+
         // Оборачиваем в RAF для плавности
         requestAnimationFrame(() => {
             cardGiftName = clickedGift;
@@ -327,8 +365,10 @@ export function initNftDetailsModal() {
 
             if (Array.isArray(colors)) {
                 apiColors = colors.map(c => (typeof c === 'object' && c.hex) ? c.hex : c);
+                console.log('[NFT Details Modal] Обработаны цвета:', apiColors);
             } else {
                 apiColors = [];
+                console.warn('[NFT Details Modal] ⚠️ Цвета не переданы или не массив');
             }
 
             currentSimilarModels = [];
@@ -349,6 +389,7 @@ export function initNftDetailsModal() {
                 document.body.classList.add('modal-open');
             }
 
+            console.log('[NFT Details Modal] ⏳ Вызываем fetchSimilarModels...');
             fetchSimilarModels();
 
             // НЕ добавляем модальное окно в историю браузера
