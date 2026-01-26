@@ -1,7 +1,7 @@
 // Объявляем функцию в глобальной области видимости
-window.copyText = function(text) {
+window.copyText = function (text) {
     if (!text) return;
-    
+
     // Используем современный API буфера обмена
     if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(text).then(() => {
@@ -32,24 +32,20 @@ window.copyText = function(text) {
 };
 
 document.addEventListener('DOMContentLoaded', () => {
-    
+
     // Telegram WebApp Logic
-        if (window.Telegram && window.Telegram.WebApp) {
+    if (window.Telegram && window.Telegram.WebApp) {
         const tg = window.Telegram.WebApp;
         tg.ready();
         tg.expand();
-        
+
         // Сбрасываем старые обработчики
         tg.BackButton.offClick();
         tg.BackButton.show();
-        
+
         tg.BackButton.onClick(() => {
-            if (window.history.length > 1) {
-                window.history.back();
-            } else {
-                // Исправленный путь: выходим из папки назад
-                window.location.href = '../index.html';
-            }
+            // Всегда возвращаемся на главную страницу
+            window.location.href = '../index.html';
         });
 
         if (tg.setHeaderColor) {

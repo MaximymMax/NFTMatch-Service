@@ -1517,10 +1517,20 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             // ИСПРАВЛЕНИЕ: Если есть количество в URL, выбираем рандомные подарки
-            if (!isNaN(paramRandomCount) && paramRandomCount > 0) {
+            //  0 или отсутствие параметра = ВСЕ коллекции
+            if (!isNaN(paramRandomCount)) {
                 selectedMultiItems.clear();
-                // Вызываем вашу функцию рандома, она заполнит selectedMultiItems
-                selectRandomGifts(paramRandomCount, giftNames, selectedGift);
+                if (paramRandomCount === 0) {
+                    // Выбираем ВСЕ коллекции (кроме текущей)
+                    giftNames.forEach(gift => {
+                        if (gift !== selectedGift) {
+                            selectedMultiItems.add(gift);
+                        }
+                    });
+                } else if (paramRandomCount > 0) {
+                    // Выбираем рандомные подарки
+                    selectRandomGifts(paramRandomCount, giftNames, selectedGift);
+                }
             }
 
             populateMultiSelectDropdown(giftNames);
