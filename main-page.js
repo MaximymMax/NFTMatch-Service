@@ -98,6 +98,167 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    // ====== DEEP LINKING ROUTER ======
+    function handleDeepLink() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const action = urlParams.get('action');
+
+        if (!action) return; // Нет deep link параметров
+
+        console.log('[DeepLink] Processing action:', action);
+
+        // Показываем индикатор загрузки
+        showLoadingIndicator();
+
+        // Обрабатываем действие
+        switch (action) {
+            case 'api':
+                redirectToPage('./API_info/api.html');
+                break;
+
+            case 'donate':
+            case 'support':
+                redirectToPage('./Support/support.html');
+                break;
+
+            case 'monochrome_color':
+                handleMonochromeColor(urlParams);
+                break;
+
+            case 'monochrome_model':
+                handleMonochromeModel(urlParams);
+                break;
+
+            case 'similar':
+                handleSimilar(urlParams);
+                break;
+
+            case 'theme':
+                handleTheme(urlParams);
+                break;
+
+            default:
+                console.warn('[DeepLink] Unknown action:', action);
+                hideLoadingIndicator();
+                break;
+        }
+    }
+
+    function showLoadingIndicator() {
+        const existingLoader = document.getElementById('deeplink-loader');
+        if (existingLoader) return;
+
+        const loader = document.createElement('div');
+        loader.id = 'deeplink-loader';
+        loader.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(22, 33, 58, 0.95);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            backdrop-filter: blur(10px);
+        `;
+
+        loader.innerHTML = `
+            <div style="text-align: center; color: #fff;">
+                <div style="width: 50px; height: 50px; border: 3px solid rgba(56, 189, 248, 0.3); border-top-color: #38bdf8; border-radius: 50%; margin: 0 auto 20px; animation: spin 0.8s linear infinite;"></div>
+                <p style="font-size: 16px; font-weight: 500; margin: 0;">Загрузка...</p>
+            </div>
+            <style>
+                @keyframes spin {
+                    to { transform: rotate(360deg); }
+                }
+            </style>
+        `;
+
+        document.body.appendChild(loader);
+    }
+
+    function hideLoadingIndicator() {
+        const loader = document.getElementById('deeplink-loader');
+        if (loader) {
+            loader.remove();
+        }
+    }
+
+    function redirectToPage(path) {
+        setTimeout(() => {
+            window.location.href = path;
+        }, 300);
+    }
+
+    // Обработчик: Монохромы по цвету (коллекция + фон)
+    function handleMonochromeColor(params) {
+        const gift = params.get('gift');
+        const color = params.get('color');
+
+        if (!gift || !color) {
+            console.error('[DeepLink] Missing parameters for monochrome_color');
+            hideLoadingIndicator();
+            return;
+        }
+
+        const url = `./Monohrome/background-finder.html?mode=findModels&gift=${encodeURIComponent(gift)}&color=${encodeURIComponent(color)}`;
+        redirectToPage(url);
+    }
+
+    // Обработчик: Монохромы по модели (коллекция + модель)
+    function handleMonochromeModel(params) {
+        const gift = params.get('gift');
+        const model = params.get('model');
+
+        if (!gift || !model) {
+            console.error('[DeepLink] Missing parameters for monochrome_model');
+            hideLoadingIndicator();
+            return;
+        }
+
+        const url = `./Monohrome/background-finder.html?mode=findBgs&gift=${encodeURIComponent(gift)}&model=${encodeURIComponent(model)}`;
+        redirectToPage(url);
+    }
+
+    // Обработчик: Похожие модели
+    function handleSimilar(params) {
+        const gift = params.get('gift');
+        const model = params.get('model');
+        const count = params.get('count') || '100';
+
+        if (!gift || !model) {
+            console.error('[DeepLink] Missing parameters for similar');
+            hideLoadingIndicator();
+            return;
+        }
+
+        const url = `./nft-page/index.html?giftName=${encodeURIComponent(gift)}&modelName=${encodeURIComponent(model)}&randomGiftsCount=${count}`;
+        redirectToPage(url);
+    }
+
+    // Обработчик: Тематики
+    function handleTheme(params) {
+        const gift = params.get('gift');
+        const model = params.get('model');
+        const theme = params.get('theme');
+
+        let url = './Thematic/themes.html';
+
+        if (gift && model) {
+            url += `?gift=${encodeURIComponent(gift)}&model=${encodeURIComponent(model)}`;
+
+            if (theme) {
+                url += `&theme=${encodeURIComponent(theme)}`;
+            }
+        }
+
+        redirectToPage(url);
+    }
+
+    // ====== END DEEP LINKING ROUTER ======
+
     const initCarousel = async () => {
         const wrapper = document.getElementById('hero-carousel-wrapper');
         const track = document.getElementById('hero-carousel-track');
@@ -290,5 +451,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (isAuthorized) {
         preloadGiftNames();
+
+        // Обрабатываем deep links после инициализации
+        handleDeepLink();
     }
 });

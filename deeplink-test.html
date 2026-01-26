@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NFTMatch Deep Links - Тестирование</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e2944 0%, #16213a 100%);
+            color: #fff;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #38bdf8;
+            font-size: 28px;
+        }
+
+        .section {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(56, 189, 248, 0.2);
+        }
+
+        .section h2 {
+            color: #38bdf8;
+            font-size: 20px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section h2 span {
+            font-size: 24px;
+        }
+
+        .link-group {
+            display: grid;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .link-item {
+            background: rgba(56, 189, 248, 0.1);
+            padding: 12px 16px;
+            border-radius: 8px;
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .link-item:hover {
+            background: rgba(56, 189, 248, 0.2);
+            border-color: rgba(56, 189, 248, 0.5);
+            transform: translateY(-2px);
+        }
+
+        .link-item h3 {
+            font-size: 14px;
+            color: #94a3b8;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .link-item a {
+            color: #38bdf8;
+            text-decoration: none;
+            word-break: break-all;
+            font-size: 13px;
+            display: block;
+            padding: 8px 12px;
+            background: rgba(22, 33, 58, 0.6);
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .link-item a:hover {
+            background: rgba(22, 33, 58, 0.8);
+            color: #60dfff;
+        }
+
+        .note {
+            background: rgba(251, 146, 60, 0.1);
+            border-left: 3px solid #fb923c;
+            padding: 12px;
+            border-radius: 6px;
+            margin-top: 15px;
+            font-size: 14px;
+            color: #fbbf24;
+        }
+
+        .note strong {
+            color: #fb923c;
+        }
+
+        .copy-btn {
+            display: inline-block;
+            background: #38bdf8;
+            color: #1e2944;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            margin-left: 8px;
+            transition: all 0.2s;
+        }
+
+        .copy-btn:hover {
+            background: #60dfff;
+        }
+
+        .copy-btn:active {
+            transform: scale(0.95);
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            h1 {
+                font-size: 24px;
+            }
+
+            .section {
+                padding: 15px;
+            }
+
+            .section h2 {
+                font-size: 18px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🔗 NFTMatch Deep Links - Тестирование</h1>
+
+        <div class="section">
+            <h2><span>📖</span> API и Поддержка</h2>
+            <div class="link-group">
+                <div class="link-item">
+                    <h3>Страница API</h3>
+                    <a href="index.html?action=api" target="_blank">index.html?action=api</a>
+                </div>
+                <div class="link-item">
+                    <h3>Страница Доната/Поддержки</h3>
+                    <a href="index.html?action=donate" target="_blank">index.html?action=donate</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2><span>🎨</span> Монохромы - Поиск по Цвету</h2>
+            <div class="link-group">
+                <div class="link-item">
+                    <h3>Delicious Cake на фоне Amber</h3>
+                    <a href="index.html?action=monochrome_color&gift=Delicious%20Cake&color=Amber" target="_blank">
+                        index.html?action=monochrome_color&gift=Delicious Cake&color=Amber
+                    </a>
+                </div>
+                <div class="link-item">
+                    <h3>Green Star на фоне Aqua</h3>
+                    <a href="index.html?action=monochrome_color&gift=Green%20Star&color=Aqua" target="_blank">
+                        index.html?action=monochrome_color&gift=Green Star&color=Aqua
+                    </a>
+                </div>
+                <div class="link-item">
+                    <h3>Blue Star на фоне Blue</h3>
+                    <a href="index.html?action=monochrome_color&gift=Blue%20Star&color=Blue" target="_blank">
+                        index.html?action=monochrome_color&gift=Blue Star&color=Blue
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2><span>🌈</span> Монохромы - Поиск Фонов</h2>
+            <div class="link-group">
+                <div class="link-item">
+                    <h3>Фоны для Delicious Cake - Balloons</h3>
+                    <a href="index.html?action=monochrome_model&gift=Delicious%20Cake&model=Balloons" target="_blank">
+                        index.html?action=monochrome_model&gift=Delicious Cake&model=Balloons
+                    </a>
+                </div>
+                <div class="link-item">
+                    <h3>Фоны для Blue Star - Deer</h3>
+                    <a href="index.html?action=monochrome_model&gift=Blue%20Star&model=Deer" target="_blank">
+                        index.html?action=monochrome_model&gift=Blue Star&model=Deer
+                    </a>
+                </div>
+                <div class="link-item">
+                    <h3>Фоны для Green Star - Tree</h3>
+                    <a href="index.html?action=monochrome_model&gift=Green%20Star&model=Tree" target="_blank">
+                        index.html?action=monochrome_model&gift=Green Star&model=Tree
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2><span>🔍</span> Похожие Модели</h2>
+            <div class="link-group">
+                <div class="link-item">
+                    <h3>Похожие на Delicious Cake - Balloons</h3>
+                    <a href="index.html?action=similar&gift=Delicious%20Cake&model=Balloons" target="_blank">
+                        index.html?action=similar&gift=Delicious Cake&model=Balloons
+                    </a>
+                </div>
+                <div class="link-item">
+                    <h3>Похожие на Blue Star - Deer (50 коллекций)</h3>
+                    <a href="index.html?action=similar&gift=Blue%20Star&model=Deer&count=50" target="_blank">
+                        index.html?action=similar&gift=Blue Star&model=Deer&count=50
+                    </a>
+                </div>
+                <div class="link-item">
+                    <h3>Похожие на Green Star - Tree (все коллекции)</h3>
+                    <a href="index.html?action=similar&gift=Green%20Star&model=Tree&count=100" target="_blank">
+                        index.html?action=similar&gift=Green Star&model=Tree&count=100
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2><span>📂</span> Тематики</h2>
+            <div class="link-group">
+                <div class="link-item">
+                    <h3>Просто открыть страницу тематик</h3>
+                    <a href="index.html?action=theme" target="_blank">
+                        index.html?action=theme
+                    </a>
+                </div>
+                <div class="link-item">
+                    <h3>Тематики для Delicious Cake - Balloons</h3>
+                    <a href="index.html?action=theme&gift=Delicious%20Cake&model=Balloons" target="_blank">
+                        index.html?action=theme&gift=Delicious Cake&model=Balloons
+                    </a>
+                </div>
+                <div class="link-item">
+                    <h3>Тематики для Blue Star - Deer</h3>
+                    <a href="index.html?action=theme&gift=Blue%20Star&model=Deer" target="_blank">
+                        index.html?action=theme&gift=Blue Star&model=Deer
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="note">
+            <strong>📝 Примечание:</strong> Эти ссылки открываются в новой вкладке для тестирования.
+            В реальном Telegram WebApp переходы будут происходить внутри приложения без открытия новых окон.
+        </div>
+
+        <div class="note" style="margin-top: 15px; border-color: #38bdf8; background: rgba(56, 189, 248, 0.1);">
+            <strong style="color: #38bdf8;">💡 Совет:</strong> Откройте консоль браузера (F12),
+            чтобы видеть логи обработки deep links в main-page.js
+        </div>
+    </div>
+
+    <script>
+        // Функция для копирования ссылки в буфер обмена
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                console.log('Ссылка скопирована:', text);
+            }).catch(err => {
+                console.error('Ошибка копирования:', err);
+            });
+        }
+
+        // Добавляем кнопки копирования к каждой ссылке
+        document.querySelectorAll('.link-item a').forEach(link => {
+            const copyBtn = document.createElement('button');
+            copyBtn.className = 'copy-btn';
+            copyBtn.textContent = 'Копировать';
+            copyBtn.onclick = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const fullUrl = window.location.origin + window.location.pathname.replace('deeplink-test.html', '') + link.getAttribute('href');
+                copyToClipboard(fullUrl);
+                copyBtn.textContent = '✓ Скопировано!';
+                setTimeout(() => {
+                    copyBtn.textContent = 'Копировать';
+                }, 2000);
+            };
+            link.parentElement.appendChild(copyBtn);
+        });
+    </script>
+</body>
+
+</html>
