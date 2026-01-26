@@ -95,13 +95,21 @@ window.initNFTsSection = function (giftName, modelName, bgName) {
 
             console.log('[NFTs] Ответ сервера - статус:', response.status, response.statusText);
 
-            // Проверка на ошибку подписки
-            if (response.status === 403) {
+            // Проверка на ошибку подписки (403 или 401)
+            if (response.status === 403 || response.status === 401) {
                 try {
                     const errorData = await response.clone().json();
-                    if (errorData.error === 'subscription_required') {
-                        console.warn('[NFTs] Subscription required. Channel ID:', errorData.channelId);
-                        window.showSubscriptionModal(errorData.channelId);
+                    console.log('[NFTs] Данные ошибки:', errorData);
+
+                    if (errorData.error === 'subscription_required' || errorData.message?.includes('subscription') || errorData.message?.includes('Subscription')) {
+                        console.warn('[NFTs] Требуется подписка. Channel ID:', errorData.channelId);
+
+                        // Показываем модальное окно подписки
+                        if (typeof window.showSubscriptionModal === 'function') {
+                            window.showSubscriptionModal(errorData.channelId || '@NFTstyler');
+                        } else {
+                            alert('Для использования этой функции необходимо подписаться на наш канал: @NFTstyler');
+                        }
 
                         // Сворачиваем секцию
                         window.nftsState.isExpanded = false;
@@ -116,7 +124,7 @@ window.initNFTsSection = function (giftName, modelName, bgName) {
                         return;
                     }
                 } catch (e) {
-                    console.error('[NFTs] Error parsing error response:', e);
+                    console.error('[NFTs] Ошибка парсинга ответа об ошибке:', e);
                 }
             }
 
@@ -167,6 +175,21 @@ window.initNFTsSection = function (giftName, modelName, bgName) {
     toggleHeader.addEventListener('click', toggleHeader._nftHandler);
 };
 
+// Функция нормализации названия коллекции для fragment.com
+function normalizeGiftName(giftName) {
+    if (!giftName) return '';
+    // Убираем пробелы и переводим в lowercase
+    return giftName.replace(/\s+/g, '').toLowerCase();
+}
+
+// Функция извлечения номера модели
+function extractModelNumber(modelName) {
+    if (!modelName) return '1';
+    // Ищем цифры в конце названия модели
+    const match = modelName.match(/(\d+)$/);
+    return match ? match[1] : '1';
+}
+
 // Функция рендера сетки NFT
 window.renderNFTsGrid = function (gifts, container) {
     console.log('[renderNFTsGrid] Вызвана функция. Gifts:', gifts.length, 'Container:', container);
@@ -176,10 +199,21 @@ window.renderNFTsGrid = function (gifts, container) {
         const card = document.createElement('div');
         card.className = 'nft-mini-card';
 
-        const imgUrl = `https://cdn.changes.tg/gifts/models/${encodeURIComponent(gift.GiftName)}/png/${encodeURIComponent(gift.ModelName)}.png`;
+        // Нормализуем название коллекции и извлекаем номер модели
+        const normalizedGift = normalizeGiftName(gift.GiftName);
+        const modelNumber = extractModelNumber(gift.ModelName);
+
+        // Формируем URL для fragment.com
+        const imgUrl = `https://nft.fragment.com/gift/${normalizedGift}-${modelNumber}.medium.jpg`;
+
+        console.log('[renderNFTsGrid] Сформирован URL:', {
+            original: { GiftName: gift.GiftName, ModelName: gift.ModelName },
+            normalized: { normalizedGift, modelNumber },
+            url: imgUrl
+        });
 
         card.innerHTML = `
-            <img src="${imgUrl}" alt="${gift.ModelName}" loading="lazy">
+            <img src="${imgUrl}" alt="${gift.ModelName}" loading="lazy" onerror="this.src='https://cdn.changes.tg/gifts/models/${encodeURIComponent(gift.GiftName)}/png/${encodeURIComponent(gift.ModelName)}.png'">
             <div class="nft-mini-info">
                 <span class="nft-mini-name">${gift.ModelName}</span>
             </div>

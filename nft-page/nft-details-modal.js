@@ -280,6 +280,33 @@ export function initNftDetailsModal() {
 
             console.log('[NFT Details Modal] 📥 Статус ответа:', response.status, response.statusText);
 
+            // Проверка на ошибку подписки (403 или 401) ПЕРЕД общей проверкой
+            if (response.status === 403 || response.status === 401) {
+                try {
+                    const errorData = await response.clone().json();
+                    console.log('[NFT Details Modal] Данные ошибки:', errorData);
+
+                    if (errorData.error === 'subscription_required' || errorData.message?.includes('subscription') || errorData.message?.includes('Subscription')) {
+                        console.warn('[NFT Details Modal] Требуется подписка. Channel ID:', errorData.channelId);
+
+                        // Показываем модальное окно подписки
+                        if (typeof window.showSubscriptionModal === 'function') {
+                            window.showSubscriptionModal(errorData.channelId || '@NFTstyler');
+                        } else {
+                            alert('Для использования этой функции необходимо подписаться на наш канал: @NFTstyler');
+                        }
+
+                        // Скрываем список и показываем сообщение
+                        if (similarModelsList) {
+                            similarModelsList.innerHTML = '<p class="list-placeholder">Требуется подписка на канал</p>';
+                        }
+                        return;
+                    }
+                } catch (e) {
+                    console.error('[NFT Details Modal] Ошибка парсинга ответа об ошибке:', e);
+                }
+            }
+
             if (!response.ok) {
                 const errorText = await response.text();
                 console.error('[NFT Details Modal] ❌ Ошибка API:', {
