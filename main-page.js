@@ -2,7 +2,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (window.Telegram && window.Telegram.WebApp) {
         const tg = window.Telegram.WebApp;
-        tg.BackButton.hide();
+        tg.BackButton.hide(); // Скрываем кнопку назад на главной
 
         if (tg.initData) {
             sessionStorage.setItem('tgInitData', tg.initData);
@@ -98,98 +98,119 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // ====== DEEP LINKING ROUTER ======
+    // ====== DEEP LINKING ROUTER (FIXED) ======
     function handleDeepLink() {
+        // Создаем копию параметров, чтобы работать с ними после очистки URL
         let urlParams = new URLSearchParams(window.location.search);
         let action = urlParams.get('action');
 
-        // Если нет обычного параметра action, проверяем Telegram startapp
+        // 1. Проверяем Telegram startapp (если action нет в URL)
         if (!action) {
             const startapp = urlParams.get('startapp');
+            // Важно: берем start_param из initDataUnsafe, это надежнее внутри Telegram
             const tgStartParam = window.Telegram?.WebApp?.initDataUnsafe?.start_param;
             const deepLinkString = startapp || tgStartParam;
 
             if (deepLinkString) {
                 console.log('[DeepLink] Telegram startapp detected:', deepLinkString);
-                urlParams = parseStartAppParams(deepLinkString);
+                const parsedParams = parseStartAppParams(deepLinkString);
+                // Объединяем параметры
+                parsedParams.forEach((value, key) => urlParams.set(key, value));
                 action = urlParams.get('action');
             }
         }
 
-        if (!action) return; // Нет deep link параметров
+        if (!action) return; // Нет действий — остаемся на главной
 
         console.log('[DeepLink] Processing action:', action);
 
-        // Очищаем URL от параметров deep link, чтобы избежать повторной обработки при возврате назад
-        clearDeepLinkParams();
+        // 2. ВАЖНО: Сначала очищаем URL текущей страницы (Index), 
+        // чтобы кнопка "Назад" возвращала на "чистую" главную, а не в редирект-петлю.
+        cleanCurrentUrlHistory();
 
-        // Показываем индикатор загрузки
+        // 3. Показываем лоадер
         showLoadingIndicator();
 
-        // Обрабатываем действие
+        // 4. Формируем целевой URL
+        let targetUrl = '';
+
         switch (action) {
             case 'api':
-                redirectToPage('./API_info/api.html');
+                targetUrl = './API_info/api.html';
                 break;
-
             case 'donate':
             case 'support':
-                redirectToPage('./Support/support.html');
+                targetUrl = './Support/support.html';
                 break;
-
             case 'monochrome_color':
-                handleMonochromeColor(urlParams);
+                const giftColor = urlParams.get('gift');
+                const color = urlParams.get('color');
+                if (giftColor && color) {
+                    targetUrl = `./Monohrome/background-finder.html?mode=findModels&gift=${encodeURIComponent(giftColor)}&color=${encodeURIComponent(color)}`;
+                }
                 break;
-
             case 'monochrome_model':
-                handleMonochromeModel(urlParams);
+                const giftModel = urlParams.get('gift');
+                const modelMono = urlParams.get('model');
+                if (giftModel && modelMono) {
+                    targetUrl = `./Monohrome/background-finder.html?mode=findBgs&gift=${encodeURIComponent(giftModel)}&model=${encodeURIComponent(modelMono)}`;
+                }
                 break;
-
             case 'similar':
-                handleSimilar(urlParams);
+                const giftSim = urlParams.get('gift');
+                const modelSim = urlParams.get('model');
+                const count = urlParams.get('count') || '100';
+                if (giftSim && modelSim) {
+                    targetUrl = `./nft-page/index.html?giftName=${encodeURIComponent(giftSim)}&modelName=${encodeURIComponent(modelSim)}&randomGiftsCount=${count}`;
+                }
                 break;
-
             case 'theme':
-                handleTheme(urlParams);
+                const giftTheme = urlParams.get('gift');
+                const modelTheme = urlParams.get('model');
+                const themeName = urlParams.get('theme');
+                if (giftTheme && modelTheme) {
+                    targetUrl = `./Thematic/themes.html?gift=${encodeURIComponent(giftTheme)}&model=${encodeURIComponent(modelTheme)}`;
+                    if (themeName) targetUrl += `&theme=${encodeURIComponent(themeName)}`;
+                } else {
+                    targetUrl = './Thematic/themes.html';
+                }
                 break;
-
             default:
                 console.warn('[DeepLink] Unknown action:', action);
                 hideLoadingIndicator();
-                break;
+                return;
+        }
+
+        // 5. Выполняем переход, если URL сформирован
+        if (targetUrl) {
+            // Используем href (или assign), чтобы СОЗДАТЬ новую запись в истории.
+            // Т.к. мы очистили предыдущую запись (шаг 2), кнопка назад вернет на чистый Index.
+            setTimeout(() => {
+                window.location.href = targetUrl;
+            }, 100); 
+        } else {
+            hideLoadingIndicator();
         }
     }
 
-    // Функция для очистки параметров deep link из URL
-    function clearDeepLinkParams() {
+    // Функция жесткой очистки URL текущей страницы без перезагрузки
+    function cleanCurrentUrlHistory() {
         const url = new URL(window.location.href);
-        const params = new URLSearchParams(url.search);
-
-        // Удаляем все параметры, связанные с deep linking
-        const deepLinkParams = ['action', 'startapp', 'gift', 'color', 'model', 'count', 'theme'];
-        let hasChanges = false;
-
-        deepLinkParams.forEach(param => {
-            if (params.has(param)) {
-                params.delete(param);
-                hasChanges = true;
-            }
-        });
-
-        if (hasChanges) {
-            // Обновляем URL без перезагрузки страницы
-            const newUrl = params.toString()
-                ? `${url.pathname}?${params.toString()}`
-                : url.pathname;
-
-            window.history.replaceState({}, '', newUrl);
-            console.log('[DeepLink] URL cleaned:', newUrl);
-        }
+        // Оставляем только чистый путь (без query params)
+        const cleanPath = url.protocol + "//" + url.host + url.pathname;
+        
+        // replaceState ЗАМЕНЯЕТ текущую запись "с мусором" на чистую запись.
+        // Теперь в истории браузера на этом месте лежит чистый index.html
+        window.history.replaceState({ path: cleanPath }, '', cleanPath);
+        console.log('[DeepLink] Current history cleaned:', cleanPath);
     }
 
-    // Парсим параметры из Telegram startapp
+    // Парсинг startapp параметров
     function parseStartAppParams(startappString) {
         const params = new URLSearchParams();
+        // Защита от undefined
+        if(!startappString) return params;
+
         const parts = startappString.split('-');
         const action = parts[0];
 
@@ -215,7 +236,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (parts[3]) params.set('theme', parts[3].replace(/_/g, ' '));
                 break;
         }
-
         return params;
     }
 
@@ -260,78 +280,6 @@ document.addEventListener('DOMContentLoaded', () => {
             loader.remove();
         }
     }
-
-    function redirectToPage(path) {
-        setTimeout(() => {
-            window.location.href = path;
-        }, 300);
-    }
-
-    // Обработчик: Монохромы по цвету (коллекция + фон)
-    function handleMonochromeColor(params) {
-        const gift = params.get('gift');
-        const color = params.get('color');
-
-        if (!gift || !color) {
-            console.error('[DeepLink] Missing parameters for monochrome_color');
-            hideLoadingIndicator();
-            return;
-        }
-
-        const url = `./Monohrome/background-finder.html?mode=findModels&gift=${encodeURIComponent(gift)}&color=${encodeURIComponent(color)}`;
-        redirectToPage(url);
-    }
-
-    // Обработчик: Монохромы по модели (коллекция + модель)
-    function handleMonochromeModel(params) {
-        const gift = params.get('gift');
-        const model = params.get('model');
-
-        if (!gift || !model) {
-            console.error('[DeepLink] Missing parameters for monochrome_model');
-            hideLoadingIndicator();
-            return;
-        }
-
-        const url = `./Monohrome/background-finder.html?mode=findBgs&gift=${encodeURIComponent(gift)}&model=${encodeURIComponent(model)}`;
-        redirectToPage(url);
-    }
-
-    // Обработчик: Похожие модели
-    function handleSimilar(params) {
-        const gift = params.get('gift');
-        const model = params.get('model');
-        const count = params.get('count') || '100';
-
-        if (!gift || !model) {
-            console.error('[DeepLink] Missing parameters for similar');
-            hideLoadingIndicator();
-            return;
-        }
-
-        const url = `./nft-page/index.html?giftName=${encodeURIComponent(gift)}&modelName=${encodeURIComponent(model)}&randomGiftsCount=${count}`;
-        redirectToPage(url);
-    }
-
-    // Обработчик: Тематики
-    function handleTheme(params) {
-        const gift = params.get('gift');
-        const model = params.get('model');
-        const theme = params.get('theme');
-
-        let url = './Thematic/themes.html';
-
-        if (gift && model) {
-            url += `?gift=${encodeURIComponent(gift)}&model=${encodeURIComponent(model)}`;
-
-            if (theme) {
-                url += `&theme=${encodeURIComponent(theme)}`;
-            }
-        }
-
-        redirectToPage(url);
-    }
-
     // ====== END DEEP LINKING ROUTER ======
 
     const initCarousel = async () => {
