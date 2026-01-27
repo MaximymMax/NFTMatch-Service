@@ -6,7 +6,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // 1. Сообщаем, что приложение готово (важно вызвать до расширения)
         tg.ready();
-        
+
         // 2. Пытаемся включить ПОЛНОЦЕННЫЙ полноэкранный режим (API 8.0+)
         try {
             if (typeof tg.requestFullscreen === 'function') {
@@ -19,13 +19,13 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('[Fullscreen] Error:', e);
             tg.expand(); // Если что-то пошло не так, просто расширяем
         }
-        
+
         // 3. Отключаем свайп вниз для закрытия (чтобы случайно не закрыли)
         if (tg.isVersionAtLeast && tg.isVersionAtLeast('7.7')) {
-             tg.disableVerticalSwipes();
+            tg.disableVerticalSwipes();
         }
 
-        tg.BackButton.hide(); 
+        tg.BackButton.hide();
 
         if (tg.initData) {
             sessionStorage.setItem('tgInitData', tg.initData);
@@ -73,7 +73,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     tg.requestFullscreen();
                 }
                 tg.expand();
-            } catch(e) {}
+            } catch (e) { }
         }
     };
 
@@ -82,9 +82,9 @@ document.addEventListener('DOMContentLoaded', () => {
             if (tgGateOverlay) tgGateOverlay.classList.add('hidden');
             body.classList.remove('body-gated');
             body.classList.add('tg-fullscreen');
-            
+
             forceFullscreen();
-            
+
             return true;
         } else {
             const urlParams = new URLSearchParams(window.location.search);
@@ -96,7 +96,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             if (tgGateOverlay) tgGateOverlay.classList.remove('hidden');
             body.classList.add('body-gated');
-            
+
             if (window.Telegram?.WebApp) {
                 window.Telegram.WebApp.ready();
                 forceFullscreen();
@@ -111,7 +111,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ====== DEEP LINKING ROUTER (UNIVERSAL) ======
     function handleDeepLink() {
-        const PROCESSED_KEY = 'deepLinkProcessed_v4'; 
+        const PROCESSED_KEY = 'deepLinkProcessed_v4';
 
         if (sessionStorage.getItem(PROCESSED_KEY)) {
             console.log('[DeepLink] Already processed.');
@@ -133,7 +133,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        if (!action) return; 
+        if (!action) return;
 
         console.log('[DeepLink] Executing action:', action);
         sessionStorage.setItem(PROCESSED_KEY, 'true');
@@ -146,7 +146,7 @@ document.addEventListener('DOMContentLoaded', () => {
             case 'api':
                 targetUrl = './API_info/api.html';
                 break;
-            case 'support': 
+            case 'support':
                 targetUrl = './Support/support.html';
                 break;
 
@@ -203,7 +203,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (targetUrl) {
             setTimeout(() => {
                 window.location.href = targetUrl;
-            }, 100); 
+            }, 100);
         } else {
             hideLoadingIndicator();
         }
@@ -217,10 +217,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function parseStartAppParams(startappString) {
         const params = new URLSearchParams();
-        if(!startappString) return params;
+        if (!startappString) return params;
 
         const parts = startappString.split('-');
-        let rawAction = parts[0].toLowerCase(); 
+        let rawAction = parts[0].toLowerCase();
 
         let action = rawAction;
         if (rawAction === 'donate') action = 'support';
@@ -236,7 +236,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (parts[2]) params.set('color', parts[2].replace(/_/g, ' '));
                 break;
 
-            case 'monochrome': 
+            case 'monochrome':
             case 'monochrome_model':
                 if (parts[1]) params.set('gift', parts[1].replace(/_/g, ' '));
                 if (parts[2]) params.set('model', parts[2].replace(/_/g, ' '));
@@ -285,7 +285,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (bypass) authHeader = `Tma ${bypass}`;
         }
 
-        const TARGET_COLLECTION = ["Santa Hat", "Holiday Drink", "Candy Cane", "Xmas Stocking", "Ginger Cookie", "Jingle Bells", "Winter Wreath", "Snow Globe", "Snow Mittens", "Sleigh Bell", "Tama Gadget"];
+        const TARGET_COLLECTION = [];
 
         try {
             const response = await fetch(`${SERVER_BASE_URL}/api/MonoCoof/GetCollectionGradient/40`, {
@@ -317,7 +317,7 @@ document.addEventListener('DOMContentLoaded', () => {
             wrapper.classList.remove('hidden');
 
             let x = 0, speed = 0.4, baseSpeed = 0.4, isDragging = false, startX = 0, currentTranslateX = 0;
-            const singleSetWidth = data.length * 65; 
+            const singleSetWidth = data.length * 65;
 
             const update = () => {
                 if (!isDragging) {
@@ -358,7 +358,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const response = await fetch(`${SERVER_BASE_URL}/api/ListGifts/AllGiftNames`, { headers: { 'Authorization': authHeader } });
             if (response.ok) sessionStorage.setItem(CACHE_KEY, JSON.stringify(await response.json()));
-        } catch (error) { console.error(error); } 
+        } catch (error) { console.error(error); }
         finally { await initCarousel(); signalTelegramAppReady(); }
     };
 

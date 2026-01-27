@@ -175,21 +175,6 @@ window.initNFTsSection = function (giftName, modelName, bgName) {
     toggleHeader.addEventListener('click', toggleHeader._nftHandler);
 };
 
-// Функция нормализации названия коллекции для fragment.com
-function normalizeGiftName(giftName) {
-    if (!giftName) return '';
-    // Убираем пробелы и переводим в lowercase
-    return giftName.replace(/\s+/g, '').toLowerCase();
-}
-
-// Функция извлечения номера модели
-function extractModelNumber(modelName) {
-    if (!modelName) return '1';
-    // Ищем цифры в конце названия модели
-    const match = modelName.match(/(\d+)$/);
-    return match ? match[1] : '1';
-}
-
 // Функция рендера сетки NFT
 window.renderNFTsGrid = function (gifts, container) {
     console.log('[renderNFTsGrid] Вызвана функция. Gifts:', gifts.length, 'Container:', container);
@@ -199,23 +184,26 @@ window.renderNFTsGrid = function (gifts, container) {
         const card = document.createElement('div');
         card.className = 'nft-mini-card';
 
-        // Нормализуем название коллекции и извлекаем номер модели
-        const normalizedGift = normalizeGiftName(gift.GiftName);
-        const modelNumber = extractModelNumber(gift.ModelName);
+        // Добавляем стиль курсора, чтобы показать кликабельность
+        card.style.cursor = 'pointer';
 
-        // Формируем URL для fragment.com
-        const imgUrl = `https://nft.fragment.com/gift/${normalizedGift}-${modelNumber}.medium.jpg`;
+        // Используем данные с бэкенда
+        const imgUrl = gift.Photo_URL;
+        const linkUrl = gift.URL;
 
-        console.log('[renderNFTsGrid] Сформирован URL:', {
-            original: { GiftName: gift.GiftName, ModelName: gift.ModelName },
-            normalized: { normalizedGift, modelNumber },
-            url: imgUrl
-        });
+        // Обработчик клика для открытия ссылки
+        card.onclick = () => {
+            if (linkUrl) {
+                // Открываем ссылку в новой вкладке
+                window.open(linkUrl, '_blank');
+            }
+        };
 
         card.innerHTML = `
-            <img src="${imgUrl}" alt="${gift.ModelName}" loading="lazy" onerror="this.src='https://cdn.changes.tg/gifts/models/${encodeURIComponent(gift.GiftName)}/png/${encodeURIComponent(gift.ModelName)}.png'">
+            <img src="${imgUrl}" alt="${gift.ModelName}" loading="lazy">
             <div class="nft-mini-info">
                 <span class="nft-mini-name">${gift.ModelName}</span>
+                <span class="nft-mini-number" style="display:block; font-size: 0.75em; opacity: 0.8;">#${gift.Number}</span>
             </div>
         `;
 
