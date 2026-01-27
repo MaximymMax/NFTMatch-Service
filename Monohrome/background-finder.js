@@ -2234,7 +2234,7 @@
         }
     });
 
-    // 🔥 ЗАМЕНИ ФУНКЦИЮ applyUrlParameters НА ЭТУ:
+    // 🔥 ИСПРАВЛЕННАЯ ФУНКЦИЯ applyUrlParameters
     async function applyUrlParameters() {
         const urlParams = new URLSearchParams(window.location.search);
 
@@ -2242,7 +2242,7 @@
         const mode = urlParams.get('mode');
         const giftName = urlParams.get('gift');
         const modelName = urlParams.get('model');
-        const colorId = urlParams.get('color');
+        const colorParam = urlParams.get('color'); // Может прийти "Azure Blue" или "AzureBlue"
 
         // Параметры модалки
         const view = urlParams.get('view');
@@ -2261,11 +2261,25 @@
                 await fetchAllModelNames(giftName, true);
             }
 
-            if (colorId) {
-                const foundColor = fixedColors.find(c => c.id === colorId);
+            if (colorParam) {
+                // 🔥 ИСПРАВЛЕНИЕ ПОИСКА ЦВЕТА 🔥
+                // 1. Нормализуем то, что пришло из URL (убираем пробелы, подчеркивания, в нижний регистр)
+                const normalizedInput = colorParam.toLowerCase().replace(/[\s\-_]/g, '');
+
+                // 2. Ищем в массиве fixedColors
+                const foundColor = fixedColors.find(c => {
+                    // Сравниваем с ID (AzureBlue -> azureblue)
+                    if (c.id.toLowerCase() === normalizedInput) return true;
+                    // Сравниваем с Name (Azure Blue -> azureblue)
+                    if (c.name.toLowerCase().replace(/\s/g, '') === normalizedInput) return true;
+                    return false;
+                });
+
                 if (foundColor) {
                     updateDropdownSelection(dropdowns.colorModels, foundColor.name);
                     state.findModels.selectedColor = foundColor;
+                } else {
+                    console.warn(`Color not found for param: ${colorParam}`);
                 }
             }
 
@@ -2291,8 +2305,6 @@
                     setupInPageColorPicker();
                     displayMonocolorAlert(modelName);
                     // ❗️ Для findBgs поиск запускается внутри setupInPageColorPicker -> image.onload -> triggerDebouncedSearch
-                    // Но если нужно мгновенно, можно раскомментировать строку ниже:
-                    // fetchMatchingBackgrounds(); 
                 }
             }
         }

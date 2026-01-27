@@ -186,11 +186,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 const tGift = urlParams.get('gift');
                 const tModel = urlParams.get('model');
                 const tName = urlParams.get('theme');
-                if (tGift && tModel) {
-                    targetUrl = `./Thematic/themes.html?gift=${encodeURIComponent(tGift)}&model=${encodeURIComponent(tModel)}`;
-                    if (tName) targetUrl += `&theme=${encodeURIComponent(tName)}`;
-                } else {
-                    targetUrl = './Thematic/themes.html';
+                
+                // Собираем параметры в список
+                const themeParams = [];
+                
+                // Если есть подарок и модель - добавляем (для фильтрации, если она будет)
+                if (tGift) themeParams.push(`gift=${encodeURIComponent(tGift)}`);
+                if (tModel) themeParams.push(`model=${encodeURIComponent(tModel)}`);
+                
+                // ВАЖНО: Передаем имя темы как 'collection', чтобы themes.js понял, что нужно открыть модалку
+                if (tName) themeParams.push(`collection=${encodeURIComponent(tName)}`);
+
+                targetUrl = './Thematic/themes.html';
+                
+                // Если параметры есть, добавляем их к URL
+                if (themeParams.length > 0) {
+                    targetUrl += '?' + themeParams.join('&');
                 }
                 break;
 

@@ -321,7 +321,7 @@ document.addEventListener('DOMContentLoaded', () => {
         updateControlsUI(); // Теперь функция существует!
 
         // 2. Модальное окно (Collection)
-        const collectionName = params.get('collection');
+        const collectionName = params.get('collection') || params.get('theme');
         const bgParam = params.get('bg');
 
         if (collectionName) {
