@@ -388,7 +388,7 @@
         if (overlay) return; // Не открываем, если уже есть
 
         // Ссылка на аватарку
-        const avatarUrl = "https://cdn.changes.tg/resources/channel_logo.jpg"; 
+        const avatarUrl = "./NFTMatchChannel.png";
 
         const html = `
             <div class="sub-modal-overlay">

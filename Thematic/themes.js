@@ -131,7 +131,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Проверяем, есть ли уже открытое окно
         if (document.querySelector('.sub-modal-overlay')) return;
 
-        const avatarUrl = "https://cdn.changes.tg/resources/channel_logo.jpg"; 
+        const avatarUrl = "../Monohrome/NFTMatchChannel.png";
 
         const html = `
             <div class="sub-modal-overlay">
