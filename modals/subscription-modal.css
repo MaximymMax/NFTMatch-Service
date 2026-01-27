@@ -1,0 +1,120 @@
+.sub-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(10, 16, 32, 0.9);
+    backdrop-filter: blur(10px);
+    z-index: 10000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 1.5rem;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+.sub-modal-overlay.active {
+    opacity: 1;
+    pointer-events: all;
+}
+
+.sub-modal {
+    background-color: var(--surface-elevated);
+    border: 1px solid var(--border-color);
+    border-radius: 24px;
+    padding: 2rem;
+    width: 100%;
+    max-width: 400px;
+    text-align: center;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+    transform: scale(0.95);
+    transition: transform 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.sub-modal-overlay.active .sub-modal {
+    transform: scale(1);
+}
+
+.sub-icon {
+    width: 100px;
+    height: 100px;
+    background: rgba(56, 189, 248, 0.1);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--primary-color);
+    overflow: hidden;
+}
+
+.sub-icon svg {
+    width: 32px;
+    height: 32px;
+}
+
+.sub-icon.channel-avatar {
+    background: transparent;
+    border: 3px solid rgba(56, 189, 248, 0.3);
+    padding: 0;
+}
+
+.sub-icon.channel-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.sub-title {
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: #fff;
+    margin: 0;
+}
+
+.sub-text {
+    font-size: 1rem;
+    color: var(--text-muted);
+    line-height: 1.5;
+    margin: 0;
+}
+
+.sub-btn {
+    background: var(--primary-color);
+    color: #0a1020;
+    border: none;
+    padding: 14px 24px;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    text-decoration: none;
+    width: 100%;
+    transition: filter 0.2s, transform 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.sub-btn:hover {
+    filter: brightness(1.1);
+    transform: translateY(-2px);
+}
+
+.sub-btn.check-btn {
+    background: transparent;
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    margin-top: -0.5rem;
+}
+
+.sub-btn.check-btn:hover {
+    background: var(--surface-color);
+}

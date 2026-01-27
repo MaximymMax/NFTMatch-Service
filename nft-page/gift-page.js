@@ -796,6 +796,20 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             if (!response.ok) {
+                if (response.status === 403 || response.status === 401) {
+                    try {
+                        const errorData = await response.clone().json();
+                        if (errorData.error === 'subscription_required' || errorData.message?.includes('subscription')) {
+                            if (typeof window.showSubscriptionModal === 'function') {
+                                window.showSubscriptionModal(errorData.channelId || '@NFTstyler');
+                            }
+                            throw new Error('SUBSCRIPTION_REQUIRED');
+                        }
+                    } catch (e) {
+                        if (e.message === 'SUBSCRIPTION_REQUIRED') throw e;
+                    }
+                }
+
                 const errorText = await response.text();
                 throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
             }
@@ -860,6 +874,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         } catch (error) {
             if (error.name === 'AbortError') {
+                return;
+            }
+            if (error.message === 'SUBSCRIPTION_REQUIRED') {
+                resultsGrid.innerHTML = '';
                 return;
             }
             resultsGrid.innerHTML = `<p class="col-span-full text-center text-danger" style="padding: 2rem;">Не удалось загрузить данные. Попробуйте снова. (${error.message})</p>`;
