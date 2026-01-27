@@ -361,7 +361,8 @@
         return await response.json();
     }
 
-    window.closeSubscriptionModal = function () {
+    // ❗️ ЭТА ФУНКЦИЯ ТЕПЕРЬ ПУБЛИЧНАЯ
+    function closeSubscriptionModal() {
         const overlay = document.querySelector('.sub-modal-overlay');
         if (overlay) {
             overlay.classList.remove('active');
@@ -370,7 +371,10 @@
             // Для надежности просто убираем active, чтобы можно было переиспользовать.
         }
     };
+    // Публикуем в window, чтобы другие скрипты видели её
+    window.closeSubscriptionModal = closeSubscriptionModal;
 
+    // ❗️ ЭТА ФУНКЦИЯ ТЕПЕРЬ ПУБЛИЧНАЯ
     function showSubscriptionModal(channelId) {
         // Убираем лоадеры сразу, чтобы они не крутились под окном подписки
         if (typeof hideLoading === 'function') hideLoading();
@@ -417,6 +421,8 @@
         // Показываем с небольшой задержкой для плавности
         setTimeout(() => overlay.classList.add('active'), 10);
     }
+    // Публикуем в window, чтобы другие скрипты видели её
+    window.showSubscriptionModal = showSubscriptionModal;
 
     async function createSimilarButtonFallback(giftName, modelName) {
         const url = `${SERVER_BASE_URL}/api/BaseInfo/GetSimilarGiftsForVisualization/${encodeURIComponent(giftName)}/${encodeURIComponent(modelName)}`;
