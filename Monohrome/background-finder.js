@@ -1819,7 +1819,8 @@
             loader.style.display = 'block';
         }
 
-        const cleanBaseUrl = BASE_URL.replace(/\/$/, '');
+        // 🔥 ИСПРАВЛЕНИЕ: Используем SERVER_BASE_URL вместо BASE_URL
+        const cleanBaseUrl = SERVER_BASE_URL.replace(/\/$/, '');
         const url = `${cleanBaseUrl}/api/ListGifts/SearchGifts/${nftsState.page}/${nftsState.pageSize}`;
 
         const body = {
@@ -1838,9 +1839,37 @@
                 body: JSON.stringify(body)
             });
 
+            // 🔥 ИСПРАВЛЕНИЕ: Добавлена проверка на 403 (Подписка)
+            if (response.status === 403) {
+                try {
+                    const errorData = await response.clone().json();
+
+                    if (errorData.error === 'subscription_required') {
+                        console.warn("[API] Subscription required. Channel ID:", errorData.channelId);
+                        showSubscriptionModal(errorData.channelId);
+                        
+                        // Сворачиваем секцию обратно
+                        const header = document.getElementById('nfts-toggle-header');
+                        const grid = document.getElementById('nfts-grid-container');
+                        const arrow = document.getElementById('nfts-arrow');
+                        
+                        nftsState.isExpanded = false;
+                        if (header) { header.style.color = 'var(--text-muted)'; header.classList.remove('expanded'); }
+                        if (arrow) arrow.style.transform = 'rotate(0deg)';
+                        if (grid) { grid.style.display = 'none'; grid.classList.add('hidden'); }
+                        
+                        throw new Error("Subscription required"); // Прерываем цепочку
+                    }
+                } catch (e) {
+                     if (e.message === "Subscription required") throw e;
+                }
+            }
+
+
             if (response.ok) {
                 const data = await response.json();
 
+                // 🔥 ИСПРАВЛЕНИЕ: Проверяем data.Items (это было верно, но на всякий случай)
                 if (data && data.Items && data.Items.length > 0) {
                     renderNFTs(data.Items);
 
