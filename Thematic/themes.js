@@ -118,16 +118,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (overlay && overlay.parentNode) overlay.parentNode.removeChild(overlay);
             }, 300);
         }
+        
+        // Возобновляем анимацию Lottie, если она была на паузе
+        const lottie = document.querySelector('lottie-player');
+        if (lottie && lottie.play) {
+            lottie.play();
+        }
     };
 
     // Делаем функцию открытия глобальной
     window.showSubscriptionModal = function(channelId) {
-        // Убираем существующие оверлеи
-        const existing = document.querySelector('.sub-modal-overlay');
-        if (existing) existing.remove();
+        // Проверяем, есть ли уже открытое окно
+        if (document.querySelector('.sub-modal-overlay')) return;
 
-        // Ссылка на аватарку канала (замените на актуальную, если нужно)
-        // Сейчас стоит заглушка или путь к логотипу
         const avatarUrl = "https://cdn.changes.tg/resources/channel_logo.jpg"; 
 
         const html = `
@@ -135,14 +138,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="sub-modal">
                     <div class="sub-avatar-container">
                         <img src="${avatarUrl}" alt="Channel Avatar" class="sub-avatar-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='block'">
-                        <div class=\"sub-icon-fallback\" style=\"display:none\">
-                             <svg xmlns=\"http://www.w3.org/2000/svg\" fill=\"none\" viewBox=\"0 0 24 24\" stroke-width=\"2\" stroke=\"currentColor\">
-                                <path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z\" />
+                        <div class="sub-icon-fallback" style="display:none">
+                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
                             </svg>
                         </div>
                     </div>
                     <h3 class="sub-title">Требуется подписка</h3>
-                    <p class="sub-text">Для просмотра результатов поиска необходимо подписаться на наш канал.</p>
+                    <p class="sub-text">Для просмотра результатов необходимо подписаться на наш канал.</p>
                     
                     <a href="https://t.me/NFTstyler" target="_blank" class="sub-btn">
                         Подписаться
@@ -159,18 +162,16 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
         document.body.insertAdjacentHTML('beforeend', html);
         
-        // Анимация появления
         const overlay = document.querySelector('.sub-modal-overlay');
-        // Небольшой таймаут для срабатывания CSS transition
-        requestAnimationFrame(() => {
-            overlay.classList.add('active');
-        });
+        setTimeout(() => overlay.classList.add('active'), 10);
 
         overlay.addEventListener('click', (e) => {
             if (e.target === overlay) window.closeSubscriptionModal();
         });
     }
 
+    window.showSubscriptionModal = showSubscriptionModal;
+    window.closeSubscriptionModal = closeSubscriptionModal;
     // --- КОНЕЦ ДОБАВЛЕННОГО БЛОКА ---
 
     const gridWrapper = document.getElementById('themes-grid');

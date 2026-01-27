@@ -362,64 +362,70 @@
     }
 
     // ❗️ ЭТА ФУНКЦИЯ ТЕПЕРЬ ПУБЛИЧНАЯ
-    function closeSubscriptionModal() {
+    window.closeSubscriptionModal = function () {
         const overlay = document.querySelector('.sub-modal-overlay');
         if (overlay) {
             overlay.classList.remove('active');
-            // Удаляем оверлей из DOM через небольшую задержку (после анимации), 
-            // или просто скрываем CSS-классом. 
-            // Для надежности просто убираем active, чтобы можно было переиспользовать.
+            setTimeout(() => {
+                if (overlay && overlay.parentNode) overlay.parentNode.removeChild(overlay);
+            }, 300);
+        }
+        
+        // 🔥 ВОЗОБНОВЛЯЕМ АНИМАЦИЮ ПРИ ЗАКРЫТИИ
+        const lottie = document.querySelector('lottie-player');
+        if (lottie && lottie.play) {
+            lottie.play();
         }
     };
     // Публикуем в window, чтобы другие скрипты видели её
     window.closeSubscriptionModal = closeSubscriptionModal;
 
     // ❗️ ЭТА ФУНКЦИЯ ТЕПЕРЬ ПУБЛИЧНАЯ
-    function showSubscriptionModal(channelId) {
-        // Убираем лоадеры сразу, чтобы они не крутились под окном подписки
+    window.showSubscriptionModal = function(channelId) {
         if (typeof hideLoading === 'function') hideLoading();
 
-        // Если это модалка деталей - нужно убрать спиннер с кнопки (если он там был)
-        // Но так как secureFetch выбрасывает ошибку, код дальше не пойдет, и модалка не откроется.
-
         let overlay = document.querySelector('.sub-modal-overlay');
+        if (overlay) return; // Не открываем, если уже есть
 
-        if (!overlay) {
-            const html = `
-                <div class="sub-modal-overlay">
-                    <div class="sub-modal">
-                        <div class="sub-icon">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+        // Ссылка на аватарку
+        const avatarUrl = "https://cdn.changes.tg/resources/channel_logo.jpg"; 
+
+        const html = `
+            <div class="sub-modal-overlay">
+                <div class="sub-modal">
+                    <div class="sub-avatar-container">
+                        <img src="${avatarUrl}" alt="Channel Avatar" class="sub-avatar-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='block'">
+                        <div class="sub-icon-fallback" style="display:none">
+                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
                             </svg>
                         </div>
-                        <h3 class="sub-title">Требуется подписка</h3>
-                        <p class="sub-text">Для использования поиска необходимо подписаться на наш Telegram канал.</p>
-                        
-                        <a href="https://t.me/NFTstyler" target="_blank" class="sub-btn">
-                            Подписаться
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
-                            </svg>
-                        </a>
-                        
-                        <button class="sub-btn check-btn" onclick="window.closeSubscriptionModal()">
-                            Я подписался
-                        </button>
                     </div>
+                    <h3 class="sub-title">Требуется подписка</h3>
+                    <p class="sub-text">Для использования поиска необходимо подписаться на наш Telegram канал.</p>
+                    
+                    <a href="https://t.me/NFTstyler" target="_blank" class="sub-btn">
+                        Подписаться
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+                        </svg>
+                    </a>
+                    
+                    <button class="sub-btn check-btn" onclick="window.closeSubscriptionModal()">
+                        Я подписался
+                    </button>
                 </div>
-            `;
-            document.body.insertAdjacentHTML('beforeend', html);
-            overlay = document.querySelector('.sub-modal-overlay');
-
-            // Добавляем закрытие по клику на фон (опционально)
-            overlay.addEventListener('click', (e) => {
-                if (e.target === overlay) window.closeSubscriptionModal();
-            });
-        }
-
-        // Показываем с небольшой задержкой для плавности
+            </div>
+        `;
+        document.body.insertAdjacentHTML('beforeend', html);
+        
+        overlay = document.querySelector('.sub-modal-overlay');
+        // Небольшая задержка для анимации
         setTimeout(() => overlay.classList.add('active'), 10);
+
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) window.closeSubscriptionModal();
+        });
     }
     // Публикуем в window, чтобы другие скрипты видели её
     window.showSubscriptionModal = showSubscriptionModal;
