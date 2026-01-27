@@ -9,15 +9,8 @@ window.initNFTsSection = function (giftName, modelName, bgName) {
     const loadingInd = document.getElementById('tm-nfts-loading-indicator');
     const arrowEl = document.getElementById('tm-nfts-arrow');
 
-    console.log('[initNFTsSection] Элементы DOM:', {
-        toggleHeader: !!toggleHeader,
-        gridContainer: !!gridContainer,
-        loadingInd: !!loadingInd,
-        arrowEl: !!arrowEl
-    });
-
     if (!toggleHeader || !gridContainer || !loadingInd) {
-        console.error('[initNFTsSection] ❌ Отсутствуют необходимые элементы DOM!');
+        // Элементов может не быть, если модалка закрылась
         return;
     }
 
@@ -25,19 +18,25 @@ window.initNFTsSection = function (giftName, modelName, bgName) {
     const BASE_URL = window.BASE_URL || 'https://nftmatchbot20250730152328.azurewebsites.net';
 
     // Обработчик клика на заголовок (один раз)
-    toggleHeader.removeEventListener('click', toggleHeader._nftHandler);
+    if (toggleHeader._nftHandler) {
+        toggleHeader.removeEventListener('click', toggleHeader._nftHandler);
+    }
+    
     toggleHeader._nftHandler = async () => {
         console.log('[NFTs] 🔵 Клик по секции "Найденные NFT"');
-        console.log('[NFTs] Текущее состояние:', window.nftsState);
 
         // Если уже раскрыто - сворачиваем
         if (window.nftsState && window.nftsState.isExpanded) {
             console.log('[NFTs] Сворачиваем секцию');
             window.nftsState.isExpanded = false;
             gridContainer.classList.add('hidden');
+            gridContainer.style.display = 'none'; // Дублируем для надежности
             if (arrowEl) arrowEl.style.transform = 'rotate(0deg)';
+            
+            // Если есть заголовок, убираем подсветку
+            toggleHeader.classList.remove('expanded');
+            toggleHeader.style.color = 'var(--text-muted)';
 
-            // Оптимизация: Возобновление Lottie
             const lottie = document.querySelector('lottie-player');
             if (lottie && lottie.play) lottie.play();
 
@@ -52,15 +51,19 @@ window.initNFTsSection = function (giftName, modelName, bgName) {
         window.nftsState.page = 1;
         window.nftsState.pageSize = 18;
         window.nftsState.hasMore = true;
+        
+        // Визуальное обновление
         if (arrowEl) arrowEl.style.transform = 'rotate(180deg)';
+        toggleHeader.classList.add('expanded');
+        toggleHeader.style.color = '#fff';
 
         // Показываем лоадер
         gridContainer.classList.remove('hidden');
+        gridContainer.style.display = 'grid'; // Важно для Grid layout
         gridContainer.innerHTML = '';
         loadingInd.classList.remove('hidden');
         window.nftsState.isLoading = true;
 
-        // Оптимизация: Пауза Lottie
         const lottie = document.querySelector('lottie-player');
         if (lottie && lottie.pause) lottie.pause();
 
@@ -73,16 +76,7 @@ window.initNFTsSection = function (giftName, modelName, bgName) {
                 BackgroundName: bgName
             };
 
-            console.log('[NFTs] Отправляем запрос:', {
-                url,
-                body,
-                page: window.nftsState.page,
-                pageSize: window.nftsState.pageSize
-            });
-
-            // Получаем заголовок авторизации
             const authHeader = window.getApiAuthHeader ? window.getApiAuthHeader() : 'Tma invalid';
-            console.log('[NFTs] Заголовок авторизации:', authHeader.substring(0, 20) + '...');
 
             const response = await fetch(url, {
                 method: 'POST',
@@ -93,39 +87,31 @@ window.initNFTsSection = function (giftName, modelName, bgName) {
                 body: JSON.stringify(body)
             });
 
-            console.log('[NFTs] Ответ сервера - статус:', response.status, response.statusText);
-
-            // Проверка на ошибку подписки (403 или 401)
+            // Проверка на ошибку подписки
             if (response.status === 403 || response.status === 401) {
                 try {
                     const errorData = await response.clone().json();
-                    console.log('[NFTs] Данные ошибки:', errorData);
-
-                    if (errorData.error === 'subscription_required' || errorData.message?.includes('subscription') || errorData.message?.includes('Subscription')) {
-                        console.warn('[NFTs] Требуется подписка. Channel ID:', errorData.channelId);
-
-                        // Показываем модальное окно подписки
+                    if (errorData.error === 'subscription_required' || errorData.message?.includes('subscription')) {
+                        console.warn('[NFTs] Требуется подписка');
                         if (typeof window.showSubscriptionModal === 'function') {
                             window.showSubscriptionModal(errorData.channelId || '@NFTstyler');
-                        } else {
-                            alert('Для использования этой функции необходимо подписаться на наш канал: @NFTstyler');
                         }
-
-                        // Сворачиваем секцию
+                        
+                        // Сворачиваем обратно
                         window.nftsState.isExpanded = false;
                         gridContainer.classList.add('hidden');
+                        gridContainer.style.display = 'none';
                         if (arrowEl) arrowEl.style.transform = 'rotate(0deg)';
                         loadingInd.classList.add('hidden');
                         window.nftsState.isLoading = false;
-
-                        const lottie = document.querySelector('lottie-player');
-                        if (lottie && lottie.play) lottie.play();
-
+                        
+                        if (toggleHeader) {
+                            toggleHeader.classList.remove('expanded');
+                            toggleHeader.style.color = 'var(--text-muted)';
+                        }
                         return;
                     }
-                } catch (e) {
-                    console.error('[NFTs] Ошибка парсинга ответа об ошибке:', e);
-                }
+                } catch (e) { console.error(e); }
             }
 
             if (!response.ok) {
@@ -133,42 +119,31 @@ window.initNFTsSection = function (giftName, modelName, bgName) {
             }
 
             const data = await response.json();
-            console.log('[NFTs] Полученные данные:', data);
-            console.log('[NFTs] Структура данных:', {
-                hasData: !!data,
-                hasGifts: !!(data && data.Gifts),
-                giftsLength: data && data.Gifts ? data.Gifts.length : 0,
-                dataKeys: data ? Object.keys(data) : []
-            });
-
+            
             loadingInd.classList.add('hidden');
             window.nftsState.isLoading = false;
 
-            // Рендерим результаты
-            if (data && data.Gifts && data.Gifts.length > 0) {
-                console.log('[NFTs] ✅ Начинаем рендеринг', data.Gifts.length, 'NFT');
-                window.renderNFTsGrid(data.Gifts, gridContainer);
-
-                console.log('[NFTs] Содержимое gridContainer после рендеринга:', gridContainer.innerHTML.substring(0, 200));
-                console.log('[NFTs] Классы gridContainer:', gridContainer.className);
+            // 🔥 ИСПРАВЛЕНИЕ: Используем data.Items вместо data.Gifts
+            if (data && data.Items && data.Items.length > 0) {
+                console.log('[NFTs] ✅ Начинаем рендеринг', data.Items.length, 'NFT');
+                window.renderNFTsGrid(data.Items, gridContainer);
 
                 // Обновляем состояние пагинации
-                window.nftsState.hasMore = data.Gifts.length === window.nftsState.pageSize;
+                window.nftsState.hasMore = data.Items.length === window.nftsState.pageSize;
 
-                // Добавляем Intersection Observer для подгрузки следующей страницы
                 if (window.nftsState.hasMore) {
                     window.setupNFTsPagination(gridContainer, giftName, modelName, bgName);
                 }
             } else {
-                console.warn('[NFTs] ❌ Нет данных для отображения');
-                gridContainer.innerHTML = '<p style="text-align:center; color:var(--text-muted); padding:1rem;">Не найдено NFT</p>';
+                console.warn('[NFTs] ❌ Нет данных (Items пуст)');
+                gridContainer.innerHTML = '<div style="grid-column: 1/-1; text-align:center; color: var(--text-muted); font-size: 0.9rem; padding: 10px;">Ничего не найдено</div>';
             }
 
         } catch (error) {
             console.error('[NFTs] Error loading NFTs:', error);
             loadingInd.classList.add('hidden');
             window.nftsState.isLoading = false;
-            gridContainer.innerHTML = '<p style="text-align:center; color:#f87171; padding:1rem;">Ошибка загрузки</p>';
+            gridContainer.innerHTML = '<div style="grid-column: 1/-1; text-align:center; color:#f87171; font-size: 0.9rem; padding: 10px;">Ошибка загрузки</div>';
         }
     };
 
@@ -176,41 +151,41 @@ window.initNFTsSection = function (giftName, modelName, bgName) {
 };
 
 // Функция рендера сетки NFT
-window.renderNFTsGrid = function (gifts, container) {
-    console.log('[renderNFTsGrid] Вызвана функция. Gifts:', gifts.length, 'Container:', container);
-    console.log('[renderNFTsGrid] Первые 3 элемента:', gifts.slice(0, 3));
+window.renderNFTsGrid = function (items, container) {
+    if (!items || !container) return;
 
-    gifts.forEach(gift => {
-        const card = document.createElement('div');
-        card.className = 'nft-mini-card';
+    items.forEach(item => {
+        const card = document.createElement('a'); // Делаем ссылкой сразу
+        card.className = 'nft-card'; // Используем класс из CSS
 
-        // Добавляем стиль курсора, чтобы показать кликабельность
+        // 🔥 ИСПРАВЛЕНИЕ: Генерируем ссылки вручную, так как API возвращает сырые данные
+        // Пример: "Santa Hat" -> "santahat"
+        const normalizedName = item.GiftName.toLowerCase().replace(/ /g, '');
+        const imgUrl = `https://nft.fragment.com/gift/${normalizedName}-${item.Number}.medium.jpg`;
+        const linkUrl = `https://t.me/nft/${item.GiftName.replace(/ /g, '')}-${item.Number}`;
+        
+        card.href = linkUrl;
+        card.target = "_blank";
+        
+        // Принудительные стили для гарантии отображения
+        card.style.position = 'relative';
+        card.style.display = 'block';
+        card.style.width = '100%';
+        card.style.aspectRatio = '1/1';
+        card.style.borderRadius = '12px';
+        card.style.overflow = 'hidden';
+        card.style.backgroundColor = '#16213a';
+        card.style.textDecoration = 'none';
         card.style.cursor = 'pointer';
 
-        // Используем данные с бэкенда
-        const imgUrl = gift.Photo_URL;
-        const linkUrl = gift.URL;
-
-        // Обработчик клика для открытия ссылки
-        card.onclick = () => {
-            if (linkUrl) {
-                // Открываем ссылку в новой вкладке
-                window.open(linkUrl, '_blank');
-            }
-        };
-
         card.innerHTML = `
-            <img src="${imgUrl}" alt="${gift.ModelName}" loading="lazy">
-            <div class="nft-mini-info">
-                <span class="nft-mini-name">${gift.ModelName}</span>
-                <span class="nft-mini-number" style="display:block; font-size: 0.75em; opacity: 0.8;">#${gift.Number}</span>
-            </div>
+            <img src="${imgUrl}" alt="#${item.Number}" style="width:100%; height:100%; object-fit:cover; display:block;" loading="lazy">
+            <div style="position:absolute; bottom:0; left:0; right:0; height:50%; background:linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 100%); pointer-events:none;"></div>
+            <span style="position:absolute; bottom:6px; left:0; width:100%; text-align:center; color:#fff; font-size:0.8rem; font-weight:700; z-index:2; text-shadow:0 2px 4px rgba(0,0,0,0.8); font-family:monospace;">#${item.Number}</span>
         `;
 
         container.appendChild(card);
     });
-
-    console.log('[renderNFTsGrid] ✅ Рендеринг завершен. Всего карточек в контейнере:', container.children.length);
 };
 
 // Функция настройки пагинации для NFT
@@ -221,9 +196,12 @@ window.setupNFTsPagination = function (container, giftName, modelName, bgName) {
 
     const BASE_URL = window.BASE_URL || 'https://nftmatchbot20250730152328.azurewebsites.net';
 
+    // Создаем невидимый элемент в конце списка для триггера загрузки
     const sentinel = document.createElement('div');
     sentinel.className = 'nfts-sentinel';
     sentinel.style.height = '1px';
+    sentinel.style.width = '100%';
+    sentinel.style.gridColumn = '1 / -1'; 
     container.appendChild(sentinel);
 
     const observer = new IntersectionObserver(async (entries) => {
@@ -246,10 +224,7 @@ window.setupNFTsPagination = function (container, giftName, modelName, bgName) {
 
                 const response = await fetch(url, {
                     method: 'POST',
-                    headers: {
-                        'Authorization': authHeader,
-                        'Content-Type': 'application/json'
-                    },
+                    headers: { 'Authorization': authHeader, 'Content-Type': 'application/json' },
                     body: JSON.stringify(body)
                 });
 
@@ -257,13 +232,15 @@ window.setupNFTsPagination = function (container, giftName, modelName, bgName) {
 
                 const data = await response.json();
 
-                if (data && data.Gifts && data.Gifts.length > 0) {
-                    sentinel.remove();
-                    window.renderNFTsGrid(data.Gifts, container);
-                    window.nftsState.hasMore = data.Gifts.length === window.nftsState.pageSize;
+                // 🔥 ИСПРАВЛЕНИЕ: Используем data.Items
+                if (data && data.Items && data.Items.length > 0) {
+                    sentinel.remove(); // Убираем старый сентинел
+                    window.renderNFTsGrid(data.Items, container);
+                    
+                    window.nftsState.hasMore = data.Items.length === window.nftsState.pageSize;
 
                     if (window.nftsState.hasMore) {
-                        container.appendChild(sentinel);
+                        container.appendChild(sentinel); // Добавляем новый в конец
                     }
                 } else {
                     window.nftsState.hasMore = false;
@@ -273,59 +250,17 @@ window.setupNFTsPagination = function (container, giftName, modelName, bgName) {
             } catch (error) {
                 console.error('[NFTs Pagination] Error:', error);
                 window.nftsState.hasMore = false;
+                sentinel.remove();
             } finally {
                 if (loadingInd) loadingInd.classList.add('hidden');
                 window.nftsState.isLoading = false;
             }
         }
-    }, { rootMargin: '100px' });
+    }, { 
+        root: document.getElementById('themes-modal-content'), // Скролл происходит внутри контента модалки
+        rootMargin: '200px' 
+    });
 
     window.nftsState.observer = observer;
     observer.observe(sentinel);
-};
-
-// Функция показа модального окна подписки
-window.showSubscriptionModal = function (channelId) {
-    let overlay = document.querySelector('.sub-modal-overlay');
-
-    if (!overlay) {
-        const html = `
-            <div class="sub-modal-overlay">
-                <div class="sub-modal">
-                    <div class="sub-icon channel-avatar">
-                        <img src="../Monohrome/NFTMatchChannel.png" alt="NFT Styler Channel">
-                    </div>
-                    <h3 class="sub-title">Требуется подписка</h3>
-                    <p class="sub-text">Для использования поиска необходимо подписаться на наш Telegram канал.</p>
-                    
-                    <a href="https://t.me/NFTstyler" target="_blank" class="sub-btn">
-                        Подписаться
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
-                        </svg>
-                    </a>
-                    
-                    <button class="sub-btn check-btn" onclick="closeSubscriptionModal()">
-                        Я подписался
-                    </button>
-                </div>
-            </div>
-        `;
-        document.body.insertAdjacentHTML('beforeend', html);
-        overlay = document.querySelector('.sub-modal-overlay');
-
-        overlay.addEventListener('click', (e) => {
-            if (e.target === overlay) window.closeSubscriptionModal();
-        });
-    }
-
-    setTimeout(() => overlay.classList.add('active'), 10);
-};
-
-// Функция закрытия модального окна подписки
-window.closeSubscriptionModal = function () {
-    const overlay = document.querySelector('.sub-modal-overlay');
-    if (overlay) {
-        overlay.classList.remove('active');
-    }
 };
