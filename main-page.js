@@ -230,39 +230,40 @@ document.addEventListener('DOMContentLoaded', () => {
         const params = new URLSearchParams();
         if (!startappString) return params;
 
+        // Теперь split('-') безопасен, так как мы удалили дефисы из названий
         const parts = startappString.split('-');
         let rawAction = parts[0].toLowerCase();
 
         let action = rawAction;
-        if (rawAction === 'donate') action = 'support';
-        if (rawAction === 'thematic') action = 'theme';
-        if (rawAction === 'similiar') action = 'similar';
-        if (rawAction === 'mono') action = 'monochrome';
+        // ... (маппинг action оставляем как есть) ...
 
         params.set('action', action);
 
+        // Мы просто берем значения как есть, так как они уже нормализованы сервером
         switch (action) {
             case 'monochrome_color':
-                if (parts[1]) params.set('gift', parts[1].replace(/_/g, ' '));
-                if (parts[2]) params.set('color', parts[2].replace(/_/g, ' '));
+                if (parts[1]) params.set('gift', parts[1]);
+                if (parts[2]) params.set('color', parts[2]);
                 break;
 
             case 'monochrome':
             case 'monochrome_model':
-                if (parts[1]) params.set('gift', parts[1].replace(/_/g, ' '));
-                if (parts[2]) params.set('model', parts[2].replace(/_/g, ' '));
+                if (parts[1]) params.set('gift', parts[1]);
+                if (parts[2]) params.set('model', parts[2]);
                 break;
 
             case 'similar':
-                if (parts[1]) params.set('gift', parts[1].replace(/_/g, ' '));
-                if (parts[2]) params.set('model', parts[2].replace(/_/g, ' '));
+                if (parts[1]) params.set('gift', parts[1]);
+                if (parts[2]) params.set('model', parts[2]);
                 if (parts[3]) params.set('count', parts[3]);
                 break;
 
             case 'theme':
-                if (parts[1]) params.set('gift', parts[1].replace(/_/g, ' '));
-                if (parts[2]) params.set('model', parts[2].replace(/_/g, ' '));
-                if (parts[3]) params.set('theme', parts[3].replace(/_/g, ' '));
+                if (parts[1]) params.set('gift', parts[1]);
+                if (parts[2]) params.set('model', parts[2]);
+                // Для темы мы передаем имя в 'collection' для themes.js, 
+                // либо themes.js сам подхватит 'theme' (как мы правили ранее)
+                if (parts[3]) params.set('theme', parts[3]);
                 break;
         }
         return params;
