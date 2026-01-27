@@ -572,3 +572,117 @@ label.control-label {
 .sub-modal .sub-icon {
     display: none; 
 }
+
+/* ========================================= */
+/* ====== СТИЛИ ДЛЯ МОДАЛКИ ПОДПИСКИ ======= */
+/* ========================================= */
+
+.sub-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(5px);
+    z-index: 10000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+.sub-modal-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.sub-modal {
+    background: var(--surface-elevated);
+    padding: 2rem;
+    border-radius: 24px;
+    width: 90%;
+    max-width: 320px;
+    text-align: center;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+    transform: scale(0.9);
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    border: 1px solid var(--border-color);
+    position: relative;
+}
+
+.sub-modal-overlay.active .sub-modal {
+    transform: scale(1);
+}
+
+/* Аватарка */
+.sub-avatar-container {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 1rem auto;
+    border-radius: 50%;
+    background: var(--surface-elevated);
+    border: 3px solid var(--primary-color);
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 20px rgba(56, 189, 248, 0.3);
+}
+
+.sub-avatar-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.sub-icon-fallback {
+    color: var(--text-muted);
+    width: 40px;
+    height: 40px;
+}
+
+/* Тексты и кнопки */
+.sub-title {
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: #fff;
+    margin: 0 0 0.5rem 0;
+}
+
+.sub-text {
+    font-size: 0.95rem;
+    color: var(--text-muted);
+    line-height: 1.5;
+    margin: 0 0 1.5rem 0;
+}
+
+.sub-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: var(--primary-color);
+    color: #0a1020;
+    text-decoration: none;
+    font-weight: 700;
+    padding: 12px 20px;
+    border-radius: 12px;
+    margin-bottom: 10px;
+    transition: transform 0.2s;
+}
+
+.sub-btn:hover {
+    transform: translateY(-2px);
+    filter: brightness(1.1);
+}
+
+.sub-btn.check-btn {
+    background: transparent;
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    width: 100%;
+    cursor: pointer;
+}
