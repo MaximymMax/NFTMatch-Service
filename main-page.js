@@ -7,18 +7,17 @@ document.addEventListener('DOMContentLoaded', () => {
         // 1. Сообщаем, что приложение готово (важно вызвать до расширения)
         tg.ready();
 
-        // 2. Пытаемся включить ПОЛНОЦЕННЫЙ полноэкранный режим (API 8.0+)
-        try {
-            if (typeof tg.requestFullscreen === 'function') {
-                tg.requestFullscreen();
-            } else {
-                // Фолбэк для старых версий
+        setTimeout(() => {
+             try {
+                if (typeof tg.requestFullscreen === 'function') {
+                    tg.requestFullscreen();
+                } else {
+                    tg.expand();
+                }
+            } catch (e) {
                 tg.expand();
             }
-        } catch (e) {
-            console.error('[Fullscreen] Error:', e);
-            tg.expand(); // Если что-то пошло не так, просто расширяем
-        }
+        }, 100);
 
         // 3. Отключаем свайп вниз для закрытия (чтобы случайно не закрыли)
         if (tg.isVersionAtLeast && tg.isVersionAtLeast('7.7')) {
@@ -71,9 +70,14 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 if (typeof tg.requestFullscreen === 'function') {
                     tg.requestFullscreen();
+                } else {
+                    // Вызываем expand только если нет поддержки fullscreen
+                    tg.expand();
                 }
+            } catch (e) {
+                console.error(e);
                 tg.expand();
-            } catch (e) { }
+            }
         }
     };
 
@@ -186,19 +190,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 const tGift = urlParams.get('gift');
                 const tModel = urlParams.get('model');
                 const tName = urlParams.get('theme');
-                
+
                 // Собираем параметры в список
                 const themeParams = [];
-                
+
                 // Если есть подарок и модель - добавляем (для фильтрации, если она будет)
                 if (tGift) themeParams.push(`gift=${encodeURIComponent(tGift)}`);
                 if (tModel) themeParams.push(`model=${encodeURIComponent(tModel)}`);
-                
+
                 // ВАЖНО: Передаем имя темы как 'collection', чтобы themes.js понял, что нужно открыть модалку
                 if (tName) themeParams.push(`collection=${encodeURIComponent(tName)}`);
 
                 targetUrl = './Thematic/themes.html';
-                
+
                 // Если параметры есть, добавляем их к URL
                 if (themeParams.length > 0) {
                     targetUrl += '?' + themeParams.join('&');
@@ -315,7 +319,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // 1. Пробуем загрузить из кэша СРАЗУ (синхронно)
         const cachedData = sessionStorage.getItem(CAROUSEL_CACHE_KEY);
         let data = null;
-        
+
         if (cachedData) {
             try {
                 data = JSON.parse(cachedData);
@@ -346,15 +350,15 @@ document.addEventListener('DOMContentLoaded', () => {
             const endDrag = () => { if (!isDragging) return; isDragging = false; track.style.cursor = 'grab'; };
 
             // Удаляем старые листенеры (на случай ре-инита)
-            const newTrack = track.cloneNode(true); 
+            const newTrack = track.cloneNode(true);
             track.parentNode.replaceChild(newTrack, track);
             // Переменная track теперь устарела, берем новую
             const activeTrack = document.getElementById('hero-carousel-track');
-            
+
             // Если мы перезаписали track, нужно заново отрендерить в него (если это был fetch)
             // Но проще просто навесить листенеры, если мы уверены, что анимация еще не запущена.
             // Для упрощения оставим как есть, просто навесим события.
-            
+
             activeTrack.addEventListener('mousedown', startDrag);
             activeTrack.addEventListener('touchstart', startDrag, { passive: true });
             window.addEventListener('mousemove', moveDrag);
@@ -387,7 +391,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (!response.ok) throw new Error('API Error');
                 data = await response.json();
-                
+
                 if (data && data.length > 0) {
                     sessionStorage.setItem(CAROUSEL_CACHE_KEY, JSON.stringify(data));
                     renderCards(data);
@@ -401,15 +405,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Запускаем анимацию, если данные есть
         if (data && data.length > 0) {
-             // Дублируем код анимации или выносим его, здесь упрощенно:
-             // (Код анимации такой же, как у вас был, просто убедитесь, что он применяется к элементам)
-             
-             // Для надежности: просто скопируйте блок update/drag логики из вашего старого кода сюда
-             // ... [БЛОК АНИМАЦИИ] ...
-             let x = 0, speed = 0.4, baseSpeed = 0.4, isDragging = false, startX = 0, currentTranslateX = 0;
-             const singleSetWidth = data.length * 65; 
-             // ... и далее по коду ...
-             const update = () => {
+            // Дублируем код анимации или выносим его, здесь упрощенно:
+            // (Код анимации такой же, как у вас был, просто убедитесь, что он применяется к элементам)
+
+            // Для надежности: просто скопируйте блок update/drag логики из вашего старого кода сюда
+            // ... [БЛОК АНИМАЦИИ] ...
+            let x = 0, speed = 0.4, baseSpeed = 0.4, isDragging = false, startX = 0, currentTranslateX = 0;
+            const singleSetWidth = data.length * 65;
+            // ... и далее по коду ...
+            const update = () => {
                 if (!isDragging) {
                     speed += (baseSpeed - speed) * 0.05;
                     x -= speed;
