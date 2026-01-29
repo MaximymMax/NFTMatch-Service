@@ -7,6 +7,7 @@
     --text-muted: #6b7fa7;
     --primary: #2563eb;
     --accent-orange: #f59e0b;
+    --accent-green: #10b981;
     --accent-blue: #3b82f6;
     --accent-ton: #0098EA;
     --border-dim: rgba(255, 255, 255, 0.08);
@@ -23,9 +24,15 @@ body {
     min-height: 100vh;
 }
 
+/* Можно убрать или оставить пустым, так как мы добавили padding в main */
+.header-safe-area {
+    display: none;
+}
+
 main {
     padding: 1rem;
-    padding-top: 90px; /* Отступ под WebApp кнопки */
+    padding-top: 90px;
+    /* Отступ под WebApp кнопки */
     padding-bottom: 60px;
     display: flex;
     justify-content: center;
@@ -33,28 +40,24 @@ main {
 
 .container {
     width: 100%;
-    max-width: 600px;
+    max-width: 850px;
     background: var(--surface-color);
     border-radius: var(--radius);
-    padding: 2rem 1.5rem;
+    padding: 1.5rem;
     box-shadow: var(--card-shadow);
     display: flex;
     flex-direction: column;
-    gap: 0;
-    text-align: left;
+    gap: 2rem;
 }
 
 /* --- HERO --- */
 .support-hero {
-    /* Контейнер остается с выравниванием по левому краю для текста */
-    text-align: left;
+    text-align: center;
+    padding-bottom: 1rem;
     border-bottom: 1px solid var(--border-dim);
-    margin-bottom: 1.5rem;
 }
 
 .support-hero h1 {
-    /* Центрируем заголовок и применяем градиент */
-    text-align: center;
     font-size: 2rem;
     font-weight: 800;
     margin: 0 0 0.5rem 0;
@@ -64,11 +67,10 @@ main {
 }
 
 .support-hero p {
-    font-size: 1rem;
-    color: var(--text-secondary);
+    font-size: 0.95rem;
+    color: var(--text-muted);
+    margin: 0;
     line-height: 1.6;
-    margin-top: 1rem;
-    text-align: left;
 }
 
 .heart-icon {
@@ -78,66 +80,114 @@ main {
 }
 
 @keyframes heartbeat {
-    0% { transform: scale(1); }
-    10% { transform: scale(1.1); }
-    20% { transform: scale(1); }
-    30% { transform: scale(1.1); }
-    100% { transform: scale(1); }
+    0% {
+        transform: scale(1);
+    }
+
+    10% {
+        transform: scale(1.1);
+    }
+
+    20% {
+        transform: scale(1);
+    }
+
+    30% {
+        transform: scale(1.1);
+    }
+
+    100% {
+        transform: scale(1);
+    }
 }
 
-/* --- SECTIONS --- */
-.support-section {
+/* --- TOOLS WRAPPER (DOUBLE GRADIENT BORDER) --- */
+.tools-wrapper-styled {
     position: relative;
-    padding: 2rem 1.5rem;
-    background: rgba(30, 41, 68, 0.3);
-    border-radius: 24px;
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-    margin-top: 1rem;
+    padding: 2.5rem 0.5rem 2.5rem 0.5rem;
+    margin-bottom: 1rem;
 }
 
-/* Градиентная рамка */
-.support-section::before {
+.tools-wrapper-styled:last-child {
+    margin-bottom: 0;
+}
+
+/* Верхняя градиентная рамка */
+.tools-wrapper-styled::before {
     content: '';
     position: absolute;
-    inset: 0;
-    border-radius: 24px; 
-    border: 2px solid #6b7fa7; 
-    -webkit-mask-image: linear-gradient(to bottom, black 0px, black 1px, transparent 20px, transparent calc(100% - 20px), black calc(100% - 1px), black 100%);
-    mask-image: linear-gradient(to bottom, black 0px, black 1px, transparent 20px, transparent calc(100% - 20px), black calc(100% - 1px), black 100%);
-    opacity: 0.5;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: 24px;
+    border: 2px solid #6b7fa7;
+    -webkit-mask-image: linear-gradient(to bottom, black 0px, black 1px, transparent 25px);
+    mask-image: linear-gradient(to bottom, black 0px, black 1px, transparent 25px);
+    opacity: 0.6;
     pointer-events: none;
+    z-index: 0;
 }
 
-.section-label {
+/* Нижняя градиентная рамка */
+.tools-wrapper-styled::after {
+    content: '';
     position: absolute;
-    top: 0; 
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: 24px;
+    border: 2px solid #6b7fa7;
+    -webkit-mask-image: linear-gradient(to top, black 0px, black 1px, transparent 25px);
+    mask-image: linear-gradient(to top, black 0px, black 1px, transparent 25px);
+    opacity: 0.6;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.tools-header-label {
+    position: absolute;
+    top: 0;
     left: 50%;
-    transform: translate(-50%, -50%); 
-    background-color: var(--surface-color); 
+    transform: translate(-50%, -50%);
+    background-color: var(--surface-color);
     padding: 0 16px;
-    font-size: 0.9rem;
-    font-weight: 700;
-    color: #6b7fa7; 
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #6b7fa7;
     white-space: nowrap;
     z-index: 2;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+}
+
+/* --- ENDPOINT CARD (Used for Content) --- */
+.endpoint-card {
+    background: var(--surface-elevated);
+    border-radius: 12px;
+    padding: 1.2rem;
+    margin-bottom: 2rem;
+    border: 1px solid var(--border-dim);
+    position: relative;
+    z-index: 1;
+}
+
+.endpoint-card:last-child {
+    margin-bottom: 0;
 }
 
 /* --- NFT ELEMENTS --- */
 .nft-full-image {
     width: 100%;
+    max-width: 400px;
     height: auto;
     border-radius: 16px;
     display: block;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-    margin-bottom: 1.5rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    margin: 0 auto 1.5rem auto;
 }
 
 .nft-info-block {
-    text-align: left;
+    text-align: center;
     margin-bottom: 1.5rem;
 }
 
@@ -149,7 +199,7 @@ main {
 }
 
 .nft-desc {
-    font-size: 1rem;
+    font-size: 0.95rem;
     color: var(--text-muted);
     line-height: 1.6;
     margin: 0;
@@ -170,7 +220,7 @@ main {
     transition: all 0.2s;
     width: 100%;
     box-sizing: border-box;
-    margin-bottom: 2.5rem;
+    margin-bottom: 0;
 }
 
 .donate-btn:hover {
@@ -182,14 +232,14 @@ main {
 /* --- CRYPTO SECTION --- */
 .ton-desc {
     color: var(--text-muted);
-    font-size: 1rem;
+    font-size: 0.95rem;
     line-height: 1.6;
-    margin: 0;
+    margin: 0 0 1rem 0;
     text-align: left;
 }
 
 .wallet-box {
-    background: var(--surface-elevated);
+    background: rgba(0, 0, 0, 0.2);
     border: 1px solid var(--border-dim);
     border-radius: 12px;
     padding: 14px;

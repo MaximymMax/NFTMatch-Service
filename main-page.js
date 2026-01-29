@@ -228,6 +228,13 @@ document.addEventListener('DOMContentLoaded', () => {
         window.history.replaceState({ path: cleanPath }, '', cleanPath);
     }
 
+    function restoreParam(str) {
+        if (!str) return '';
+        // Заменяем все нижние подчеркивания на пробелы
+        return decodeURIComponent(str).replace(/_/g, ' ');
+    }
+
+    // --- 2. Обнови функцию парсинга ---
     function parseStartAppParams(startappString) {
         const params = new URLSearchParams();
         if (!startappString) return params;
@@ -238,28 +245,29 @@ document.addEventListener('DOMContentLoaded', () => {
 
         params.set('action', action);
 
+        // Используем restoreParam для всех текстовых параметров
         switch (action) {
             case 'monochrome_color':
-                if (parts[1]) params.set('gift', parts[1]);
-                if (parts[2]) params.set('color', parts[2]);
+                if (parts[1]) params.set('gift', restoreParam(parts[1]));
+                if (parts[2]) params.set('color', restoreParam(parts[2]));
                 break;
 
             case 'monochrome':
             case 'monochrome_model':
-                if (parts[1]) params.set('gift', parts[1]);
-                if (parts[2]) params.set('model', parts[2]);
+                if (parts[1]) params.set('gift', restoreParam(parts[1]));
+                if (parts[2]) params.set('model', restoreParam(parts[2]));
                 break;
 
             case 'similar':
-                if (parts[1]) params.set('gift', parts[1]);
-                if (parts[2]) params.set('model', parts[2]);
-                if (parts[3]) params.set('count', parts[3]);
+                if (parts[1]) params.set('gift', restoreParam(parts[1]));
+                if (parts[2]) params.set('model', restoreParam(parts[2]));
+                if (parts[3]) params.set('count', parts[3]); // count обычно число, можно не менять
                 break;
 
             case 'theme':
-                if (parts[1]) params.set('gift', parts[1]);
-                if (parts[2]) params.set('model', parts[2]);
-                if (parts[3]) params.set('theme', parts[3]);
+                if (parts[1]) params.set('gift', restoreParam(parts[1]));
+                if (parts[2]) params.set('model', restoreParam(parts[2]));
+                if (parts[3]) params.set('theme', restoreParam(parts[3]));
                 break;
         }
         return params;
