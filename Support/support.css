@@ -61,7 +61,7 @@ main {
     font-size: 2rem;
     font-weight: 800;
     margin: 0 0 0.5rem 0;
-    background: linear-gradient(90deg, #fff, #a5b4fc);
+    background: #fff;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
 }
