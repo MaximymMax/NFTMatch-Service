@@ -4,22 +4,26 @@ document.addEventListener('DOMContentLoaded', () => {
     if (window.Telegram && window.Telegram.WebApp) {
         const tg = window.Telegram.WebApp;
 
-        // 1. Сообщаем, что приложение готово (важно вызвать до расширения)
+        // 1. Сообщаем, что приложение готово
         tg.ready();
 
+        // 2. Гарантированно расширяем
         setTimeout(() => {
              try {
+                // Сначала всегда расширяем шторку на максимум
+                tg.expand();
+                
+                // Потом пробуем включить иммерсивный фуллскрин (если поддерживается)
                 if (typeof tg.requestFullscreen === 'function') {
                     tg.requestFullscreen();
-                } else {
-                    tg.expand();
                 }
             } catch (e) {
+                console.error(e);
                 tg.expand();
             }
         }, 100);
 
-        // 3. Отключаем свайп вниз для закрытия (чтобы случайно не закрыли)
+        // 3. Отключаем свайп вниз для закрытия
         if (tg.isVersionAtLeast && tg.isVersionAtLeast('7.7')) {
             tg.disableVerticalSwipes();
         }
@@ -63,16 +67,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     saveInitData();
 
-    // Функция жесткого форсирования полного экрана при проверке окружения
+    // Функция жесткого форсирования полного экрана
     const forceFullscreen = () => {
         if (window.Telegram && window.Telegram.WebApp) {
             const tg = window.Telegram.WebApp;
             try {
+                // ВСЕГДА сначала делаем expand
+                tg.expand();
+                
+                // И только потом пробуем фуллскрин
                 if (typeof tg.requestFullscreen === 'function') {
                     tg.requestFullscreen();
-                } else {
-                    // Вызываем expand только если нет поддержки fullscreen
-                    tg.expand();
                 }
             } catch (e) {
                 console.error(e);
@@ -191,19 +196,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 const tModel = urlParams.get('model');
                 const tName = urlParams.get('theme');
 
-                // Собираем параметры в список
                 const themeParams = [];
-
-                // Если есть подарок и модель - добавляем (для фильтрации, если она будет)
                 if (tGift) themeParams.push(`gift=${encodeURIComponent(tGift)}`);
                 if (tModel) themeParams.push(`model=${encodeURIComponent(tModel)}`);
-
-                // ВАЖНО: Передаем имя темы как 'collection', чтобы themes.js понял, что нужно открыть модалку
                 if (tName) themeParams.push(`collection=${encodeURIComponent(tName)}`);
 
                 targetUrl = './Thematic/themes.html';
-
-                // Если параметры есть, добавляем их к URL
                 if (themeParams.length > 0) {
                     targetUrl += '?' + themeParams.join('&');
                 }
@@ -234,16 +232,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const params = new URLSearchParams();
         if (!startappString) return params;
 
-        // Теперь split('-') безопасен, так как мы удалили дефисы из названий
         const parts = startappString.split('-');
         let rawAction = parts[0].toLowerCase();
-
         let action = rawAction;
-        // ... (маппинг action оставляем как есть) ...
 
         params.set('action', action);
 
-        // Мы просто берем значения как есть, так как они уже нормализованы сервером
         switch (action) {
             case 'monochrome_color':
                 if (parts[1]) params.set('gift', parts[1]);
@@ -265,8 +259,6 @@ document.addEventListener('DOMContentLoaded', () => {
             case 'theme':
                 if (parts[1]) params.set('gift', parts[1]);
                 if (parts[2]) params.set('model', parts[2]);
-                // Для темы мы передаем имя в 'collection' для themes.js, 
-                // либо themes.js сам подхватит 'theme' (как мы правили ранее)
                 if (parts[3]) params.set('theme', parts[3]);
                 break;
         }
@@ -293,13 +285,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const track = document.getElementById('hero-carousel-track');
         if (!wrapper || !track) return;
 
-        // Ключ для кэша картинок карусели
         const CAROUSEL_CACHE_KEY = 'heroCarouselItems';
 
-        // Функция рендера карточек
         const renderCards = (items) => {
             track.innerHTML = '';
-            // Дублируем 4 раза для бесконечности
             for (let i = 0; i < 4; i++) {
                 items.forEach(item => {
                     const card = document.createElement('div');
@@ -312,63 +301,18 @@ document.addEventListener('DOMContentLoaded', () => {
                     track.appendChild(card);
                 });
             }
-            // Показываем сразу после рендера
             wrapper.classList.remove('hidden');
         };
 
-        // 1. Пробуем загрузить из кэша СРАЗУ (синхронно)
         const cachedData = sessionStorage.getItem(CAROUSEL_CACHE_KEY);
         let data = null;
 
         if (cachedData) {
             try {
                 data = JSON.parse(cachedData);
-                renderCards(data); // Рендерим мгновенно, без дерганий
-            } catch (e) {
-                console.error('Cache parse error', e);
-            }
+                renderCards(data);
+            } catch (e) { console.error('Cache parse error', e); }
         }
-
-        // Логика анимации (выносим, чтобы запускать после рендера)
-        const startAnimation = (itemsCount) => {
-            let x = 0, speed = 0.4, baseSpeed = 0.4, isDragging = false, startX = 0, currentTranslateX = 0;
-            const singleSetWidth = itemsCount * 65; // 50px width + 15px gap
-
-            const update = () => {
-                if (!isDragging) {
-                    speed += (baseSpeed - speed) * 0.05;
-                    x -= speed;
-                }
-                if (Math.abs(x) >= singleSetWidth) x += singleSetWidth;
-                if (x > 0) x -= singleSetWidth;
-                track.style.transform = `translate3d(${x}px, 0, 0)`;
-                requestAnimationFrame(update);
-            };
-
-            const startDrag = (e) => { isDragging = true; startX = (e.touches ? e.touches[0].clientX : e.clientX); currentTranslateX = x; speed = 0; track.style.cursor = 'grabbing'; };
-            const moveDrag = (e) => { if (!isDragging) return; const clientX = (e.touches ? e.touches[0].clientX : e.clientX); x = currentTranslateX + (clientX - startX); };
-            const endDrag = () => { if (!isDragging) return; isDragging = false; track.style.cursor = 'grab'; };
-
-            // Удаляем старые листенеры (на случай ре-инита)
-            const newTrack = track.cloneNode(true);
-            track.parentNode.replaceChild(newTrack, track);
-            // Переменная track теперь устарела, берем новую
-            const activeTrack = document.getElementById('hero-carousel-track');
-
-            // Если мы перезаписали track, нужно заново отрендерить в него (если это был fetch)
-            // Но проще просто навесить листенеры, если мы уверены, что анимация еще не запущена.
-            // Для упрощения оставим как есть, просто навесим события.
-
-            activeTrack.addEventListener('mousedown', startDrag);
-            activeTrack.addEventListener('touchstart', startDrag, { passive: true });
-            window.addEventListener('mousemove', moveDrag);
-            window.addEventListener('touchmove', moveDrag, { passive: true });
-            window.addEventListener('mouseup', endDrag);
-            window.addEventListener('touchend', endDrag);
-
-            update();
-        };
-
 
         // 2. Если данных не было в кэше, грузим с сервера
         if (!data) {
@@ -398,21 +342,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             } catch (e) {
                 console.error(e);
-                wrapper.classList.add('hidden'); // Скрываем, если ошибка
+                wrapper.classList.add('hidden');
                 return;
             }
         }
 
-        // Запускаем анимацию, если данные есть
         if (data && data.length > 0) {
-            // Дублируем код анимации или выносим его, здесь упрощенно:
-            // (Код анимации такой же, как у вас был, просто убедитесь, что он применяется к элементам)
-
-            // Для надежности: просто скопируйте блок update/drag логики из вашего старого кода сюда
-            // ... [БЛОК АНИМАЦИИ] ...
             let x = 0, speed = 0.4, baseSpeed = 0.4, isDragging = false, startX = 0, currentTranslateX = 0;
-            const singleSetWidth = data.length * 65;
-            // ... и далее по коду ...
+            const singleSetWidth = data.length * 65; 
+
             const update = () => {
                 if (!isDragging) {
                     speed += (baseSpeed - speed) * 0.05;
@@ -423,9 +361,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 track.style.transform = `translate3d(${x}px, 0, 0)`;
                 requestAnimationFrame(update);
             };
+
             const startDrag = (e) => { isDragging = true; startX = (e.touches ? e.touches[0].clientX : e.clientX); currentTranslateX = x; speed = 0; track.style.cursor = 'grabbing'; };
             const moveDrag = (e) => { if (!isDragging) return; const clientX = (e.touches ? e.touches[0].clientX : e.clientX); x = currentTranslateX + (clientX - startX); };
             const endDrag = () => { if (!isDragging) return; isDragging = false; track.style.cursor = 'grab'; };
+
             track.addEventListener('mousedown', startDrag);
             track.addEventListener('touchstart', startDrag, { passive: true });
             window.addEventListener('mousemove', moveDrag);
