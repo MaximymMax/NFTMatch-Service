@@ -110,7 +110,13 @@ const GIFT_NAME_TO_ID = {
     "Spring Basket": "5773725897517433693",
     "Instant Ramen": "6005564615793050414",
     "Faith Amulet": "6003456431095808759",
-    "Mousse Cake": "5935877878062253519"
+    "Mousse Cake": "5935877878062253519",
+    "Bling Binky": "5902339509239940491",
+    "Money Pot": "5963238670868677492",
+    "Pretty Posy": "5933737850477478635",
+    "Khabib's Papakha": "5839094187366024301",
+    "UFC Strike": "5882260270843168924",
+    "Victory Medal": "5830340739074097859"
 };
 
 function setupTelegramBackButton() {
