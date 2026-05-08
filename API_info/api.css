@@ -172,18 +172,32 @@ main {
     background: rgba(0, 0, 0, 0.8); backdrop-filter: blur(5px);
     display: none; align-items: center; justify-content: center;
     z-index: 1000; padding: 20px;
+    box-sizing: border-box; /* ФИКС ЦЕНТРИРОВАНИЯ (overlay) */
 }
-.confirm-modal {
+.confirm-modal, .sub-modal-content {
     background: var(--surface-color);
     width: 100%; max-width: 320px;
     border-radius: var(--radius);
     padding: 24px; text-align: center;
     border: 1px solid var(--border-dim);
     animation: popIn 0.2s ease-out;
+    box-sizing: border-box; /* ФИКС ЦЕНТРИРОВАНИЯ (самого окна) */
 }
 @keyframes popIn { 0% { transform: scale(0.9); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
 .modal-icon svg { width: 40px; height: 40px; color: var(--accent-red); margin-bottom: 15px; }
 .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
-.btn-cancel, .btn-confirm { flex: 1; padding: 12px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer; }
+.btn-cancel, .btn-confirm { flex: 1; padding: 12px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer; transition: 0.2s;}
 .btn-cancel { background: var(--surface-elevated); color: var(--text-primary); }
 .btn-confirm { background: var(--accent-red); color: #fff; }
+.btn-cancel:active, .btn-confirm:active { transform: scale(0.96); }
+
+/* СТИЛЬ ДЛЯ ОТКЛЮЧЕННОГО SWAGGER */
+.swagger-btn.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: rgba(16, 185, 129, 0.05);
+}
+.swagger-btn.disabled:active {
+    transform: none;
+}
+
