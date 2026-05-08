@@ -116,12 +116,13 @@ window.loadMarketData = async function(scenario) {
                 PageSize: 20 
             };
         } else if (scenario === 3) {
-            // ✅ ИСПРАВЛЕН ПУТЬ НА ТОТ, ЧТО В ТВОЕМ C# КОДЕ
             url = `${BASE_URL}/api/GiftsInfo/MarketOffers`;
             body = { 
                 CollectionName: window.nftsState.currentGift, 
                 ModelName: window.nftsState.currentModel, 
-                BackdropName: window.nftsState.currentBg,
+                // ❗️ ИСПРАВЛЕНИЕ: Бэкенд ждет BackgroundName, а не BackdropName
+                BackgroundName: window.nftsState.currentBg, 
+                BackdropName: window.nftsState.currentBg, // Оставляем на всякий случай для совместимости
                 Page: state.page, 
                 PageSize: 20 
             };
@@ -132,7 +133,7 @@ window.loadMarketData = async function(scenario) {
                 ModelName: window.nftsState.currentModel 
             };
             if (window.nftsState.currentBg && window.nftsState.currentBg !== 'Default' && window.nftsState.currentBg !== 'Выбрать...') {
-                body.BackgroundName = window.nftsState.currentBg;
+                body.BackgroundName = window.nftsState.currentBg; // Тут все правильно
             }
         }
 
