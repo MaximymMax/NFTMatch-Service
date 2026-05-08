@@ -13,31 +13,29 @@ window.initNFTsSection = function (giftName, modelName, bgName) {
         }
     };
 
-    // --- ОТОБРАЖЕНИЕ БЛОКОВ ПОИСКА ПО ФОНУ ---
     const branch3 = document.getElementById('branch-3-container');
     const bgLabel = document.getElementById('tree-bg-label');
     const branch4 = document.getElementById('branch-4-container');
-    const mtBranches = document.querySelector('.mt-branches'); // Контейнер веток
+    const mtBranches = document.querySelector('.mt-branches'); 
     const hasValidBg = bgName && bgName !== 'Default' && bgName !== 'Выбрать...';
 
     if (hasValidBg) {
         if (branch3) branch3.style.display = 'block';
         if (bgLabel) bgLabel.textContent = bgName;
-        if (branch4) branch4.style.display = 'block'; // Показываем 4-й сценарий
-        if (mtBranches) mtBranches.style.marginBottom = '0'; // Сбрасываем отступ
+        if (branch4) branch4.style.display = 'block'; 
+        if (mtBranches) mtBranches.style.marginBottom = '0'; 
     } else {
         if (branch3) branch3.style.display = 'none';
-        if (branch4) branch4.style.display = 'none'; // Скрываем 4-й сценарий
-        if (mtBranches) mtBranches.style.marginBottom = '16px'; // ✅ ДОБАВЛЕН отступ снизу
+        if (branch4) branch4.style.display = 'none'; 
+        if (mtBranches) mtBranches.style.marginBottom = '16px'; 
     }
 
-    // --- СБРОС СТАРЫХ РЕЗУЛЬТАТОВ ПРИ СМЕНЕ ФОНА ---
     [1, 2, 3, 4].forEach(sc => {
         const grid = document.getElementById(`grid-scenario-${sc}`);
-        if (grid) grid.innerHTML = ''; // Очищаем старые картинки
+        if (grid) grid.innerHTML = ''; 
         
         const content = document.getElementById(`content-scenario-${sc}`);
-        if (content) content.classList.add('hidden'); // Сворачиваем ветку
+        if (content) content.classList.add('hidden'); 
         
         const btn = document.querySelector(`.mt-btn[data-scenario="${sc}"]`);
         if (btn) {
@@ -46,7 +44,6 @@ window.initNFTsSection = function (giftName, modelName, bgName) {
         }
     });
 
-    // Привязываем обработчики заново (чтобы избежать дубликатов)
     const actionBtns = document.querySelectorAll('.mt-btn');
     actionBtns.forEach(btn => {
         const newBtn = btn.cloneNode(true);
@@ -55,18 +52,8 @@ window.initNFTsSection = function (giftName, modelName, bgName) {
         newBtn.addEventListener('click', (e) => {
             e.stopPropagation();
 
-            // 👑 === БЛОКИРОВКА ПО ПОДПИСКЕ ===
-            // Замени window.isPremiumUser на твою реальную переменную (например tgUser.isPremium)
-            const isPremiumUser = window.isPremiumUser || false; 
-            if (!isPremiumUser) {
-                if (window.showPremiumRequiredNotification) {
-                    window.showPremiumRequiredNotification();
-                } else {
-                    alert("Требуется Premium-подписка для использования поиска.");
-                }
-                return; // Прерываем выполнение, не даем открыть контент
-            }
-            // ===================================
+            // 🗑️ СТАРЫЙ ФРОНТЕНД-БЛОК С ПРЕМИУМОМ ПОЛНОСТЬЮ УДАЛЕН 🗑️
+            // Все проверки теперь делает только Бэкенд
 
             const scenario = parseInt(newBtn.dataset.scenario);
             const content = document.getElementById(`content-scenario-${scenario}`);
@@ -87,32 +74,6 @@ window.initNFTsSection = function (giftName, modelName, bgName) {
             }
         });
     });
-};
-
-window.showPremiumRequiredNotification = function() {
-    // Если тост уже висит на экране, не дублируем
-    if (document.getElementById('premium-toast')) return;
-
-    const toast = document.createElement('div');
-    toast.id = 'premium-toast';
-    toast.className = 'premium-toast-notification';
-    toast.innerHTML = `
-        <div class="pt-icon">👑</div>
-        <div class="pt-text">
-            <strong>Требуется подписка</strong>
-            <span>Этот поиск доступен только Premium пользователям.</span>
-        </div>
-        <button class="pt-close-btn" onclick="this.parentElement.remove()">✕</button>
-    `;
-    document.body.appendChild(toast);
-
-    // Автоскрытие через 3 секунды
-    setTimeout(() => {
-        if (toast.parentElement) {
-            toast.classList.add('hiding');
-            setTimeout(() => toast.remove(), 300); // удаляем из DOM после анимации
-        }
-    }, 3000);
 };
 
 window.loadMarketData = async function(scenario) {
@@ -136,7 +97,8 @@ window.loadMarketData = async function(scenario) {
         let url, body;
         
         if (scenario === 1) {
-            url = `${BASE_URL}/api/MarketsAnalis/ModalMonochromes`; 
+            // ✅ ИСПРАВЛЕН ПУТЬ НА ТОТ, ЧТО В ТВОЕМ C# КОДЕ
+            url = `${BASE_URL}/api/BaseInfo/GetModelMonochromeOffers`; 
             body = { 
                 CollectionName: window.nftsState.currentGift, 
                 ModelName: window.nftsState.currentModel, 
@@ -145,8 +107,8 @@ window.loadMarketData = async function(scenario) {
                 MinScore: 0.5 
             }; 
         } else if (scenario === 2) {
-            // ✅ ИСПРАВЛЕНИЕ: Убрали BackdropName: "Default"
-            url = `${BASE_URL}/api/MarketsAnalis/SearchOffers`;
+            // ✅ ИСПРАВЛЕН ПУТЬ НА ТОТ, ЧТО В ТВОЕМ C# КОДЕ
+            url = `${BASE_URL}/api/GiftsInfo/MarketOffers`;
             body = { 
                 CollectionName: window.nftsState.currentGift, 
                 ModelName: window.nftsState.currentModel, 
@@ -154,8 +116,8 @@ window.loadMarketData = async function(scenario) {
                 PageSize: 20 
             };
         } else if (scenario === 3) {
-            // Ищем на конкретном фоне
-            url = `${BASE_URL}/api/MarketsAnalis/SearchOffers`;
+            // ✅ ИСПРАВЛЕН ПУТЬ НА ТОТ, ЧТО В ТВОЕМ C# КОДЕ
+            url = `${BASE_URL}/api/GiftsInfo/MarketOffers`;
             body = { 
                 CollectionName: window.nftsState.currentGift, 
                 ModelName: window.nftsState.currentModel, 
@@ -169,7 +131,6 @@ window.loadMarketData = async function(scenario) {
                 GiftName: window.nftsState.currentGift, 
                 ModelName: window.nftsState.currentModel 
             };
-            // Проверка на 'Выбрать...' на всякий случай
             if (window.nftsState.currentBg && window.nftsState.currentBg !== 'Default' && window.nftsState.currentBg !== 'Выбрать...') {
                 body.BackgroundName = window.nftsState.currentBg;
             }
@@ -181,13 +142,34 @@ window.loadMarketData = async function(scenario) {
             body: JSON.stringify(body)
         });
 
+        // 📢 === ПРАВИЛЬНЫЙ ПЕРЕХВАТ 403 ОТ БЭКЕНДА ===
+        if (response.status === 403) {
+            try {
+                const errData = await response.json();
+                if (errData.error === 'subscription_required') {
+                    if (window.showSubscriptionModal) window.showSubscriptionModal();
+                    
+                    // Сбрасываем кнопку обратно
+                    const btn = document.querySelector(`.mt-btn[data-scenario="${scenario}"]`);
+                    if (btn) {
+                        btn.textContent = 'Найти';
+                        btn.classList.remove('active');
+                        const content = document.getElementById(`content-scenario-${scenario}`);
+                        if (content) content.classList.add('hidden');
+                    }
+                    return; // Прерываем выполнение!
+                }
+            } catch(e) {}
+        }
+        // ==============================================
+
+        // ❗️ ВАЖНО: Эта ошибка должна выкидываться ТОЛЬКО ПОСЛЕ проверки на 403
         if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
         const data = await response.json();
         
         let items = data.Items || data.items || data.Compositions || (Array.isArray(data) ? data : []);
         const totalCount = data.TotalCount !== undefined ? data.TotalCount : (data.totalCount || 0);
 
-        // Уникальные фоны для Самых Дешевых
         if (scenario === 2) {
             if (state.page === 1) window.nftsState.seenUniqueBgs.clear();
             let uniqueItems = [];
@@ -201,7 +183,6 @@ window.loadMarketData = async function(scenario) {
             items = uniqueItems;
         }
 
-        // --- СОРТИРОВКА НОМЕРОВ ---
         if (scenario === 4 && items.length > 0) {
             items.sort((a, b) => {
                 const numA = a.Number !== undefined ? a.Number : (a.number || a.Rank || a.Num || 0);
@@ -217,7 +198,6 @@ window.loadMarketData = async function(scenario) {
                 window.renderNumberCards(items, gridContainer);
             }
             
-            // Расчет пагинации
             if (scenario === 1 || scenario === 4) {
                 const totalPages = data.TotalPages !== undefined ? data.TotalPages : (data.totalPages || 1);
                 state.hasMore = state.page < totalPages;
@@ -250,6 +230,32 @@ window.loadMarketData = async function(scenario) {
         state.isLoading = false;
         if (loadingInd) loadingInd.classList.add('hidden');
     }
+};
+
+window.showPremiumRequiredNotification = function() {
+    // Если тост уже висит на экране, не дублируем
+    if (document.getElementById('premium-toast')) return;
+
+    const toast = document.createElement('div');
+    toast.id = 'premium-toast';
+    toast.className = 'premium-toast-notification';
+    toast.innerHTML = `
+        <div class="pt-icon">👑</div>
+        <div class="pt-text">
+            <strong>Требуется подписка</strong>
+            <span>Этот поиск доступен только Premium пользователям.</span>
+        </div>
+        <button class="pt-close-btn" onclick="this.parentElement.remove()">✕</button>
+    `;
+    document.body.appendChild(toast);
+
+    // Автоскрытие через 3 секунды
+    setTimeout(() => {
+        if (toast.parentElement) {
+            toast.classList.add('hiding');
+            setTimeout(() => toast.remove(), 300); // удаляем из DOM после анимации
+        }
+    }, 3000);
 };
 
 window.renderCompactCards = function(items, container, showBg = true, showScore = false) {
