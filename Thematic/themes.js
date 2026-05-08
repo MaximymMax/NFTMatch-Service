@@ -1809,5 +1809,48 @@ document.addEventListener('DOMContentLoaded', () => {
         window.BASE_URL = SERVER_BASE_URL;
     }
 
+    window.showSubscriptionModal = function() {
+    // Если модалка уже есть в DOM, просто показываем её
+    const existingModal = document.getElementById('sub-required-modal');
+    if (existingModal) {
+        existingModal.style.display = 'flex';
+        return;
+    }
+
+    // ТУТ ВСТАВЬ ССЫЛКУ НА СВОЙ КАНАЛ
+    const channelUrl = "https://t.me/nftstyler"; 
+
+    const modalHtml = `
+        <div id="sub-required-modal" class="modal-overlay" style="display: flex; z-index: 100000; flex-direction: column; align-items: center; justify-content: center; background: rgba(0, 0, 0, 0.8); backdrop-filter: blur(5px);">
+            <div class="sub-modal-content" style="background: var(--surface-color); width: 90%; max-width: 320px; border-radius: 20px; padding: 24px; text-align: center; border: 1px solid var(--border-color); animation: popIn 0.2s ease-out; box-shadow: 0 10px 40px rgba(0,0,0,0.5);">
+                
+                <div class="modal-icon" style="color: var(--primary-color); margin-bottom: 16px;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 48px; height: 48px;">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M11 5L6 9H2v6h4l5 4V5z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                    </svg>
+                </div>
+                
+                <h3 style="margin: 0 0 10px 0; color: #fff; font-size: 1.2rem;">Требуется подписка</h3>
+                
+                <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 24px; line-height: 1.5;">
+                    Чтобы пользоваться поиском маркета и продвинутой аналитикой, необходимо быть подписчиком нашего Telegram канала.
+                </p>
+                
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                    <a href="${channelUrl}" target="_blank" style="background: var(--primary-color); color: #0a1020; text-decoration: none; padding: 12px; border-radius: 12px; font-weight: 700; font-size: 0.95rem; transition: transform 0.2s;">
+                        Перейти в канал
+                    </a>
+                    <button onclick="document.getElementById('sub-required-modal').style.display='none'" style="background: rgba(255,255,255,0.05); color: var(--text-primary); border: 1px solid rgba(255,255,255,0.1); padding: 12px; border-radius: 12px; font-weight: 600; cursor: pointer; transition: background 0.2s;">
+                        Позже
+                    </button>
+                </div>
+                
+            </div>
+        </div>
+    `;
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+};
+
     init();
 });
