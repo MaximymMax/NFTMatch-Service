@@ -124,7 +124,7 @@ window.showSubscriptionModal = function() {
         return;
     }
 
-    const channelUrl = "https://t.me/Criminal_hamster"; 
+    const channelUrl = "https://t.me/NFTstylet"; 
 
     const modalHtml = `
         <div id="sub-required-modal" class="modal-overlay" style="display: flex; z-index: 100000; flex-direction: column; align-items: center; justify-content: center; background: rgba(0, 0, 0, 0.8); backdrop-filter: blur(5px);">
