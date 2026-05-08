@@ -13,6 +13,29 @@ const collectionCache = new Map(); // Кэш для коллекций (API Them
 const gradientCache = new Map();
 // --- Новые глобальные переменные ---
 let currentView = 'themes'; // 'themes', 'models', 'details'
+let idToNameDict = null; 
+let dictFetchPromise = fetch('https://cdn.changes.tg/gifts/id-to-name.json')
+    .then(r => r.json())
+    .then(data => { 
+        idToNameDict = data; 
+        window.idToNameDict = data; // Экспортируем глобально для themes.js
+    })
+    .catch(err => console.error("Failed to load collection dict", err));
+
+// Универсальная функция для получения правильной картинки
+window.getModelImageUrl = function(giftName, modelName) {
+    if (modelName === 'CollectionMarker') {
+        if (window.idToNameDict) {
+            const searchStr = (giftName || '').toLowerCase().trim();
+            const entry = Object.entries(window.idToNameDict).find(([id, name]) => name.toLowerCase().trim() === searchStr);
+            if (entry) return `https://cdn.changes.tg/gifts/originals/${entry[0]}/Original.png`;
+        }
+        return `https://cdn.changes.tg/gifts/models/${encodeURIComponent(giftName)}/png/Original.png`;
+    }
+    return `https://cdn.changes.tg/gifts/models/${encodeURIComponent(giftName)}/png/${encodeURIComponent(modelName)}.png`;
+};
+
+
 let currentThemeName = '';
 let currentThemeGifts = [];
 let currentThemeGroups = [];
@@ -21,6 +44,16 @@ let hasColorGroups = false; // ❗️ НОВАЯ ГЛОБАЛЬНАЯ ПЕРЕМ
 const INIT_DATA_KEY = 'tgInitData';
 const BYPASS_KEY_STORAGE = 'apiBypassKey';
 let currentBgName = null;
+let currentSearchQuery = ''; // Поисковый запрос для блока ВЛОЖЕНИЯ
+
+// --- In-memory кэши (живут на время сессии) ---
+const _allModelsCache = new Map(); // key: giftName  → AllModelNames array
+const _v2ThemesCache = new Map(); // key: `${gift}/${model}` → V2 themes array
+const _oldThemesCache = new Map(); // key: `${gift}/${model}` → old themes array
+const _colorsCache = new Map(); // key: `${gift}/${model}` → parsed colors array
+const _bgScoresCache = new Map(); // key: `${gift}/${model}` → bgScores array
+const _countCache = new Map(); // key: `${gift}/${model}/${bg}` → count number
+const _similarCache = new Map(); // ❗️ ДОБАВИТЬ ЭТУ СТРОКУ
 
 let nftsState = {
     isExpanded: false,
@@ -32,6 +65,35 @@ let nftsState = {
     currentModel: null,
     currentBg: null,
     observer: null
+};
+
+// --- Глобальный кэш и ленивая загрузка картинок ---
+window.lazyImageObserver = new IntersectionObserver((entries, observer) => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            const img = entry.target;
+            const src = img.getAttribute('data-src');
+            if (src) {
+                // Браузер сам закэширует скачанную картинку
+                img.src = src;
+                img.removeAttribute('data-src');
+                // Добавляем класс для плавного проявления (opacity: 1)
+                img.onload = () => img.classList.add('loaded');
+            }
+            // Перестаем следить за картинкой после её загрузки
+            observer.unobserve(img);
+        }
+    });
+}, { 
+    root: null,
+    rootMargin: '300px', // Начинаем грузить картинку за 300px до того, как она появится на экране
+    threshold: 0.01 
+});
+
+window.observeLazyImages = function(container) {
+    if (!container) return;
+    const images = container.querySelectorAll('img.lazy-image');
+    images.forEach(img => window.lazyImageObserver.observe(img));
 };
 
 // Иконка поиска, скопированная из background-finder.js
@@ -231,11 +293,26 @@ function populateModelGrid() {
         wrapper.style.padding = '0 0.5rem';
         const grid = document.createElement('div');
         grid.className = 'models-in-theme-grid';
-        sortedGifts.forEach(gift => grid.appendChild(createCountGiftCard(gift)));
+        sortedGifts.forEach(gift => grid.appendChild(createSimpleGiftCard(gift)));
         wrapper.appendChild(grid);
         container.appendChild(wrapper);
     }
-    // Режим "По цвету" (Кластеры)
+    // Режим "По цене (Флору)"
+    else if (currentSortMode === 'price') {
+        const sortedGifts = [...currentThemeGifts].sort((a, b) => {
+            const pA = a.AVGPrice || 999999;
+            const pB = b.AVGPrice || 999999;
+            return pA - pB;
+        });
+        const wrapper = document.createElement('div');
+        wrapper.style.padding = '0 0.5rem';
+        const grid = document.createElement('div');
+        grid.className = 'models-in-theme-grid';
+        sortedGifts.forEach(gift => grid.appendChild(createSimpleGiftCard(gift)));
+        wrapper.appendChild(grid);
+        container.appendChild(wrapper);
+    }
+    // Режим "Кластеры" (По умолчанию)
     else {
         const groupsMap = {};
         currentThemeGifts.forEach(gift => {
@@ -255,33 +332,26 @@ function populateModelGrid() {
             if (!giftsInGroup || giftsInGroup.length === 0) return;
 
             const colorHex = groupInfo.AverageColorHex;
-
-            // ❗️ ФИКС: Получаем сырое значение (например 0.95)
             const rawVal = (groupInfo.MatchPercentage !== undefined)
                 ? groupInfo.MatchPercentage
                 : (groupInfo.matchPercentage || 0);
-
-            // Умножаем на 100 для процентов (например 95.0)
             const percentVal = rawVal * 100;
 
             const clusterDiv = document.createElement('div');
             clusterDiv.className = 'theme-group-cluster';
 
             if (colorHex) {
-                // 1. ЛЕВЫЙ БЛОК
                 const leftHeader = document.createElement('div');
                 leftHeader.className = 'group-header-left';
                 leftHeader.innerHTML = `
-                    <span class="group-text">Средний цвет:</span>
+                    <span class="group-text">Средний цвет группы:</span>
                     <span class="group-badge" style="background-color:${colorHex}; border: 1px solid rgba(255,255,255,0.2);">${colorHex}</span>
                 `;
                 clusterDiv.appendChild(leftHeader);
 
-                // 2. ПРАВЫЙ БЛОК: Проверяем уже умноженное значение (>= 30%)
                 if (currentBgName && percentVal >= 30) {
                     const rightHeader = document.createElement('div');
                     rightHeader.className = 'group-header-right';
-                    // Выводим с одним знаком после запятой (например "95.0%")
                     rightHeader.innerHTML = `
                         <span class="group-percent-text">${percentVal.toFixed(1)}%</span>
                     `;
@@ -294,7 +364,7 @@ function populateModelGrid() {
 
             giftsInGroup.sort((a, b) => b.Count - a.Count);
             giftsInGroup.forEach(gift => {
-                gridDiv.appendChild(createColorGiftCard(gift, colorHex));
+                gridDiv.appendChild(createSimpleGiftCard(gift));
             });
 
             clusterDiv.appendChild(gridDiv);
@@ -356,16 +426,20 @@ function createCountGiftCard(gift) {
     return card;
 }
 
-function createSimpleGiftCard(gift, gradientColorHex) {
+function createSimpleGiftCard(gift) {
     const card = document.createElement('div');
     card.className = 'model-card-simple';
 
-    // ❗️ Устанавливаем переменную CSS для градиента
-    if (gradientColorHex) {
-        card.style.setProperty('--card-gradient-color', gradientColorHex);
-    }
+    const colorHex = gift.AverageColorHex || gift.averageColorHex || gift.GroupColorHex || gift.groupColorHex || '#38bdf8';
+    card.style.setProperty('--card-gradient-color', colorHex); // Важно для нового CSS
 
     const imgUrl = `${PHOTO_URL}/${encodeURIComponent(gift.GiftName)}/png/${encodeURIComponent(gift.ModelName)}.png`;
+    const price = gift.AVGPrice || gift.avgPrice || gift.Price;
+    const count = gift.Count || gift.count || gift.TotalCount;
+
+    // Встраиваемые SVG-иконки для цены и количества
+    const iconPrice = `<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M19.012 9.201L12.66 19.316a.857.857 0 0 1-1.453-.005L4.98 9.197a1.8 1.8 0 0 1-.266-.943a1.856 1.856 0 0 1 1.882-1.826h10.817c1.033 0 1.873.815 1.873 1.822a1.8 1.8 0 0 1-.274.951M6.51 8.863l4.633 7.144V8.143H6.994c-.48 0-.694.317-.484.72m6.347 7.144l4.633-7.144c.214-.403-.004-.72-.484-.72h-4.149z"/></svg>`;
+    const iconCount = `<svg viewBox="0 0 20 20" width="14" height="14" fill="currentColor"><path fill-rule="evenodd" d="M3 4a1 1 0 00-1 1v1a1 1 0 001 1h14a1 1 0 001-1V5a1 1 0 00-1-1H3zM2 9.5A1.5 1.5 0 013.5 8h13A1.5 1.5 0 0118 9.5v6.042a1.5 1.5 0 01-1.5 1.5h-13A1.5 1.5 0 012 15.542V9.5z" clip-rule="evenodd"/></svg>`;
 
     card.innerHTML = `
         <div class="mcs-image-box">
@@ -374,11 +448,14 @@ function createSimpleGiftCard(gift, gradientColorHex) {
         <div class="mcs-info">
             <h4 class="mcs-model-name">${gift.ModelName}</h4>
             <p class="mcs-gift-name">${gift.GiftName}</p>
+            <div class="mcs-stats">
+                ${price ? `<span class="mcs-stat">${iconPrice} ${formatPrice(price)}</span>` : ''}
+                ${count ? `<span class="mcs-stat">${iconCount} ${count}</span>` : ''}
+            </div>
         </div>
     `;
 
-    // ❗️ Клик удален
-
+    card.addEventListener('click', () => onModelCardClick(gift, card));
     return card;
 }
 
@@ -386,30 +463,26 @@ function createSimpleGiftCard(gift, gradientColorHex) {
 function renderModelListViewUI() {
     hideLoadingState();
     toggleMainHeader(true);
-
-    // ❗️ ДОБАВИТЬ ЭТУ СТРОКУ: Убираем паддинг у контейнера
     modalContent.classList.add('no-padding');
 
+    // Сортировка по умолчанию - Флор
     modalContent.innerHTML = `
         <div class="tm-sort-controls">
             <div class="tm-buttons-wrapper">
-                <button class="tm-sort-button active" data-sort="color">Сортировка по цвету</button>
-                <button class="tm-sort-button" data-sort="count">Сортировка по кол-ву</button>
+                <button class="tm-sort-button" data-sort="group">Кластеры</button>
+                <button class="tm-sort-button" data-sort="count">По кол-ву</button>
+                <button class="tm-sort-button active" data-sort="price">По флорам</button>
             </div>
         </div>
         <div id="tm-models-grid-container">
         </div>
     `;
 
-    // Логика переключения кнопок
     const btns = modalContent.querySelectorAll('.tm-sort-button');
     btns.forEach(btn => {
         btn.addEventListener('click', () => {
-            // UI Update
             btns.forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
-
-            // Logic Update
             currentSortMode = btn.dataset.sort;
             populateModelGrid();
         });
@@ -461,7 +534,7 @@ async function loadAndRenderModelView(collectionName, bgName = null, restoreScro
 
         currentThemeGifts = data.Gifts || [];
         currentThemeGroups = data.Groups || [];
-        currentSortMode = 'group';
+        currentSortMode = 'price';
 
         renderModelListViewUI();
         populateModelGrid();
@@ -559,10 +632,11 @@ async function onModelCardClick(gift, cardElement) {
 
         // ❗️ ФИКС СКРОЛЛА: Запоминаем текущую позицию скролла перед уходом
         const currentScrollPos = modalContent ? modalContent.scrollTop : 0;
+        const savedBg = currentBgName; // ❗️ ФИКС: Фиксируем текущий фон тематики
 
         pushToHistory(() => {
-            // Передаем сохраненную позицию обратно в функцию рендера
-            loadAndRenderModelView(currentThemeName, currentBgName, currentScrollPos);
+            // Передаем сохраненную позицию и фон обратно в функцию рендера
+            loadAndRenderModelView(currentThemeName, savedBg, currentScrollPos);
         });
 
         // --- ЛОГИКА ФОНА И ПРОЦЕНТОВ ---
@@ -863,8 +937,14 @@ async function renderSimilarGiftsButtonForDetailView(container, giftName, modelN
 }
 
 function updateThemesRowUI(themesValEl, themes, modelData, fullData) {
-    if (themes && themes.length > 0) {
-        const count = themes.length;
+    // Фильтруем тематики с менее чем 3 моделями
+    const filteredThemes = (themes || []).filter(t => {
+        const cnt = t.CountGiftsInTheme || t.countGiftsInTheme || 0;
+        return cnt >= 3;
+    });
+
+    if (filteredThemes.length > 0) {
+        const count = filteredThemes.length;
         const plural = getPlural(count, 'тематика', 'тематики', 'тематик');
 
         themesValEl.innerHTML = `${count} ${plural} <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width:14px; height:14px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>`;
@@ -873,11 +953,9 @@ function updateThemesRowUI(themesValEl, themes, modelData, fullData) {
         themesValEl.style.color = '';
 
         themesValEl.onclick = () => {
-            // ❗️ ВАЖНО: Передаем fullData в renderModelDetailView при возврате.
-            // Теперь при нажатии "Назад" из списка тем, fetch не сработает, так как данные уже есть.
             pushToHistory(() => renderModelDetailView(modelData, fullData));
 
-            currentThemes = themes;
+            currentThemes = filteredThemes;
             currentGift = modelData.GiftName;
             currentModel = modelData.ModelName;
             renderThemeListView();
@@ -890,15 +968,17 @@ function updateThemesRowUI(themesValEl, themes, modelData, fullData) {
 /**
  * Рендерит View 3: Детали (Без изменений, но заголовок теперь ставится из themeData)
  */
+// 1. ЗАМЕНИТЬ ФУНКЦИЮ ЦЕЛИКОМ:
 async function renderModelDetailView(modelData, preloadedData = null) {
     currentView = 'details';
-    if (modalContent) {
-        modalContent.scrollTop = 0;
-    }
+    if (modalContent) modalContent.scrollTop = 0;
+
     modalContent.innerHTML = '';
+    if (modalContent) modalContent.style.opacity = '1';
     modalContent.classList.remove('loading');
     modalContent.classList.add('details-mode');
     toggleMainHeader(false);
+
     const footer = document.querySelector('#themes-modal-overlay .themes-modal-footer');
     if (footer) footer.style.display = 'none';
 
@@ -906,145 +986,502 @@ async function renderModelDetailView(modelData, preloadedData = null) {
     const searchIconSvg = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width:16px; height:16px; min-width:16px; display:inline-block; vertical-align:middle; margin-left:4px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607z" /></svg>`;
 
     let bgStyle = 'background: transparent;';
-    let bgNameDisplay = '<span class="info-value dash" style="color: var(--text-muted); font-weight: 400;">—</span>';
-    let compatDisplay = '<span class="info-value dash" style="color: var(--text-muted); font-weight: 400;">—</span>';
-    let bgNameForNFTs = null;
+    let initialBgName = preloadedData?.bgData?.name || currentBgName || null;
+    let initialPercent = preloadedData?.bgData?.matchPercent || '—';
 
-    if (preloadedData && preloadedData.bgData) {
-        const bg = preloadedData.bgData;
-
-        if (bg.gradient) {
-            bgStyle = `background: ${bg.gradient};`;
-        }
-
-        if (bg.name) {
-            bgNameForNFTs = bg.name;
-            const bgLinkUrl = `./background-finder.html?mode=findModels&gift=${encodeURIComponent(modelData.GiftName)}&color=${encodeURIComponent(bg.name)}`;
-            bgNameDisplay = `<a href="${bgLinkUrl}" class="info-value link-style" title="Искать модели для этого фона">${bg.name} ${searchIconSvg}</a>`;
-
-            if (bg.matchPercent && parseFloat(bg.matchPercent) > 0) {
-                compatDisplay = `<span class="info-value compat">${bg.matchPercent}%</span>`;
-            } else {
-                compatDisplay = '<span class="info-value dash" style="color: var(--text-muted); font-weight: 400;">—</span>';
-            }
-        }
+    if (initialBgName) {
+        const colorObj = GLOBAL_COLORS.find(c => c.name === initialBgName || c.id === initialBgName);
+        if (colorObj) bgStyle = `background: ${colorObj.gradient};`;
     }
 
-    let nftsSectionHtml = '';
-    if (bgNameForNFTs) {
-        // 🔥 ИЗМЕНЕНИЕ: Используем уникальные ID с префиксом tm-
-        nftsSectionHtml = `
-            <div class="nfts-section-container">
-                <div class="nfts-header" id="tm-nfts-toggle-header">
-                    <span class="nfts-header-line"></span>
-                    <span class="nfts-header-title">Найденные NFT</span>
-                    <svg id="tm-nfts-arrow" class="nfts-arrow" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
-                    </svg>
-                    <span class="nfts-header-line"></span>
-                </div>
-                <div id="tm-nfts-grid-container" class="nfts-grid hidden"></div>
-                <div id="tm-nfts-loading-indicator" class="nfts-loading hidden">
-                    <span class="loading-spinner-mini" style="display: inline-block; width: 18px; height: 18px; border: 2px solid #227da9; border-top-color: #38bdf8; border-radius: 50%; animation: spin 0.8s linear infinite;"></span>
-                </div>
-            </div>`;
-    }
+    const modelPrice = modelData.AVGPrice !== undefined ? modelData.AVGPrice : (modelData.Price !== undefined ? modelData.Price : (modelData.price !== undefined ? modelData.price : (modelData.FloorPrice !== undefined ? modelData.FloorPrice : 0)));
+    const priceHtml = modelPrice > 0 ? `&nbsp;&nbsp;<span style="color: var(--text-muted); font-size: 0.9em;">${modelPrice % 1 === 0 ? modelPrice : modelPrice.toFixed(1)} TON</span>` : '';
 
     modalContent.innerHTML = `
         <div class="details-content-wrapper"> 
-            <div class="details-modal-header">
-                <button id="dm-back-btn" class="themes-modal-back-btn">
+           <div class="details-modal-header">
+                <button id="dm-back-btn" class="themes-modal-back-btn" style="visibility: hidden; pointer-events: none; display: flex;">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" /></svg>
                 </button>
-                <h3 class="modal-title">${modelData.ModelName}</h3>
+                <h3 class="modal-title">${modelData.GiftName}</h3>
                 <button id="dm-close-btn" class="themes-modal-close-btn">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
             </div>
             
-            <div class="modal-visual-area" style="${bgStyle}">
+            <div class="modal-visual-area" id="visual-area-container" style="${bgStyle}">
                 <lottie-player src="${lottieUrl}" background="transparent" speed="1" loop autoplay></lottie-player>
             </div>
             
             <div class="modal-info info-table">
                 <div class="info-row">
                     <span class="info-label">Модель</span>
-                    <a href="../Monohrome/background-finder.html?mode=findBgs&gift=${encodeURIComponent(modelData.GiftName)}&model=${encodeURIComponent(modelData.ModelName)}" class="info-value link-style" title="Найти фоны для этой модели">
-                        ${modelData.ModelName} ${searchIconSvg}
+                    <a href="../Monohrome/background-finder.html?mode=findBgs&gift=${encodeURIComponent(modelData.GiftName)}&model=${encodeURIComponent(modelData.ModelName)}${modelPrice > 0 ? `&price=${modelPrice}` : ''}" class="info-value link-style">
+                        ${modelData.ModelName}${priceHtml}
                     </a>
                 </div>
-                <div class="info-row">
+                
+                <div class="info-row" id="tm-bg-accordion-trigger" style="cursor: pointer;">
                     <span class="info-label">Фон</span>
-                    ${bgNameDisplay}
+                    <div class="info-value link-style" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                        <span id="tm-current-bg-text">${initialBgName || 'Выбрать...'}</span>
+                        <svg id="tm-bg-arrow" class="nfts-arrow" style="width:16px;height:16px; transition: transform 0.3s;" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M19 9l-7 7-7-7" stroke-width="3"/></svg>
+                    </div>
                 </div>
+
+                <div id="tm-bg-accordion-content" class="bg-accordion-content hidden">
+                    <div class="palette-scroll-area" id="tm-bg-palette"></div>
+                </div>
+
                 <div class="info-row">
                     <span class="info-label">Совпадение</span>
-                    ${compatDisplay}
+                    <span id="tm-compat-val" class="info-value compat">${initialPercent}${initialPercent !== '—' ? '%' : ''}</span>
                 </div>
+
                 <div class="info-row">
                     <span class="info-label">Количество</span>
                     <span class="info-value count">${modelData.Count || '-'} шт.</span>
                 </div>
-                <div class="info-row" style="border-bottom: none;">
+
+                <div class="info-row" id="tm-v2-accordion-trigger" style="cursor: pointer; border-bottom: none; display: none;">
                     <span class="info-label">Тематики</span>
-                    <span id="tm-model-themes-val" class="info-value link-style" style="cursor: pointer;"></span>
+                    <div class="info-value link-style" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                        <span id="tm-v2-count-val"></span>
+                        <svg id="tm-v2-arrow" class="nfts-arrow" style="width:16px;height:16px; transition: transform 0.3s;" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M19 9l-7 7-7-7" stroke-width="3"/></svg>
+                    </div>
                 </div>
+                <div id="tm-v2-accordion-content" class="bg-accordion-content hidden" style="padding: 12px 0;">
+                    <div id="tm-v2-grid" style="padding: 0 16px;"></div>
+                </div>
+
             </div>
             
-            <div class="gold-button-container" id="tm-similar-btn-container" style="margin-top: 1.5rem; margin-bottom: 1rem;"></div>
+            <div class="gold-button-container" id="tm-similar-btn-container"></div>
 
-            ${nftsSectionHtml}
+            <div class="market-tree-v2">
+                <div class="mt-root">ПОИСК НА МАРКЕТАХ</div>
+                <div class="mt-branches">
+                    
+                    <div class="mt-item-container">
+                        <div class="mt-item">
+                            <div class="mt-label">Самые дешевые</div>
+                            <button class="mt-btn" data-scenario="2">Найти</button>
+                        </div>
+                        <div class="mt-content hidden" id="content-scenario-2">
+                            <div class="mt-horizontal-scroll" id="grid-scenario-2"></div>
+                            <div class="nfts-loading hidden"><span class="loading-spinner-mini"></span></div>
+                        </div>
+                    </div>
+
+                    <div class="mt-item-container">
+                        <div class="mt-item">
+                            <div class="mt-label">Лучшие монохромы</div>
+                            <button class="mt-btn" data-scenario="1">Найти</button>
+                        </div>
+                        <div class="mt-content hidden" id="content-scenario-1">
+                            <div class="mt-horizontal-scroll" id="grid-scenario-1"></div>
+                            <div class="nfts-loading hidden"><span class="loading-spinner-mini"></span></div>
+                        </div>
+                    </div>
+
+                    <div class="mt-item-container" id="branch-3-container" style="display:none;">
+                        <div class="mt-item">
+                            <div class="mt-label">На фоне <span id="tree-bg-label" style="color:var(--primary-color)"></span></div>
+                            <button class="mt-btn" data-scenario="3">Найти</button>
+                        </div>
+                        <div class="mt-content hidden" id="content-scenario-3">
+                            <div class="mt-horizontal-scroll" id="grid-scenario-3"></div>
+                            <div class="nfts-loading hidden"><span class="loading-spinner-mini"></span></div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="market-tree-v2 standalone-search-zone" id="branch-4-container" style="margin-top: 12px; border-top: none; display: none;">
+                <div class="mt-root standalone" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0;">
+                    <span>ПОИСК <span style="color:var(--primary-color)">модель+фон</span></span>
+                    <button class="mt-btn" data-scenario="4">Найти</button>
+                </div>
+                <div class="mt-content hidden" id="content-scenario-4" style="margin-top: 16px;">
+                    <div class="nfts-grid grid-3" id="grid-scenario-4"></div>
+                    <div class="nfts-loading hidden" style="text-align: center; margin-top:10px;"><span class="loading-spinner-mini"></span></div>
+                </div>
+            </div>
         </div>
     `;
 
-    document.getElementById('dm-close-btn').addEventListener('click', () => close());
+    document.getElementById('dm-close-btn').onclick = () => close();
     const backBtn = document.getElementById('dm-back-btn');
-    if (navigationStack.length > 0 || onBackCallback) {
-        backBtn.style.visibility = 'visible';
-        backBtn.addEventListener('click', handleBackNavigation);
-    } else {
-        backBtn.style.visibility = 'hidden';
+    if (backBtn) {
+        const canGoBack = navigationStack.length > 0 || onBackCallback;
+        backBtn.style.display = 'flex';
+        if (canGoBack) {
+            backBtn.style.visibility = 'visible';
+            backBtn.style.pointerEvents = 'auto';
+            backBtn.onclick = handleBackNavigation;
+        } else {
+            backBtn.style.visibility = 'hidden';
+            backBtn.style.pointerEvents = 'none';
+        }
     }
 
-    let currentFullData = { themes: [], similar: null, colors: [] };
-    const themesValEl = document.getElementById('tm-model-themes-val');
+    // --- Логика Аккордеона Фонов ---
+    const bgTrigger = document.getElementById('tm-bg-accordion-trigger');
+    const bgContent = document.getElementById('tm-bg-accordion-content');
+    const bgArrow = document.getElementById('tm-bg-arrow');
+    const paletteContainer = document.getElementById('tm-bg-palette');
+
+    bgTrigger.onclick = () => {
+        bgContent.classList.toggle('hidden');
+        bgArrow.style.transform = bgContent.classList.contains('hidden') ? 'rotate(0deg)' : 'rotate(180deg)';
+    };
+
+    let bgScores = preloadedData?.bgScoreData || [];
+    if (bgScores.length === 0 && !preloadedData) {
+        bgScores = _bgScoresCache.get(`${modelData.GiftName}/${modelData.ModelName}`) || [];
+    }
+
+    // ✅ ИСПРАВЛЕНИЕ: Мягкая загрузка вместо жесткой подмены DOM
+    const reloadWithBg = (newBgName) => {
+        const savedBg = currentBgName;
+        pushToHistory(() => openModelDetail(modelData.GiftName, modelData.ModelName, savedBg, null, true));
+        openModelDetail(modelData.GiftName, modelData.ModelName, newBgName, null, true);
+    };
+
+    {
+        const isNoBgActive = !initialBgName;
+        const noBgItem = document.createElement('div');
+        noBgItem.className = `bg-palette-item ${isNoBgActive ? 'active' : ''}`;
+        noBgItem.dataset.bg = 'none'; // ✅ Маркер для updateModelDetailView
+        noBgItem.innerHTML = `
+            <div class="bg-palette-color" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); display:flex; align-items:center; justify-content:center;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;color:var(--text-muted);"><path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /></svg>
+            </div>
+            <div class="bg-palette-percent" style="font-size:0.6rem;">—</div>
+            <div style="font-size: 0.65rem; color: var(--text-muted); font-weight: 600; margin-top: 2px; text-align: center; width: 100%; white-space: nowrap;">Без фона</div>
+        `;
+        noBgItem.onclick = (e) => {
+            e.stopPropagation();
+            if (currentBgName === null) return;
+            reloadWithBg(null);
+        };
+        paletteContainer.appendChild(noBgItem);
+    }
+
+    if (bgScores.length > 0) {
+        bgScores.sort((a, b) => {
+            if (b.Value !== a.Value) return b.Value - a.Value;
+            return a.Key.localeCompare(b.Key);
+        }).forEach(bg => {
+            const colorObj = GLOBAL_COLORS.find(c => c.name === bg.Key || c.id === bg.Key);
+            if (!colorObj) return;
+
+            const percent = (bg.Value * 100).toFixed(1);
+            const isActive = initialBgName === bg.Key;
+
+            const item = document.createElement('div');
+            item.className = `bg-palette-item ${isActive ? 'active' : ''}`;
+            item.dataset.bg = bg.Key; // ✅ Маркер для updateModelDetailView
+            item.innerHTML = `
+                <div class="bg-palette-color" style="background: ${colorObj.gradient};"></div>
+                <div class="bg-palette-percent">${percent}%</div>
+                <div style="font-size: 0.65rem; color: var(--text-muted); font-weight: 600; margin-top: 2px; text-align: center; width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${bg.Key}">${bg.Key}</div>
+            `;
+
+            item.onclick = (e) => {
+                e.stopPropagation();
+                if (currentBgName === bg.Key) return;
+                reloadWithBg(bg.Key);
+            };
+            paletteContainer.appendChild(item);
+        });
+    }
+
+    // --- Логика Аккордеона V2 Тематик ---
+    const v2Themes = preloadedData?.v2Themes || [];
+    if (v2Themes.length > 0) {
+        const v2Trigger = document.getElementById('tm-v2-accordion-trigger');
+        const v2Content = document.getElementById('tm-v2-accordion-content');
+        const v2Arrow = document.getElementById('tm-v2-arrow');
+        const v2Grid = document.getElementById('tm-v2-grid');
+
+        v2Trigger.style.display = 'grid';
+        document.getElementById('tm-v2-count-val').textContent = v2Themes.length + ' шт.';
+
+        v2Trigger.onclick = () => {
+            v2Content.classList.toggle('hidden');
+            v2Arrow.style.transform = v2Content.classList.contains('hidden') ? 'rotate(0deg)' : 'rotate(180deg)';
+        };
+
+        if (typeof renderV2ItemsGrid === 'function') {
+            const detailRestoreFn = () => renderModelDetailView(modelData, preloadedData);
+            renderV2ItemsGrid(v2Themes, v2Grid, null, null, false, detailRestoreFn);
+        }
+    }
+
     const btnContainer = document.getElementById('tm-similar-btn-container');
 
-    if (preloadedData && (preloadedData.themes || preloadedData.similar || preloadedData.colors)) {
-        currentFullData = preloadedData;
+    const preloadedSimilar = preloadedData?.similar;
+    const preloadedColors = preloadedData?.colors;
+    if (preloadedSimilar !== undefined) {
+        renderSimilarButtonWithData(btnContainer, modelData.GiftName, modelData.ModelName, preloadedSimilar, preloadedColors || []);
     } else {
-        themesValEl.innerHTML = '<span class="loading-spinner-mini" style="width:14px; height:14px; border-width: 2px;"></span>';
-        try {
-            const [themes, similar, colorsText] = await Promise.all([
-                fetch(`${BASE_URL}/api/Thematic/GetCollectionByGift/${encodeURIComponent(modelData.GiftName)}/${encodeURIComponent(modelData.ModelName)}/WithParameters`, { headers: { 'Authorization': getApiAuthHeader() } }).then(r => r.json()),
-                fetch(`${BASE_URL}/api/MonoCoof/SimilarNFTs`, { method: 'POST', headers: { 'Authorization': getApiAuthHeader(), 'Content-Type': 'application/json' }, body: JSON.stringify({ NameTargetGift: modelData.GiftName, NameTargetModel: modelData.ModelName, MonohromeModelsOnly: true }) }).then(r => r.json()),
-                fetch(`${BASE_URL}/api/ListGifts/${encodeURIComponent(modelData.GiftName)}/${encodeURIComponent(modelData.ModelName)}/MainColors`, { headers: { 'Authorization': getApiAuthHeader() } }).then(r => r.text())
-            ]);
-            let parsedColors = [];
-            if (colorsText) {
-                parsedColors = colorsText.trim().replace(/^['"]|['"]$/g, '').split(';').map(item => {
-                    const parts = item.trim().split(':');
-                    return (parts.length === 2) ? { hex: '#' + parts[1] } : null;
-                }).filter(Boolean);
-            }
-            currentFullData = { themes, similar, colors: parsedColors, bgData: preloadedData ? preloadedData.bgData : null };
-        } catch (e) { console.error(e); }
+        btnContainer.innerHTML = '';
     }
 
-    updateThemesRowUI(themesValEl, currentFullData.themes, modelData, currentFullData);
-    renderSimilarButtonWithData(btnContainer, modelData.GiftName, modelData.ModelName, currentFullData.similar, currentFullData.colors);
-
-    if (bgNameForNFTs) {
-        setTimeout(() => {
-            // Используем глобальную функцию из themes-modal-nfts.js с проверкой подписки
-            if (typeof window.initNFTsSection === 'function') {
-                window.initNFTsSection(modelData.GiftName, modelData.ModelName, bgNameForNFTs);
-            } else {
-                initNFTsSection(modelData.GiftName, modelData.ModelName, bgNameForNFTs);
-            }
-        }, 0);
+    if (window.initNFTsSection) {
+        window.initNFTsSection(modelData.GiftName, modelData.ModelName, initialBgName);
     }
 }
+
+function renderV2ThemeContent(models, container, nodeId, nodeType, isSingleCollection, collectionName, currentName) {
+    if (!models || models.length === 0) {
+        container.innerHTML = '<p style="text-align:center; color:var(--text-muted); margin:0;">У этой тематики нет моделей</p>';
+        return;
+    }
+
+    let currentSort = currentBgName ? 'bg' : 'price';
+    let isAscending = currentBgName ? false : true;
+    let hasUserSorted = false;
+
+    const mainModels = models.filter(m => m._isMainTheme || !m._sourceThemeName);
+    const extraModels = models.filter(m => !m._isMainTheme && m._sourceThemeName);
+
+    const groupedExtra = {};
+    extraModels.forEach(m => {
+        if (!groupedExtra[m._sourceThemeName]) groupedExtra[m._sourceThemeName] = [];
+        groupedExtra[m._sourceThemeName].push(m);
+    });
+
+    const collapsible = document.createElement('div');
+    collapsible.className = 'v2-section-collapsible';
+    container.appendChild(collapsible);
+
+    const renderCard = (m, parentNode) => {
+        const giftName = m.GiftName || m.giftName;
+        const modelName = m.ModelName || m.modelName;
+        const colorHex = m.AverageColorHex || m.averageColorHex || m.GroupColorHex || m.groupColorHex || '#38bdf8';
+        
+        const isCollectionMarker = modelName === 'CollectionMarker' || m.IsCollectionWide;
+        const isBgVisualMode = !!currentBgName;
+        const colorsArray = typeof GLOBAL_COLORS !== 'undefined' ? GLOBAL_COLORS : (window.themesFixedColors || []);
+        const bgObj = isBgVisualMode ? colorsArray.find(c => c.name === currentBgName || c.id === currentBgName) : null;
+
+        const card = document.createElement('div');
+        card.className = 'v2-model-card';
+        card.style.setProperty('--card-gradient-color', colorHex);
+
+        const imgUrl = window.getModelImageUrl(giftName, modelName);
+
+        let gradientHtml = `<div class="v2-mc-gradient"></div>`;
+        // Заменяем src на прозрачный GIF, а реальный URL прячем в data-src
+        let imageHtml = `<div class="v2-mc-image"><img data-src="${imgUrl}" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" class="lazy-image" alt="${modelName}"></div>`;
+        let subtitleStyle = '';
+
+        if (bgObj) {
+            let innerColor = bgObj.hex;
+            let extremeColor = bgObj.hex;
+            const rgbMatches = bgObj.gradient.match(/rgb\([^)]+\)/g);
+            if (rgbMatches && rgbMatches.length > 0) {
+                innerColor = rgbMatches[0];
+                extremeColor = rgbMatches[rgbMatches.length - 1];
+            }
+
+            gradientHtml = ''; 
+            card.style.background = extremeColor;
+            card.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+
+            const centeredRad = `radial-gradient(circle at 50% 50%, ${innerColor} 0%, ${extremeColor} 65%)`;
+            // Аналогично меняем здесь
+            imageHtml = `
+                    <div class="v2-mc-image" style="background: ${centeredRad}; width: 100%; aspect-ratio: 1/1; display: flex; justify-content: center; align-items: center; margin: 0; padding: 0; border-radius: 14px 14px 0 0;">
+                        <img data-src="${imgUrl}" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" class="lazy-image" style="width: 80%; height: 80%; object-fit: contain;" alt="${modelName}">
+                    </div>
+                `;
+            subtitleStyle = 'color: #fff; opacity: 0.8;';
+        }
+
+        if (isCollectionMarker) {
+            card.style.cursor = 'default';
+            card.style.pointerEvents = 'none';
+            card.innerHTML = `
+                ${gradientHtml}
+                ${imageHtml}
+                <div class="v2-mc-info" style="justify-content: center;">
+                    <div class="v2-mc-title" style="font-size: 0.95rem; margin-bottom: 2px;">${giftName}</div>
+                    <div class="v2-mc-subtitle" style="${subtitleStyle}">Вся коллекция</div>
+                </div>
+            `;
+        } else {
+            const count = m.TotalCount !== undefined ? m.TotalCount : (m.Count !== undefined ? m.Count : (m.count || m.totalCount || 0));
+            const price = m.AVGPrice !== undefined ? m.AVGPrice : (m.Price || m.avgPrice || m.price || 0);
+            const rawPercent = m.MatchPercentage !== undefined ? m.MatchPercentage : (m.matchPercentage || null);
+            let matchPercent = null;
+            if (rawPercent !== null) {
+                matchPercent = rawPercent <= 1 ? (rawPercent * 100).toFixed(1) : rawPercent.toFixed(1);
+            }
+
+            const iconStyle = bgObj ? 'style="color: #fff;"' : '';
+            const priceIcon = `<svg viewBox="0 0 24 24" fill="currentColor" ${iconStyle}><path d="M19.012 9.201L12.66 19.316a.857.857 0 0 1-1.453-.005L4.98 9.197a1.8 1.8 0 0 1-.266-.943a1.856 1.856 0 0 1 1.882-1.826h10.817c1.033 0 1.873.815 1.873 1.822a1.8 1.8 0 0 1-.274.951M6.51 8.863l4.633 7.144V8.143H6.994c-.48 0-.694.317-.484.72m6.347 7.144l4.633-7.144c.214-.403-.004-.72-.484-.72h-4.149z"/></svg>`;
+
+            let statsHtmlContent = '';
+
+            if (bgObj && matchPercent) {
+                statsHtmlContent += `<div class="v2-mc-stat-badge" style="background: rgba(0,0,0,0.6); color: #fff; border: 1px solid rgba(255,255,255,0.2); margin-bottom: 4px;"><span>coof. ${matchPercent}%</span></div>`;
+            }
+
+            const additionalBgStyle = bgObj ? 'style="background: rgba(0,0,0,0.3); color: #fff; border-color: rgba(255,255,255,0.1);"' : '';
+
+            if (currentSort === 'price') {
+                statsHtmlContent += `<div class="v2-mc-stat-badge" ${additionalBgStyle}>${priceIcon} <span>${price > 0 ? formatPrice(price) : '-'}</span></div>`;
+            } else if (currentSort === 'count') {
+                statsHtmlContent += `<div class="v2-mc-stat-badge" ${additionalBgStyle}><span>${count} шт.</span></div>`;
+            } else if (currentSort === 'bg' && matchPercent) {
+                statsHtmlContent = `<div class="v2-mc-stat-badge" style="background: rgba(0,0,0,0.6); color: #fff; border: 1px solid rgba(255,255,255,0.2);"><span>${matchPercent}%</span></div>`;
+            } else if (currentSort === 'price') {
+                const pBadge = `<div class="v2-mc-stat-badge" ${bgObj ? 'style="color: #fff;"' : ''}>${priceIcon} <span>${price > 0 ? formatPrice(price) : '-'}</span></div>`;
+                const mBadge = (bgObj && matchPercent) ? `<div class="v2-mc-stat-badge" style="background: rgba(0,0,0,0.6); color: #fff; border: 1px solid rgba(255,255,255,0.2); margin-bottom:4px;"><span>${matchPercent}%</span></div>` : '';
+                statsHtmlContent = mBadge + pBadge;
+            } else if (currentSort === 'count') {
+                statsHtmlContent = `<div class="v2-mc-stat-badge"><span>${count}</span></div>`;
+            }
+
+            card.innerHTML = `
+                ${gradientHtml}
+                ${imageHtml}
+                <div class="v2-mc-info">
+                    <div class="v2-mc-title">${modelName}</div>
+                    <div class="v2-mc-subtitle" style="${subtitleStyle}">${giftName}</div>
+                    <div class="v2-mc-stats" style="flex-direction: column; align-items: flex-end;">${statsHtmlContent}</div>
+                </div>
+            `;
+
+            card.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const savedBg = currentBgName; 
+                pushToHistory(() => openV2Node(nodeId, nodeType, false, currentName, savedBg));
+                openModelDetail(giftName, modelName, savedBg, null, true);
+            });
+        }
+        parentNode.appendChild(card);
+    };
+
+    const renderGrid = () => {
+        collapsible.innerHTML = '';
+        // 🔥 ОПТИМИЗАЦИЯ: DocumentFragment позволяет браузеру вставить 1000 элементов за доли секунды
+        const fragment = document.createDocumentFragment();
+
+        const sorter = (a, b) => {
+            let valA, valB;
+            if (currentSort === 'bg') {
+                valA = a.MatchPercentage !== undefined ? a.MatchPercentage : (a.matchPercentage || 0);
+                valB = b.MatchPercentage !== undefined ? b.MatchPercentage : (b.matchPercentage || 0);
+                return isAscending ? (valA - valB) : (valB - valA);
+            } else if (currentSort === 'count') {
+                valA = a.TotalCount !== undefined ? a.TotalCount : (a.Count || a.count || 0);
+                valB = b.TotalCount !== undefined ? b.TotalCount : (b.Count || b.count || 0);
+                return isAscending ? (valA - valB) : (valB - valA);
+            } else if (currentSort === 'price') {
+                valA = a.AVGPrice !== undefined ? a.AVGPrice : (a.Price || a.avgPrice || 999999);
+                valB = b.AVGPrice !== undefined ? b.AVGPrice : (b.Price || b.avgPrice || 999999);
+                return isAscending ? (valA - valB) : (valB - valA);
+            } else {
+                valA = (a.ModelName || a.modelName || '').toLowerCase();
+                valB = (b.ModelName || b.modelName || '').toLowerCase();
+                if (valA < valB) return isAscending ? -1 : 1;
+                if (valA > valB) return isAscending ? 1 : -1;
+                return 0;
+            }
+        };
+
+        if (hasUserSorted) {
+            let allModels = [...models];
+            allModels.sort(sorter);
+            const mainGrid = document.createElement('div');
+            mainGrid.className = 'models-in-theme-grid wrap-grid-v2';
+            allModels.forEach(m => renderCard(m, mainGrid));
+            fragment.appendChild(mainGrid);
+        } else {
+            if (mainModels.length > 0) {
+                let sortedMain = [...mainModels];
+                sortedMain.sort(sorter);
+                const mainGrid = document.createElement('div');
+                mainGrid.className = 'models-in-theme-grid wrap-grid-v2';
+                sortedMain.forEach(m => renderCard(m, mainGrid));
+                fragment.appendChild(mainGrid);
+            }
+            for (const [tName, tModels] of Object.entries(groupedExtra)) {
+                let sortedSub = [...tModels];
+                sortedSub.sort(sorter);
+                const rowWrap = document.createElement('div');
+                rowWrap.className = 'v2-sub-theme-row';
+                rowWrap.innerHTML = `<div class="v2-sub-theme-label">${tName}</div>`;
+                const rowGrid = document.createElement('div');
+                rowGrid.className = 'models-in-theme-grid wrap-grid-v2';
+                sortedSub.forEach(m => renderCard(m, rowGrid));
+                rowWrap.appendChild(rowGrid);
+                fragment.appendChild(rowWrap);
+            }
+        }
+        
+        collapsible.appendChild(fragment);
+        window.observeLazyImages(collapsible);
+    };
+    
+    renderGrid();
+
+    const sortMenu = document.getElementById('v2-sort-menu');
+    const filterBtn = document.getElementById('v2-filter-toggle');
+    const dirBtnInside = document.getElementById('v2-dir-toggle-inside');
+
+    if (dirBtnInside) {
+        dirBtnInside.onclick = (e) => {
+            e.stopPropagation();
+            isAscending = !isAscending;
+            hasUserSorted = true;
+            document.getElementById('v2-dir-text').textContent = isAscending ? 'По возрастанию' : 'По убыванию';
+            document.getElementById('v2-dir-icon').style.transform = isAscending ? 'scaleY(-1)' : 'none';
+            renderGrid();
+        };
+    }
+
+    if (filterBtn && sortMenu) {
+        filterBtn.onclick = (e) => {
+            e.stopPropagation();
+            sortMenu.classList.toggle('hidden');
+        };
+        document.addEventListener('click', (e) => {
+            if (!filterBtn.contains(e.target) && !sortMenu.contains(e.target)) sortMenu.classList.add('hidden');
+        });
+        const opts = sortMenu.querySelectorAll('.v2-sort-option');
+        opts.forEach(opt => {
+            opt.onclick = () => {
+                opts.forEach(o => o.classList.remove('active'));
+                opt.classList.add('active');
+                currentSort = opt.dataset.sort;
+                hasUserSorted = true;
+                if (currentSort === 'name') {
+                    isAscending = true;
+                    document.getElementById('v2-dir-text').textContent = 'По возрастанию';
+                    document.getElementById('v2-dir-icon').style.transform = 'none';
+                } else if (currentSort === 'bg') {
+                    isAscending = false; 
+                    document.getElementById('v2-dir-text').textContent = 'По убыванию';
+                    document.getElementById('v2-dir-icon').style.transform = 'rotate(180deg)';
+                } else {
+                    isAscending = false;
+                    document.getElementById('v2-dir-text').textContent = 'По убыванию';
+                    document.getElementById('v2-dir-icon').style.transform = 'rotate(180deg)';
+                }
+                sortMenu.classList.add('hidden');
+                renderGrid();
+            };
+        });
+    }
+}
+
+// 3. ЗАМЕНИТЬ ФУНКЦИЮ ЦЕЛИКОМ:
 
 function setNoThemes(el) {
     el.classList.remove('link-style');
@@ -1053,76 +1490,104 @@ function setNoThemes(el) {
     el.textContent = 'Нет';
 }
 
-async function openModelDetail(giftName, modelName, bgName = null, onBack = null) {
+async function openModelDetail(giftName, modelName, bgName = null, onBack = null, keepHistory = false) {
+    const isSameModel = (currentGift === giftName && currentModel === modelName);
+
     if (typeof bgName === 'function') {
         onBack = bgName;
         bgName = null;
     }
 
     onBackCallback = onBack;
-    navigationStack = [];
+    if (!keepHistory) navigationStack = [];
 
     currentGift = giftName;
     currentModel = modelName;
     currentBgName = bgName;
 
-    // ❗️ СБРОС СОСТОЯНИЯ NFT ПРИ ОТКРЫТИИ НОВОЙ МОДАЛКИ
-    nftsState = {
-        isExpanded: false, // Всегда свернуто при открытии
-        page: 1,
-        pageSize: 18,
-        isLoading: false,
-        hasMore: true,
-        currentGift: giftName,
-        currentModel: modelName,
-        currentBg: bgName,
-        observer: null
-    };
+    nftsState = { isExpanded: false, page: 1, pageSize: 18, isLoading: false, hasMore: true, currentGift: giftName, currentModel: modelName, currentBg: bgName, observer: null };
 
     document.body.classList.add('modal-open');
     if (modalOverlay) modalOverlay.classList.remove('hidden');
-
     updateBackButtonState();
-    showLoadingState();
-    toggleMainHeader(false);
 
     const cleanBaseUrl = BASE_URL.replace(/\/$/, '');
+    const modelKey = `${giftName}/${modelName}`;
+
+    // 🔥 ОПТИМИЗАЦИЯ: Мгновенно вставляем Lottie-анимацию, чтобы она скачивалась параллельно с API
+    const lottieUrl = `${PHOTO_URL}/${encodeURIComponent(giftName)}/lottie/${encodeURIComponent(modelName)}.json`;
+    
+    const existingWrapper = document.getElementById('details-content-wrapper');
+    const needsFullRender = !isSameModel || !existingWrapper;
+
+    if (needsFullRender) {
+        modalContent.classList.remove('loading', 'no-padding');
+        modalContent.classList.add('details-mode');
+        toggleMainHeader(false);
+        
+        modalContent.innerHTML = `
+            <div id="full-page-loader" style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 100;">
+                <span class="themes-modal-spinner" style="width: 40px; height: 40px; border-width: 3px; border-top-color: var(--primary-color);"></span>
+            </div>
+            <div class="details-content-wrapper hidden" id="details-content-wrapper" style="opacity: 0;"> 
+               <div class="details-modal-header">
+                    <button id="dm-back-btn" class="themes-modal-back-btn" style="visibility: visible; display: flex;">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" /></svg>
+                    </button>
+                    <h3 class="modal-title">${giftName}</h3>
+                    <button id="dm-close-btn" class="themes-modal-close-btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                    </button>
+                </div>
+                
+                <div class="modal-visual-area" id="visual-area-container" style="background: transparent;">
+                    <lottie-player src="${lottieUrl}" background="transparent" speed="1" loop autoplay></lottie-player>
+                </div>
+                
+                <div id="details-data-zone"></div>
+            </div>
+        `;
+        
+        document.getElementById('dm-close-btn').onclick = () => close();
+        document.getElementById('dm-back-btn').onclick = handleBackNavigation;
+    } else {
+        // Если та же модель (например, вернулись назад)
+        // Просто делаем контент полупрозрачным на время обновления данных
+        if (existingWrapper) {
+            existingWrapper.style.transition = 'opacity 0.2s';
+            existingWrapper.style.opacity = '0.5';
+        }
+    }
 
     try {
-        let countUrl;
-        if (bgName) {
-            countUrl = `${cleanBaseUrl}/api/BaseInfo/GetCountGiftByNameAndBackground/${encodeURIComponent(giftName)}/${encodeURIComponent(modelName)}/${encodeURIComponent(bgName)}`;
-        } else {
-            countUrl = `${cleanBaseUrl}/api/BaseInfo/GetCountGiftByName/${encodeURIComponent(giftName)}/${encodeURIComponent(modelName)}`;
-        }
+        // 🔥 ОПТИМИЗАЦИЯ: Один единый запрос к бэкенду
+        let aggUrl = `${cleanBaseUrl}/api/BaseInfo/GetModelAggregatedInfo/${encodeURIComponent(giftName)}/${encodeURIComponent(modelName)}`;
+        if (bgName) aggUrl += `?bgName=${encodeURIComponent(bgName)}`;
 
-        const similarUrl = `${cleanBaseUrl}/api/MonoCoof/SimilarNFTs`;
-        const similarBody = { NameTargetGift: giftName, NameTargetModel: modelName, MonohromeModelsOnly: true };
-
-        const [countData, themesData, similarData, colorsText, bgScoreData] = await Promise.all([
-            fetch(countUrl, { headers: { 'Authorization': getApiAuthHeader() } }).then(r => r.ok ? r.json() : null).catch(() => null),
-            fetch(`${cleanBaseUrl}/api/Thematic/GetCollectionByGift/${encodeURIComponent(giftName)}/${encodeURIComponent(modelName)}/WithParameters`, { headers: { 'Authorization': getApiAuthHeader() } }).then(r => r.ok ? r.json() : []).catch(() => []),
-            fetch(similarUrl, { method: 'POST', headers: { 'Authorization': getApiAuthHeader(), 'Content-Type': 'application/json' }, body: JSON.stringify(similarBody) }).then(r => r.ok ? r.json() : null).catch(() => null),
-            fetch(`${cleanBaseUrl}/api/ListGifts/${encodeURIComponent(giftName)}/${encodeURIComponent(modelName)}/MainColors`, { headers: { 'Authorization': getApiAuthHeader() } }).then(r => r.ok ? r.text() : '').catch(() => ''),
-            bgName ? fetch(`${cleanBaseUrl}/api/MonoCoof/TopBackgroundColorsByNFT`, { method: 'POST', headers: { 'Authorization': getApiAuthHeader(), 'Content-Type': 'application/json' }, body: JSON.stringify({ NameGift: giftName, NameModel: modelName }) }).then(r => r.ok ? r.json() : []).catch(() => []) : Promise.resolve(null)
+        const [aggResponse, similarData] = await Promise.all([
+            fetch(aggUrl, { headers: { 'Authorization': getApiAuthHeader() } }).then(r => r.ok ? r.json() : null),
+            
+            // Фоновый запрос на похожие оставляем отдельно, так как он тяжелый
+            _similarCache.has(modelKey)
+                ? Promise.resolve(_similarCache.get(modelKey))
+                : fetch(`${cleanBaseUrl}/api/MonoCoof/SimilarNFTs`, {
+                    method: 'POST',
+                    headers: { 'Authorization': getApiAuthHeader(), 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ NameTargetGift: giftName, NameTargetModel: modelName, MonohromeModelsOnly: true })
+                }).then(r => r.ok ? r.json() : null).catch(() => null)
         ]);
 
-        let countVal = 0;
-        if (countData) {
-            if (typeof countData === 'object' && countData.Count !== undefined) {
-                countVal = countData.Count;
-            } else if (typeof countData === 'number') {
-                countVal = countData;
-            }
-        }
+        if (!aggResponse) throw new Error("Aggregated API returned null");
 
+        if (!_similarCache.has(modelKey)) _similarCache.set(modelKey, similarData);
+
+        // Парсим цвета для UI
         let parsedColors = [];
-        if (colorsText) {
-            const cleanedString = colorsText.trim().replace(/^['"]|['"]$/g, '');
-            parsedColors = cleanedString.split(';').map(item => {
+        if (aggResponse.MainColors) {
+            const cleaned = aggResponse.MainColors.trim().replace(/^['"]|['"]$/g, '');
+            parsedColors = cleaned.split(';').map(item => {
                 const parts = item.trim().split(':');
-                if (parts.length !== 2) return null;
-                return { hex: '#' + parts[1] };
+                return parts.length === 2 ? { hex: '#' + parts[1] } : null;
             }).filter(Boolean);
         }
 
@@ -1130,38 +1595,311 @@ async function openModelDetail(giftName, modelName, bgName = null, onBack = null
         if (bgName && GLOBAL_COLORS) {
             const colorObj = GLOBAL_COLORS.find(c => c.name === bgName || c.id === bgName);
             let matchPercent = 0;
-            if (bgScoreData && Array.isArray(bgScoreData)) {
-                const exactMatch = bgScoreData.find(x => x.Key === bgName || (colorObj && x.Key === colorObj.id));
-                if (exactMatch) {
-                    matchPercent = (exactMatch.Value * 100).toFixed(1);
-                }
+            if (aggResponse.TopBackgrounds) {
+                const exactMatch = aggResponse.TopBackgrounds.find(x => x.Key === bgName || (colorObj && x.Key === colorObj.id));
+                if (exactMatch) matchPercent = (exactMatch.Value * 100).toFixed(1);
             }
-            if (colorObj) {
-                bgDataForDetails = {
-                    name: colorObj.name,
-                    gradient: colorObj.gradient,
-                    matchPercent: matchPercent
-                };
-            }
+            if (colorObj) bgDataForDetails = { name: colorObj.name, gradient: colorObj.gradient, matchPercent };
         }
 
-        const targetGiftData = {
+        const modelData = {
             GiftName: giftName,
             ModelName: modelName,
-            Count: countVal,
+            Count: aggResponse.Count,
+            FloorPrice: aggResponse.FloorPrice
         };
 
-        renderModelDetailView(targetGiftData, {
-            themes: themesData,
+        const phase1Data = {
+            bgData: bgDataForDetails,
+            bgScoreData: aggResponse.TopBackgrounds || [],
+            v2Themes: aggResponse.V2Themes || [],
             similar: similarData,
-            colors: parsedColors,
-            bgData: bgDataForDetails
-        });
+            colors: parsedColors
+        };
+
+        renderModelDetailViewBody(modelData, phase1Data);
+
+        if (window.initNFTsSection) {
+            window.initNFTsSection(giftName, modelName, bgName);
+        }
 
     } catch (e) {
         console.error("openModelDetail Error:", e);
-        modalContent.innerHTML = `<div style="padding:2rem; text-align:center; color:#f87171;">Не удалось загрузить данные</div>`;
+        if (modalContent) modalContent.innerHTML = `<div style="padding:2rem; text-align:center; color:#f87171;">Не удалось загрузить данные</div>`;
     }
+}
+
+// 🔥 Вспомогательная функция, которая заполняет нижнюю часть модалки, не трогая Lottie-анимацию
+function renderModelDetailViewBody(modelData, preloadedData) {
+    const dataZone = document.getElementById('details-data-zone');
+    const visualArea = document.getElementById('visual-area-container');
+    
+    if (!dataZone) return;
+
+    let initialBgName = preloadedData?.bgData?.name || currentBgName || null;
+    let initialPercent = preloadedData?.bgData?.matchPercent || '—';
+
+    if (initialBgName && visualArea) {
+        const colorObj = GLOBAL_COLORS.find(c => c.name === initialBgName || c.id === initialBgName);
+        if (colorObj) visualArea.style.background = colorObj.gradient;
+    }
+
+    const modelPrice = modelData.FloorPrice || 0;
+    const priceHtml = modelPrice > 0 ? `&nbsp;&nbsp;<span style="color: var(--text-muted); font-size: 0.9em;">${modelPrice % 1 === 0 ? modelPrice : modelPrice.toFixed(1)} TON</span>` : '';
+
+    dataZone.innerHTML = `
+        <div class="modal-info info-table">
+            <div class="info-row">
+                <span class="info-label">Модель</span>
+                <a href="../Monohrome/background-finder.html?mode=findBgs&gift=${encodeURIComponent(modelData.GiftName)}&model=${encodeURIComponent(modelData.ModelName)}${modelPrice > 0 ? `&price=${modelPrice}` : ''}" class="info-value link-style">
+                    ${modelData.ModelName}${priceHtml}
+                </a>
+            </div>
+            
+            <div class="info-row" id="tm-bg-accordion-trigger" style="cursor: pointer;">
+                <span class="info-label">Фон</span>
+                <div class="info-value link-style" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                    <span id="tm-current-bg-text">${initialBgName || 'Выбрать...'}</span>
+                    <svg id="tm-bg-arrow" class="nfts-arrow" style="width:16px;height:16px; transition: transform 0.3s;" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M19 9l-7 7-7-7" stroke-width="3"/></svg>
+                </div>
+            </div>
+
+            <div id="tm-bg-accordion-content" class="bg-accordion-content hidden">
+                <div class="palette-scroll-area" id="tm-bg-palette"></div>
+            </div>
+
+            <div class="info-row">
+                <span class="info-label">Совпадение</span>
+                <span id="tm-compat-val" class="info-value compat">${initialPercent}${initialPercent !== '—' ? '%' : ''}</span>
+            </div>
+
+            <div class="info-row">
+                <span class="info-label">Количество</span>
+                <span class="info-value count">${modelData.Count || '-'} шт.</span>
+            </div>
+
+            <div class="info-row" id="tm-v2-accordion-trigger" style="cursor: pointer; border-bottom: none; display: none;">
+                <span class="info-label">Тематики</span>
+                <div class="info-value link-style" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                    <span id="tm-v2-count-val"></span>
+                    <svg id="tm-v2-arrow" class="nfts-arrow" style="width:16px;height:16px; transition: transform 0.3s;" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M19 9l-7 7-7-7" stroke-width="3"/></svg>
+                </div>
+            </div>
+            <div id="tm-v2-accordion-content" class="bg-accordion-content hidden" style="padding: 12px 0;">
+                <div id="tm-v2-grid" style="padding: 0 16px;"></div>
+            </div>
+        </div>
+        
+        <div class="gold-button-container" id="tm-similar-btn-container"></div>
+
+        <div class="market-tree-v2">
+            <div class="mt-root">ПОИСК НА МАРКЕТАХ</div>
+            <div class="mt-branches">
+                <div class="mt-item-container">
+                    <div class="mt-item"><div class="mt-label">Самые дешевые</div><button class="mt-btn" data-scenario="2">Найти</button></div>
+                    <div class="mt-content hidden" id="content-scenario-2"><div class="mt-horizontal-scroll" id="grid-scenario-2"></div><div class="nfts-loading hidden"><span class="loading-spinner-mini"></span></div></div>
+                </div>
+                <div class="mt-item-container">
+                    <div class="mt-item"><div class="mt-label">Лучшие монохромы</div><button class="mt-btn" data-scenario="1">Найти</button></div>
+                    <div class="mt-content hidden" id="content-scenario-1"><div class="mt-horizontal-scroll" id="grid-scenario-1"></div><div class="nfts-loading hidden"><span class="loading-spinner-mini"></span></div></div>
+                </div>
+                <div class="mt-item-container" id="branch-3-container" style="display:none;">
+                    <div class="mt-item"><div class="mt-label">На фоне <span id="tree-bg-label" style="color:var(--primary-color)"></span></div><button class="mt-btn" data-scenario="3">Найти</button></div>
+                    <div class="mt-content hidden" id="content-scenario-3"><div class="mt-horizontal-scroll" id="grid-scenario-3"></div><div class="nfts-loading hidden"><span class="loading-spinner-mini"></span></div></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="market-tree-v2 standalone-search-zone" id="branch-4-container" style="margin-top: 12px; border-top: none; display: none;">
+            <div class="mt-root standalone" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0;">
+                <span>ПОИСК <span style="color:var(--primary-color)">модель+фон</span></span>
+                <button class="mt-btn" data-scenario="4">Найти</button>
+            </div>
+            <div class="mt-content hidden" id="content-scenario-4" style="margin-top: 16px;">
+                <div class="nfts-grid grid-3" id="grid-scenario-4"></div>
+                <div class="nfts-loading hidden" style="text-align: center; margin-top:10px;"><span class="loading-spinner-mini"></span></div>
+            </div>
+        </div>
+    `;
+
+    const bgTrigger = document.getElementById('tm-bg-accordion-trigger');
+    const bgContent = document.getElementById('tm-bg-accordion-content');
+    const bgArrow = document.getElementById('tm-bg-arrow');
+    const paletteContainer = document.getElementById('tm-bg-palette');
+
+    bgTrigger.onclick = () => {
+        bgContent.classList.toggle('hidden');
+        bgArrow.style.transform = bgContent.classList.contains('hidden') ? 'rotate(0deg)' : 'rotate(180deg)';
+    };
+
+    // ⚡️ ЛЕГКОЕ ОБНОВЛЕНИЕ ФОНА (БЕЗ ПЕРЕЗАГРУЗКИ) ⚡️
+    const reloadWithBg = async (newBgName) => {
+        if (currentBgName === newBgName) return;
+        
+        // 1. Меняем стейт, но НЕ пушим в историю (чинит стрелочку назад)
+        currentBgName = newBgName;
+
+        // 2. Визуальное обновление
+        const vArea = document.getElementById('visual-area-container');
+        const bgText = document.getElementById('tm-current-bg-text');
+        const compatVal = document.getElementById('tm-compat-val');
+        const pItems = document.querySelectorAll('.bg-palette-item');
+        const countEls = document.querySelectorAll('.info-value.count');
+
+        let matchPrc = '—';
+        if (newBgName) {
+            const colorObj = GLOBAL_COLORS.find(c => c.name === newBgName || c.id === newBgName);
+            if (colorObj && vArea) vArea.style.background = colorObj.gradient;
+            
+            const exactMatch = preloadedData.bgScoreData.find(x => x.Key === newBgName || (colorObj && x.Key === colorObj.id));
+            if (exactMatch) matchPrc = (exactMatch.Value * 100).toFixed(1);
+        } else {
+            if (vArea) vArea.style.background = 'transparent';
+        }
+
+        if (bgText) bgText.textContent = newBgName || 'Выбрать...';
+        if (compatVal) compatVal.textContent = `${matchPrc}${matchPrc !== '—' ? '%' : ''}`;
+
+        pItems.forEach(item => {
+            item.classList.remove('active');
+            if (item.dataset.bg === String(newBgName || 'none')) item.classList.add('active');
+        });
+
+        // 3. Подгружаем количество для нового фона
+        countEls.forEach(el => el.innerHTML = '<span class="loading-spinner-mini" style="width:14px; height:14px; border-width:2px;"></span>');
+        
+        try {
+            let currentCount = modelData.Count;
+            if (newBgName) {
+                // ПРИМЕЧАНИЕ: Если сделаешь мелкий путь на бэке, поменяй URL здесь. 
+                // Пока используем стандартный запрос SearchGifts на 1 элемент ради TotalCount
+                const countUrl = `${BASE_URL}/api/ListGifts/SearchGifts/1/1`;
+                const countResp = await fetch(countUrl, {
+                    method: 'POST',
+                    headers: { 'Authorization': getApiAuthHeader(), 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ GiftName: modelData.GiftName, ModelName: modelData.ModelName, BackgroundName: newBgName })
+                });
+                if (countResp.ok) {
+                    const countData = await countResp.json();
+                    if (countData && typeof countData.TotalCount === 'number') {
+                        currentCount = countData.TotalCount;
+                    }
+                }
+            }
+            countEls.forEach(el => el.textContent = `${currentCount} шт.`);
+        } catch(e) {
+            countEls.forEach(el => el.textContent = '- шт.');
+        }
+
+        // Обновляем маркет-зону под новый фон
+        if (window.initNFTsSection) {
+            window.initNFTsSection(modelData.GiftName, modelData.ModelName, newBgName);
+        }
+    };
+
+    const isNoBgActive = !initialBgName;
+    paletteContainer.innerHTML = `
+        <div class="bg-palette-item ${isNoBgActive ? 'active' : ''}" data-bg="none">
+            <div class="bg-palette-color" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); display:flex; align-items:center; justify-content:center;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;color:var(--text-muted);"><path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /></svg>
+            </div>
+            <div class="bg-palette-percent" style="font-size:0.6rem;">—</div>
+            <div style="font-size: 0.65rem; color: var(--text-muted); font-weight: 600; margin-top: 2px; text-align: center; width: 100%; white-space: nowrap;">Без фона</div>
+        </div>
+    `;
+    paletteContainer.firstElementChild.onclick = (e) => { e.stopPropagation(); if (currentBgName !== null) reloadWithBg(null); };
+
+    preloadedData.bgScoreData.forEach(bg => {
+        const colorObj = GLOBAL_COLORS.find(c => c.name === bg.Key || c.id === bg.Key);
+        if (!colorObj) return;
+        const percent = (bg.Value * 100).toFixed(1);
+        const isActive = initialBgName === bg.Key;
+
+        const item = document.createElement('div');
+        item.className = `bg-palette-item ${isActive ? 'active' : ''}`;
+        item.dataset.bg = bg.Key;
+        item.innerHTML = `
+            <div class="bg-palette-color" style="background: ${colorObj.gradient};"></div>
+            <div class="bg-palette-percent">${percent}%</div>
+            <div style="font-size: 0.65rem; color: var(--text-muted); font-weight: 600; margin-top: 2px; text-align: center; width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${bg.Key}">${bg.Key}</div>
+        `;
+        item.onclick = (e) => { e.stopPropagation(); if (currentBgName !== bg.Key) reloadWithBg(bg.Key); };
+        paletteContainer.appendChild(item);
+    });
+
+    if (preloadedData.v2Themes && preloadedData.v2Themes.length > 0) {
+        const v2Trigger = document.getElementById('tm-v2-accordion-trigger');
+        const v2Content = document.getElementById('tm-v2-accordion-content');
+        const v2Arrow = document.getElementById('tm-v2-arrow');
+        const v2Grid = document.getElementById('tm-v2-grid');
+
+        v2Trigger.style.display = 'grid';
+        document.getElementById('tm-v2-count-val').textContent = preloadedData.v2Themes.length + ' шт.';
+
+        v2Trigger.onclick = () => {
+            v2Content.classList.toggle('hidden');
+            v2Arrow.style.transform = v2Content.classList.contains('hidden') ? 'rotate(0deg)' : 'rotate(180deg)';
+        };
+
+        if (typeof renderV2ItemsGrid === 'function') {
+            const detailRestoreFn = () => { openModelDetail(modelData.GiftName, modelData.ModelName, currentBgName, null, true); };
+            renderV2ItemsGrid(preloadedData.v2Themes, v2Grid, null, null, false, detailRestoreFn);
+        }
+    }
+
+    const btnContainer = document.getElementById('tm-similar-btn-container');
+    if (preloadedData.similar) {
+        renderSimilarButtonWithData(btnContainer, modelData.GiftName, modelData.ModelName, preloadedData.similar, preloadedData.colors || []);
+    }
+
+    // ПРОЯВЛЕНИЕ ИНТЕРФЕЙСА (после того как DOM построен)
+    const loader = document.getElementById('full-page-loader');
+    const wrapper = document.getElementById('details-content-wrapper');
+    if (loader) loader.remove();
+    if (wrapper) {
+        wrapper.classList.remove('hidden');
+        requestAnimationFrame(() => {
+            wrapper.style.transition = 'opacity 0.4s ease-in-out';
+            wrapper.style.opacity = '1';
+        });
+    }
+}
+
+// Заглушка, чтобы не ломался вызов в `renderThemeListView`
+// Функцию `renderModelDetailView` можно вообще удалить, так как мы используем `renderModelDetailViewBody`
+
+function updateModelDetailView(modelData, preloadedData) {
+    let initialBgName = preloadedData?.bgData?.name || currentBgName || null;
+    let initialPercent = preloadedData?.bgData?.matchPercent || '—';
+
+    const visualArea = document.getElementById('visual-area-container');
+    if (visualArea) {
+        if (initialBgName) {
+            const colorObj = GLOBAL_COLORS.find(c => c.name === initialBgName || c.id === initialBgName);
+            if (colorObj) visualArea.style.background = colorObj.gradient;
+        } else {
+            visualArea.style.background = 'transparent';
+        }
+    }
+
+    const bgText = document.getElementById('tm-current-bg-text');
+    if (bgText) bgText.textContent = initialBgName || 'Выбрать...';
+
+    const compatVal = document.getElementById('tm-compat-val');
+    if (compatVal) compatVal.textContent = `${initialPercent}${initialPercent !== '—' ? '%' : ''}`;
+
+    const countEls = document.querySelectorAll('.info-value.count');
+    countEls.forEach(el => { el.textContent = `${modelData.Count || '-'} шт.`; });
+
+    const paletteItems = document.querySelectorAll('.bg-palette-item');
+    paletteItems.forEach(item => {
+        item.classList.remove('active');
+        if (item.dataset.bg === String(initialBgName || 'none')) {
+            item.classList.add('active');
+        }
+    });
+
+    if (modalContent) modalContent.style.opacity = '1';
 }
 
 // 4. НОВАЯ ФУНКЦИЯ РЕНДЕРА КНОПКИ (СИНХРОННАЯ, ДАННЫЕ ЕСТЬ)
@@ -1311,122 +2049,53 @@ async function openCollection(collectionName, bgName = null) {
 }
 
 async function open(giftName, modelName, onBack) {
-    onBackCallback = onBack;
-    navigationStack = []; // ❗️ Очищаем историю при новом открытии
-
-    currentGift = giftName;
-    currentModel = modelName;
-
-    document.body.classList.add('modal-open');
-    if (!modalOverlay) return;
-
-    modalOverlay.classList.remove('hidden');
-    updateBackButtonState();
-
-    // Показываем лоадер
-    showLoadingState();
-    modalTitle.textContent = modelName;
-
-    const url = `${BASE_URL}/api/Thematic/GetCollectionByGift/${encodeURIComponent(giftName)}/${encodeURIComponent(modelName)}/WithParameters`;
-
-    try {
-        const response = await fetch(url, { headers: { 'Authorization': getApiAuthHeader() } });
-        if (!response.ok) throw new Error('API Error');
-        const themes = await response.json();
-
-        // Сохраняем глобально
-        currentThemes = themes;
-
-        // --- ИЗМЕНЕНИЕ: ЛОГИКА АВТОПЕРЕХОДА ---
-        if (themes && themes.length === 1) {
-            // Если тема одна — сразу открываем её
-            const singleThemeName = themes[0].CollectionName;
-
-            // Важно: Не пушим в историю (stack), чтобы кнопка "Назад" 
-            // закрывала модалку, а не возвращала на пропущенный список.
-            loadAndRenderModelView(singleThemeName);
-        } else {
-            // Если тем несколько или 0 — показываем список как обычно
-            renderThemeListView();
-        }
-        // -------------------------------------
-
-    } catch (e) {
-        console.error(e);
-        modalContent.innerHTML = '<p style="text-align:center; margin-top:2rem; color:#f87171;">Ошибка загрузки</p>';
-    }
+    // Открываем детальный вид напрямую через V2 (без старых тематик)
+    openModelDetail(giftName, modelName, null, onBack, false);
 }
 
-function renderThemes(themes) {
-    modalContent.innerHTML = '';
-    modalContent.classList.remove('loading');
+function renderThemes(data) {
+    const container = document.getElementById('themes-grid');
+    if (!container) return;
 
-    const container = document.createElement('div');
-    container.className = 'themes-list-container';
+    data.forEach(theme => {
+        const nodeId = theme.Id;
+        const nodeType = theme.Type;
 
-    if (!themes || themes.length === 0) {
-        modalContent.innerHTML = '<p style="text-align:center; margin-top:2rem; color:#6b7fa7;">Нет доступных тематик</p>';
-        return;
-    }
+        if (!document.querySelector(`.theme-page-card[data-id="${nodeId}"][data-type="${nodeType}"]`)) {
+            const card = document.createElement('div');
+            card.className = 'theme-page-card';
+            card.dataset.id = nodeId;
+            card.dataset.type = nodeType;
 
-    themes.forEach(theme => {
-        const card = document.createElement('div');
-        card.className = 'theme-card-modern';
+            // Выводим количество (🎨 X) если есть статистика по фону
+            let countLabel = `${theme.ModelCount} шт.`;
+            if (theme.BgMatchCount !== null && theme.BgMatchCount !== undefined) {
+                countLabel = `${theme.ModelCount} шт. <span style="color:var(--primary-color); font-weight:800;">(🎨 ${theme.BgMatchCount})</span>`;
+            }
 
-        // Исходный цвет (Hex)
-        const clusterHex = theme.ClusterAverageColorHex || '#38bdf8';
-
-        // Свечение используем сразу (Hex с прозрачностью в CSS)
-        card.style.setProperty('--glow-color', clusterHex);
-
-        const count = theme.CountGiftsInTheme;
-        const countText = `${count} ${getPlural(count, 'модель', 'модели', 'моделей')}`;
-
-        // Формируем иконки. Изначально ставим --icon-bg = Hex
-        let iconsHtml = '';
-        const displayGifts = theme.TopGifts.slice(0, 3);
-
-        displayGifts.forEach(gift => {
-            const imgUrl = `${PHOTO_URL}/${encodeURIComponent(gift.GiftName)}/png/${encodeURIComponent(gift.ModelName)}.png`;
-            iconsHtml += `
-                <div class="tc-icon-box" style="--icon-bg: ${clusterHex};">
-                    <img src="${imgUrl}" class="tc-icon-img" loading="lazy" alt="">
+            card.innerHTML = `
+                <div class="tpc-header">
+                    <div class="tpc-icon" style="background: ${theme.ThemeColor || 'var(--primary-color)'};"></div>
+                    <div class="tpc-title-wrap">
+                        <div class="tpc-name">${theme.Name}</div>
+                        <div class="tpc-count">${countLabel}</div>
+                    </div>
+                    <div class="tpc-arrow"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></div>
                 </div>
+                <div class="tpc-glow"></div>
             `;
-        });
 
-        card.innerHTML = `
-            <div class="tc-left">
-                <div class="tc-title">${theme.CollectionName}</div>
-                <div class="tc-subtitle">${countText}</div>
-            </div>
-            
-            <div class="tc-right">
-                <div class="tc-glow" style="--glow-color: ${clusterHex};"></div>
-                <div class="tc-icons-group">
-                    ${iconsHtml}
-                </div>
-                <div class="tc-arrow">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                    </svg>
-                </div>
-            </div>
-        `;
+            card.addEventListener('click', () => {
+                if (window.themesModal && window.themesModal.openV2Node) {
+                    // Передаем state.selectedColor третьим или четвертым аргументом (смотря какая сигнатура)
+                    // В стандартном коде это обычно: nodeId, nodeType, isBack, currentName, bgName
+                    window.themesModal.openV2Node(nodeId, nodeType, false, null, state.selectedColor);
+                }
+            });
 
-        card.addEventListener('click', () => {
-            loadAndRenderModelView(theme.CollectionName);
-        });
-
-        // ❗️ ЗАПУСКАЕМ ПОЛУЧЕНИЕ ГРАДИЕНТА ДЛЯ ЭТОЙ ТЕМЫ ❗️
-        if (theme.ClusterAverageColorHex) {
-            fetchAndApplyThemeGradient(card, theme.ClusterAverageColorHex);
+            container.appendChild(card);
         }
-
-        container.appendChild(card);
     });
-
-    modalContent.appendChild(container);
 }
 
 async function fetchAndApplyThemeGradient(cardElement, hexColor) {
@@ -1568,7 +2237,7 @@ function init(baseUrl, photoUrl, lazyLoadFunc, fixedColors) {
         <div id="themes-modal-overlay" class="modal-overlay hidden">
             <div class="themes-modal">
                 <div class="themes-modal-header">
-                    <button id="themes-back-btn" class="themes-modal-back-btn hidden">
+                    <button id="themes-back-btn" class="themes-modal-back-btn" style="visibility: hidden; display: flex;">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
                         </svg>
@@ -1629,27 +2298,756 @@ function handleBackNavigation() {
 }
 
 function updateBackButtonState() {
-    if (navigationStack.length > 0) {
-        modalBackButton.classList.remove('hidden');
-        modalBackButton.style.display = 'flex'; // Fix display
+    if (!modalBackButton) return;
+
+    const canGoBack = navigationStack.length > 0 || onBackCallback;
+
+    // Убираем класс hidden, так как он делает display: none и ломает Grid/Flex
+    modalBackButton.classList.remove('hidden');
+    modalBackButton.style.display = 'flex';
+
+    if (canGoBack) {
+        modalBackButton.style.visibility = 'visible';
+        modalBackButton.style.pointerEvents = 'auto';
+        modalBackButton.style.opacity = '1';
     } else {
-        // Если есть внешний callback (мы пришли из деталей), кнопку оставляем
-        if (onBackCallback) {
-            modalBackButton.classList.remove('hidden');
-            modalBackButton.style.display = 'flex';
-        } else {
-            modalBackButton.classList.add('hidden');
-            modalBackButton.style.display = 'none';
-        }
+        // Кнопка становится невидимой, но продолжает "подпирать" заголовок слева
+        modalBackButton.style.visibility = 'hidden';
+        modalBackButton.style.pointerEvents = 'none';
+        modalBackButton.style.opacity = '0';
     }
 }
+
+// --- V2 навигация: открытие Group или Theme из дерева/списка ---
+
+// --- V2 навигация: открытие Group или Theme из дерева/списка ---
+
+// ❗️ ДОБАВЛЕН ПАРАМЕТР clearHistory для исправления ошибки кнопки "Назад"
+async function openV2Node(nodeId, nodeType, clearHistory = true, explicitName = null, bgName = undefined) {
+    if (clearHistory) {
+        navigationStack = [];
+    }
+
+    if (bgName !== undefined) {
+        currentBgName = bgName;
+    } else {
+        currentBgName = null;
+    }
+
+    document.body.classList.add('modal-open');
+    if (modalOverlay) modalOverlay.classList.remove('hidden');
+    updateBackButtonState();
+    showLoadingState();
+    toggleMainHeader(true);
+
+    try {
+        const parentsUrl = `${BASE_URL}/api/Thematic/V2/Parents/${nodeType}/${nodeId}`;
+        const parentsResp = await fetch(parentsUrl, { headers: { 'Authorization': getApiAuthHeader() } });
+        let parentsData = parentsResp.ok ? await parentsResp.json() : [];
+
+        let currentName = explicitName;
+
+        // 🔥 УМНЫЙ ПЕРЕХВАТЧИК: Если это тематика, и её родительская группа имеет такое же имя - переключаемся на группу
+        if ((nodeType || '').toLowerCase() === 'theme' && currentName && parentsData && parentsData.length > 0) {
+            const firstPath = parentsData[0];
+            if (firstPath && firstPath.length > 0) {
+                const immediateParent = firstPath[firstPath.length - 1];
+                const parentName = immediateParent.Name || immediateParent.name;
+                const parentType = (immediateParent.Type || immediateParent.type || '').toLowerCase();
+                
+                if (parentType === 'group' && parentName && currentName.toLowerCase() === parentName.toLowerCase()) {
+                    const parentId = immediateParent.Id !== undefined ? immediateParent.Id : immediateParent.id;
+                    console.log('🔄 Перенаправление с Тематики на Группу:', currentName);
+                    
+                    // Отменяем текущий рендер тематики и запускаем открытие группы с её правильным ID
+                    return openV2Node(parentId, 'Group', false, currentName, currentBgName);
+                }
+            }
+        } 
+        
+        // 🔥 ФИКС: Убрали жёсткий else. Теперь мы ставим заглушку, только если путей РЕАЛЬНО нет
+        if (!parentsData || parentsData.length === 0) {
+            parentsData = [[{ Name: currentName || `ID ${nodeId}`, Id: nodeId, Type: nodeType }]];
+        }
+
+        if (!currentName) currentName = `ID ${nodeId}`;
+        if (modalTitle) modalTitle.textContent = currentName;
+
+        let items = [];
+        let themeModels = [];
+        let topBackgrounds = []; // ❗️ НОВОЕ: Переменная для хранения фонов
+        const isFinalTheme = (nodeType || '').toLowerCase() === 'theme';
+
+        if (!isFinalTheme) {
+            const layerUrl = `${BASE_URL}/api/Thematic/V2/Layer/${nodeId}?page=1&pageSize=50`;
+            const layerResp = await fetch(layerUrl, { headers: { 'Authorization': getApiAuthHeader() } });
+            const layerData = layerResp.ok ? await layerResp.json() : {};
+
+            if (!currentName || (typeof currentName === 'string' && currentName.startsWith('ID '))) {
+                currentName = layerData.RequestedNodeName || layerData.requestedNodeName || layerData.Name || layerData.name || layerData.GroupName || layerData.groupName || currentName;
+            }
+
+            const rawItems = layerData.Items || layerData.items || [];
+
+            const themesToExtract = [];
+            const itemsToKeep = [];
+
+            rawItems.forEach(item => {
+                const isItemTheme = (item.Type || item.type || '').toLowerCase() === 'theme';
+                const itemName = item.Name || item.name;
+
+                if (isItemTheme && itemName === currentName) {
+                    themesToExtract.push(item);
+                } else {
+                    itemsToKeep.push(item);
+                }
+            });
+
+            items = itemsToKeep;
+
+            if (themesToExtract.length > 0) {
+                const promises = themesToExtract.map(async (t) => {
+                    const tId = t.Id !== undefined ? t.Id : t.id;
+                    // ДОБАВЛЕНА ПЕРЕДАЧА ФОНА
+                    let themeUrl = `${BASE_URL}/api/Thematic/V2/Theme/${tId}?page=1&pageSize=100`;
+                    if (currentBgName) themeUrl += `&bgName=${encodeURIComponent(currentBgName)}`;
+
+                    const tmResp = await fetch(themeUrl, { headers: { 'Authorization': getApiAuthHeader() } });
+                    if (tmResp.ok) {
+                        const tmData = await tmResp.json();
+                        
+                        // 🔥 ИСПРАВЛЕНИЕ: Извлекаем и сохраняем лучшие фоны для тематики
+                        if (tmData.TopBackgrounds && tmData.TopBackgrounds.length > 0) {
+                            tmData.TopBackgrounds.forEach(bg => {
+                                if (!topBackgrounds.includes(bg)) {
+                                    topBackgrounds.push(bg);
+                                }
+                            });
+                        }
+
+                        const models = tmData.Items || tmData.items || [];
+                        models.forEach(m => {
+                            m._sourceThemeName = t.Name || t.name;
+                            m._isMainTheme = ((t.Name || t.name) === currentName);
+                        });
+                        return models;
+                    }
+                    return [];
+                });
+                const results = await Promise.all(promises);
+                results.forEach(res => themeModels.push(...res));
+            }
+        } else {
+            // ДОБАВЛЕНА ПЕРЕДАЧА ФОНА
+            let themeUrl = `${BASE_URL}/api/Thematic/V2/Theme/${nodeId}?page=1&pageSize=100`;
+            if (currentBgName) themeUrl += `&bgName=${encodeURIComponent(currentBgName)}`;
+
+            const tmResp = await fetch(themeUrl, { headers: { 'Authorization': getApiAuthHeader() } });
+            const tmData = tmResp.ok ? await tmResp.json() : {};
+
+            // ❗️ НОВОЕ: Извлекаем фоны из ответа сервера
+            topBackgrounds = tmData.TopBackgrounds || [];
+
+            if (!currentName || (typeof currentName === 'string' && currentName.startsWith('ID '))) {
+                currentName = tmData.RequestedNodeName || tmData.requestedNodeName || tmData.Name || tmData.name || tmData.ThemeName || tmData.themeName || currentName;
+            }
+
+            themeModels = tmData.Items || tmData.items || [];
+        }
+
+        if (modalTitle) modalTitle.textContent = currentName;
+
+        if (parentsData && parentsData.length > 0) {
+            parentsData.forEach(pathGroup => {
+                if (pathGroup.length > 0) {
+                    const lastNode = pathGroup[pathGroup.length - 1];
+                    const lastNodeId = lastNode.Id !== undefined ? lastNode.Id : lastNode.id;
+                    if (String(lastNodeId) !== String(nodeId)) {
+                        pathGroup.push({ Name: currentName || `ID ${nodeId}`, Id: nodeId, Type: nodeType });
+                    } else {
+                        if (!currentName) currentName = lastNode.Name || lastNode.name;
+                    }
+                } else {
+                    // 🔥 ФИКС: Если API вернуло пустой путь, принудительно добавляем текущую группу, чтобы путь не потерялся
+                    pathGroup.push({ Name: currentName || `ID ${nodeId}`, Id: nodeId, Type: nodeType });
+                }
+            });
+        } else {
+            parentsData = [[{ Name: currentName || `ID ${nodeId}`, Id: nodeId, Type: nodeType }]];
+        }
+
+        hideLoadingState();
+        modalContent.innerHTML = '';
+        modalContent.classList.remove('loading', 'details-mode', 'no-padding');
+
+        // ==========================================
+        // 1. БЛОК: ПУТИ
+        // ==========================================
+        const validPaths = (parentsData || []).filter(pathGroup => pathGroup.length > 0);
+
+        if (validPaths.length > 0) {
+            const pathsSection = document.createElement('div');
+            pathsSection.className = 'v2-layout-section';
+            pathsSection.innerHTML = `
+                <div class="v2-section-wrapper paths-mode" style="margin-top: 0;">
+                    <div class="v2-section-title-box">ПУТИ</div>
+                    <div class="v2-breadcrumb-container" id="v2-paths-box"></div>
+                </div>
+            `;
+            modalContent.appendChild(pathsSection);
+            const pathsBox = pathsSection.querySelector('#v2-paths-box');
+            validPaths.forEach(pathGroup => {
+                pathsBox.appendChild(buildBreadcrumbs(pathGroup, nodeId, nodeType));
+            });
+        }
+
+        let isSingleCollection = false;
+        let collectionName = '';
+        const mainModelsOnly = themeModels.filter(m => m._isMainTheme || !m._sourceThemeName);
+        if (mainModelsOnly.length > 0) {
+            const firstGift = mainModelsOnly[0].GiftName || mainModelsOnly[0].giftName;
+            const allSame = mainModelsOnly.every(m => (m.GiftName || m.giftName) === firstGift);
+            if (allSame) {
+                isSingleCollection = true;
+                collectionName = firstGift;
+            }
+        }
+        
+        // ==========================================
+        // 2. БЛОК: СОДЕРЖИМОЕ
+        // ==========================================
+        const contentSection = document.createElement('div');
+        contentSection.className = 'v2-layout-section';
+        const hasModels = themeModels.length > 0;
+        
+        // ❗️ ПРОВЕРКА: Сворачиваем ТОЛЬКО если это группа и есть другие вложения
+        const isCollapsible = (nodeType || '').toLowerCase() === 'group' && hasModels && items.length > 0;
+
+        // Формируем HTML для выбора фонов
+        let bgSelectorHtml = '';
+        if (topBackgrounds && topBackgrounds.length > 0) {
+            let bgItemsHtml = '';
+            const isNoBgActive = !currentBgName;
+
+            bgItemsHtml += `
+                <div class="bg-palette-item v2-bg-item ${isNoBgActive ? 'active' : ''}" data-bg="none">
+                    <div class="bg-palette-color" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); display:flex; align-items:center; justify-content:center;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px;height:20px;color:var(--text-muted);"><path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /></svg>
+                    </div>
+                    <div style="font-size: 0.65rem; color: var(--text-muted); font-weight: 600; margin-top: 4px; text-align: center; width: 100%; white-space: nowrap;">Без фона</div>
+                </div>
+            `;
+
+            topBackgrounds.forEach(bgNameStr => {
+                const colorsArray = typeof GLOBAL_COLORS !== 'undefined' ? GLOBAL_COLORS : (window.themesFixedColors || []);
+                const colorObj = colorsArray.find(c => c.name === bgNameStr || c.id === bgNameStr);
+
+                if (colorObj) {
+                    const isActive = currentBgName === bgNameStr;
+                    bgItemsHtml += `
+                        <div class="bg-palette-item v2-bg-item ${isActive ? 'active' : ''}" data-bg="${bgNameStr}">
+                            <div class="bg-palette-color" style="background: ${colorObj.gradient};"></div>
+                            <div style="font-size: 0.65rem; color: var(--text-muted); font-weight: 600; margin-top: 4px; text-align: center; width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${bgNameStr}">${bgNameStr}</div>
+                        </div>
+                    `;
+                }
+            });
+
+            bgSelectorHtml = `
+                <div class="v2-theme-bg-selector" style="margin-bottom: 4px; background: transparent;">
+                    <div class="palette-scroll-area" style="padding: 10px 16px; gap: 16px; margin: 0; align-items: flex-start;">
+                        ${bgItemsHtml}
+                    </div>
+                </div>
+            `;
+        }
+
+        contentSection.innerHTML = `
+            <div class="v2-section-wrapper ${isCollapsible ? 'is-collapsed' : ''}" id="v2-content-wrapper" style="padding-top: 24px; padding-bottom: 24px;">
+                <div class="v2-section-title-box" style="margin-bottom: 12px;">
+                    <span>СОДЕРЖИМОЕ</span>
+                    ${hasModels ? `
+                    <div class="v2-section-controls">
+                        <button id="v2-filter-toggle" class="v2-filter-btn" title="Фильтры">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 01-.659 1.591l-5.432 5.432a2.25 2.25 0 00-.659 1.591v2.927a2.25 2.25 0 01-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 00-.659-1.591L3.659 7.409A2.25 2.25 0 013 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0112 3z"/></svg>
+                        </button>
+                        <div id="v2-sort-menu" class="v2-sort-dropdown hidden">
+                            <div class="v2-sort-dir-toggle" id="v2-dir-toggle-inside" style="justify-content: center; background: rgba(255,255,255,0.05); margin-bottom: 6px;">
+                                <span id="v2-dir-text">${currentBgName ? 'По убыванию' : 'По возрастанию'}</span>
+                                <svg id="v2-dir-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:16px;height:16px; margin-left:6px; transform: ${currentBgName ? 'rotate(180deg)' : 'none'};"><path stroke-linecap="round" stroke-linejoin="round" d="M3 4.5h14.25M3 9h9.75M3 13.5h9.75m4.5-4.5v12m0 0l-3.75-3.75M17.25 21L21 17.25"/></svg>
+                            </div>
+                            ${currentBgName ? `<div class="v2-sort-option active" data-sort="bg">По проценту</div>` : ''}
+                            <div class="v2-sort-option" data-sort="name">По названию</div>
+                            <div class="v2-sort-option" data-sort="count">По количеству</div>
+                            <div class="v2-sort-option ${!currentBgName ? 'active' : ''}" data-sort="price">По флорам</div>
+                        </div>
+                    </div>` : ''}
+                </div>
+                
+                ${bgSelectorHtml}
+
+                <div id="v2-content-box" style="position: relative; z-index: 1;"></div>
+                
+                ${isCollapsible ? `
+                <div class="v2-section-fade"></div>
+                <button class="v2-section-toggle-btn" id="v2-content-toggle">
+                    <span id="v2-toggle-text">Развернуть</span>
+                    <svg id="v2-toggle-icon" style="transform: rotate(180deg);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                </button>
+                ` : ''}
+            </div>
+        `;
+        modalContent.appendChild(contentSection);
+
+        const bgItems = contentSection.querySelectorAll('.v2-bg-item');
+        bgItems.forEach(item => {
+            item.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const selectedBg = item.dataset.bg === 'none' ? null : item.dataset.bg;
+                if (currentBgName !== selectedBg) {
+                    openV2Node(nodeId, nodeType, false, currentName, selectedBg);
+                }
+            });
+        });
+
+        // ❗️ ЛОГИКА РАЗВОРАЧИВАНИЯ БЕЗ ЛИМИТОВ
+        const toggleBtn = contentSection.querySelector('#v2-content-toggle');
+        const contentWrapper = contentSection.querySelector('#v2-content-wrapper');
+        
+        if (toggleBtn && contentWrapper) {
+            toggleBtn.onclick = () => {
+                const isCollapsed = contentWrapper.classList.contains('is-collapsed');
+                const collArea = contentSection.querySelector('.v2-section-collapsible');
+                if (isCollapsed) {
+                    contentWrapper.classList.remove('is-collapsed');
+                    document.getElementById('v2-toggle-text').textContent = 'Свернуть';
+                    document.getElementById('v2-toggle-icon').style.transform = 'none';
+                    if (collArea) collArea.style.maxHeight = 'none'; // Отключаем CSS лимит 5000px
+                } else {
+                    contentWrapper.classList.add('is-collapsed');
+                    document.getElementById('v2-toggle-text').textContent = 'Развернуть';
+                    document.getElementById('v2-toggle-icon').style.transform = 'rotate(180deg)';
+                    if (collArea) collArea.style.maxHeight = ''; // Возвращаем CSS лимит
+                    contentWrapper.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            };
+        }
+
+        const contentBox = contentSection.querySelector('#v2-content-box');
+        if (hasModels) {
+            renderV2ThemeContent(themeModels, contentBox, nodeId, nodeType, isSingleCollection, collectionName, currentName);
+        } else {
+            items.sort((a, b) => {
+                const getCount = (obj) => obj.ModelCount ?? obj.modelCount ?? obj.TotalCount ?? obj.totalCount ?? obj.Count ?? obj.count ?? 0;
+                return getCount(b) - getCount(a);
+            });
+            renderV2ItemsGrid(items, contentBox, nodeId, nodeType);
+        }
+
+        // ==========================================
+        // 3. БЛОК: ВЛОЖЕНИЯ
+        // ==========================================
+        if (hasModels && items.length > 0) {
+            const extraSection = document.createElement('div');
+            extraSection.className = 'v2-layout-section';
+            extraSection.innerHTML = `
+                <div class="v2-section-wrapper" style="padding-top: 6px;">
+                    <div class="v2-section-title-box" style="margin-bottom: 8px;">
+                        <span>ВЛОЖЕНИЯ</span>
+                        <div class="v2-section-controls" style="display:flex; gap:6px; align-items:center;">
+                            <button id="v2-extra-filter-toggle" class="v2-filter-btn" title="Фильтры">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 01-.659 1.591l-5.432 5.432a2.25 2.25 0 00-.659 1.591v2.927a2.25 2.25 0 01-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 00-.659-1.591L3.659 7.409A2.25 2.25 0 013 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0112 3z"/></svg>
+                            </button>
+                            <div id="v2-extra-sort-menu" class="v2-sort-dropdown hidden">
+                                <div class="v2-sort-dir-toggle" id="v2-extra-dir-toggle-inside" style="justify-content: center; background: rgba(255,255,255,0.05); margin-bottom: 6px;">
+                                    <span id="v2-extra-dir-text">По возрастанию</span>
+                                    <svg id="v2-extra-dir-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:16px;height:16px; margin-left:6px; transform: none;"><path stroke-linecap="round" stroke-linejoin="round" d="M3 4.5h14.25M3 9h9.75M3 13.5h9.75m4.5-4.5v12m0 0l-3.75-3.75M17.25 21L21 17.25"/></svg>
+                                </div>
+                                <div class="v2-sort-option" data-sort="name">По названию</div>
+                                <div class="v2-sort-option" data-sort="count">По количеству</div>
+                                <div class="v2-sort-option active" data-sort="price">По флорам</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="v2-extra-content-box" style="position: relative; z-index: 1;"></div>
+                </div>
+            `;
+            modalContent.appendChild(extraSection);
+
+            const extraContentBox = extraSection.querySelector('#v2-extra-content-box');
+            let currentExtraSort = 'price'; // По умолчанию цена
+            let isAscendingExtra = true; // От меньшего к большему
+
+            const filterBtnExtra = extraSection.querySelector('#v2-extra-filter-toggle');
+            const sortMenuExtra = extraSection.querySelector('#v2-extra-sort-menu');
+            const dirBtnExtraInside = extraSection.querySelector('#v2-extra-dir-toggle-inside');
+
+            if (filterBtnExtra && sortMenuExtra) {
+                filterBtnExtra.onclick = (e) => {
+                    e.stopPropagation();
+                    sortMenuExtra.classList.toggle('hidden');
+                };
+                document.addEventListener('click', (e) => {
+                    if (!filterBtnExtra.contains(e.target) && !sortMenuExtra.contains(e.target)) sortMenuExtra.classList.add('hidden');
+                });
+
+                if (dirBtnExtraInside) {
+                    dirBtnExtraInside.onclick = (e) => {
+                        e.stopPropagation();
+                        isAscendingExtra = !isAscendingExtra;
+                        document.getElementById('v2-extra-dir-text').textContent = isAscendingExtra ? 'По возрастанию' : 'По убыванию';
+                        document.getElementById('v2-extra-dir-icon').style.transform = isAscendingExtra ? 'none' : 'rotate(180deg)';
+                        renderDefault();
+                    };
+                }
+
+                const optsExtra = sortMenuExtra.querySelectorAll('.v2-sort-option');
+                optsExtra.forEach(opt => {
+                    opt.onclick = () => {
+                        optsExtra.forEach(o => o.classList.remove('active'));
+                        opt.classList.add('active');
+                        currentExtraSort = opt.dataset.sort;
+
+                        if (currentExtraSort === 'name') {
+                            isAscendingExtra = true;
+                            document.getElementById('v2-extra-dir-text').textContent = 'По возрастанию';
+                            document.getElementById('v2-extra-dir-icon').style.transform = 'none';
+                        } else {
+                            isAscendingExtra = false;
+                            document.getElementById('v2-extra-dir-text').textContent = 'По убыванию';
+                            document.getElementById('v2-extra-dir-icon').style.transform = 'rotate(180deg)';
+                        }
+                        sortMenuExtra.classList.add('hidden');
+                        renderDefault();
+                    };
+                });
+            }
+
+            const getCount = (obj) => {
+                if (obj.ModelCount !== undefined && obj.ModelCount !== null) return obj.ModelCount;
+                if (obj.modelCount !== undefined && obj.modelCount !== null) return obj.modelCount;
+                if (obj.TotalCount !== undefined && obj.TotalCount !== null) return obj.TotalCount;
+                if (obj.totalCount !== undefined && obj.totalCount !== null) return obj.totalCount;
+                if (obj.Count !== undefined && obj.Count !== null) return obj.Count;
+                return obj.count || 0;
+            };
+
+            const sortExtraItems = (sourceItems) => {
+                const crit = currentExtraSort;
+                const sortedItems = [...sourceItems].sort((a, b) => {
+                    let valA, valB;
+                    if (crit === 'count') {
+                        valA = getCount(a); valB = getCount(b);
+                        return isAscendingExtra ? (valA - valB) : (valB - valA);
+                    } else if (crit === 'price') {
+                        valA = a.MedianPrice !== undefined ? a.MedianPrice : (a.medianPrice || 0);
+                        valB = b.MedianPrice !== undefined ? b.MedianPrice : (b.medianPrice || 0);
+                        return isAscendingExtra ? (valA - valB) : (valB - valA);
+                    } else {
+                        valA = (a.Name || a.name || '').toLowerCase();
+                        valB = (b.Name || b.name || '').toLowerCase();
+                        if (valA < valB) return isAscendingExtra ? -1 : 1;
+                        if (valA > valB) return isAscendingExtra ? 1 : -1;
+                        return 0;
+                    }
+                });
+
+                extraContentBox.innerHTML = '';
+                // Поисковый режим: noTree=true, иначе tree-mode
+                renderV2ItemsGrid(sortedItems, extraContentBox, nodeId, nodeType, currentSearchQuery.length > 0);
+            };
+
+            const renderDefault = () => sortExtraItems(items);
+
+            renderDefault();
+        }
+
+    } catch (e) {
+        console.error('[openV2Node] Error:', e);
+        hideLoadingState();
+        if (modalContent) modalContent.innerHTML = '<p style="text-align:center; color:#f87171; margin-top:2rem;">Ошибка загрузки V2</p>';
+    }
+}
+
+function renderV2ItemsGrid(itemsList, container, parentNodeId, parentNodeType, noTree = false, backRestoreFn = null) {
+    if (!itemsList || itemsList.length === 0) {
+        container.innerHTML = '<p style="text-align:center; color:var(--text-muted); margin:0;">Пусто</p>';
+        return;
+    }
+
+    // Проверяем, рендерим ли мы сетку внутри аккордеона деталей
+    const isDetailAccordion = container.id === 'tm-v2-grid';
+
+    const grid = document.createElement('div');
+    grid.className = 'themes-list-container';
+
+    itemsList.forEach(item => {
+        const isItemTheme = (item.Type || item.type || '').toLowerCase() === 'theme';
+        const previews = item.Previews || item.previews || [];
+
+        let modelsCount = 999;
+        if (item.ModelCount !== undefined && item.ModelCount !== null) modelsCount = item.ModelCount;
+        else if (item.modelCount !== undefined && item.modelCount !== null) modelsCount = item.modelCount;
+        else if (item.TotalCount !== undefined && item.TotalCount !== null) modelsCount = item.TotalCount;
+        else if (item.totalCount !== undefined && item.totalCount !== null) modelsCount = item.totalCount;
+        else if (item.Count !== undefined && item.Count !== null) modelsCount = item.Count;
+        else if (item.count !== undefined && item.count !== null) modelsCount = item.count;
+        else if (previews.length > 0) modelsCount = previews.length;
+
+        const itemName = item.Name || item.name;
+        const itemId = item.Id !== undefined ? item.Id : item.id;
+        const itemType = item.Type || item.type;
+        const colorHex = item.ThemeColor || item.themeColor || '#38bdf8';
+
+        // 1. ЕСЛИ ЭТО МЕЛКАЯ ТЕМАТИКА (до 3х моделей) -> ПОКАЗЫВАЕМ ВЛОЖЕНИЯ СРАЗУ
+        if (isItemTheme && modelsCount > 0 && modelsCount <= 3) {
+            const baseId = 'inline-theme-' + itemId;
+            const inlineThemeBox = document.createElement('div');
+            inlineThemeBox.className = 'v2-premium-card v2-inline-theme';
+
+            inlineThemeBox.style.setProperty('--theme-color', colorHex);
+            inlineThemeBox.style.setProperty('--glow-color', colorHex);
+            inlineThemeBox.style.height = 'auto';
+            inlineThemeBox.style.minHeight = '140px';
+            inlineThemeBox.style.paddingBottom = '6px';
+
+            const paletteIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" style="width:14px;height:14px;margin-right:4px;"><path fill-rule="evenodd" d="M11.3 1.046A12.014 12.014 0 0010.337 1a10.034 10.034 0 00-6.16 2.053 9.948 9.948 0 00-3.13 6.643c-.024.321-.034.646-.034.975 0 5.485 4.544 9.942 10.151 9.942 2.091 0 4.041-.63 5.672-1.706a1.986 1.986 0 00.864-1.637 1.985 1.985 0 00-1.282-1.854l-2.02-.741a.486.486 0 01-.26-.532l.278-1.57a1.488 1.488 0 00-1.238-1.722l-1.928-.276a.486.486 0 01-.365-.635l.89-2.181a1.488 1.488 0 00-.737-1.862l-1.831-.884a.487.487 0 01-.24-.657l1.01-2.222A1.488 1.488 0 0011.3 1.046zM6.5 7.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zm6.5 1.5a1.5 1.5 0 100-3 1.5 1.5 0 000 3zm1.5 5.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zm-5.5.5a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" clip-rule="evenodd" /></svg>`;
+
+            const colsCount = previews && previews.length > 0 ? previews.length : 1;
+            
+            // Прячем тег "Тематика", если мы в аккордеоне деталей
+            const inlineThemeTagHtml = isDetailAccordion ? '' : `<span class="v2-type-tag premium-tag v2-theme-tag">${paletteIcon}Тематика</span>`;
+
+            inlineThemeBox.innerHTML = `
+                <div class="v2-card-bg-container">
+                    <div class="v2-card-glow"></div>
+                    <div class="v2-tag-glow" style="--tag-color: #38bdf8;"></div>
+                </div>
+                ${inlineThemeTagHtml}
+                <div class="v2-card-content-inline" style="position: relative; z-index: 2; padding: 0; margin-top: ${isDetailAccordion ? '16px' : '32px'}; display: flex; flex-direction: column; width: 100%; box-sizing: border-box;">
+                    <div class="v2-card-info" style="margin-bottom: 8px; padding: 0 16px; cursor: pointer;">
+                        <div class="v2-card-title" style="font-size: 1.15rem; font-weight: 600; color: #fff;">${itemName}</div>
+                    </div>
+                    <div id="grid-${baseId}" style="width: 100%; display: grid; grid-template-columns: repeat(${colsCount}, calc((100% - 16px) / 3)); justify-content: center; gap: 8px; padding: 0;">
+                    </div>
+                </div>
+            `;
+            grid.appendChild(inlineThemeBox);
+
+            const titleRow = inlineThemeBox.querySelector('.v2-card-info');
+            titleRow.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const modalName = document.getElementById('themes-modal-title') ? document.getElementById('themes-modal-title').textContent : null;
+                if (parentNodeId != null) {
+                    pushToHistory(() => openV2Node(parentNodeId, parentNodeType, false, modalName, currentBgName));
+                } else if (backRestoreFn) {
+                    pushToHistory(backRestoreFn);
+                }
+                openV2Node(itemId, itemType, false, itemName, null);
+            });
+
+            const gridContainer = inlineThemeBox.querySelector(`#grid-${baseId}`);
+
+            if (!previews || previews.length === 0) {
+                gridContainer.innerHTML = '<p style="color:var(--text-muted); font-size:0.8rem; text-align:center; width:100%;">Пусто</p>';
+            } else {
+                previews.forEach(m => {
+                    const giftName = m.GiftName || m.giftName;
+                    const modelName = m.ModelName || m.modelName;
+                    const mColorHex = m.AverageColorHex || m.averageColorHex || m.GroupColorHex || m.groupColorHex || colorHex;
+                    const isCollectionMarker = modelName === 'CollectionMarker' || m.IsCollectionWide;
+
+                    const card = document.createElement('div');
+                    card.className = 'v2-model-card';
+                    card.style.setProperty('--card-gradient-color', mColorHex);
+                    const imgUrl = window.getModelImageUrl(giftName, modelName);
+
+                    if (isCollectionMarker) {
+                        card.style.cursor = 'default';
+                        card.style.pointerEvents = 'none';
+                        card.innerHTML = `
+                            <div class="v2-mc-gradient"></div>
+                            <div class="v2-mc-image"><img src="${imgUrl}" loading="lazy"></div>
+                            <div class="v2-mc-info" style="justify-content: center;">
+                                <div class="v2-mc-title" style="font-size: 0.9rem; margin-bottom: 2px;">${giftName}</div>
+                                <div class="v2-mc-subtitle">Вся коллекция</div>
+                            </div>
+                        `;
+                    } else {
+                        const count = m.TotalCount !== undefined ? m.TotalCount : (m.Count !== undefined ? m.Count : (m.count || m.totalCount || 0));
+                        const price = m.AVGPrice !== undefined ? m.AVGPrice : (m.Price || m.avgPrice || m.price || 0);
+                        
+                        const priceIcon = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M19.012 9.201L12.66 19.316a.857.857 0 0 1-1.453-.005L4.98 9.197a1.8 1.8 0 0 1-.266-.943a1.856 1.856 0 0 1 1.882-1.826h10.817c1.033 0 1.873.815 1.873 1.822a1.8 1.8 0 0 1-.274.951M6.51 8.863l4.633 7.144V8.143H6.994c-.48 0-.694.317-.484.72m6.347 7.144l4.633-7.144c.214-.403-.004-.72-.484-.72h-4.149z"/></svg>`;
+                        const countIcon = `<svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 4a1 1 0 00-1 1v1a1 1 0 001 1h14a1 1 0 001-1V5a1 1 0 00-1-1H3zM2 9.5A1.5 1.5 0 013.5 8h13A1.5 1.5 0 0118 9.5v6.042a1.5 1.5 0 01-1.5 1.5h-13A1.5 1.5 0 012 15.542V9.5z" clip-rule="evenodd"/></svg>`;
+
+                        const statRows = `
+                            <div class="v2-mc-stat-badge" style="margin-bottom: 2px;">${countIcon} <span>${count}</span></div>
+                            <div class="v2-mc-stat-badge">${priceIcon} <span>${price > 0 ? formatPrice(price) : '-'}</span></div>
+                        `;
+
+                        card.innerHTML = `
+                            <div class="v2-mc-gradient"></div>
+                            <div class="v2-mc-image"><img src="${imgUrl}" loading="lazy"></div>
+                            <div class="v2-mc-info">
+                                <div class="v2-mc-title">${modelName}</div>
+                                <div class="v2-mc-subtitle">${giftName}</div>
+                                <div class="v2-mc-stats" style="flex-direction: column; align-items: flex-end; gap: 0;">${statRows}</div>
+                            </div>
+                        `;
+                        
+                        card.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            const savedBg = currentBgName;
+                            if (parentNodeId != null) {
+                                pushToHistory(() => openV2Node(parentNodeId, parentNodeType, false, null, savedBg));
+                            } else if (backRestoreFn) {
+                                pushToHistory(backRestoreFn);
+                            }
+                            openModelDetail(giftName, modelName, savedBg, null, true);
+                        });
+                    }
+                    
+                    gridContainer.appendChild(card);
+                });
+            }
+
+        // 2. ВСЕ ОСТАЛЬНЫЕ (БОЛЬШИЕ ТЕМЫ И ГРУППЫ) -> СТАНДАРТНАЯ КАРТОЧКА
+        } else {
+            const card = document.createElement('div');
+            card.className = 'v2-premium-card';
+
+            card.style.setProperty('--theme-color', colorHex);
+            card.style.setProperty('--glow-color', colorHex);
+
+            const isGroup = (item.Type || item.type || '').toLowerCase() === 'group';
+            const typeLabel = isGroup ? 'Группа' : 'Тематика';
+            const typeTagClass = isGroup ? 'v2-group-tag' : 'v2-theme-tag';
+
+            const folderIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" style="width:14px;height:14px;margin-right:4px;"><path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" /></svg>`;
+            const paletteIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" style="width:14px;height:14px;margin-right:4px;"><path fill-rule="evenodd" d="M11.3 1.046A12.014 12.014 0 0010.337 1a10.034 10.034 0 00-6.16 2.053 9.948 9.948 0 00-3.13 6.643c-.024.321-.034.646-.034.975 0 5.485 4.544 9.942 10.151 9.942 2.091 0 4.041-.63 5.672-1.706a1.986 1.986 0 00.864-1.637 1.985 1.985 0 00-1.282-1.854l-2.02-.741a.486.486 0 01-.26-.532l.278-1.57a1.488 1.488 0 00-1.238-1.722l-1.928-.276a.486.486 0 01-.365-.635l.89-2.181a1.488 1.488 0 00-.737-1.862l-1.831-.884a.487.487 0 01-.24-.657l1.01-2.222A1.488 1.488 0 0011.3 1.046zM6.5 7.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zm6.5 1.5a1.5 1.5 0 100-3 1.5 1.5 0 000 3zm1.5 5.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zm-5.5.5a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" clip-rule="evenodd" /></svg>`;
+            const typeIcon = isGroup ? folderIcon : paletteIcon;
+            const countClass = `items-${Math.min(previews.length, 5)}`;
+
+            let iconsHtml = '';
+            previews.slice(0, 5).forEach((g, idx) => {
+                const gName = g.GiftName || g.giftName;
+                const mName = g.ModelName || g.modelName;
+                const imgUrl = window.getModelImageUrl(gName, mName);
+                const gColor = g.AverageColorHex || g.averageColorHex || colorHex;
+                iconsHtml += `<div class="tpc-icon-box pos-${idx}" style="--icon-bg: ${gColor}; background: ${gColor};"><img src="${imgUrl}" class="tpc-img" loading="lazy"></div>`;
+            });
+
+            const mediaPrice = item.MedianPrice || item.medianPrice || 0;
+            let countLabel = '';
+            if (isGroup) {
+                const themes = item.ChildThemeCount || item.childThemeCount || 0;
+                const groups = item.ChildGroupCount || item.childGroupCount || 0;
+                let parts = [];
+                if (themes > 0) parts.push(`${themes} тем.`);
+                if (groups > 0) parts.push(`${groups} гр.`);
+                if (parts.length > 0) countLabel = parts.join(' / ');
+            } else if (modelsCount > 0) {
+                countLabel = `${modelsCount} шт.`;
+            }
+
+            const mediaPriceTag = mediaPrice > 0 ? `<span class="v2-type-tag" style="position:static;transform:none;color:#7dd3fc;background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.25);box-shadow:0 2px 8px rgba(0,0,0,0.3);">${mediaPrice >= 1 ? '~' + mediaPrice.toFixed(2) + ' TON' : '~' + (mediaPrice * 1000).toFixed(0) + ' nTON'}</span>` : '';
+            const countTagHtml = countLabel ? `<span class="v2-type-tag" style="position:static;transform:none;color:rgba(255,255,255,0.7);background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.05);box-shadow:0 2px 8px rgba(0,0,0,0.3);">${countLabel}</span>` : '';
+            const rightTagsHtml = (countTagHtml || mediaPriceTag) ? `<div style="position:absolute;top:0;right:12px;transform:translateY(-50%);display:flex;gap:6px;z-index:10;">${mediaPriceTag}${countTagHtml}</div>` : '';
+
+            const tagGlowColor = isGroup ? '#6366f1' : '#38bdf8';
+            
+            // Прячем тег, если рендеримся внутри аккордеона деталей модели
+            const mainTagHtml = isDetailAccordion ? '' : `<span class="v2-type-tag premium-tag ${typeTagClass}">${typeIcon}${typeLabel}</span>`;
+
+            card.innerHTML = `
+                <div class="v2-card-bg-container">
+                    <div class="v2-card-glow"></div>
+                    <div class="v2-tag-glow" style="--tag-color: ${tagGlowColor};"></div>
+                </div>
+                ${mainTagHtml}
+                ${rightTagsHtml}
+                <div class="v2-card-content">
+                    <div class="v2-card-info"><div class="v2-card-title">${itemName}</div></div>
+                    <div class="tpc-visuals ${countClass}">${iconsHtml}</div>
+                    <div class="v2-card-arrow"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7-7" /></svg></div>
+                </div>
+            `;
+
+            card.addEventListener('click', () => {
+                const savedBg = currentBgName;
+                const modalName = document.getElementById('themes-modal-title')
+                    ? document.getElementById('themes-modal-title').textContent : null;
+                if (parentNodeId != null) {
+                    pushToHistory(() => openV2Node(parentNodeId, parentNodeType, false, modalName, savedBg));
+                } else if (backRestoreFn) {
+                    pushToHistory(backRestoreFn);
+                }
+                openV2Node(itemId, itemType, false, itemName);
+            });
+            
+            grid.appendChild(card);
+        }
+    });
+
+    container.appendChild(grid);
+}
+
+// 3. ПОЛНОСТЬЮ ЗАМЕНИ ФУНКЦИЮ buildBreadcrumbs
+function buildBreadcrumbs(pathNodes, currentId, currentType) {
+    const crumbsEl = document.createElement('div');
+    crumbsEl.className = 'v2-breadcrumb-path';
+
+    const homeIcon = `<svg viewBox="0 0 20 20" fill="currentColor"><path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" /></svg>`;
+    const sepIcon = `<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>`;
+
+    pathNodes.forEach((node, idx) => {
+        const isLast = idx === pathNodes.length - 1;
+        const span = document.createElement('span');
+        span.className = 'v2-crumb-item' + (isLast ? ' current' : '');
+
+        const nodeName = node.Name || node.name;
+        const nodeId = node.Id !== undefined ? node.Id : node.id;
+        const nodeTypeB = node.Type || node.type;
+
+        span.innerHTML = idx === 0
+            ? `<span class="icon">${homeIcon}</span> <span>${nodeName}</span>`
+            : `<span>${nodeName}</span>`;
+        span.title = nodeName;
+
+        if (!isLast) {
+            span.addEventListener('click', () => {
+                const savedBg = currentBgName; // ❗️ ФИКС: Сохраняем фон
+                const modalName = document.getElementById('themes-modal-title') ? document.getElementById('themes-modal-title').textContent : null;
+                pushToHistory(() => openV2Node(currentId, currentType, false, modalName, savedBg));
+
+                // Переходим на новый узел явно передавая null, чтобы фон исчез
+                openV2Node(nodeId, nodeTypeB, false, nodeName, null);
+            });
+        }
+
+        crumbsEl.appendChild(span);
+
+        if (!isLast) {
+            const sep = document.createElement('span');
+            sep.className = 'v2-crumb-sep';
+            sep.innerHTML = sepIcon;
+            crumbsEl.appendChild(sep);
+        }
+    });
+
+    return crumbsEl;
+}
+
+
+
 
 // 4. Экспортируем публичные методы в глобальный объект
 window.themesModal = {
     init,
     open,
     openModelDetail,
-    openCollection, // <--- ❗️ Не забудьте добавить эту строчку
+    openCollection,
+    openV2Node,    // НОВОЕ: открытие V2-ноды с хлебными крошками
     close
 };
 
@@ -1722,20 +3120,16 @@ function toggleNFTsSection() {
 
 async function loadMoreNFTs() {
     if (nftsState.isLoading || !nftsState.hasMore) return;
-
     nftsState.isLoading = true;
-    const loader = document.getElementById('tm-nfts-loading-indicator');
-    if (loader) {
-        loader.classList.remove('hidden');
-        loader.style.display = 'block';
-    }
 
-    const url = `${BASE_URL}/api/ListGifts/SearchGifts/${nftsState.page}/${nftsState.pageSize}`;
-
+    // Сценарий 1: Умный поиск монохромов
+    const url = `${BASE_URL}/api/BaseInfo/GetModelMonochromeOffers`;
     const body = {
-        GiftName: nftsState.currentGift,
+        CollectionName: nftsState.currentGift,
         ModelName: nftsState.currentModel,
-        BackgroundName: nftsState.currentBg
+        Page: nftsState.page,
+        PageSize: nftsState.pageSize,
+        MinScore: 0.5
     };
 
     try {
@@ -1745,81 +3139,48 @@ async function loadMoreNFTs() {
             body: JSON.stringify(body)
         });
 
-        // --- ❗️ ДОБАВЛЕННЫЙ БЛОК ПРОВЕРКИ ПОДПИСКИ ---
-        if (response.status === 403) {
-            try {
-                const errorData = await response.json();
-                if (errorData.error === 'subscription_required') {
-                    console.warn('[NFTs] Требуется подписка. Channel ID:', errorData.channelId);
-
-                    // 1. Показываем модалку (функция должна быть доступна глобально из themes-modal-nfts.js)
-                    if (typeof window.showSubscriptionModal === 'function') {
-                        window.showSubscriptionModal(errorData.channelId);
-                    }
-
-                    // 2. Принудительно закрываем (сворачиваем) секцию
-                    const header = document.getElementById('tm-nfts-toggle-header');
-                    const grid = document.getElementById('tm-nfts-grid-container');
-                    const arrow = document.getElementById('tm-nfts-arrow');
-
-                    nftsState.isExpanded = false;
-                    nftsState.isLoading = false; // Снимаем флаг загрузки
-
-                    // Скрываем лоадер
-                    if (loader) {
-                        loader.style.display = 'none';
-                        loader.classList.add('hidden');
-                    }
-
-                    // Визуально сворачиваем элементы
-                    if (header) {
-                        header.style.color = 'var(--text-muted)';
-                        header.classList.remove('expanded');
-                    }
-                    if (arrow) arrow.style.transform = 'rotate(0deg)';
-                    if (grid) {
-                        grid.style.display = 'none';
-                        grid.classList.add('hidden');
-                    }
-
-                    return; // Прерываем выполнение
-                }
-            } catch (e) {
-                console.error("Error parsing 403 response", e);
-            }
-        }
-        // --- КОНЕЦ ДОБАВЛЕННОГО БЛОКА ---
-
         if (response.ok) {
             const data = await response.json();
-
-            if (data && data.Items && data.Items.length > 0) {
-                renderNFTs(data.Items);
-
-                if (data.Items.length < nftsState.pageSize) {
-                    nftsState.hasMore = false;
-                } else {
-                    nftsState.page++;
-                    setupNFTIntersectionObserver();
-                }
+            if (data.items && data.items.length > 0) {
+                renderMonochromeCards(data.items); // Новая функция рендера
+                nftsState.hasMore = nftsState.page < data.totalPages;
+                nftsState.page++;
             } else {
                 nftsState.hasMore = false;
-                if (nftsState.page === 1) {
-                    const grid = document.getElementById('tm-nfts-grid-container');
-                    if (grid) grid.innerHTML = '<div style="grid-column: 1/-1; text-align:center; color: var(--text-muted); font-size: 0.9rem; padding: 10px;">Ничего не найдено</div>';
-                }
             }
         }
     } catch (error) {
-        console.error("Error loading NFTs:", error);
+        console.error("Smart Search Error:", error);
     } finally {
         nftsState.isLoading = false;
-        if (loader) {
-            loader.style.display = 'none';
-            loader.classList.add('hidden');
-        }
     }
 }
+
+window.renderMonochromeCards = function (items, container) {
+    items.forEach(item => {
+        const card = document.createElement('a');
+        card.className = 'nft-market-card';
+        card.href = item.telegramUrl;
+        card.target = "_blank";
+
+        const scorePercent = (item.monochromeScore * 100).toFixed(1);
+
+        card.innerHTML = `
+            <div class="card-image-wrapper">
+                <img src="${item.imageUrl}" loading="lazy">
+                <div class="score-badge">${scorePercent}%</div>
+            </div>
+            <div class="card-details">
+                <div class="price-row">
+                    <svg class="ton-icon">...</svg>
+                    <span>${item.price} TON</span>
+                </div>
+                <div class="market-tag">${item.marketplace}</div>
+            </div>
+        `;
+        container.appendChild(card);
+    });
+};
 
 function renderNFTs(items) {
     // 🔥 ИЗМЕНЕНИЕ: Новый ID сетки

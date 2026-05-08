@@ -43,6 +43,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (state.currentMode === 'findBgs') {
             if (state.findBgs.selectedGift) params.set('gift', state.findBgs.selectedGift);
             if (state.findBgs.selectedModel) params.set('model', state.findBgs.selectedModel);
+        } else if (state.currentMode === 'findUniversal') {
+            if (state.findUniversal.selectedGift) params.set('gift', state.findUniversal.selectedGift);
+            if (state.findUniversal.selectedColor) params.set('color', state.findUniversal.selectedColor.id);
+            params.set('sort', state.findUniversal.sortBy);
+            params.set('desc', state.findUniversal.descending); // <-- Добавляем эту строку
         } else {
             if (state.findModels.selectedGift) params.set('gift', state.findModels.selectedGift);
             if (state.findModels.selectedColor) params.set('color', state.findModels.selectedColor.id); // Или name, как тебе удобнее
@@ -80,6 +85,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         return many;
     }
+
+    function getOuterColor(gradientString) {
+    if (!gradientString) return '#16213a';
+    // Находим все rgb/rgba внутри строки градиента
+    const matches = gradientString.match(/rgba?\([^)]+\)/g);
+    // Берем самый последний цвет, он и будет "крайним"
+    return (matches && matches.length > 0) ? matches[matches.length - 1] : '#16213a';
+}
 
     const GIFT_NAME_TO_ID = {
         "Santa Hat": "5983471780763796287",
@@ -653,7 +666,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     let state = {
-        currentMode: 'findBgs',
+        currentMode: 'findUniversal',
         giftNames: [],
         modelNames: [],
         findBgs: {
@@ -667,6 +680,22 @@ document.addEventListener('DOMContentLoaded', () => {
             selectedColor: null,
             lastResults: [],
         },
+        findUniversal: {
+            selectedGifts: [], 
+            selectedColors: [], 
+            sortBy: 'FloorPrice', // Сортируем по цене (было 'Coof')
+            descending: false,    // От меньшей к большей (было true)
+            minCoof: 0.85,        // 85% уже стоит, все ок
+            page: 1,
+            lastResults: [],
+            applied: {
+                selectedGifts: [],
+                selectedColors: [],
+                sortBy: 'FloorPrice', // И здесь тоже
+                descending: false,    // И здесь тоже
+                minCoof: 0.85
+            }
+        }
     };
 
     let nftsState = {
@@ -751,6 +780,20 @@ document.addEventListener('DOMContentLoaded', () => {
     const modalGiftCount = document.getElementById('modal-gift-count');
 
     const dropdowns = {
+        giftUniv: {
+            header: document.getElementById('gift-dropdown-header-univ'),
+            list: document.getElementById('gift-dropdown-list-univ'),
+            input: document.getElementById('gift-search-univ'),
+            options: document.getElementById('gift-list-options-univ'),
+            value: document.getElementById('gift-selected-value-univ'),
+        },
+        colorUniv: {
+            header: document.getElementById('color-dropdown-header-univ'),
+            list: document.getElementById('color-dropdown-list-univ'),
+            input: document.getElementById('color-search-univ'),
+            options: document.getElementById('color-list-options-univ'),
+            value: document.getElementById('color-selected-value-univ'),
+        },
         giftBgs: {
             header: document.getElementById('gift-dropdown-header-bgs'),
             list: document.getElementById('gift-dropdown-list-bgs'),
@@ -1101,42 +1144,376 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 🔥 ЗАМЕНИ ФУНКЦИЮ switchMode НА ЭТУ:
     function switchMode(mode, updateUrl = true) {
-        state.currentMode = mode;
+    state.currentMode = mode;
 
-        modeSwitcher.classList.toggle('mode-models', mode === 'findModels');
-        modeSwitcher.querySelectorAll('.mode-tab').forEach(tab => {
-            tab.classList.toggle('active', tab.dataset.mode === mode);
-        });
+    // НОВОЕ управление анимацией ползунка через data-атрибут
+    modeSwitcher.setAttribute('data-active-mode', mode);
 
-        if (mode === 'findBgs') {
-            findBgsControls.classList.add('active');
-            findModelsControls.classList.remove('active');
-            pickerArea.style.display = 'flex';
+    modeSwitcher.querySelectorAll('.mode-tab').forEach(tab => {
+        tab.classList.toggle('active', tab.dataset.mode === mode);
+    });
 
-            if (state.findBgs.lastResults.length > 0) {
-                renderBackgroundResults(state.findBgs.lastResults);
-            } else if (state.findBgs.selectedModel) {
-                fetchMatchingBackgrounds();
-            } else {
-                clearResults();
-            }
+    // ... (весь остальной код функции switchMode остается без изменений) ...
+    const findUniversalControls = document.getElementById('find-universal-controls');
+    
+    findBgsControls.classList.remove('active');
+    findModelsControls.classList.remove('active');
+    if (findUniversalControls) findUniversalControls.classList.remove('active');
+
+    if (mode === 'findBgs') {
+        findBgsControls.classList.add('active');
+        pickerArea.style.display = 'flex';
+        if (state.findBgs.lastResults.length > 0) renderBackgroundResults(state.findBgs.lastResults);
+        else if (state.findBgs.selectedModel) fetchMatchingBackgrounds();
+        else clearResults();
+    } else if (mode === 'findModels') {
+        findModelsControls.classList.add('active');
+        pickerArea.style.display = 'none';
+        if (state.findModels.lastResults.length > 0) renderModelResults(state.findModels.lastResults, state.findModels.selectedColor);
+        else if (state.findModels.selectedGift && state.findModels.selectedColor) fetchMatchingModels();
+        else clearResults();
+    } else if (mode === 'findUniversal') {
+        if (findUniversalControls) findUniversalControls.classList.add('active');
+        pickerArea.style.display = 'none';
+        if (state.findUniversal.lastResults.length > 0) {
+            renderUniversalResults(state.findUniversal.lastResults);
         } else {
-            findBgsControls.classList.remove('active');
-            findModelsControls.classList.add('active');
-            pickerArea.style.display = 'none';
+            fetchUniversalMonochromes();
+        }
+    }
 
-            if (state.findModels.lastResults.length > 0) {
-                renderModelResults(state.findModels.lastResults, state.findModels.selectedColor);
-            } else if (state.findModels.selectedGift && state.findModels.selectedColor) {
-                fetchMatchingModels();
-            } else {
-                clearResults();
-            }
+    if (updateUrl) updateUrlState();
+}
+
+async function fetchUniversalMonochromes(append = false) {
+        if (state.findUniversal.isLoading) return;
+
+        if (!append) {
+            state.findUniversal.page = 1;
+            state.findUniversal.hasMore = true;
         }
 
-        // Обновляем URL только если разрешено (при старте мы запретим)
-        if (updateUrl) updateUrlState();
+        if (!state.findUniversal.hasMore) return;
+
+        state.findUniversal.isLoading = true;
+        const isGridEmpty = resultsGrid.innerHTML.trim() === '';
+        if (!append) showLoading(isGridEmpty);
+
+        // Формируем payload на основе массивов
+        const requestBody = {
+            CollectionNames: state.findUniversal.selectedGifts.length > 0 ? state.findUniversal.selectedGifts : null,
+            BackgroundNames: state.findUniversal.selectedColors.length > 0 ? state.findUniversal.selectedColors.map(c => c.id) : null,
+            SortBy: state.findUniversal.sortBy,
+            Descending: state.findUniversal.descending,
+            MinCoof: state.findUniversal.minCoof,
+            Page: state.findUniversal.page,
+            PageSize: 42
+        };
+
+        try {
+            const data = await secureFetch(`${SERVER_BASE_URL}/api/MonoCoof/BestMonochromes`, requestBody);
+            const newItems = data.Items || [];
+
+            if (append) {
+                state.findUniversal.lastResults = state.findUniversal.lastResults.concat(newItems);
+            } else {
+                state.findUniversal.lastResults = newItems;
+            }
+
+            if (newItems.length < 42) {
+                state.findUniversal.hasMore = false;
+            } else {
+                state.findUniversal.page++;
+            }
+
+            hideLoading();
+            renderUniversalResults(newItems, append);
+            state.findUniversal.isLoading = false;
+        } catch (error) {
+            console.error('[API Error] Универсальный поиск:', error);
+            hideLoading();
+            if (!append) resultsGrid.innerHTML = `<p style="text-align: center; color: #f87171;">Ошибка загрузки данных</p>`;
+            state.findUniversal.isLoading = false;
+        }
     }
+
+    function setupUniversalIntersectionObserver() {
+        if (state.findUniversal.observer) state.findUniversal.observer.disconnect();
+
+        const options = {
+            root: null, 
+            rootMargin: '400px',
+            threshold: 0.1
+        };
+
+        state.findUniversal.observer = new IntersectionObserver((entries) => {
+            if (entries[0].isIntersecting && state.findUniversal.hasMore && !state.findUniversal.isLoading) {
+                fetchUniversalMonochromes(true);
+            }
+        }, options);
+
+        if (resultsGrid.lastElementChild) {
+            state.findUniversal.observer.observe(resultsGrid.lastElementChild);
+        }
+    }
+
+    function updateMultiSelectText(dropdownObj, selectedArray, defaultText) {
+        if (selectedArray.length === 0) {
+            dropdownObj.value.textContent = defaultText;
+            dropdownObj.header.classList.remove('value-active');
+        } else if (selectedArray.length === 1) {
+            // Если выбран фон, выводим его имя, а не объект
+            const name = typeof selectedArray[0] === 'object' ? selectedArray[0].name : selectedArray[0];
+            dropdownObj.value.textContent = name;
+            dropdownObj.header.classList.add('value-active');
+        } else {
+            dropdownObj.value.textContent = `Выбрано: ${selectedArray.length}`;
+            dropdownObj.header.classList.add('value-active');
+        }
+        
+        // Подсвечиваем выбранные опции в списке
+        const allOptions = dropdownObj.list.querySelectorAll('.list-option');
+        allOptions.forEach(opt => {
+            const val = opt.dataset.value;
+            if (val === 'ALL') {
+                opt.classList.toggle('selected', selectedArray.length === 0);
+            } else {
+                const isSelected = selectedArray.some(s => (typeof s === 'object' ? s.id : s) === val);
+                opt.classList.toggle('selected', isSelected);
+            }
+        });
+    }
+
+function initUniversalFilters() {
+    const slider = document.getElementById('univ-min-coof');
+    const sliderLabel = document.getElementById('min-coof-value');
+    
+    // Функция проверки изменений
+    window.updateSearchButtonState = function() {
+        const btn = document.getElementById('univ-search-btn');
+        if (!btn) return;
+        const app = state.findUniversal.applied;
+        const cur = state.findUniversal;
+        
+        // Массивы могут быть в разном порядке, но мы можем просто сравнивать их ID
+        const getIds = (arr) => arr.map(i => typeof i === 'object' ? i.id : i).sort().join(',');
+        
+        const giftsChanged = getIds(app.selectedGifts) !== getIds(cur.selectedGifts);
+        const colorsChanged = getIds(app.selectedColors) !== getIds(cur.selectedColors);
+        const sortChanged = app.sortBy !== cur.sortBy;
+        const descChanged = app.descending !== cur.descending;
+        const coofChanged = app.minCoof !== cur.minCoof;
+        
+        const isDirty = giftsChanged || colorsChanged || sortChanged || descChanged || coofChanged;
+        
+        if (isDirty) {
+            btn.style.opacity = '1';
+            btn.style.pointerEvents = 'auto';
+            btn.style.filter = 'grayscale(0)';
+            btn.querySelector('svg').style.transform = 'scale(1.1)';
+        } else {
+            btn.style.opacity = '0.5';
+            btn.style.pointerEvents = 'none';
+            btn.style.filter = 'grayscale(1)';
+            btn.querySelector('svg').style.transform = 'scale(1)';
+        }
+    };
+
+    slider.addEventListener('input', (e) => {
+        const val = e.target.value;
+        sliderLabel.textContent = val + '%';
+        state.findUniversal.minCoof = val / 100;
+        e.target.style.background = `linear-gradient(to right, var(--primary-color) ${val}%, rgba(0, 0, 0, 0.3) ${val}%)`;
+        window.updateSearchButtonState();
+    });
+
+    document.getElementById('univ-sort-type').addEventListener('click', (e) => {
+        const tab = e.target.closest('.mini-tab');
+        if (!tab) return;
+        document.querySelectorAll('#univ-sort-type .mini-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        state.findUniversal.sortBy = tab.dataset.sort;
+        window.updateSearchButtonState();
+    });
+
+    const dirBtn = document.getElementById('univ-direction-btn');
+    dirBtn.addEventListener('click', () => {
+        state.findUniversal.descending = !state.findUniversal.descending;
+        dirBtn.classList.toggle('asc', !state.findUniversal.descending);
+        window.updateSearchButtonState();
+    });
+
+    document.getElementById('univ-search-btn').addEventListener('click', () => {
+        state.findUniversal.applied = {
+            selectedGifts: [...state.findUniversal.selectedGifts],
+            selectedColors: [...state.findUniversal.selectedColors],
+            sortBy: state.findUniversal.sortBy,
+            descending: state.findUniversal.descending,
+            minCoof: state.findUniversal.minCoof
+        };
+        window.updateSearchButtonState();
+        
+        state.findUniversal.page = 1;
+        fetchUniversalMonochromes();
+        toggleDropdown(null, true);
+    });
+    
+    window.updateSearchButtonState();
+}
+
+function renderUniversalResults(items, append = false) {
+    resultsWrapper.classList.remove('results-initial-hide');
+    
+    if (!append) {
+        resultsGrid.innerHTML = '';
+    }
+    
+    if (!append && (!items || items.length === 0)) {
+        resultsGrid.innerHTML = '<p style="text-align: center;">Ничего не найдено.</p>';
+        return;
+    }
+
+    if (append && (!items || items.length === 0)) return;
+
+    const fragment = document.createDocumentFragment();
+    items.forEach(item => {
+        const bgObj = fixedColors.find(c => c.name === item.BackgroundName || c.id === item.BackgroundName) || { gradient: '#16213a', name: item.BackgroundName };
+        const modelImageUrl = `${API_PHOTO_URL}/${encodeURIComponent(item.CollectionName)}/png/${encodeURIComponent(item.ModelName)}.png`;
+        const compatValue = item.Coof.toFixed(1);
+
+        const card = document.createElement('div');
+        card.className = 'result-card-bg';
+        card.style.background = bgObj.gradient;
+
+        // Логика цены: только цена и иконка (чуть больше)
+        const formattedPrice = formatPrice(item.FloorPrice);
+        const priceTag = formattedPrice ? `
+            <div class="badge-price" style="font-size: 0.9rem; font-weight: 800; display: flex; align-items: center; justify-content: center; gap: 4px;">
+                ${formattedPrice}
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M19.012 9.201L12.66 19.316a.857.857 0 0 1-1.453-.005L4.98 9.197a1.8 1.8 0 0 1-.266-.943a1.856 1.856 0 0 1 1.882-1.826h10.817c1.033 0 1.873.815 1.873 1.822a1.8 1.8 0 0 1-.274.951M6.51 8.863l4.633 7.144V8.143H6.994c-.48 0-.694.317-.484.72m6.347 7.144l4.633-7.144c.214-.403-.004-.72-.484-.72h-4.149z"/>
+                </svg>
+            </div>` : '';
+
+        card.innerHTML = `
+            <div class="image-container">
+                <img data-src="${modelImageUrl}" alt="${item.ModelName}" class="model-image lazy-load">
+            </div>
+            <div class="info-container">
+                <div class="info-text">
+                    <div class="info-collection">${item.CollectionName}</div>
+                    <div class="info-model">${item.ModelName}</div>
+                </div>
+                <div class="info-badges">
+                    <div class="badge-percent">${compatValue}%</div>
+                    ${priceTag}
+                </div>
+            </div>`;
+
+        card.addEventListener('click', () => {
+            if (window.themesModal) {
+                window.themesModal.openModelDetail(item.CollectionName, item.ModelName, item.BackgroundName);
+            }
+        });
+        fragment.appendChild(card);
+    });
+    
+    resultsGrid.appendChild(fragment);
+    setupLazyLoading(resultsGrid, null, 'grid');
+    setupUniversalIntersectionObserver();
+}
+
+function formatPrice(price) {
+    if (!price) return null;
+    const num = parseFloat(price);
+    if (num >= 1000) {
+        return (num / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
+    }
+    return num.toString();
+}
+
+// Функция для добавления опции "Все" в начало списка
+function populateUniversalDropdown(container, items, type) {
+    container.innerHTML = '';
+    const fragment = document.createDocumentFragment();
+    
+    // Создаем опцию "Все"
+    const allOption = document.createElement('div');
+    allOption.classList.add('list-option');
+    allOption.dataset.value = 'ALL';
+    allOption.innerHTML = `<span class="option-text" style="font-weight:700; color:var(--primary-color);">Выбрать все</span>`;
+    fragment.appendChild(allOption);
+
+    items.forEach((item, index) => {
+        const option = createDropdownOption(item, type, index < 15);
+        fragment.appendChild(option);
+    });
+    
+    container.appendChild(fragment);
+    setupLazyLoading(container, container.closest('.dropdown-list'), 'list');
+}
+
+// Обработка кликов по коллекциям (Мультиселект)
+    dropdowns.giftUniv.list.addEventListener('click', (e) => {
+        const option = e.target.closest('.list-option');
+        if (!option) return;
+        
+        const val = option.dataset.value;
+        if (val === 'ALL') {
+            state.findUniversal.selectedGifts = [];
+        } else {
+            const idx = state.findUniversal.selectedGifts.indexOf(val);
+            if (idx > -1) {
+                state.findUniversal.selectedGifts.splice(idx, 1);
+            } else {
+                state.findUniversal.selectedGifts.push(val);
+            }
+        }
+        updateMultiSelectText(dropdowns.giftUniv, state.findUniversal.selectedGifts, 'Все коллекции');
+        if (window.updateSearchButtonState) window.updateSearchButtonState();
+    });
+
+    // Обработка кликов по фонам (Мультиселект)
+    dropdowns.colorUniv.list.addEventListener('click', (e) => {
+        const option = e.target.closest('.list-option');
+        if (!option) return;
+        
+        const val = option.dataset.value;
+        if (val === 'ALL') {
+            state.findUniversal.selectedColors = [];
+        } else {
+            const colorObj = fixedColors.find(c => c.id === val);
+            const idx = state.findUniversal.selectedColors.findIndex(c => c.id === val);
+            if (idx > -1) {
+                state.findUniversal.selectedColors.splice(idx, 1);
+            } else if (colorObj) {
+                state.findUniversal.selectedColors.push(colorObj);
+            }
+        }
+        updateMultiSelectText(dropdowns.colorUniv, state.findUniversal.selectedColors, 'Все фоны');
+        if (window.updateSearchButtonState) window.updateSearchButtonState();
+    });
+
+
+
+// Клик по сортировке
+const sortSwitcher = document.getElementById('sort-switcher');
+if (sortSwitcher) {
+    sortSwitcher.addEventListener('click', (e) => {
+        const tab = e.target.closest('.mode-tab');
+        if (!tab) return;
+        
+        const sortType = tab.dataset.sort;
+        sortSwitcher.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        
+        sortSwitcher.classList.remove('sort-price');
+        if (sortType === 'price') sortSwitcher.classList.add('sort-price');
+        
+        state.findUniversal.sortBy = sortType;
+        fetchUniversalMonochromes();
+    });
+}
 
     function clearResults() {
         resultsGrid.innerHTML = '';
@@ -1223,7 +1600,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     async function fetchAllGiftNames() {
-        const cacheKey = 'giftNamesCache';
+        const cacheKey = 'giftNamesCacheWithFloor';
         try {
             const cachedData = sessionStorage.getItem(cacheKey);
             if (cachedData) {
@@ -1238,7 +1615,7 @@ document.addEventListener('DOMContentLoaded', () => {
             sessionStorage.removeItem(cacheKey);
         }
 
-        const url = `${SERVER_BASE_URL}/api/ListGifts/AllGiftNames`;
+        const url = `${SERVER_BASE_URL}/api/ListGifts/AllGiftNamesWithFloor`;
         console.log(`%c[API Request] Fetching all gift names from: ${url}`, 'color: dodgerblue');
 
         try {
@@ -1406,19 +1783,32 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log('Request Body:', requestBody);
 
         try {
-            const serverData = await secureFetch(url, requestBody);
+            const [serverData, allModelsData] = await Promise.all([
+                secureFetch(url, requestBody),
+                secureFetch(`${SERVER_BASE_URL}/api/ListGifts/${encodeURIComponent(state.findModels.selectedGift)}/AllModelNames`, null)
+                    .catch(() => [])
+            ]);
             console.log('%c[API Success] Received model data:', 'color: green', serverData);
+
+            const floorMap = new Map();
+            if (Array.isArray(allModelsData)) {
+                allModelsData.forEach(m => {
+                    const n = m.NameModel || m.nameModel;
+                    if (n && m.FloorPrice > 0) floorMap.set(n, m.FloorPrice);
+                });
+            }
 
             const modelsToRender = serverData.map(item => ({
                 modelName: item.Name,
                 giftName: state.findModels.selectedGift,
                 compatValue: item.Coof,
                 isMonohrome: item.IsMonohrome,
+                floorPrice: floorMap.get(item.Name) || 0,
             }));
 
             const resultsWithCounts = await fetchGiftCounts(modelsToRender, state.findModels.selectedGift, 'findModels');
 
-            state.findModels.lastResults = resultsWithCounts; // Сохраняем обогащенные данные
+            state.findModels.lastResults = resultsWithCounts;
             hideLoading();
             renderModelResults(resultsWithCounts, state.findModels.selectedColor);
 
@@ -1440,34 +1830,35 @@ document.addEventListener('DOMContentLoaded', () => {
         const modelImageUrl = `${API_PHOTO_URL}/${encodeURIComponent(state.findBgs.selectedGift)}/png/${encodeURIComponent(state.findBgs.selectedModel)}.png`;
         const fragment = document.createDocumentFragment();
 
+        backgroundData = backgroundData.filter(bg => bg.compatValue > 0);
+        if (backgroundData.length === 0) {
+            resultsGrid.innerHTML = '<p style="text-align: center;">Подходящих фонов не найдено.</p>';
+            return;
+        }
         backgroundData.forEach(bg => {
             const card = document.createElement('div');
             card.className = 'result-card-bg';
+            card.style.background = bg.gradient;
             const compatValue = (bg.compatValue * 100).toFixed(1);
 
             card.innerHTML = `
-                <div class="image-container" style="background: ${bg.gradient};">
+                <div class="image-container">
                     <img data-src="${modelImageUrl}" alt="${state.findBgs.selectedModel}" class="model-image lazy-load">
                 </div>
                 <div class="info-container">
-                    <p class="compat-value">${compatValue}%</p>
-                    <p class="bg-name">${bg.name}</p>
+                    <div class="info-text">
+                        <div class="info-collection">${state.findBgs.selectedGift}</div>
+                        <div class="info-model">${bg.name}</div>
+                    </div>
+                    <div class="info-badges">
+                        <div class="badge-percent">${compatValue}%</div>
+                    </div>
                 </div>`;
 
             card.addEventListener('click', () => {
-                // ИСПОЛЬЗУЕМ GLOBAL MODAL из themes-modal.js
                 if (window.themesModal) {
-                    window.themesModal.openModelDetail(
-                        state.findBgs.selectedGift,
-                        state.findBgs.selectedModel,
-                        bg.name
-                    );
-
-                    updateUrlState({
-                        giftName: state.findBgs.selectedGift,
-                        modelName: state.findBgs.selectedModel,
-                        bgName: bg.name
-                    });
+                    window.themesModal.openModelDetail(state.findBgs.selectedGift, state.findBgs.selectedModel, bg.name);
+                    updateUrlState({ giftName: state.findBgs.selectedGift, modelName: state.findBgs.selectedModel, bgName: bg.name });
                 }
             });
             fragment.appendChild(card);
@@ -1542,34 +1933,45 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const fragment = document.createDocumentFragment();
+        modelData = modelData.filter(model => model.compatValue > 0);
+        if (modelData.length === 0) {
+            resultsGrid.innerHTML = '<p style="text-align: center;">Подходящих моделей не найдено.</p>';
+            return;
+        }
         modelData.forEach(model => {
             const modelImageUrl = `${API_PHOTO_URL}/${encodeURIComponent(model.giftName)}/png/${encodeURIComponent(model.modelName)}.png`;
             const card = document.createElement('div');
             card.className = 'result-card-bg';
+            card.style.background = backgroundColor.gradient;
             const compatValue = (model.compatValue * 100).toFixed(1);
+            const formattedPrice = model.floorPrice > 0 ? formatPrice(model.floorPrice) : null;
+            const priceTag = formattedPrice ? `
+                <div class="badge-price" style="font-size: 0.9rem; font-weight: 800; display: flex; align-items: center; justify-content: center; gap: 4px;">
+                    ${formattedPrice}
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M19.012 9.201L12.66 19.316a.857.857 0 0 1-1.453-.005L4.98 9.197a1.8 1.8 0 0 1-.266-.943a1.856 1.856 0 0 1 1.882-1.826h10.817c1.033 0 1.873.815 1.873 1.822a1.8 1.8 0 0 1-.274.951M6.51 8.863l4.633 7.144V8.143H6.994c-.48 0-.694.317-.484.72m6.347 7.144l4.633-7.144c.214-.403-.004-.72-.484-.72h-4.149z"/>
+                    </svg>
+                </div>` : '';
 
             card.innerHTML = `
-                <div class="image-container" style="background: ${backgroundColor.gradient};">
+                <div class="image-container">
                     <img data-src="${modelImageUrl}" alt="${model.modelName}" class="model-image lazy-load">
                 </div>
                 <div class="info-container">
-                    <p class="compat-value">${compatValue}%</p>
-                    <p class="bg-name">${model.modelName}</p>
+                    <div class="info-text">
+                        <div class="info-collection">${model.giftName}</div>
+                        <div class="info-model">${model.modelName}</div>
+                    </div>
+                    <div class="info-badges">
+                        <div class="badge-percent">${compatValue}%</div>
+                        ${priceTag}
+                    </div>
                 </div>`;
 
             card.addEventListener('click', () => {
                 if (window.themesModal) {
-                    window.themesModal.openModelDetail(
-                        model.giftName,
-                        model.modelName,
-                        backgroundColor.name
-                    );
-
-                    updateUrlState({
-                        giftName: model.giftName,
-                        modelName: model.modelName,
-                        bgName: backgroundColor.name
-                    });
+                    window.themesModal.openModelDetail(model.giftName, model.modelName, backgroundColor.name);
+                    updateUrlState({ giftName: model.giftName, modelName: model.modelName, bgName: backgroundColor.name });
                 }
             });
             fragment.appendChild(card);
@@ -1612,14 +2014,16 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         if (type === 'gift') {
-            name = item; // item - это строка "Santa Hat"
+            const giftName = typeof item === 'string' ? item : item.Name;
+            const floorPrice = typeof item === 'string' ? null : item.FloorPrice;
+            name = giftName;
             const giftId = GIFT_NAME_TO_ID[name];
             if (giftId) {
                 const imageUrl = `${API_GIFT_ORIGINALS_URL}/${giftId}/Original.png`;
                 imageHtml = generateImageTag(imageUrl, name);
             }
             // Обычный span для гифтов
-            option.innerHTML = `${imageHtml}<span class="option-text">${name}</span>`;
+            option.innerHTML = `${imageHtml}<span class="option-text">${name}${floorPrice > 0 ? `&nbsp;&nbsp;<span class="option-floor-price" style="opacity:0.7;font-size:0.9em;">${floorPrice % 1 === 0 ? floorPrice : floorPrice.toFixed(1)} TON</span>` : ''}</span>`;
             option.dataset.value = name;
 
         } else if (type === 'model') {
@@ -1632,17 +2036,17 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             let themesHtml = '';
-            if (item.Themes && item.Themes.length > 0) {
-                // ✅ ИЗМЕНЕНИЕ: Возвращаем "2 тематики"
-                const plural = getPlural(item.Themes.length, 'тематика', 'тематики', 'тематик');
-                themesHtml = `<span class="option-theme-count">${item.Themes.length} ${plural}</span>`;
+            const v2Count = item.V2ThemeCount || 0;
+            if (v2Count > 0) {
+                const plural = getPlural(v2Count, 'тематика', 'тематики', 'тематик');
+                themesHtml = `<span class="option-theme-count">${v2Count} ${plural}</span>`;
             } else {
                 themesHtml = `<span class="option-theme-count"> </span>`;
             }
 
             const infoWrapperHtml = `
                 <div class="option-info-wrapper">
-                    <span class="option-text">${name}</span>
+                    <span class="option-text">${name}${item.FloorPrice > 0 ? `&nbsp;&nbsp;<span class="option-floor-price" style="opacity:0.7;font-size:0.9em;">${item.FloorPrice % 1 === 0 ? item.FloorPrice : item.FloorPrice.toFixed(1)} TON</span>` : ''}</span>
                     ${themesHtml}
                 </div>`;
 
@@ -1721,20 +2125,23 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function filterDropdown(input, optionsContainer, items, type) {
+    function filterDropdown(input, optionsContainer, items, type, isUniversal = false) {
         const searchText = input.value.toLowerCase();
 
         const filtered = items.filter(item => {
             let name = '';
             if (type === 'color') name = item.name;
-            else if (type === 'model') name = item.NameModel; // ✅ НОВАЯ ЛОГИКА
-            else name = item; // для 'gift' (это просто строка)
+            else if (type === 'model') name = item.NameModel; 
+            else name = item; 
 
             return name.toLowerCase().includes(searchText);
         });
 
-        // Передаем отфильтрованный массив (объектов или строк)
-        populateDropdown(optionsContainer, filtered, type);
+        if (isUniversal) {
+            populateUniversalDropdown(optionsContainer, filtered, type);
+        } else {
+            populateDropdown(optionsContainer, filtered, type);
+        }
     }
 
     function resetPickerAreaToPlaceholder() {
@@ -2139,12 +2546,17 @@ document.addEventListener('DOMContentLoaded', () => {
         dd.header.addEventListener('click', () => toggleDropdown(dd));
         dd.input.addEventListener('input', () => {
             dd.header.classList.toggle('value-active', dd.input.value.trim() !== '');
+            
             if (dd === dropdowns.giftBgs || dd === dropdowns.giftModels) {
                 filterDropdown(dd.input, dd.options, state.giftNames, 'gift');
+            } else if (dd === dropdowns.giftUniv) {
+                filterDropdown(dd.input, dd.options, state.giftNames, 'gift', true); // true для универсального
             } else if (dd === dropdowns.modelBgs) {
                 filterDropdown(dd.input, dd.options, state.modelNames, 'model');
             } else if (dd === dropdowns.colorModels) {
                 filterDropdown(dd.input, dd.options, fixedColors, 'color');
+            } else if (dd === dropdowns.colorUniv) {
+                filterDropdown(dd.input, dd.options, fixedColors, 'color', true); // true для универсального
             }
         });
     });
@@ -2242,112 +2654,134 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 🔥 ИСПРАВЛЕННАЯ ФУНКЦИЯ applyUrlParameters
     async function applyUrlParameters() {
-        const urlParams = new URLSearchParams(window.location.search);
+    const urlParams = new URLSearchParams(window.location.search);
 
-        // Считываем параметры
-        const mode = urlParams.get('mode');
-        const giftName = urlParams.get('gift');
-        const modelName = urlParams.get('model');
-        const colorParam = urlParams.get('color'); // Может прийти "Azure Blue" или "AzureBlue"
+    // Считываем параметры
+    const mode = urlParams.get('mode') || 'findUniversal';
+    const giftName = urlParams.get('gift');
+    const modelName = urlParams.get('model');
+    const colorParam = urlParams.get('color');
 
-        // Параметры модалки
-        const view = urlParams.get('view');
-        const detailGift = urlParams.get('d_gift');
-        const detailModel = urlParams.get('d_model');
-        const detailBg = urlParams.get('d_bg');
+    // Параметры модалки
+    const view = urlParams.get('view');
+    const detailGift = urlParams.get('d_gift');
+    const detailModel = urlParams.get('d_model');
+    const detailBg = urlParams.get('d_bg');
 
-        // --- 1. Восстанавливаем фильтры на заднем фоне ---
-        if (mode === 'findModels') {
-            switchMode('findModels', false);
-
-            if (giftName) {
-                updateDropdownSelection(dropdowns.giftModels, giftName);
-                state.findModels.selectedGift = giftName;
-                // 🔥 ВАЖНО: true для обновления DOM
-                await fetchAllModelNames(giftName, true);
-            }
-
-            if (colorParam) {
-                // 🔥 ИСПРАВЛЕНИЕ ПОИСКА ЦВЕТА 🔥
-                // 1. Нормализуем то, что пришло из URL (убираем пробелы, подчеркивания, в нижний регистр)
-                const normalizedInput = colorParam.toLowerCase().replace(/[\s\-_]/g, '');
-
-                // 2. Ищем в массиве fixedColors
-                const foundColor = fixedColors.find(c => {
-                    // Сравниваем с ID (AzureBlue -> azureblue)
-                    if (c.id.toLowerCase() === normalizedInput) return true;
-                    // Сравниваем с Name (Azure Blue -> azureblue)
-                    if (c.name.toLowerCase().replace(/\s/g, '') === normalizedInput) return true;
-                    return false;
+    if (mode === 'findUniversal') {
+        switchMode('findUniversal', false);
+        
+        // 1. Восстанавливаем тип сортировки
+        const sortParam = urlParams.get('sort');
+        if (sortParam) {
+            state.findUniversal.sortBy = sortParam;
+            // Ищем новые кнопки универсального поиска
+            const univSortType = document.getElementById('univ-sort-type');
+            if (univSortType) {
+                univSortType.querySelectorAll('.mini-tab').forEach(t => {
+                    t.classList.toggle('active', t.dataset.sort === sortParam);
                 });
-
-                if (foundColor) {
-                    updateDropdownSelection(dropdowns.colorModels, foundColor.name);
-                    state.findModels.selectedColor = foundColor;
-                } else {
-                    console.warn(`Color not found for param: ${colorParam}`);
-                }
-            }
-
-            // ❗️❗️❗️ ДОБАВЛЕНО: ЗАПУСК ПОИСКА ПОСЛЕ УСТАНОВКИ ПАРАМЕТРОВ ❗️❗️❗️
-            triggerModelSearchIfReady();
-
-        } else {
-            // По умолчанию findBgs
-            switchMode('findBgs', false);
-
-            if (giftName) {
-                updateDropdownSelection(dropdowns.giftBgs, giftName);
-                state.findBgs.selectedGift = giftName;
-                // 🔥 ВАЖНО: true для обновления DOM
-                await fetchAllModelNames(giftName, true);
-            }
-
-            if (modelName) {
-                updateDropdownSelection(dropdowns.modelBgs, modelName);
-                state.findBgs.selectedModel = modelName;
-
-                if (giftName) {
-                    setupInPageColorPicker();
-                    displayMonocolorAlert(modelName);
-                    // ❗️ Для findBgs поиск запускается внутри setupInPageColorPicker -> image.onload -> triggerDebouncedSearch
-                }
             }
         }
 
-        // --- 2. Открытие модалки ---
-        if (view === 'details' && detailGift && (detailModel || detailBg)) {
-
-            if (window.themesModal) {
-                let bgToPass = detailBg;
-
-                if (!bgToPass && state.findModels.selectedColor) {
-                    bgToPass = state.findModels.selectedColor.name;
-                }
-
-                window.themesModal.openModelDetail(
-                    detailGift,
-                    detailModel,
-                    bgToPass
-                );
-
-                if (window.updateTelegramBackButton) {
-                    window.updateTelegramBackButton('details');
-                }
+        // 2. Восстанавливаем направление сортировки
+        const descParam = urlParams.get('desc');
+        if (descParam !== null) {
+            state.findUniversal.descending = descParam === 'true';
+            const dirBtn = document.getElementById('univ-direction-btn');
+            if (dirBtn) {
+                dirBtn.classList.toggle('asc', !state.findUniversal.descending);
+                dirBtn.classList.toggle('desc', state.findUniversal.descending);
             }
-        } else {
-            if (window.updateTelegramBackButton) {
-                window.updateTelegramBackButton('list');
+        }
+
+        if (giftName) {
+            updateDropdownSelection(dropdowns.giftUniv, giftName);
+            state.findUniversal.selectedGift = giftName;
+        }
+        if (colorParam) {
+            const normalizedInput = colorParam.toLowerCase().replace(/[\s\-_]/g, '');
+            const foundColor = fixedColors.find(c => c.id.toLowerCase() === normalizedInput || c.name.toLowerCase().replace(/\s/g, '') === normalizedInput);
+            if (foundColor) {
+                updateDropdownSelection(dropdowns.colorUniv, foundColor.name);
+                state.findUniversal.selectedColor = foundColor;
+            }
+        }
+        fetchUniversalMonochromes();
+
+    } else if (mode === 'findModels') {
+        switchMode('findModels', false);
+
+        if (giftName) {
+            updateDropdownSelection(dropdowns.giftModels, giftName);
+            state.findModels.selectedGift = giftName;
+            await fetchAllModelNames(giftName, true);
+        }
+
+        if (colorParam) {
+            const normalizedInput = colorParam.toLowerCase().replace(/[\s\-_]/g, '');
+            const foundColor = fixedColors.find(c => c.id.toLowerCase() === normalizedInput || c.name.toLowerCase().replace(/\s/g, '') === normalizedInput);
+
+            if (foundColor) {
+                updateDropdownSelection(dropdowns.colorModels, foundColor.name);
+                state.findModels.selectedColor = foundColor;
+            }
+        }
+        triggerModelSearchIfReady();
+
+    } else if (mode === 'findBgs') { 
+        switchMode('findBgs', false);
+
+        if (giftName) {
+            updateDropdownSelection(dropdowns.giftBgs, giftName);
+            state.findBgs.selectedGift = giftName;
+            await fetchAllModelNames(giftName, true);
+        }
+
+        if (modelName) {
+            updateDropdownSelection(dropdowns.modelBgs, modelName);
+            state.findBgs.selectedModel = modelName;
+
+            if (giftName) {
+                setupInPageColorPicker();
+                displayMonocolorAlert(modelName);
             }
         }
     }
+
+    // --- Открытие модалки ---
+    if (view === 'details' && detailGift && (detailModel || detailBg)) {
+        if (window.themesModal) {
+            let bgToPass = detailBg;
+            if (!bgToPass && state.findModels.selectedColor) {
+                bgToPass = state.findModels.selectedColor.name;
+            }
+            window.themesModal.openModelDetail(detailGift, detailModel, bgToPass);
+
+            if (window.updateTelegramBackButton) {
+                window.updateTelegramBackButton('details');
+            }
+        }
+    } else {
+        if (window.updateTelegramBackButton) {
+            window.updateTelegramBackButton('list');
+        }
+    }
+}
     // 🔥 ЗАМЕНИ ФУНКЦИЮ init НА ЭТУ:
     async function init() {
-        // Устанавливаем режим по умолчанию, но НЕ обновляем URL (false)
-        switchMode('findBgs', false);
+        // Устанавливаем универсальный по умолчанию
+        switchMode('findUniversal', false); 
+        initUniversalFilters();
         resetPickerAreaToPlaceholder();
 
         populateDropdown(dropdowns.colorModels.options, fixedColors, 'color');
+        // Сразу заполняем цвета для универсального (они хардкодом)
+        populateUniversalDropdown(dropdowns.colorUniv.options, fixedColors, 'color');
+
+        await fetchAllGiftNames();
+        // Заполняем коллекции ТОЛЬКО после fetchAllGiftNames
+        populateUniversalDropdown(dropdowns.giftUniv.options, state.giftNames, 'gift');
 
         // Сначала загружаем список подарков
         await fetchAllGiftNames();

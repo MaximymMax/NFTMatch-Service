@@ -72,9 +72,10 @@ body.tg-fullscreen header {
 
 main {
     display: flex;
-    justify-content: center;
+    flex-direction: column; /* Выстраиваем блоки друг под другом */
+    align-items: center;    /* Центрируем их */
+    justify-content: flex-start;
     padding: 1rem;
-    /* Учитываем Safe Area */
     padding-top: 100px;
     padding-bottom: 40px;
     width: 100%;
@@ -108,19 +109,28 @@ main {
     z-index: 10;
 }
 
+.top-carousel-container {
+    width: 100%;
+    max-width: 950px;
+    background: var(--surface-color);
+    border-radius: var(--radius);
+    box-shadow: var(--card-shadow);
+    padding: 5px 1rem; /* Небольшой отступ внутри */
+    margin-bottom: 1rem; /* Отступ до главного контейнера */
+    position: relative;
+    overflow: hidden;
+    z-index: 10;
+}
+
 /* --- CAROUSEL STYLES --- */
 .hero-carousel-wrapper {
     position: relative;
     width: 100%;
     height: 70px;
-    /* Высота области карусели уменьшена */
     overflow: hidden;
-    margin-bottom: 20px;
-    /* Маска для плавного исчезновения краев */
+    margin-bottom: 0; /* Убрали старый отступ */
     -webkit-mask-image: linear-gradient(to right, transparent 0%, black 15%, black 85%, transparent 100%);
     mask-image: linear-gradient(to right, transparent 0%, black 15%, black 85%, transparent 100%);
-
-    /* Скрываем, пока JS не загрузит данные */
     opacity: 1;
     transition: opacity 0.5s ease;
 }
@@ -134,14 +144,12 @@ main {
     display: flex;
     align-items: center;
     gap: 15px;
-    /* Расстояние между карточками */
     position: absolute;
     left: 0;
     top: 0;
     height: 100%;
     cursor: grab;
     touch-action: pan-x;
-    /* Разрешаем скролл по X для тача */
     will-change: transform;
 }
 
@@ -152,11 +160,8 @@ main {
 .carousel-card {
     flex: 0 0 auto;
     width: 50px;
-    /* Уменьшен размер */
     height: 50px;
-    /* Уменьшен размер */
     border-radius: 12px;
-    /* Чуть меньше радиус */
     display: flex;
     align-items: center;
     justify-content: center;
@@ -165,10 +170,8 @@ main {
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
     user-select: none;
     -webkit-user-select: none;
-    /* Фон задается в JS */
 }
 
-/* ЗАТЕМНЕНИЕ ФОНА (Overlay) */
 .carousel-card::after {
     content: '';
     position: absolute;
@@ -177,7 +180,6 @@ main {
     width: 100%;
     height: 100%;
     background: rgba(0, 0, 0, 0.25);
-    /* 25% затемнения */
     z-index: 1;
     pointer-events: none;
 }
@@ -187,7 +189,6 @@ main {
     height: 80%;
     object-fit: contain;
     z-index: 2;
-    /* Поверх затемнения */
     filter: drop-shadow(0 4px 4px rgba(0, 0, 0, 0.2));
     pointer-events: none;
 }
@@ -225,78 +226,14 @@ main {
     margin: 0 auto;
 }
 
-.hero-title {
-    font-size: 2.5rem;
-    font-weight: 800;
-    margin: 0 0 1.5rem 0;
-    color: #ffffff;
-    text-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
-}
-
-.hero-description {
-    font-size: 0.8rem;
-    line-height: 1.5;
-    color: var(--text-primary);
-    max-width: 650px;
-    margin-left: auto;
-    margin-right: auto;
-    margin-bottom: 2rem;
-    font-weight: 500;
-    text-align: justify;
-    text-align-last: center;
-    padding: 0 1rem;
-    opacity: 0.9;
-}
-
-.hero-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    background-color: #1e2944;
-    color: #fff;
-    text-decoration: none;
-    padding: 0.6rem 1.2rem;
-    border-radius: 16px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-    transition: all 0.2s ease;
-    min-width: 160px;
-}
-
-.hero-btn:hover {
-    background-color: #263355;
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
-}
-
-.hero-btn .btn-icon {
-    width: 32px;
-    height: 32px;
-    object-fit: contain;
+/* Простая картинка на всю ширину без скруглений и теней */
+.hero-main-image {
+    width: 100%;
+    height: auto;
     display: block;
+    object-fit: cover;
+    margin: 0;
 }
-
-.hero-btn-text {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    line-height: 1.1;
-}
-
-.hero-btn-text span:first-child {
-    font-size: 0.75rem;
-    color: #aaa;
-    font-weight: 500;
-    padding-bottom: 0.3rem;
-}
-
-.hero-btn-text span.btn-sub {
-    font-size: 0.9rem;
-    font-weight: 700;
-    color: #fff;
-}
-
 
 /* ========================================= */
 /* ====== TOOLS SECTION (Wrapper) ========== */
@@ -514,6 +451,22 @@ main {
     line-height: 1.4;
 }
 
+/* --- СТИЛИ ДЛЯ КАНАЛА (Синее) --- */
+.card-channel {
+    background-image: linear-gradient(90deg, rgba(37, 99, 235, 0.1) 0%, transparent 40%);
+    border-left: 2px solid #3b82f6; 
+    box-shadow: 0 4px 15px rgba(37, 99, 235, 0.1);
+}
+
+.card-channel .info-card-icon {
+    color: #60a5fa;
+    background: rgba(37, 99, 235, 0.15);
+}
+
+.card-channel:hover {
+    box-shadow: 0 6px 20px rgba(37, 99, 235, 0.25);
+}
+
 /* --- СТИЛИ ДЛЯ API (Зеленое) --- */
 .card-api {
     background-image: linear-gradient(90deg, rgba(16, 185, 129, 0.1) 0%, transparent 40%);
@@ -575,14 +528,6 @@ main {
 /* ========================================= */
 
 @media (min-width: 601px) {
-    .hero-title {
-        font-size: 3rem;
-    }
-
-    .hero-description {
-        font-size: 1rem;
-    }
-
     .features-container {
         grid-template-columns: repeat(3, 1fr);
         gap: 20px;
@@ -597,8 +542,6 @@ main {
         font-size: 1rem;
         padding: 12px;
     }
-
-    /* Медиа-запросы для карточек тоже удалены */
 
     .glow-effect {
         display: none;

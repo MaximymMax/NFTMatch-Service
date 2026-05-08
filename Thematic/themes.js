@@ -89,21 +89,21 @@ document.addEventListener('DOMContentLoaded', () => {
         { id: 'Tomato', name: 'Tomato', hex: '#E6793E', gradient: 'radial-gradient(circle, rgb(230, 121, 62) 0%, rgb(212, 78, 63) 100%)' },
         { id: 'Turquoise', name: 'Turquoise', hex: '#5EC0B8', gradient: 'radial-gradient(circle, rgb(94, 192, 184) 0%, rgb(61, 146, 142) 100%)' },
     ];
-
+    window.themesFixedColors = fixedColors;
     let state = {
-        sortCriteria: 'name',
-        isAscending: true,
-        filterText: '',
-        selectedColor: null,
-
-        openedCollection: null, // Имя открытой коллекции
-        openedCollectionBg: null, // Фон фильтр в коллекции
-
         page: 1,
         pageSize: 30,
-        hasMore: true,
+        sortCriteria: 'v2themes',
+        v2SubSort: 'count',     
+        maxPrice: 5,                     // <-- ПО УМОЛЧАНИЮ 5 TON
+        minBgPercent: 80,                // <-- ПО УМОЛЧАНИЮ 80%
+        isAscending: false,              // <-- ЗАМЕНИТЬ НА false (От большего к меньшему)
+        selectedColor: fixedColors[0], 
+        filterText: '',
         isFetching: false,
-
+        hasMore: true,
+        openedCollection: null,
+        openedCollectionBg: null,
         colorResults: [],
     };
 
@@ -211,6 +211,15 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 
+    function getPlural(count, one, few, many) {
+        count = Math.abs(count) % 100;
+        if (count >= 5 && count <= 20) return many;
+        count %= 10;
+        if (count === 1) return one;
+        if (count >= 2 && count <= 4) return few;
+        return many;
+    }
+
     function getApiAuthHeader() {
         try { const initData = sessionStorage.getItem(INIT_DATA_KEY); if (initData) return `Tma ${initData}`; } catch (e) { }
         try { const bypassKey = sessionStorage.getItem(BYPASS_KEY_STORAGE); if (bypassKey) return `Tma ${bypassKey}`; } catch (e) { }
@@ -273,23 +282,48 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // 🔥 ВОТ ФУНКЦИЯ, КОТОРУЮ Я ПРОПУСТИЛ В ПРОШЛЫЙ РАЗ 🔥
+    function highlightText(text, query) {
+        if (!query) return text;
+        const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+        return text.replace(regex, '<span class="highlight-text">$1</span>');
+    }
+
+    // 🔥 УПРАВЛЕНИЕ UI КОНТРОЛЕЙ 🔥
     function updateControlsUI() {
-        if (state.sortCriteria === 'color') {
+        const isTree = state.sortCriteria === 'v2tree';
+        const isV2Themes = state.sortCriteria === 'v2themes';
+
+        const mainFilterBtn = document.getElementById('main-filter-btn');
+        const fpV2SortSection = document.getElementById('fp-v2-sort-section');
+
+        // Поиск текста
+        if (isTree) {
             textInputContainer.classList.add('hidden');
-            colorInputContainer.classList.remove('hidden');
             removeSentinel();
         } else {
             textInputContainer.classList.remove('hidden');
-            colorInputContainer.classList.add('hidden');
         }
 
-        if (state.isAscending) {
-            directionBtn.classList.remove('rotated');
-            directionBtn.title = "По возрастанию";
-        } else {
-            directionBtn.classList.add('rotated');
-            directionBtn.title = "По убыванию";
+        // Кнопка направления сортировки
+        if (directionBtn) {
+            directionBtn.style.display = isTree ? 'none' : '';
+            if (state.isAscending) {
+                directionBtn.classList.remove('rotated');
+                directionBtn.title = "По возрастанию";
+            } else {
+                directionBtn.classList.add('rotated');
+                directionBtn.title = "По убыванию";
+            }
+        }
+
+        // Кнопка фильтров
+        if (mainFilterBtn) {
+            // Показываем кнопку фильтров ТОЛЬКО для списка тематик
+            mainFilterBtn.classList.toggle('hidden', !isV2Themes);
+        }
+
+        if (fpV2SortSection) {
+            fpV2SortSection.style.display = isV2Themes ? 'block' : 'none';
         }
     }
 
@@ -315,8 +349,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         if (sortSelectedValue) {
-            const map = { 'name': 'По названию', 'count': 'По количеству', 'color': 'По цвету' };
-            sortSelectedValue.textContent = map[state.sortCriteria] || 'По названию';
+            const map = {
+                'v2themes': 'Списком',
+                'v2tree': 'Деревом'
+            };
+            sortSelectedValue.textContent = map[state.sortCriteria] || 'Списком';
         }
         updateControlsUI(); // Теперь функция существует!
 
@@ -452,7 +489,13 @@ document.addEventListener('DOMContentLoaded', () => {
         sentinelObserver = new IntersectionObserver((entries) => {
             const target = entries[0];
             if (target.isIntersecting && state.hasMore && !state.isFetching && state.sortCriteria !== 'color') {
-                loadThemes(false);
+                if (state.sortCriteria === 'v2themes') {
+                    loadV2NamesSorted(false);
+                } else if (state.sortCriteria === 'v2tree') {
+                    loadV2Tree(false); // <-- Исправлено
+                } else {
+                    loadV2NamesSorted(false); // <-- Исправлено
+                }
             }
         }, options);
 
@@ -581,21 +624,58 @@ document.addEventListener('DOMContentLoaded', () => {
 
         let iconsHtml = '';
         previews.forEach((gift, index) => {
-            const imgUrl = `${API_PHOTO_URL}/${encodeURIComponent(gift.GiftName)}/png/${encodeURIComponent(gift.ModelName)}.png`;
+            const imgUrl = window.getModelImageUrl ? window.getModelImageUrl(gift.GiftName, gift.ModelName) : `${API_PHOTO_URL}/${encodeURIComponent(gift.GiftName)}/png/${encodeURIComponent(gift.ModelName)}.png`;
             iconsHtml += `
                 <div class="tpc-icon-box pos-${index}" style="background: ${iconBackgroundStyle};">
                     <img src="${imgUrl}" class="tpc-img" loading="lazy">
                 </div>`;
         });
 
-        let subtitleHtml = `<span class="tpc-count">${count} шт.</span>`;
-        if (isColorMatchMode && themeData.Score) {
-            const percent = Math.round(themeData.Score * 100);
-            subtitleHtml += `<div class="tpc-percent-badge">${percent}%</div>`;
+        let typeBadgeHtml = '';
+        let subtitleHtml = '';
+        let isGroup = (themeData._v2Type || '').toLowerCase() === 'group';
+        let isV2 = themeData._v2Type !== undefined;
+
+        if (isV2) {
+            if (isGroup) {
+                let themesCount = themeData.ChildThemeCount || 0;
+                let groupsCount = themeData.ChildGroupCount || 0;
+                
+                let details = [];
+                if (groupsCount > 0) details.push(`${groupsCount} ${getPlural(groupsCount, 'подгруппа', 'подгруппы', 'подгрупп')}`);
+                if (themesCount > 0) details.push(`${themesCount} ${getPlural(themesCount, 'подтема', 'подтемы', 'подтем')}`);
+                let childText = details.length > 0 ? ` • ${details.join(', ')}` : '';
+                
+                typeBadgeHtml = `
+                    <div style="margin-bottom: 4px;">
+                        <span class="v2-type-tag premium-tag v2-group-tag" style="padding:2px 6px; font-size:0.6rem; display:inline-flex;">
+                            <svg fill="currentColor" viewBox="0 0 24 24" style="width:10px;height:10px;margin-right:4px;"><path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z"/></svg>Группа
+                        </span>
+                    </div>
+                `;
+
+                subtitleHtml = `<span class="tpc-count" style="margin-top:0;">${count} шт.${childText}</span>`;
+            } else {
+                typeBadgeHtml = `
+                    <div style="margin-bottom: 4px;">
+                        <span class="v2-type-tag v2-theme-tag" style="padding:2px 6px; font-size:0.6rem; display:inline-flex;">
+                            <svg fill="currentColor" viewBox="0 0 24 24" style="width:10px;height:10px;margin-right:4px;"><path d="M12 2L2 22h20L12 2zm0 3.8L18.4 19H5.6L12 5.8z"/></svg>Тематика
+                        </span>
+                    </div>
+                `;
+                subtitleHtml = `<span class="tpc-count" style="margin-top:0;">${count} шт.</span>`;
+            }
+        } else {
+            subtitleHtml = `<span class="tpc-count">${count} шт.</span>`;
+            if (isColorMatchMode && themeData.Score) {
+                const percent = Math.round(themeData.Score * 100);
+                subtitleHtml += `<div class="tpc-percent-badge">${percent}%</div>`;
+            }
         }
 
         card.innerHTML = `
             <div class="tpc-left-side">
+                ${typeBadgeHtml}
                 <div class="tpc-title">${title}</div>
                 <div class="tpc-meta">${subtitleHtml}</div>
             </div>
@@ -629,8 +709,14 @@ document.addEventListener('DOMContentLoaded', () => {
             updateUrlState('replace');
 
             // 3. Открываем модалку
-            if (window.themesModal && window.themesModal.openCollection) {
-                window.themesModal.openCollection(collectionName, bgParam);
+            if (themeData._v2Id !== undefined && themeData._v2Type) {
+                if (window.themesModal && window.themesModal.openV2Node) {
+                    window.themesModal.openV2Node(themeData._v2Id, themeData._v2Type, false, title);
+                }
+            } else {
+                if (window.themesModal && window.themesModal.openCollection) {
+                    window.themesModal.openCollection(collectionName, bgParam);
+                }
             }
         });
 
@@ -780,10 +866,10 @@ document.addEventListener('DOMContentLoaded', () => {
             sortDropdownHeader.classList.remove('open', 'active');
 
             updateControlsUI();
-            if (state.sortCriteria === 'color') {
-                renderColorMode();
+            if (state.sortCriteria === 'v2tree') {
+                loadV2Tree(true); // <-- Исправлено
             } else {
-                loadThemes(true);
+                loadV2NamesSorted(true); // <-- Исправлено
             }
         });
     }
@@ -815,7 +901,19 @@ document.addEventListener('DOMContentLoaded', () => {
             const div = document.createElement('div');
             div.className = 'list-option';
             div.innerHTML = `<div class="color-swatch-mini" style="background:${color.gradient};"></div><span style="font-weight:500;">${color.name}</span>`;
-            div.onclick = () => searchByColor(color);
+            div.onclick = () => {
+                state.selectedColor = color;
+                if (colorDropdown.input) {
+                    colorDropdown.input.value = '';
+                    colorDropdown.header.classList.remove('value-active');
+                }
+                toggleColorDropdown(false);
+                
+                // Вызываем функцию отрисовки кружка
+                if (typeof updateColorDropdownUI === 'function') updateColorDropdownUI();
+                
+                updateUrlState('replace');
+            };
             colorDropdown.options.appendChild(div);
         });
     }
@@ -861,6 +959,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (state.sortCriteria === 'color') {
                 renderColorMode();
+            } else if (state.sortCriteria === 'v2themes') {
+                loadV2NamesSorted(true);
             } else {
                 loadThemes(true);
             }
@@ -870,13 +970,818 @@ document.addEventListener('DOMContentLoaded', () => {
     if (textInput) {
         const debouncedSearch = debounce((text) => {
             state.filterText = text;
-            loadThemes(true);
+            if (state.sortCriteria === 'v2themes') {
+                loadV2NamesSorted(true);
+            } else {
+                loadThemes(true);
+            }
         }, 1000);
 
         textInput.addEventListener('input', (e) => {
             debouncedSearch(e.target.value);
         });
     }
+
+    // --- V2 ПО ИМЕНИ ---
+
+    async function loadV2NamesSorted(isReset = false) {
+        if (isReset) {
+            state.page = 1;
+            state.hasMore = true;
+            const container = document.getElementById('themes-grid');
+            if (container) container.innerHTML = '';
+            removeSentinel(); // Убираем сентинель перед перезагрузкой
+        }
+
+        if (state.isFetching || !state.hasMore) return;
+        state.isFetching = true;
+        showLoading(isReset);
+
+        try {
+            // Базовый URL, используем state.page и !state.isAscending
+            let url = `${SERVER_BASE_URL}/api/Thematic/V2/AllNamesSorted?page=${state.page}&pageSize=${state.pageSize}&desc=${!state.isAscending}`;
+            
+            // Текстовый поиск (в V2 используем state.filterText)
+            if (state.filterText) url += `&search=${encodeURIComponent(state.filterText)}`;
+
+            // Логика сортировки (bg, price, count, name)
+            if (state.v2SubSort === 'bg' && state.selectedColor) {
+                url += `&sort=bg&bgName=${encodeURIComponent(state.selectedColor.name)}&minBgPercent=${state.minBgPercent}`;
+            } else {
+                url += `&sort=${state.v2SubSort || 'name'}`;
+            }
+
+            if (state.maxPrice) url += `&maxPrice=${state.maxPrice}`;
+
+            const response = await fetch(url, {
+                headers: { 'Authorization': getApiAuthHeader() }
+            });
+            const data = await response.json();
+
+            if (data && data.Items) {
+                renderV2FlatItems(data.Items); // Вызываем правильную функцию отрисовки
+                state.hasMore = data.Page < data.TotalPages;
+                state.page++;
+                
+                if (isReset) setupIntersectionObserver();
+            } else {
+                state.hasMore = false;
+                removeSentinel();
+            }
+            
+            if (isReset && (!data || !data.Items || data.Items.length === 0)) {
+                const container = document.getElementById('themes-grid');
+                if (container) container.innerHTML = '<p style="text-align:center; color:var(--text-muted); margin-top: 2rem;">Ничего не найдено</p>';
+            }
+        } catch (err) {
+            console.error("Ошибка загрузки тематик V2:", err);
+            if (isReset) {
+                const container = document.getElementById('themes-grid');
+                if (container) container.innerHTML = '<p style="text-align:center; color:#f87171; margin-top: 2rem;">Ошибка API</p>';
+            }
+        } finally {
+            state.isFetching = false;
+            hideLoading();
+            if (state.hasMore) ensureSentinel();
+        }
+    }
+
+    function renderV2FlatItems(items) {
+        if (!gridWrapper) return;
+        items.forEach(item => {
+            let letter;
+            // Собираем в общий список для всех сортировок, кроме алфавитной
+            if (state.v2SubSort === 'count' || state.v2SubSort === 'median' || state.v2SubSort === 'price' || state.v2SubSort === 'bg') {
+                letter = 'СПИСОК ТЕМАТИК';
+            } else {
+                const itemName = item.Name || item.CollectionName || 'Unknown';
+                letter = itemName.charAt(0).toUpperCase();
+            }
+
+            const sections = gridWrapper.querySelectorAll('.letter-section');
+            const lastSection = sections.length > 0 ? sections[sections.length - 1] : null;
+
+            let targetGrid = null;
+            if (lastSection && lastSection.dataset.letter === letter) {
+                targetGrid = lastSection.querySelector('.themes-page-grid');
+            } else {
+                const section = document.createElement('div');
+                section.className = 'letter-section';
+                section.dataset.letter = letter;
+                // Скрываем букву для списка тематик
+                if (letter === 'СПИСОК ТЕМАТИК') {
+                    section.innerHTML = `<div class="letter-header">Список Тематик</div>`;
+                } else {
+                    section.innerHTML = `<div class="letter-header">${letter}</div>`;
+                }
+                targetGrid = document.createElement('div');
+                targetGrid.className = 'themes-page-grid';
+                section.appendChild(targetGrid);
+                const s = document.getElementById(sentinelId);
+                if (s && gridWrapper.contains(s)) gridWrapper.insertBefore(section, s);
+                else gridWrapper.appendChild(section);
+            }
+            if (targetGrid) targetGrid.appendChild(createV2Card(item));
+        });
+        ensureSentinel();
+    }
+
+    function createV2Card(itemData) {
+        const isGroup = (itemData._v2Type || '').toLowerCase() === 'group';
+        const typeLabel = isGroup ? 'Группа' : 'Тематика';
+        const typeTagClass = isGroup ? 'v2-group-tag' : 'v2-theme-tag';
+        const tagGlowColor = isGroup ? '#6366f1' : '#38bdf8'; 
+        
+        const folderIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" style="width:14px;height:14px;margin-right:4px;"><path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" /></svg>`;
+        const paletteIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" style="width:14px;height:14px;margin-right:4px;"><path fill-rule="evenodd" d="M11.3 1.046A12.014 12.014 0 0010.337 1a10.034 10.034 0 00-6.16 2.053 9.948 9.948 0 00-3.13 6.643c-.024.321-.034.646-.034.975 0 5.485 4.544 9.942 10.151 9.942 2.091 0 4.041-.63 5.672-1.706a1.986 1.986 0 00.864-1.637 1.985 1.985 0 00-1.282-1.854l-2.02-.741a.486.486 0 01-.26-.532l.278-1.57a1.488 1.488 0 00-1.238-1.722l-1.928-.276a.486.486 0 01-.365-.635l.89-2.181a1.488 1.488 0 00-.737-1.862l-1.831-.884a.487.487 0 01-.24-.657l1.01-2.222A1.488 1.488 0 0011.3 1.046zM6.5 7.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zm6.5 1.5a1.5 1.5 0 100-3 1.5 1.5 0 000 3zm1.5 5.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zm-5.5.5a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" clip-rule="evenodd" /></svg>`;
+        const typeIcon = isGroup ? folderIcon : paletteIcon;
+
+        const colorHex = itemData.ClusterAverageColorHex || itemData.ThemeColor || '#38bdf8';
+        
+        // 🔥 БЕЗОПАСНОЕ ЧТЕНИЕ ИМЕНИ ДЛЯ V2 API
+        const itemName = itemData.Name || itemData.CollectionName || 'Unknown';
+        const title = highlightText(itemName, state.filterText);
+        
+        const previews = (itemData.TopGifts || itemData.Previews || []).slice(0, 5);
+        const countClass = `items-${previews.length}`;
+
+        let iconsHtml = '';
+        previews.forEach((gift, index) => {
+            const imgUrl = window.getModelImageUrl ? window.getModelImageUrl(gift.GiftName, gift.ModelName) : `${API_PHOTO_URL}/${encodeURIComponent(gift.GiftName)}/png/${encodeURIComponent(gift.ModelName)}.png`;
+            iconsHtml += `<div class="tpc-icon-box pos-${index}" style="background: ${colorHex};"><img src="${imgUrl}" class="tpc-img" loading="lazy"></div>`;
+        });
+
+        const count = itemData.CountGiftsInTheme || itemData.ModelCount || 0;
+        const medianPrice = itemData.MedianPrice || 0;
+        const affordableCount = itemData.AffordableCount;
+
+        let countLabel = '';
+        if (isGroup) {
+            const themes = itemData.ChildThemeCount || itemData.childThemeCount || 0;
+            const groups = itemData.ChildGroupCount || itemData.childGroupCount || 0;
+            let parts = [];
+            if (themes > 0) parts.push(`${themes} тем.`);
+            if (groups > 0) parts.push(`${groups} гр.`);
+            if (parts.length > 0) countLabel = parts.join(' / ');
+        } else if (count > 0) {
+            countLabel = `${count} шт.`;
+        }
+
+        const countTagHtml = countLabel
+            ? `<span class="v2-type-tag" style="color:rgba(255,255,255,0.7);background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.05);box-shadow:0 2px 8px rgba(0,0,0,0.3);position:static;transform:none;">${countLabel}</span>`
+            : '';
+            
+        let medianTagHtml = '';
+        // Показываем цену ТОЛЬКО если выбрана сортировка по цене ('price')
+        // Если выбрана сортировка по фону ('bg'), тег будет скрыт.
+        if (state.v2SubSort === 'price') {
+            if (affordableCount !== undefined && affordableCount !== null) {
+                medianTagHtml = `<span class="v2-type-tag" title="До ${state.maxPrice} TON">≤ ${state.maxPrice} T | ${affordableCount} шт.</span>`;
+            } else if (medianPrice > 0) {
+                const priceStr = medianPrice >= 1 ? `~${medianPrice.toFixed(2)} TON` : `~${(medianPrice * 1000).toFixed(0)} nTON`;
+                medianTagHtml = `<span class="v2-type-tag">${priceStr}</span>`;
+            }
+        }
+
+        let bgTagHtml = '';
+        if (itemData.BgMatchCount !== undefined && itemData.BgMatchCount !== null) {
+            bgTagHtml = `<span class="v2-type-tag" title="Моделей, подходящих под фон" style="color:#fcd34d;background:rgba(251,191,36,0.12);border:1px solid rgba(251,191,36,0.3);position:static;transform:none;box-shadow:0 2px 8px rgba(0,0,0,0.3);">
+                <svg fill="currentColor" viewBox="0 0 20 20" style="width:10px;height:10px;margin-right:3px;"><path fill-rule="evenodd" d="M10 2a6.005 6.005 0 00-6 6c0 4.314 6 10 6 10s6-5.686 6-10a6.005 6.005 0 00-6-6zM8 8a2 2 0 114 0 2 2 0 01-4 0z" clip-rule="evenodd" /></svg>
+                ${itemData.BgMatchCount} совп.
+            </span>`;
+        }
+
+        const rightTagsHtml = (countTagHtml || medianTagHtml || bgTagHtml) 
+            ? `<div style="position:absolute;top:0;right:12px;transform:translateY(-50%);display:flex;gap:6px;z-index:10;">${bgTagHtml}${medianTagHtml}${countTagHtml}</div>` 
+            : '';
+
+        const card = document.createElement('div');
+        card.className = 'v2-premium-card';
+        card.style.setProperty('--glow-color', colorHex);
+        card.style.setProperty('--theme-color', colorHex);
+        card.innerHTML = `
+            <div class="v2-card-bg-container">
+                <div class="v2-card-glow"></div>
+                <div class="v2-tag-glow" style="--tag-color: ${tagGlowColor};"></div>
+            </div>
+            <span class="v2-type-tag premium-tag ${typeTagClass}">${typeIcon}${typeLabel}</span>
+            ${rightTagsHtml}
+            <div class="v2-card-content">
+                <div class="v2-card-info"><div class="v2-card-title">${title}</div></div>
+                <div class="tpc-visuals ${countClass}">${iconsHtml}</div>
+                <div class="v2-card-arrow"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg></div>
+            </div>
+        `;
+
+        const clickFn = () => {
+            // Безопасно извлекаем ID и тип
+            let v2Id = itemData.Id !== undefined ? itemData.Id : (itemData.id !== undefined ? itemData.id : itemData._v2Id);
+            let v2Type = itemData.Type || itemData.type || itemData._v2Type || 'Theme';
+
+            // 🔥 НОВАЯ ЛОГИКА: Проверяем, есть ли у тематики одноименная родительская группа
+            // В бэкенде такие тематики могут приходить с Type = "Group" благодаря логике isSameNameAsParent,
+            // но на всякий случай мы дополнительно ориентируемся на переданные ChildGroupCount или Type.
+            if (v2Type === 'Theme' && (itemData.ChildGroupCount > 0 || itemData.ChildThemeCount > 0)) {
+                v2Type = 'Group';
+            }
+
+            if (v2Id !== undefined && window.themesModal && window.themesModal.openV2Node) {
+                sessionStorage.setItem(SCROLL_STORAGE_KEY, window.scrollY);
+                
+                // ИСПРАВЛЕНИЕ: Передаем цвет фона, ТОЛЬКО если активна вкладка сортировки по фону
+                let selectedBg = (state.v2SubSort === 'bg' && state.selectedColor) ? state.selectedColor.name : null;
+                
+                // Передаем itemName и selectedBg 5-м аргументом
+                window.themesModal.openV2Node(v2Id, v2Type, true, itemName, selectedBg);
+            } else if (window.themesModal && window.themesModal.openCollection) {
+                sessionStorage.setItem(SCROLL_STORAGE_KEY, window.scrollY);
+                
+                // ИСПРАВЛЕНИЕ: аналогично для обычных коллекций
+                let selectedBg = (state.v2SubSort === 'bg' && state.selectedColor) ? state.selectedColor.name : null;
+                window.themesModal.openCollection(itemName, selectedBg);
+            }
+        };
+        card.addEventListener('click', clickFn);
+        return card;
+    }
+
+    // --- V2 ДЕРЕВО ---
+
+    async function loadV2Tree(isReset = true) {
+        if (state.isFetching) return;
+
+        if (isReset) {
+            state.page = 1;
+            state.hasMore = true;
+            gridWrapper.innerHTML = '';
+            removeSentinel();
+        }
+        if (!state.hasMore) return;
+
+        state.isFetching = true;
+        showLoading(isReset);
+
+        // Запрашиваем КОРЕНЬ (ParentGroupId = null)
+        const url = `${SERVER_BASE_URL}/api/Thematic/V2/Layer?page=${state.page}&pageSize=${state.pageSize}`;
+        try {
+            const data = await secureFetch(url);
+            const items = data.Items || data.items || [];
+
+            if (items.length === 0 && isReset) {
+                gridWrapper.innerHTML = '<p style="text-align:center; color:var(--text-muted); margin-top: 2rem;">Дерево пусто</p>';
+                state.hasMore = false;
+            } else {
+                renderLayer(items, gridWrapper, 0); // Рендерим корень
+                state.page++;
+
+                const totalPages = data.TotalPages || data.totalPages;
+                if (!totalPages || state.page > totalPages) {
+                    state.hasMore = false;
+                    removeSentinel();
+                } else {
+                    if (isReset) setupIntersectionObserver();
+                }
+            }
+        } catch (e) {
+            console.error('V2 Tree error:', e);
+            if (isReset && gridWrapper) gridWrapper.innerHTML = '<p style="color:#f87171; text-align:center; margin-top: 2rem;">Ошибка загрузки дерева</p>';
+        } finally {
+            state.isFetching = false;
+            hideLoading();
+            if (state.hasMore) ensureSentinel();
+        }
+    }
+
+    function renderLayer(nodes, container, depth) {
+        nodes.forEach(node => {
+            const nodeType = (node.Type || node.type || '').toLowerCase();
+            const nodeId = node.Id !== undefined ? node.Id : node.id;
+            const nodeName = node.Name || node.name || 'Unknown';
+            const nodeColor = node.ThemeColor || node.themeColor || '#38bdf8';
+            const nodePreviews = node.Previews || node.previews || [];
+
+            // Если это группа (папка)
+            if (nodeType === 'group') {
+                const groupWrap = document.createElement('div');
+                groupWrap.className = 'tree-group-node';
+
+                const childThemeCount = node.ChildThemeCount || node.childThemeCount || 0;
+                const childGroupCount = node.ChildGroupCount || node.childGroupCount || 0;
+                
+                let subtitleParts = [];
+                // 🔥 КОРОТКИЕ НАЗВАНИЯ ДЛЯ ЭКОНОМИИ МЕСТА (т. = тематик, г. = групп)
+                if (childThemeCount > 0) subtitleParts.push(`${childThemeCount} тем.`);
+                if (childGroupCount > 0) subtitleParts.push(`${childGroupCount} гр.`);
+                const subtitle = subtitleParts.join(', ') || 'пусто';
+
+                // Генерируем превью (всегда до 5 штук)
+                const previews = nodePreviews.slice(0, 5);
+                const countClass = `items-${previews.length}`;
+                let iconsHtml = '';
+                
+                previews.forEach((gift, index) => {
+                    const giftName = gift.GiftName || gift.giftName || '';
+                    const modelName = gift.ModelName || gift.modelName || '';
+                    const itemColor = gift.AverageColorHex || gift.averageColorHex || nodeColor;
+                    if (!giftName || !modelName) return;
+                    const imgUrl = `${API_PHOTO_URL}/${encodeURIComponent(giftName)}/png/${encodeURIComponent(modelName)}.png`;
+                    iconsHtml += `<div class="tpc-icon-box pos-${index}" style="background: ${itemColor};"><img src="${imgUrl}" class="tpc-img" loading="lazy" onerror="this.style.display='none'"></div>`;
+                });
+
+                // Создаем заголовок группы
+                const header = document.createElement('div');
+                header.className = 'theme-page-card tree-theme-compact tree-group-card';
+                header.style.setProperty('--glow-color', nodeColor);
+                header.style.setProperty('--theme-color', nodeColor);
+                header.innerHTML = `
+                    <div class="tree-group-corner-badge">Группа</div>
+                    <div class="tpc-left-side">
+                        <div class="tpc-title">${nodeName}</div>
+                        <div class="tpc-meta"><span class="tpc-count">${subtitle}</span></div>
+                    </div>
+                    <div class="tpc-visuals ${countClass}">${iconsHtml}</div>
+                    <div class="tpc-arrow tree-expand-arrow">
+                        <svg class="tree-arrow-svg" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+                        <div class="tree-loading-spinner"></div>
+                    </div>
+                    <div class="tpc-glow"></div>
+                `;
+
+                // Контейнер для вложенностей (изначально пустой)
+                const childrenWrap = document.createElement('div');
+                childrenWrap.className = 'tree-group-children collapsed';
+                childrenWrap.dataset.loaded = 'false';
+
+                let isCollapsed = true;
+                
+                header.addEventListener('click', async () => {
+                    // Если пытаемся развернуть и данные еще не загружены
+                    if (isCollapsed && childrenWrap.dataset.loaded === 'false') {
+                        
+                        // 1. Включаем стили загрузки на самой карточке (появится спиннер, карточка подсветится)
+                        header.classList.add('is-loading');
+                        
+                        // 2. Рисуем скелетон под карточкой (как будто там грузятся элементы)
+                        childrenWrap.innerHTML = `
+                            <div class="tree-skeleton-loader">
+                                <div class="skeleton-item">
+                                    <div>
+                                        <div class="skeleton-text-1"></div>
+                                        <div class="skeleton-text-2"></div>
+                                    </div>
+                                </div>
+                                <div class="skeleton-item" style="opacity: 0.7;">
+                                    <div>
+                                        <div class="skeleton-text-1"></div>
+                                        <div class="skeleton-text-2"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        
+                        // Раскрываем контейнер, чтобы показать скелетон
+                        isCollapsed = false;
+                        childrenWrap.classList.remove('collapsed');
+                        
+                        try {
+                            const response = await secureFetch(`${SERVER_BASE_URL}/api/Thematic/V2/Layer/${nodeId}?page=1&pageSize=100`);
+                            const childrenData = response.Items || response.items || [];
+                            
+                            childrenWrap.innerHTML = ''; 
+                            
+                            if (childrenData.length > 0) {
+                                renderLayer(childrenData, childrenWrap, depth + 1);
+                            } else {
+                                childrenWrap.innerHTML = `<div class="tree-empty-hint">Пустая группа</div>`;
+                            }
+                            childrenWrap.dataset.loaded = 'true';
+                            
+                        } catch (err) {
+                            childrenWrap.innerHTML = `<div class="tree-empty-hint" style="color:#f87171">Ошибка загрузки. Попробуйте еще раз.</div>`;
+                            // Если ошибка - сворачиваем обратно
+                            isCollapsed = true; 
+                            childrenWrap.classList.add('collapsed');
+                        } finally {
+                            // Выключаем стили загрузки на карточке
+                            header.classList.remove('is-loading');
+                            
+                            // Убеждаемся, что стрелка смотрит куда надо
+                            const arrowSvg = header.querySelector('.tree-arrow-svg');
+                            if (arrowSvg) arrowSvg.style.transform = isCollapsed ? '' : 'rotate(90deg)';
+                        }
+                    } else {
+                        // Если данные уже загружены, просто переключаем состояние открыть/закрыть
+                        isCollapsed = !isCollapsed;
+                        childrenWrap.classList.toggle('collapsed', isCollapsed);
+                        
+                        const arrowSvg = header.querySelector('.tree-arrow-svg');
+                        if (arrowSvg) arrowSvg.style.transform = isCollapsed ? '' : 'rotate(90deg)';
+                    }
+                });
+
+                groupWrap.appendChild(header);
+                groupWrap.appendChild(childrenWrap);
+                container.appendChild(groupWrap);
+
+            } else if (nodeType === 'theme') {
+                // Если это Тематика - создаем обычную карточку-ссылку на модели
+                const card = document.createElement('div');
+                card.className = 'theme-page-card tree-theme-compact';
+                card.style.setProperty('--glow-color', nodeColor);
+                card.style.setProperty('--theme-color', nodeColor);
+
+                const previews = nodePreviews.slice(0, 5);
+                const countClass = `items-${previews.length}`;
+
+                let iconsHtml = '';
+                previews.forEach((gift, index) => {
+                    const giftName = gift.GiftName || gift.giftName || '';
+                    const modelName = gift.ModelName || gift.modelName || '';
+                    const itemColor = gift.AverageColorHex || gift.averageColorHex || nodeColor;
+                    if (!giftName || !modelName) return;
+                    const imgUrl = `${API_PHOTO_URL}/${encodeURIComponent(giftName)}/png/${encodeURIComponent(modelName)}.png`;
+                    iconsHtml += `<div class="tpc-icon-box pos-${index}" style="background: ${itemColor};"><img src="${imgUrl}" class="tpc-img" loading="lazy" onerror="this.style.display='none'"></div>`;
+                });
+
+                const count = node.ModelCount || node.modelCount || 0;
+
+                card.innerHTML = `
+                    <div class="tpc-left-side">
+                        <div class="tpc-title">${nodeName}</div>
+                        <div class="tpc-meta"><span class="tpc-count">${count} мод.</span></div>
+                    </div>
+                    <div class="tpc-visuals ${countClass}">${iconsHtml}</div>
+                    <div class="tpc-arrow"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg></div>
+                    <div class="tpc-glow"></div>
+                `;
+
+                card.addEventListener('click', () => {
+                    sessionStorage.setItem(SCROLL_STORAGE_KEY, window.scrollY);
+                    if (window.themesModal && window.themesModal.openV2Node) {
+                        // 🔥 Передаем nodeName как 4-й аргумент
+                        window.themesModal.openV2Node(nodeId, nodeType, false, nodeName);
+                    }
+                });
+
+                container.appendChild(card);
+            }
+        });
+    }
+
+    function renderTree(nodes, container, depth) {
+        nodes.forEach(node => {
+            const nodeType = node.Type || node.type;
+            const nodeId = node.Id !== undefined ? node.Id : node.id;
+            const nodeName = node.Name || node.name || 'Unknown';
+            const nodeWeight = node.Weight || node.weight || 1;
+            const nodeColor = (node.ThemeColor || node.themeColor || null);
+            const nodePreviews = node.Previews || node.previews || [];
+            const nodeChildren = node.Children || node.children || [];
+            const tType = (nodeType || '').toLowerCase();
+
+            // Skip standalone themes at root level — only groups at depth=0
+            if (depth === 0 && tType === 'theme') return;
+
+            if (tType === 'group') {
+                const groupWrap = document.createElement('div');
+                groupWrap.className = 'tree-group-node';
+
+                // Accent color from first preview
+                const accentColor = nodeColor ||
+                    (nodePreviews[0] && (nodePreviews[0].AverageColorHex || nodePreviews[0].averageColorHex)) ||
+                    '#38bdf8';
+
+                // Find a child theme with the same name as this group
+                const sameNameChild = nodeChildren.find(c =>
+                    (c.Type || c.type || '').toLowerCase() === 'theme' &&
+                    (c.Name || c.name || '').toLowerCase() === nodeName.toLowerCase()
+                );
+
+                // Subtitle: child counts
+                const childThemeCount = nodeChildren.filter(c => (c.Type || c.type || '').toLowerCase() === 'theme').length;
+                const childGroupCount = nodeChildren.filter(c => (c.Type || c.type || '').toLowerCase() === 'group').length;
+                let subtitleParts = [];
+                if (childThemeCount > 0) subtitleParts.push(`${childThemeCount} ${getPlural(childThemeCount, 'тематика', 'тематики', 'тематик')}`);
+                if (childGroupCount > 0) subtitleParts.push(`${childGroupCount} ${getPlural(childGroupCount, 'группа', 'группы', 'групп')}`);
+                const subtitle = subtitleParts.join(', ');
+
+                // Build stacked icons like createV2Card
+                const previews = nodePreviews.slice(0, 3);
+                const countClass = `items-${previews.length}`;
+                let iconsHtml = '';
+                previews.forEach((gift, index) => {
+                    const giftName = gift.GiftName || gift.giftName || '';
+                    const modelName = gift.ModelName || gift.modelName || '';
+                    if (!giftName || !modelName) return;
+                    const imgUrl = `${API_PHOTO_URL}/${encodeURIComponent(giftName)}/png/${encodeURIComponent(modelName)}.png`;
+                    iconsHtml += `<div class="tpc-icon-box pos-${index}" style="background: ${accentColor};"><img src="${imgUrl}" class="tpc-img" loading="lazy" onerror="this.style.display='none'"></div>`;
+                });
+
+                const header = document.createElement('div');
+                header.className = 'theme-page-card tree-theme-compact tree-group-card';
+                header.style.setProperty('--glow-color', accentColor);
+                header.style.setProperty('--theme-color', accentColor);
+                header.innerHTML = `
+                    <div class="tree-group-corner-badge">Группа</div>
+                    <div class="tpc-left-side">
+                        <div class="tpc-title">${nodeName}</div>
+                        <div class="tpc-meta"><span class="tpc-count">${subtitle || 'группа'}</span></div>
+                    </div>
+                    <div class="tpc-visuals ${countClass}">${iconsHtml}</div>
+                    <div class="tpc-arrow tree-expand-arrow"><svg class="tree-arrow-svg" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg></div>
+                    <div class="tpc-glow"></div>
+                `;
+
+                const childrenWrap = document.createElement('div');
+                childrenWrap.className = 'tree-group-children collapsed';
+
+                if (nodeChildren.length > 0) {
+                    // Sort children: same-name theme first, then rest
+                    const sortedChildren = sameNameChild
+                        ? [sameNameChild, ...nodeChildren.filter(c => c !== sameNameChild)]
+                        : nodeChildren;
+
+                    sortedChildren.forEach(child => {
+                        const cType = (child.Type || child.type || '').toLowerCase();
+                        const cId = child.Id !== undefined ? child.Id : child.id;
+                        const cName = child.Name || child.name || '';
+                        const cColor = child.ThemeColor || child.themeColor || null;
+                        const cPreviews = child.Previews || child.previews || [];
+                        const cChildren = child.Children || child.children || [];
+
+                        if (cType === 'theme') {
+                            const cColorHex = cColor ||
+                                (cPreviews[0] && (cPreviews[0].AverageColorHex || cPreviews[0].averageColorHex)) ||
+                                '#38bdf8';
+
+                            const isSameName = sameNameChild && child === sameNameChild;
+
+                            const card = document.createElement('div');
+                            card.className = 'theme-page-card tree-theme-compact';
+                            card.style.setProperty('--glow-color', cColorHex);
+                            card.style.setProperty('--theme-color', cColorHex);
+
+                            const cPreviews3 = cPreviews.slice(0, 3);
+                            const cCountClass = `items-${cPreviews3.length}`;
+                            let cIconsHtml = '';
+                            cPreviews3.forEach((gift, index) => {
+                                const giftName = gift.GiftName || gift.giftName || '';
+                                const modelName = gift.ModelName || gift.modelName || '';
+                                if (!giftName || !modelName) return;
+                                const imgUrl = `${API_PHOTO_URL}/${encodeURIComponent(giftName)}/png/${encodeURIComponent(modelName)}.png`;
+                                cIconsHtml += `<div class="tpc-icon-box pos-${index}" style="background: ${cColorHex};"><img src="${imgUrl}" class="tpc-img" loading="lazy" onerror="this.style.display='none'"></div>`;
+                            });
+
+                            card.innerHTML = `
+                                <div class="tpc-left-side">
+                                    <div class="tpc-title">${cName}</div>
+                                    <div class="tpc-meta"><span class="tpc-count">тематика</span></div>
+                                </div>
+                                <div class="tpc-visuals ${cCountClass}">${cIconsHtml}</div>
+                                <div class="tpc-arrow"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg></div>
+                                <div class="tpc-glow"></div>
+                            `;
+
+                            card.addEventListener('click', () => {
+                                sessionStorage.setItem(SCROLL_STORAGE_KEY, window.scrollY);
+                                if (window.themesModal && window.themesModal.openV2Node) {
+                                    // Same-name theme opens the GROUP (parent), not the theme itself
+                                    const openId = isSameName ? nodeId : cId;
+                                    const openType = isSameName ? 'Group' : 'Theme';
+                                    const openTitle = isSameName ? nodeName : cName; // 🔥 Достаем правильное имя
+                                    
+                                    // Передаем 4 параметра (id, type, isFlatList=false, title)
+                                    window.themesModal.openV2Node(openId, openType, false, openTitle);
+                                }
+                            });
+
+                            childrenWrap.appendChild(card);
+                        } else if (cType === 'group') {
+                            // Recurse for nested groups
+                            renderTree([child], childrenWrap, depth + 1);
+                        }
+                    });
+                } else {
+                    childrenWrap.innerHTML = `<div class="tree-empty-hint">Нет вложенных элементов</div>`;
+                }
+
+                let isCollapsed = true;
+                header.addEventListener('click', () => {
+                    isCollapsed = !isCollapsed;
+                    childrenWrap.classList.toggle('collapsed', isCollapsed);
+                    const arrow = header.querySelector('.tree-arrow-svg');
+                    if (arrow) arrow.style.transform = isCollapsed ? '' : 'rotate(90deg)';
+                });
+
+                groupWrap.appendChild(header);
+                groupWrap.appendChild(childrenWrap);
+                container.appendChild(groupWrap);
+
+            } else if (tType === 'theme') {
+                // Use same card style as createV2Card (theme-page-card with stacked icons)
+                const colorHex = nodeColor ||
+                    (nodePreviews[0] && (nodePreviews[0].AverageColorHex || nodePreviews[0].averageColorHex)) ||
+                    '#38bdf8';
+
+                const card = document.createElement('div');
+                card.className = 'theme-page-card tree-theme-compact';
+                card.style.setProperty('--glow-color', colorHex);
+                card.style.setProperty('--theme-color', colorHex);
+
+                const previews = nodePreviews.slice(0, 3);
+                const countClass = `items-${previews.length}`;
+
+                let iconsHtml = '';
+                previews.forEach((gift, index) => {
+                    const giftName = gift.GiftName || gift.giftName || '';
+                    const modelName = gift.ModelName || gift.modelName || '';
+                    if (!giftName || !modelName) return;
+                    const imgUrl = `${API_PHOTO_URL}/${encodeURIComponent(giftName)}/png/${encodeURIComponent(modelName)}.png`;
+                    iconsHtml += `<div class="tpc-icon-box pos-${index}" style="background: ${colorHex};"><img src="${imgUrl}" class="tpc-img" loading="lazy" onerror="this.style.display='none'"></div>`;
+                });
+
+                card.innerHTML = `
+                    <div class="tpc-left-side">
+                        <div class="tpc-title">${nodeName}</div>
+                        <div class="tpc-meta"><span class="tpc-count">тематика</span></div>
+                    </div>
+                    <div class="tpc-visuals ${countClass}">${iconsHtml}</div>
+                    <div class="tpc-arrow"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg></div>
+                    <div class="tpc-glow"></div>
+                `;
+
+                card.addEventListener('click', () => {
+                    sessionStorage.setItem(SCROLL_STORAGE_KEY, window.scrollY);
+                    if (window.themesModal && window.themesModal.openV2Node) {
+                        window.themesModal.openV2Node(nodeId, nodeType);
+                    }
+                });
+
+                container.appendChild(card);
+            }
+        });
+    }
+
+
+
+    // --- ОБРАБОТЧИКИ НОВОГО POPUP ФИЛЬТРА ---
+    const mainFilterBtn = document.getElementById('main-filter-btn');
+    const mainFilterPopup = document.getElementById('main-filter-popup');
+    const fpMaxPrice = document.getElementById('fp-max-price');
+    const fpBgPercent = document.getElementById('fp-bg-percent');
+    const fpApplyBtn = document.getElementById('fp-apply-btn');
+    const fpSegBtns = document.querySelectorAll('.v2-seg-btn');
+    const percentDropdownContainer = document.getElementById('percent-dropdown-container');
+    const percentDropdownHeader = document.getElementById('percent-dropdown-header');
+    const percentDropdownList = document.getElementById('percent-dropdown-list');
+    const percentSelectedValue = document.getElementById('percent-selected-value');
+    const fpPriceRow = document.getElementById('fp-price-row');
+    const fpBgRow = document.getElementById('fp-bg-row');
+    const fpColorSection = document.getElementById('fp-color-section');
+
+    // Функция для отрисовки красивого кружка с градиентом
+    window.updateColorDropdownUI = function() {
+        const label = document.getElementById('color-selected-value');
+        if (label) {
+            if (state.selectedColor) {
+                label.innerHTML = `
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <div class="color-swatch-mini" style="background:${state.selectedColor.gradient}; width:16px; height:16px; border-radius:50%; flex-shrink:0; box-shadow: 0 0 0 1px rgba(255,255,255,0.2);"></div>
+                        <span style="font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${state.selectedColor.name}</span>
+                    </div>
+                `;
+            } else {
+                label.textContent = 'Не выбран';
+            }
+        }
+    };
+
+    // Заполнение параметров перед открытием
+    function syncPopupWithState() {
+        if (fpMaxPrice) fpMaxPrice.value = state.maxPrice || '';
+        // Синхронизируем наш новый кастомный дропдаун процентов
+        if (percentSelectedValue) percentSelectedValue.textContent = `От ${state.minBgPercent}%`;
+        
+        updateColorDropdownUI();
+
+        if (fpSegBtns) {
+            fpSegBtns.forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.sort === state.v2SubSort);
+            });
+        }
+    }
+
+    // Жесткое управление видимостью полей (решает проблему "слетевших стилей")
+    function updatePopupFieldsVisibility() {
+        if(fpPriceRow) fpPriceRow.classList.add('fp-hidden');
+        if(fpBgRow) fpBgRow.classList.add('fp-hidden');
+        if(fpColorSection) fpColorSection.classList.add('fp-hidden');
+
+        if (state.sortCriteria === 'v2themes') {
+            if (state.v2SubSort === 'price') {
+                if(fpPriceRow) fpPriceRow.classList.remove('fp-hidden');
+            } else if (state.v2SubSort === 'bg') {
+                if(fpBgRow) fpBgRow.classList.remove('fp-hidden');
+                if(fpColorSection) fpColorSection.classList.remove('fp-hidden');
+            }
+        }
+    }
+
+    if (mainFilterBtn && mainFilterPopup) {
+        mainFilterBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isHidden = mainFilterPopup.classList.contains('hidden');
+            if (isHidden) {
+                syncPopupWithState(); // Заполняем дефолтные значения
+                updatePopupFieldsVisibility(); // Показываем нужные блоки
+                mainFilterPopup.classList.remove('hidden');
+                mainFilterBtn.classList.add('active');
+            } else {
+                mainFilterPopup.classList.add('hidden');
+                mainFilterBtn.classList.remove('active');
+            }
+        });
+
+        mainFilterPopup.addEventListener('click', (e) => { e.stopPropagation(); });
+
+        document.addEventListener('click', (e) => {
+            if (!mainFilterPopup.contains(e.target) && !mainFilterBtn.contains(e.target)) {
+                mainFilterPopup.classList.add('hidden');
+                mainFilterBtn.classList.remove('active');
+            }
+        });
+    }
+
+    if (fpSegBtns) {
+        fpSegBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                fpSegBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                state.v2SubSort = btn.dataset.sort;
+                updatePopupFieldsVisibility();
+            });
+        });
+    }
+
+    if (fpApplyBtn) {
+        fpApplyBtn.addEventListener('click', () => {
+            // Сохраняем цену (если пусто - то пусто, иначе берем число)
+            if(fpMaxPrice) state.maxPrice = fpMaxPrice.value ? Number(fpMaxPrice.value) : '';
+            
+            // state.minBgPercent теперь сохраняется сам при клике на выпадающий список
+            
+            mainFilterPopup.classList.add('hidden');
+            mainFilterBtn.classList.remove('active');
+
+            if (state.sortCriteria === 'color') {
+                if (state.selectedColor) searchByColor(state.selectedColor);
+            } else if (state.sortCriteria === 'v2themes') {
+                loadV2NamesSorted(true);
+            }
+        });
+    }
+
+    // Логика для кастомного выпадающего списка процентов
+    if (percentDropdownHeader) {
+        percentDropdownHeader.addEventListener('click', (e) => {
+            e.stopPropagation(); // чтобы не закрылся сам попап
+            const isHidden = percentDropdownList.classList.contains('hidden');
+            if (isHidden) {
+                percentDropdownList.classList.remove('hidden');
+                percentDropdownHeader.classList.add('open', 'active');
+            } else {
+                percentDropdownList.classList.add('hidden');
+                percentDropdownHeader.classList.remove('open', 'active');
+            }
+        });
+    }
+
+    if (percentDropdownList) {
+        percentDropdownList.addEventListener('click', (e) => {
+            const option = e.target.closest('.list-option');
+            if (!option) return;
+
+            const value = parseInt(option.dataset.value);
+            const text = option.textContent;
+
+            // Сразу сохраняем в state
+            state.minBgPercent = value;
+            percentSelectedValue.textContent = text;
+
+            percentDropdownList.classList.add('hidden');
+            percentDropdownHeader.classList.remove('open', 'active');
+        });
+    }
+
+    // Закрытие списка процентов при клике куда-угодно
+    document.addEventListener('click', (e) => {
+        if (percentDropdownContainer && !percentDropdownContainer.contains(e.target)) {
+            if (percentDropdownList && !percentDropdownList.classList.contains('hidden')) {
+                percentDropdownList.classList.add('hidden');
+                if (percentDropdownHeader) percentDropdownHeader.classList.remove('open', 'active');
+            }
+        }
+    });
 
     function init() {
         initTelegramData();
@@ -888,9 +1793,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (state.sortCriteria === 'color' && state.selectedColor) {
             searchByColor(state.selectedColor);
+        } else if (state.sortCriteria === 'v2themes') {
+            loadV2NamesSorted(true);
+        } else if (state.sortCriteria === 'v2tree') {
+            loadV2Tree(true); // <-- Исправлено
         } else {
-            // Если мы уже открыли модалку в restoreStateFromUrl, этот loadThemes загрузит фон
-            loadThemes(true);
+            loadV2NamesSorted(true); // <-- Исправлено
         }
 
         if (window.themesModal && window.themesModal.init) {
@@ -898,7 +1806,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // Инициализация для работы модального окна подписки
-        // Функция showSubscriptionModal уже определена в themes-modal-nfts.js
         window.BASE_URL = SERVER_BASE_URL;
     }
 

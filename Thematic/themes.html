@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ru">
 
 <head>
@@ -22,24 +22,21 @@
 
             <div class="title-section">
                 <h1 class="page-main-title">ТЕМАТИКИ</h1>
-                <p class="page-credits">by <a href="https://t.me/GiftWiki" target="_blank">GiftWiki</a> and <a href="https://t.me/+3R5wFr14sG1lZDcy" target="_blank">GiftStat</a></p>
             </div>
 
             <div class="toolbar-section">
-
                 <div class="toolbar-group">
                     <label class="control-label">Способ сортировки</label>
-                    <div class="sort-row">
+                    <div class="sort-row" style="position: relative;">
 
                         <div class="custom-dropdown-container" id="sort-dropdown-container">
                             <div class="dropdown-header" id="sort-dropdown-header">
-                                <span id="sort-selected-value">По названию</span>
+                                <span id="sort-selected-value">Списком</span>
                                 <div class="arrow"></div>
                             </div>
                             <div class="dropdown-list hidden" id="sort-dropdown-list">
-                                <div class="list-option" data-value="name">По названию</div>
-                                <div class="list-option" data-value="count">По количеству</div>
-                                <div class="list-option" data-value="color">По цвету</div>
+                                <div class="list-option" data-value="v2themes">Списком</div>
+                                <div class="list-option" data-value="v2tree">Деревом</div>
                             </div>
                         </div>
 
@@ -50,39 +47,81 @@
                                     d="M3 4.5h14.25M3 9h9.75M3 13.5h9.75m4.5-4.5v12m0 0l-3.75-3.75M17.25 21L21 17.25" />
                             </svg>
                         </button>
+
+                        <button id="main-filter-btn" class="direction-btn" title="Фильтры">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 01-.659 1.591l-5.432 5.432a2.25 2.25 0 00-.659 1.591v2.927a2.25 2.25 0 01-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 00-.659-1.591L3.659 7.409A2.25 2.25 0 013 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0112 3z" />
+                            </svg>
+                        </button>
+
+                        <div id="main-filter-popup" class="filter-popup-panel hidden">
+                            <div class="fp-section" id="fp-v2-sort-section">
+                                <label class="fp-label">Режим отображения:</label>
+                                <div class="v2-segmented-control">
+                                    <button class="v2-seg-btn active" data-sort="count">Кол-во</button>
+                                    <button class="v2-seg-btn" data-sort="price">Цена</button>
+                                    <button class="v2-seg-btn" data-sort="name">Имя</button>
+                                    <button class="v2-seg-btn" data-sort="bg">Фон</button>
+                                </div>
+                            </div>
+
+                            <div class="fp-row fp-hidden" id="fp-price-row">
+                                <div class="fp-col">
+                                    <label class="fp-label">Ограничение цены (TON):</label>
+                                    <input type="number" id="fp-max-price" class="fp-input" placeholder="До скольки?">
+                                </div>
+                            </div>
+
+                            <div class="fp-row fp-hidden" id="fp-bg-row">
+                                <div class="fp-col">
+                                    <label class="fp-label">Мин. совпадение:</label>
+                                    <div class="custom-dropdown-container" id="percent-dropdown-container">
+                                        <div class="dropdown-header" id="percent-dropdown-header">
+                                            <span id="percent-selected-value">От 80%</span>
+                                            <div class="arrow"></div>
+                                        </div>
+                                        <div class="dropdown-list hidden" id="percent-dropdown-list">
+                                            <div class="list-option" data-value="95">От 95%</div>
+                                            <div class="list-option" data-value="90">От 90%</div>
+                                            <div class="list-option" data-value="80">От 80%</div>
+                                            <div class="list-option" data-value="70">От 70%</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="fp-section fp-hidden" id="fp-color-section" style="margin-bottom: 16px; margin-top: 10px;">
+                                <label class="fp-label">Цвет фона:</label>
+                                <div class="custom-dropdown-container" id="color-input-container">
+                                    <div class="dropdown-header with-search" id="color-dropdown-header">
+                                        <span class="selected-value-placeholder" id="color-selected-value">Выберите цвет...</span>
+                                        <input type="text" class="dropdown-search" id="color-search-input" placeholder="Поиск цвета..." autocomplete="off">
+                                        <div class="arrow"></div>
+                                    </div>
+                                    <div class="dropdown-list hidden" id="color-dropdown-list">
+                                        <div id="color-list-options"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button id="fp-apply-btn" class="fp-apply-btn">Применить</button>
+                        </div>
                     </div>
                 </div>
 
-                <div class="toolbar-group bottom-group">
-
+                <div class="toolbar-group bottom-group" style="margin-top: -10px;">
                     <div id="text-input-container" class="custom-dropdown-container">
                         <label class="control-label" for="theme-text-search">Поиск</label>
                         <div class="input-wrapper">
                             <div class="search-icon">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none"
-                                    viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                                 </svg>
                             </div>
-                            <input type="text" id="theme-text-search" class="theme-search-input"
-                                placeholder="Поиск тематики..." autocomplete="off">
+                            <input type="text" id="theme-text-search" class="theme-search-input" placeholder="Поиск тематики..." autocomplete="off">
                         </div>
                     </div>
-
-                    <div id="color-input-container" class="custom-dropdown-container hidden">
-                        <label class="control-label">Задний фон:</label>
-                        <div class="dropdown-header with-search" id="color-dropdown-header">
-                            <input type="text" id="color-search-input" class="dropdown-search" autocomplete="off">
-                            <span id="color-selected-value" class="selected-value-placeholder">Выберите цвет...</span>
-                            <div class="arrow"></div>
-                        </div>
-                        <div class="dropdown-list hidden" id="color-dropdown-list">
-                            <div class="list-options" id="color-list-options"></div>
-                        </div>
                     </div>
-
-                </div>
             </div>
 
             <div class="content-wrapper">

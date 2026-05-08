@@ -1,4 +1,4 @@
-﻿*, *::before, *::after {
+*, *::before, *::after {
     box-sizing: border-box;
 }
 
@@ -112,14 +112,14 @@ main {
     border-radius: var(--radius);
     box-shadow: var(--card-shadow);
     padding: 0;
-    margin-top: 0.5rem;
+    margin-top: 0;
     margin-bottom: 3rem;
     min-height: 110vh;
     overflow: hidden;
 }
 
 .content-wrapper {
-    padding: 1.5rem 1.5rem 1.5rem; 
+    padding: 1.5rem 1.5rem 0rem; 
 }
 
 .page-title {
@@ -142,7 +142,9 @@ main {
     display: flex;
     flex-direction: column;
     gap: 1rem;
-    margin-bottom: 1.5rem; 
+    margin-bottom: 1.5rem;
+    position: relative;
+    z-index: 100; /* Главный фикс перекрытия слоев */
 }
 
 
@@ -205,7 +207,7 @@ main {
     box-shadow: var(--card-shadow);
     z-index: 100;
     padding: 0.5rem;
-    max-height: 350px;
+    max-height: 450px;
     overflow-y: auto;
     overflow-x: hidden;
 }
@@ -430,59 +432,95 @@ main {
 
 .mode-switcher-container {
     width: 100%;
-    background-color: var(--surface-color);
+    background-color: transparent;
+    padding: 0; 
+    margin: 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    border-top-left-radius: var(--radius);
+    border-top-right-radius: var(--radius);
 }
 
 .mode-switcher {
+    display: flex;
+    background: transparent; 
+    border-radius: 0;
+    padding: 4px; 
     position: relative;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    width: 100%;
-    background-color: transparent;
-    padding: 0;
+    box-shadow: none;
+    height: auto;
     border: none;
-    box-sizing: border-box;
-    height: 3rem;
 }
 
 .mode-switcher::before {
     content: '';
     position: absolute;
-    top: 0;
-    left: 0;
-    width: 50%;
-    height: 100%;
-    background-color: #4861a1;
-    box-shadow: 2px 0 15px -4px rgba(72, 97, 161, 0.7);
-    transition: all 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-    border-radius: var(--radius) 0 0 var(--radius);
+    top: 4px; bottom: 4px; left: 4px;
+    width: calc((100% - 8px) / 3); 
+    background: rgba(56, 189, 248, 0.15); 
+    border: 1px solid rgba(56, 189, 248, 0.25);
+    border-radius: 8px;
+    z-index: 1;
+    transition: transform 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.mode-switcher[data-active-mode="findUniversal"]::before {
+    transform: translateX(0%);
+}
+.mode-switcher[data-active-mode="findBgs"]::before {
+    transform: translateX(100%);
+}
+.mode-switcher[data-active-mode="findModels"]::before {
+    transform: translateX(200%);
 }
 
 .mode-switcher.mode-models::before {
     transform: translateX(100%);
+    box-shadow: none;
+    border-radius: 0;
+}
+
+.mode-switcher.mode-universal::before {
+    transform: translateX(200%);
     box-shadow: -2px 0 15px -4px rgba(72, 97, 161, 0.7);
     border-radius: 0 var(--radius) var(--radius) 0;
 }
 
+#sort-switcher {
+    grid-template-columns: 1fr 1fr;
+    height: 2.5rem;
+}
+#sort-switcher::before {
+    width: 50%;
+    border-radius: var(--radius) 0 0 var(--radius);
+}
+#sort-switcher.sort-price::before {
+    transform: translateX(100%);
+    border-radius: 0 var(--radius) var(--radius) 0;
+}
+
 .mode-tab {
-    padding: 10px 16px;
+    flex: 1;
     border: none;
-    background-color: transparent;
-    color: #8a9dc3; 
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    line-height: 1.2;
     font-weight: 600;
+    padding: 12px 2px;
+    z-index: 2;
+    transition: color 0.3s ease;
     cursor: pointer;
-    font-size: 0.95rem;
-    z-index: 1;
-    transition: color 0.3s ease-in-out, border-color 0.35s ease;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-bottom: 1px solid var(--border-color);
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .mode-tab.active {
-    color: var(--text-primary);
-    border-bottom-color: transparent;
+    color: var(--text-primary); 
 }
 
 .mode-content {
@@ -549,17 +587,22 @@ main {
     object-fit: contain;
 }
 
+
+/* --- ОБНОВЛЕННЫЕ СТИЛИ КАРТОЧКИ (С ДВУМЯ ПЛАШКАМИ ВНИЗУ) --- */
 .result-card-bg {
-    background-color: var(--surface-elevated);
-    border-radius: var(--radius);
+    border-radius: 16px;
     overflow: hidden;
-    border: 1px solid var(--border-color);
+    border: none;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    display: flex;
+    flex-direction: column;
     transition: transform 0.2s, box-shadow 0.2s;
+    position: relative;
 }
 
 .result-card-bg:hover {
     transform: translateY(-5px);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.6);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
 }
 
 .result-card-bg .image-container {
@@ -571,18 +614,94 @@ main {
     justify-content: center;
     padding: 10%; 
     box-sizing: border-box;
+    z-index: 1;
 }
 
 .result-card-bg .model-image {
     max-width: 100%;
     max-height: 100%;
     object-fit: contain;
-    z-index: 2; 
+    filter: drop-shadow(0 10px 15px rgba(0,0,0,0.4)); 
 }
 
+/* Градиент снизу вверх */
 .result-card-bg .info-container {
-    padding: 0.75rem 1rem; 
-    text-align: left; 
+    padding: 30px 14px 14px 14px; 
+    margin-top: -20px; /* Плавный наплыв на картинку */
+    position: relative;
+    z-index: 2;
+    background: linear-gradient(to top, rgba(14, 21, 38, 0.95) 20%, rgba(14, 21, 38, 0.6) 70%, transparent 100%);
+    display: flex;
+    flex-direction: column;
+    gap: 12px; /* Расстояние между текстом и блоком плашек */
+}
+
+/* Текстовая часть (Название) */
+.info-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    text-align: center; /* Центрируем текст для красоты */
+}
+
+.info-collection {
+    font-size: 0.65rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.7);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+}
+
+.info-model {
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: #ffffff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.2;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+}
+
+/* --- КОНТЕЙНЕР ПЛАШЕК --- */
+.info-badges {
+    display: flex;
+    flex-direction: column; /* Стоят друг над другом */
+    gap: 4px; /* Компактное расстояние */
+    width: 100%;
+}
+
+.badge-percent, .badge-price {
+    width: 100%;
+    text-align: center;
+    padding: 4px 0;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 800;
+    color: #fff; /* Белый текст */
+    background: rgba(0, 0, 0, 0.4); /* Одинаковый черный фон */
+    border: 1px solid rgba(255, 255, 255, 0.15); /* Одинаковая рамка */
+    backdrop-filter: blur(4px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 4px; /* Расстояние между текстом и иконкой */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.badge-price svg {
+    color: inherit;
+    margin-top: -1px;
+}
+
+/* Верхняя плашка (Процент) */
+.badge-percent {
+    color: #fff;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 .result-card-bg .bg-name {
@@ -706,6 +825,13 @@ main {
     white-space: nowrap;
 }
 
+.list-option .option-floor-price {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    font-weight: 400;
+    opacity: 0.75;
+}
+
 #model-themes-container {
     margin-top: 1rem; 
 }
@@ -797,13 +923,13 @@ body.modal-open {
     z-index: 2; 
 }
 
-
 #results-wrapper {
     background-color: transparent;
     box-shadow: none;
-    padding: 2rem 0.2rem 1rem 0.2rem; 
+    /* margin - ВНЕШНИЙ отступ. Именно он отодвинет линию рамки от краев экрана */
+    /* padding - ВНУТРЕННИЙ отступ. Задаст "воздух" между рамкой и самими карточками */
+    padding: 2.5rem 12px 1.5rem 12px; 
     position: relative;
-    margin-top: 2.5rem;
 }
 
 #results-wrapper::before {
@@ -1010,4 +1136,258 @@ main {
     color: var(--text-muted);
     width: 40px;
     height: 40px;
+}
+
+/* --- СТИЛИ УНИВЕРСАЛЬНОГО ФИЛЬТРА И ВЫПАДАЮЩИХ СПИСКОВ --- */
+
+/* 1. Обновленный дизайн выпадающих списков (чтобы всегда были поверх всего) */
+.dropdown-list {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    right: 0;
+    background-color: var(--surface-color); /* Плотный темный фон */
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(56, 189, 248, 0.15); /* Глубокая тень и легкое свечение */
+    z-index: 9999 !important; /* Жестко выводим на самый передний план */
+    padding: 8px;
+    max-height: 260px;
+    overflow-y: auto;
+}
+
+.dropdown-header {
+    background-color: var(--surface-elevated);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    transition: all 0.2s ease;
+}
+
+.dropdown-header.active {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15); /* Эффект фокуса */
+}
+
+/* Красивое выделение активного элемента списка */
+.list-option.selected {
+    background-color: rgba(56, 189, 248, 0.15);
+    border-left: 3px solid var(--primary-color);
+    border-radius: 8px;
+}
+
+.list-option.selected .option-text {
+    color: var(--text-primary);
+    font-weight: 700;
+}
+
+/* 2. Обертка фильтров с затухающей рамкой */
+.filter-wrapper {
+    background-color: rgba(22, 33, 58, 0.4);
+    padding: 2.5rem 1.5rem 1.5rem 1.5rem;
+    position: relative;
+    margin-top: 1.5rem;
+    margin-bottom: 2rem;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 24px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2), inset 0 1px 2px rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(12px);
+}
+
+/* Врезанный заголовок */
+.filter-header-label {
+    position: absolute;
+    top: 0; 
+    left: 50%;
+    transform: translate(-50%, -50%); 
+    background-color: rgba(22, 33, 58, 1); /* Фон подложки, чтобы перекрыть границу */
+    padding: 0 16px;
+    font-size: 0.85rem;
+    font-weight: 700; 
+    color: var(--text-muted); 
+    text-transform: uppercase; 
+    letter-spacing: 1.5px;
+    white-space: nowrap;
+    z-index: 2;
+    margin: 0;
+}
+
+/* 3. Строки фильтров и ИЕРАРХИЯ СЛОЕВ (Stacking Context) */
+.filter-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 20px;
+    position: relative;
+}
+
+/* САМОЕ ВАЖНОЕ: верхний ряд жестко "выше" нижних, чтобы списки падали поверх слайдеров и кнопок */
+.dropdowns-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    z-index: 100;
+}
+
+.sorting-row {
+    justify-content: flex-start;
+    align-items: flex-end;
+    z-index: 50; 
+}
+
+.filter-row-slider {
+    margin-bottom: 20px;
+    position: relative;
+    z-index: 10;
+}
+
+.sort-group-col {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+}
+
+.filter-label {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    font-weight: 600;
+    padding-left: 4px;
+}
+
+.highlight-val {
+    color: var(--text-primary);
+    font-weight: 800;
+}
+
+/* 4. Переключатели сортировки (Новый объемный стиль) */
+.mini-switcher {
+    display: flex;
+    background: rgba(0, 0, 0, 0.3); 
+    padding: 4px;
+    border-radius: 10px;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+    border: none;
+}
+
+.mini-tab {
+    flex: 1;
+    padding: 8px 16px;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    text-align: center;
+}
+.mini-tab.active {
+    background: var(--surface-elevated);
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+.direction-toggle-btn {
+    background: rgba(0, 0, 0, 0.3);
+    border: none;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+    color: var(--text-primary);
+    padding: 10px 16px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    height: 100%;
+}
+
+.direction-toggle-btn:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.direction-toggle-btn svg {
+    transition: transform 0.3s ease;
+}
+.direction-toggle-btn.asc svg {
+    transform: rotate(180deg);
+}
+
+
+
+/* 5. Слайдер */
+.slider-header {
+    margin-bottom: 12px;
+}
+.modern-slider {
+    width: 100%;
+    -webkit-appearance: none;
+    height: 8px;
+    border-radius: 4px;
+    outline: none;
+    transition: background 0.1s;
+}
+.modern-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 20px;
+    height: 20px;
+    background: var(--primary-color);
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 0 10px var(--glow-color);
+}
+
+/* 6. Кнопка Поиска */
+.primary-search-btn {
+    width: 100%;
+    background: linear-gradient(135deg, var(--primary-color) 0%, #0284c7 100%);
+    color: #fff;
+    border: none;
+    padding: 14px;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 800;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 4px 20px rgba(56, 189, 248, 0.3);
+    transition: transform 0.2s, box-shadow 0.2s;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+
+.primary-search-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 25px rgba(56, 189, 248, 0.5);
+}
+
+.primary-search-btn svg {
+    width: 20px;
+    height: 20px;
+    stroke-width: 2.5;
+}
+/* 7. Адаптив для телефонов */
+@media (max-width: 600px) {
+    .dropdowns-row {
+        grid-template-columns: 1fr;
+    }
+    .sorting-row {
+        flex-direction: row;
+        flex-wrap: wrap;
+    }
+    .sort-group-col {
+        width: auto;
+        flex-grow: 1;
+    }
+    .mini-tab {
+        padding: 8px 12px;
+    }
+    .direction-toggle-btn {
+        padding: 8px 12px;
+    }
 }
