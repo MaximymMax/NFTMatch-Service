@@ -54,6 +54,20 @@ window.initNFTsSection = function (giftName, modelName, bgName) {
         
         newBtn.addEventListener('click', (e) => {
             e.stopPropagation();
+
+            // 👑 === БЛОКИРОВКА ПО ПОДПИСКЕ ===
+            // Замени window.isPremiumUser на твою реальную переменную (например tgUser.isPremium)
+            const isPremiumUser = window.isPremiumUser || false; 
+            if (!isPremiumUser) {
+                if (window.showPremiumRequiredNotification) {
+                    window.showPremiumRequiredNotification();
+                } else {
+                    alert("Требуется Premium-подписка для использования поиска.");
+                }
+                return; // Прерываем выполнение, не даем открыть контент
+            }
+            // ===================================
+
             const scenario = parseInt(newBtn.dataset.scenario);
             const content = document.getElementById(`content-scenario-${scenario}`);
             
@@ -73,6 +87,32 @@ window.initNFTsSection = function (giftName, modelName, bgName) {
             }
         });
     });
+};
+
+window.showPremiumRequiredNotification = function() {
+    // Если тост уже висит на экране, не дублируем
+    if (document.getElementById('premium-toast')) return;
+
+    const toast = document.createElement('div');
+    toast.id = 'premium-toast';
+    toast.className = 'premium-toast-notification';
+    toast.innerHTML = `
+        <div class="pt-icon">👑</div>
+        <div class="pt-text">
+            <strong>Требуется подписка</strong>
+            <span>Этот поиск доступен только Premium пользователям.</span>
+        </div>
+        <button class="pt-close-btn" onclick="this.parentElement.remove()">✕</button>
+    `;
+    document.body.appendChild(toast);
+
+    // Автоскрытие через 3 секунды
+    setTimeout(() => {
+        if (toast.parentElement) {
+            toast.classList.add('hiding');
+            setTimeout(() => toast.remove(), 300); // удаляем из DOM после анимации
+        }
+    }, 3000);
 };
 
 window.loadMarketData = async function(scenario) {

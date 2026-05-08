@@ -1568,3 +1568,74 @@ img.lazy-image {
 img.lazy-image.loaded {
     opacity: 1;
 }
+
+/* Всплывающее уведомление о подписке */
+.premium-toast-notification {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: linear-gradient(135deg, #1e2944 0%, #16213a 100%);
+    border: 1px solid rgba(255, 215, 0, 0.4); /* Легкий золотой бордер */
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6), 0 0 15px rgba(255, 215, 0, 0.15);
+    border-radius: 16px;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    z-index: 10000;
+    opacity: 0;
+    animation: toastSlideUp 0.4s forwards cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    width: 90%;
+    max-width: 320px;
+}
+
+.premium-toast-notification.hiding {
+    animation: toastSlideDown 0.3s forwards ease-in;
+}
+
+.pt-icon {
+    font-size: 1.5rem;
+    filter: drop-shadow(0 2px 4px rgba(255, 215, 0, 0.4));
+}
+
+.pt-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex-grow: 1;
+}
+
+.pt-text strong {
+    color: #ffd700;
+    font-size: 0.9rem;
+    font-weight: 800;
+}
+
+.pt-text span {
+    color: #d8d8d8;
+    font-size: 0.8rem;
+    line-height: 1.2;
+}
+
+.pt-close-btn {
+    background: transparent;
+    border: none;
+    color: #6b7fa7;
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 0;
+    margin-left: 8px;
+    transition: color 0.2s;
+}
+
+.pt-close-btn:hover {
+    color: #fff;
+}
+
+@keyframes toastSlideUp {
+    to { transform: translateX(-50%) translateY(0); opacity: 1; }
+}
+@keyframes toastSlideDown {
+    to { transform: translateX(-50%) translateY(100px); opacity: 0; }
+}

@@ -1765,30 +1765,11 @@ function renderModelDetailViewBody(modelData, preloadedData) {
             if (item.dataset.bg === String(newBgName || 'none')) item.classList.add('active');
         });
 
-        // 3. Подгружаем количество для нового фона
-        countEls.forEach(el => el.innerHTML = '<span class="loading-spinner-mini" style="width:14px; height:14px; border-width:2px;"></span>');
-        
-        try {
-            let currentCount = modelData.Count;
-            if (newBgName) {
-                // ПРИМЕЧАНИЕ: Если сделаешь мелкий путь на бэке, поменяй URL здесь. 
-                // Пока используем стандартный запрос SearchGifts на 1 элемент ради TotalCount
-                const countUrl = `${BASE_URL}/api/ListGifts/SearchGifts/1/1`;
-                const countResp = await fetch(countUrl, {
-                    method: 'POST',
-                    headers: { 'Authorization': getApiAuthHeader(), 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ GiftName: modelData.GiftName, ModelName: modelData.ModelName, BackgroundName: newBgName })
-                });
-                if (countResp.ok) {
-                    const countData = await countResp.json();
-                    if (countData && typeof countData.TotalCount === 'number') {
-                        currentCount = countData.TotalCount;
-                    }
-                }
-            }
-            countEls.forEach(el => el.textContent = `${currentCount} шт.`);
-        } catch(e) {
+        // 3. СТАВИМ ПРОЧЕРК ВМЕСТО ТЯЖЕЛОГО ЗАПРОСА
+        if (newBgName) {
             countEls.forEach(el => el.textContent = '- шт.');
+        } else {
+            countEls.forEach(el => el.textContent = `${modelData.Count || '-'} шт.`);
         }
 
         // Обновляем маркет-зону под новый фон
