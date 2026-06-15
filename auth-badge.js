@@ -33,7 +33,7 @@
             borderRadius: '20px',
             padding: '6px 14px',
             display: 'flex',
-            align-items: 'center',
+            alignItems: 'center',
             gap: '8px',
             cursor: 'pointer',
             color: '#ffffff',
