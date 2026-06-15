@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Circular Gradient Validator</title>
+    <script src="./config.js"></script>
     <style>
         :root {
             --bg-color: #0a1020;
@@ -256,7 +257,7 @@
         </div>
 
     <script>
-        const SERVER_BASE_URL = 'https://nftmatchbot20250730152328.azurewebsites.net';
+        const SERVER_BASE_URL = window.CONFIG?.SERVER_BASE_URL || 'https://nftmatch.pro';
         const API_PHOTO_URL = 'https://cdn.changes.tg/gifts/models';
         const BYPASS_KEY = 'UserOwnerKey759-jrpf'; 
 

@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
 
-    const SERVER_BASE_URL = 'https://nftmatchbot20250730152328.azurewebsites.net';
+    const SERVER_BASE_URL = window.CONFIG?.SERVER_BASE_URL || 'https://nftmatch.pro';
     const API_PHOTO_URL = 'https://cdn.changes.tg/gifts/models';
     const API_GIFT_ORIGINALS_URL = 'https://cdn.changes.tg/gifts/originals';
     const INIT_DATA_KEY = 'tgInitData';

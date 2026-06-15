@@ -1,4 +1,4 @@
-const SERVER_BASE_URL = 'https://nftmatchbot20250730152328.azurewebsites.net/';
+const SERVER_BASE_URL = window.CONFIG?.SERVER_BASE_URL || 'https://nftmatch.pro';
 const API_PHOTO_MODEL_URL = 'https://cdn.changes.tg/gifts/models';
 // Используем актуальный эндпоинт для получения всех похожих моделей
 const API_SIMILAR_MODELS = '/api/MonoCoof/SimilarNFT';

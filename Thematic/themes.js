@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
 
     // --- КОНФИГУРАЦИЯ ---
-    const SERVER_BASE_URL = 'https://nftmatchbot20250730152328.azurewebsites.net';
+    const SERVER_BASE_URL = window.CONFIG?.SERVER_BASE_URL || 'https://nftmatch.pro';
     const API_PHOTO_URL = 'https://cdn.changes.tg/gifts/models';
     const INIT_DATA_KEY = 'tgInitData';
     const BYPASS_KEY_STORAGE = 'apiBypassKey';

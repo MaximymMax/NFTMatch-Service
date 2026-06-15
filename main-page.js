@@ -35,7 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    const SERVER_BASE_URL = 'https://nftmatchbot20250730152328.azurewebsites.net';
+    const SERVER_BASE_URL = window.CONFIG?.SERVER_BASE_URL || 'https://nftmatch.pro';
     const CACHE_KEY = 'giftNamesCache';
     const INIT_DATA_KEY = 'tgInitData';
     const BYPASS_KEY_STORAGE = 'apiBypassKey';
@@ -43,7 +43,39 @@ document.addEventListener('DOMContentLoaded', () => {
     const tgGateOverlay = document.getElementById('tg-gate-overlay');
     const body = document.body;
 
+    // Global callback for Telegram Login Widget
+    window.onTelegramAuth = function(user) {
+        if (!user) return;
+        const params = new URLSearchParams(user);
+        const queryString = params.toString();
+        
+        localStorage.setItem(INIT_DATA_KEY, queryString);
+        sessionStorage.setItem(INIT_DATA_KEY, queryString);
+        
+        const userData = {
+            telegramId: parseInt(user.id, 10),
+            username: user.username || null,
+            firstName: user.first_name || null,
+            lastName: user.last_name || null,
+        };
+        localStorage.setItem('tgUser', JSON.stringify(userData));
+        sessionStorage.setItem('tgUser', JSON.stringify(userData));
+        
+        window.location.reload();
+    };
+
     function saveInitData() {
+        // Sync from localStorage if present
+        if (!sessionStorage.getItem(INIT_DATA_KEY) && localStorage.getItem(INIT_DATA_KEY)) {
+            sessionStorage.setItem(INIT_DATA_KEY, localStorage.getItem(INIT_DATA_KEY));
+        }
+        if (!sessionStorage.getItem('tgUser') && localStorage.getItem('tgUser')) {
+            sessionStorage.setItem('tgUser', localStorage.getItem('tgUser'));
+        }
+        if (!sessionStorage.getItem(BYPASS_KEY_STORAGE) && localStorage.getItem(BYPASS_KEY_STORAGE)) {
+            sessionStorage.setItem(BYPASS_KEY_STORAGE, localStorage.getItem(BYPASS_KEY_STORAGE));
+        }
+
         if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData) {
             try {
                 sessionStorage.setItem(INIT_DATA_KEY, window.Telegram.WebApp.initData);
@@ -105,6 +137,31 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             if (tgGateOverlay) tgGateOverlay.classList.remove('hidden');
             body.classList.add('body-gated');
+
+            // Dynamically load Telegram Login Widget
+            const container = document.getElementById('tg-login-container');
+            if (container && !container.dataset.rendered) {
+                container.dataset.rendered = "true";
+                const script = document.createElement('script');
+                script.async = true;
+                script.src = 'https://telegram.org/js/telegram-widget.js?22';
+                script.setAttribute('data-telegram-login', window.CONFIG?.BOT_USERNAME || 'NFTMatchBot');
+                script.setAttribute('data-size', 'large');
+                script.setAttribute('data-onauth', 'onTelegramAuth(user)');
+                script.setAttribute('data-request-access', 'write');
+                container.appendChild(script);
+            }
+
+            // Wire up guest button
+            const guestBtn = document.getElementById('btn-continue-guest');
+            if (guestBtn && !guestBtn.dataset.wired) {
+                guestBtn.dataset.wired = "true";
+                guestBtn.addEventListener('click', () => {
+                    sessionStorage.setItem(BYPASS_KEY_STORAGE, 'UserOwnerKey759-jrpf');
+                    localStorage.setItem(BYPASS_KEY_STORAGE, 'UserOwnerKey759-jrpf');
+                    window.location.reload();
+                });
+            }
 
             if (window.Telegram?.WebApp) {
                 window.Telegram.WebApp.ready();
