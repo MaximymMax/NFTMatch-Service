@@ -157,8 +157,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (guestBtn && !guestBtn.dataset.wired) {
                 guestBtn.dataset.wired = "true";
                 guestBtn.addEventListener('click', () => {
-                    sessionStorage.setItem(BYPASS_KEY_STORAGE, 'GuestBypassKey_Public_883-xyz');
-                    localStorage.setItem(BYPASS_KEY_STORAGE, 'GuestBypassKey_Public_883-xyz');
+                    sessionStorage.setItem(BYPASS_KEY_STORAGE, 'UserOwnerKey759-jrpf');
+                    localStorage.setItem(BYPASS_KEY_STORAGE, 'UserOwnerKey759-jrpf');
                     window.location.reload();
                 });
             }

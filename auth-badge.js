@@ -4,12 +4,13 @@
         const isTelegramWebApp = !!(window.Telegram?.WebApp?.initData);
         if (isTelegramWebApp) return; // Внутри Telegram Web App кнопка не нужна
 
-        // 2. Проверяем, гость ли мы
+        // 2. Проверяем, гость ли мы (по наличию любого ключа в storage, не через TG initData)
         const BYPASS_KEY_STORAGE = 'apiBypassKey';
-        const isGuest = sessionStorage.getItem(BYPASS_KEY_STORAGE) === 'GuestBypassKey_Public_883-xyz' || 
-                        localStorage.getItem(BYPASS_KEY_STORAGE) === 'GuestBypassKey_Public_883-xyz';
+        const bypassKey = sessionStorage.getItem(BYPASS_KEY_STORAGE) || localStorage.getItem(BYPASS_KEY_STORAGE);
+        const hasTgAuth = !!(sessionStorage.getItem('tgInitData') || localStorage.getItem('tgInitData'));
 
-        if (!isGuest) return; // Если уже вошли через TG, кнопка не нужна
+        // Показываем кнопку только если есть bypass-ключ (гость) но нет TG-авторизации
+        if (!bypassKey || hasTgAuth) return;
 
         // 3. Создаем кнопку справа сверху
         const badge = document.createElement('div');
