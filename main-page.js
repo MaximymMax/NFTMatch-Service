@@ -9,26 +9,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // 2. Гарантированно расширяем
         setTimeout(() => {
-             try {
-                // Сначала всегда расширяем шторку на максимум
+            try {
                 tg.expand();
-                
-                // Потом пробуем включить иммерсивный фуллскрин (если поддерживается)
-                if (typeof tg.requestFullscreen === 'function') {
+                // requestFullscreen появился в TG 8.0
+                if (typeof tg.requestFullscreen === 'function' && tg.isVersionAtLeast && tg.isVersionAtLeast('8.0')) {
                     tg.requestFullscreen();
                 }
             } catch (e) {
-                console.error(e);
-                tg.expand();
+                // Игнорируем — expand уже был вызван
+                console.warn('[TG] requestFullscreen not supported:', e?.message || e);
             }
         }, 100);
 
-        // 3. Отключаем свайп вниз для закрытия
+        // 3. Отключаем свайп вниз для закрытия (TG 7.7+)
         if (tg.isVersionAtLeast && tg.isVersionAtLeast('7.7')) {
             tg.disableVerticalSwipes();
         }
 
-        tg.BackButton.hide();
+        // BackButton.hide() поддерживается с TG 6.1+
+        if (tg.isVersionAtLeast && tg.isVersionAtLeast('6.1')) {
+            tg.BackButton.hide();
+        }
 
         if (tg.initData) {
             sessionStorage.setItem('tgInitData', tg.initData);
@@ -104,16 +105,13 @@ document.addEventListener('DOMContentLoaded', () => {
         if (window.Telegram && window.Telegram.WebApp) {
             const tg = window.Telegram.WebApp;
             try {
-                // ВСЕГДА сначала делаем expand
                 tg.expand();
-                
-                // И только потом пробуем фуллскрин
-                if (typeof tg.requestFullscreen === 'function') {
+                // requestFullscreen только в TG 8.0+
+                if (typeof tg.requestFullscreen === 'function' && tg.isVersionAtLeast && tg.isVersionAtLeast('8.0')) {
                     tg.requestFullscreen();
                 }
             } catch (e) {
-                console.error(e);
-                tg.expand();
+                console.warn('[TG] forceFullscreen error:', e?.message || e);
             }
         }
     };
