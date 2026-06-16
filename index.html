@@ -21,15 +21,15 @@
 <body>
 
     <div id="tg-gate-overlay" class="tg-gate-overlay hidden">
-        <div class="tg-gate-modal">
+        <div class="tg-gate-modal" style="position: relative;">
+            <button id="tg-gate-close" style="position: absolute; top: 15px; right: 15px; background: none; border: none; color: rgba(255,255,255,0.5); font-size: 24px; cursor: pointer; line-height: 1; padding: 0;">&times;</button>
             <h2>NFT MATCH</h2>
-            <p>Авторизуйтесь через Telegram для полноценного использования или продолжите как гость.</p>
+            <p>Для использования функций приложения необходимо авторизоваться через Telegram.</p>
             
-            <div id="tg-login-container" style="margin: 20px 0; display: flex; justify-content: center; min-height: 40px;"></div>
+            <div id="tg-login-container" style="margin: 20px 0; display: flex; justify-content: center; min-height: 40px; width: 100%;"></div>
             
             <div style="display: flex; flex-direction: column; gap: 10px; width: 100%;">
-                <a href="https://t.me/NFTMatchBot" target="_blank" class="tg-gate-link" style="text-align: center;">Открыть в Telegram</a>
-                <button id="btn-continue-guest" class="tg-gate-btn-secondary" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: #fff; padding: 12px; border-radius: 12px; cursor: pointer; font-weight: 500; font-size: 14px; transition: background 0.2s;">Войти как гость</button>
+                <a href="https://t.me/NFTMatchBot" target="_blank" class="tg-gate-link" style="text-align: center;">Открыть в Telegram-боте</a>
             </div>
         </div>
     </div>

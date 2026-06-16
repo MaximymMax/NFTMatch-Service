@@ -73,39 +73,124 @@ document.addEventListener('DOMContentLoaded', () => {
         window.location.reload();
     }
 
-    // Рендерим кнопку через новый Telegram.Login API
-    function renderTelegramButton() {
+    // ====== TELEGRAM OAUTH 2.0 (PKCE) ======
+
+    // Генерируем случайную строку для PKCE code_verifier
+    function generateCodeVerifier() {
+        const array = new Uint8Array(32);
+        crypto.getRandomValues(array);
+        return btoa(String.fromCharCode(...array))
+            .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+    }
+
+    // SHA-256 хэш для code_challenge
+    async function generateCodeChallenge(verifier) {
+        const data = new TextEncoder().encode(verifier);
+        const hash = await crypto.subtle.digest('SHA-256', data);
+        return btoa(String.fromCharCode(...new Uint8Array(hash)))
+            .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+    }
+
+    // Обрабатываем callback от Telegram (если в URL есть ?code=...)
+    async function handleOAuthCallback() {
+        const params = new URLSearchParams(window.location.search);
+        const code = params.get('code');
+        if (!code) return false;
+
+        const codeVerifier = sessionStorage.getItem('tg_oauth_verifier');
+        const redirectUri = sessionStorage.getItem('tg_oauth_redirect');
+        if (!codeVerifier || !redirectUri) {
+            console.warn('[OAuth] code_verifier not found in session');
+            return false;
+        }
+
+        // Чистим URL от ?code=...
+        window.history.replaceState({}, '', window.location.pathname);
+
+        try {
+            const resp = await fetch(`${SERVER_BASE_URL}/api/Auth/TelegramWebLogin`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ code, codeVerifier, redirectUri })
+            });
+
+            if (!resp.ok) {
+                const err = await resp.text();
+                console.error('[OAuth] Backend error:', err);
+                return false;
+            }
+
+            const data = await resp.json();
+            // Сохраняем API-ключ как bypass-ключ, он будет использован для всех запросов
+            sessionStorage.setItem(BYPASS_KEY_STORAGE, data.apiKey);
+            localStorage.setItem(BYPASS_KEY_STORAGE, data.apiKey);
+
+            // Сохраняем данные пользователя
+            if (data.telegramId) {
+                const userData = {
+                    telegramId: data.telegramId,
+                    username: data.username || null,
+                    firstName: data.username || null,
+                    lastName: null
+                };
+                sessionStorage.setItem('tgUser', JSON.stringify(userData));
+                localStorage.setItem('tgUser', JSON.stringify(userData));
+            }
+
+            // Чистим временные данные PKCE
+            sessionStorage.removeItem('tg_oauth_verifier');
+            sessionStorage.removeItem('tg_oauth_redirect');
+
+            window.location.reload();
+            return true;
+        } catch (e) {
+            console.error('[OAuth] Fetch error:', e);
+            return false;
+        }
+    }
+
+    // Рендерим кнопку которая запускает OAuth redirect
+    async function renderTelegramButton() {
         const container = document.getElementById('tg-login-container');
         if (!container || container.dataset.rendered) return;
         container.dataset.rendered = 'true';
 
-        if (window.Telegram && window.Telegram.Login) {
-            // Создаём кнопку которая при клике запускает Telegram.Login.auth()
-            const btn = document.createElement('button');
-            btn.innerHTML = `
-                <svg viewBox="0 0 24 24" width="18" height="18" fill="white" style="margin-right:8px;vertical-align:middle;">
-                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 0 0-.05-.18c-.06-.05-.14-.03-.2-.02-.08.02-1.32.84-3.73 2.46-.35.24-.67.36-.97.35-.32-.01-.95-.18-1.41-.33-.57-.18-1.02-.28-1.01-.59.01-.16.23-.33.68-.51 2.76-1.2 4.6-2 5.53-2.4 2.64-1.1 3.19-1.3 3.55-1.3.08 0 .25.02.36.11.09.08.12.19.13.27 0 .05-.01.15-.02.21z"/>
-                </svg>
-                Войти через Telegram`;
-            btn.style.cssText = 'display:inline-flex;align-items:center;background:#2ea6da;color:#fff;border:none;border-radius:8px;padding:10px 20px;font-size:15px;font-weight:600;cursor:pointer;width:100%;justify-content:center;';
-            btn.addEventListener('mouseenter', () => btn.style.background = '#1d8bbf');
-            btn.addEventListener('mouseleave', () => btn.style.background = '#2ea6da');
+        const btn = document.createElement('button');
+        btn.innerHTML = `
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="white" style="margin-right:8px;vertical-align:middle;flex-shrink:0;">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 0 0-.05-.18c-.06-.05-.14-.03-.2-.02-.08.02-1.32.84-3.73 2.46-.35.24-.67.36-.97.35-.32-.01-.95-.18-1.41-.33-.57-.18-1.02-.28-1.01-.59.01-.16.23-.33.68-.51 2.76-1.2 4.6-2 5.53-2.4 2.64-1.1 3.19-1.3 3.55-1.3.08 0 .25.02.36.11.09.08.12.19.13.27 0 .05-.01.15-.02.21z"/>
+            </svg>
+            Войти через Telegram`;
+        btn.style.cssText = 'display:inline-flex;align-items:center;background:#2ea6da;color:#fff;border:none;border-radius:8px;padding:10px 20px;font-size:15px;font-weight:600;cursor:pointer;width:100%;justify-content:center;transition:background 0.2s;';
+        btn.addEventListener('mouseenter', () => btn.style.background = '#1d8bbf');
+        btn.addEventListener('mouseleave', () => btn.style.background = '#2ea6da');
 
-            btn.addEventListener('click', () => {
-                Telegram.Login.auth(
-                    {
-                        client_id: window.CONFIG?.BOT_CLIENT_ID || '7544432373',
-                        request_access: 'write',
-                    },
-                    (data) => onTelegramAuth(data)
-                );
+        btn.addEventListener('click', async () => {
+            btn.disabled = true;
+            btn.textContent = 'Перенаправление...';
+
+            const verifier = generateCodeVerifier();
+            const challenge = await generateCodeChallenge(verifier);
+            const redirectUri = `${window.location.origin}${window.location.pathname}`;
+            const state = Math.random().toString(36).slice(2);
+
+            sessionStorage.setItem('tg_oauth_verifier', verifier);
+            sessionStorage.setItem('tg_oauth_redirect', redirectUri);
+
+            const params = new URLSearchParams({
+                client_id: window.CONFIG?.BOT_CLIENT_ID || '7544432373',
+                redirect_uri: redirectUri,
+                response_type: 'code',
+                scope: 'openid profile',
+                state,
+                code_challenge: challenge,
+                code_challenge_method: 'S256'
             });
 
-            container.appendChild(btn);
-        } else {
-            // Fallback: показываем ссылку на бота
-            container.innerHTML = '<a href="https://t.me/NFTMatchBot" target="_blank" style="color:#54a9eb;text-decoration:none;">Открыть в Telegram →</a>';
-        }
+            window.location.href = `https://oauth.telegram.org/auth?${params}`;
+        });
+
+        container.appendChild(btn);
     }
 
 
@@ -160,55 +245,82 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    // Загрузка скрипта Telegram Login для внешних браузеров
+    const loadTelegramLoginScript = () => {
+        if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData) {
+            // Внутри WebApp скрипт авторизации не нужен
+            return;
+        }
+        if (!document.getElementById('tg-login-script')) {
+            const script = document.createElement('script');
+            script.id = 'tg-login-script';
+            script.src = 'https://telegram.org/js/telegram-login.js';
+            script.async = true;
+            script.onload = () => renderTelegramButton();
+            document.head.appendChild(script);
+        } else {
+            renderTelegramButton();
+        }
+    };
+
+    const isUserAuthorized = () => {
+        return !!(sessionStorage.getItem(INIT_DATA_KEY) || sessionStorage.getItem(BYPASS_KEY_STORAGE));
+    };
+
+    const showAuthModal = () => {
+        if (tgGateOverlay) tgGateOverlay.classList.remove('hidden');
+        body.classList.add('body-gated');
+    };
+
+    const hideAuthModal = () => {
+        if (tgGateOverlay) tgGateOverlay.classList.add('hidden');
+        body.classList.remove('body-gated');
+    };
+
+    // Настраиваем кнопку закрытия модалки
+    const closeBtn = document.getElementById('tg-gate-close');
+    if (closeBtn) {
+        closeBtn.addEventListener('click', hideAuthModal);
+    }
+
     const checkEnvironmentAndGate = () => {
+        // Загружаем скрипт логина для браузера в любом случае
+        loadTelegramLoginScript();
+
+        // Проверяем наличие параметра bypass в URL (для тестов/админа)
+        const urlParams = new URLSearchParams(window.location.search);
+        const bypass = urlParams.get('bypass');
+        if (bypass) {
+            sessionStorage.setItem(BYPASS_KEY_STORAGE, bypass);
+            window.location.reload();
+            return true;
+        }
+
         if (saveInitData()) {
-            if (tgGateOverlay) tgGateOverlay.classList.add('hidden');
             body.classList.remove('body-gated');
             body.classList.add('tg-fullscreen');
-
             forceFullscreen();
-
             return true;
-        } else {
-            const urlParams = new URLSearchParams(window.location.search);
-            const bypass = urlParams.get('bypass');
-            if (bypass) {
-                sessionStorage.setItem(BYPASS_KEY_STORAGE, bypass);
-                window.location.reload();
-                return true;
-            }
-            if (tgGateOverlay) tgGateOverlay.classList.remove('hidden');
-            body.classList.add('body-gated');
-
-            // Load new Telegram Login library
-            if (!document.getElementById('tg-login-script')) {
-                const script = document.createElement('script');
-                script.id = 'tg-login-script';
-                script.src = 'https://telegram.org/js/telegram-login.js';
-                script.async = true;
-                script.onload = () => renderTelegramButton();
-                document.head.appendChild(script);
-            } else {
-                renderTelegramButton();
-            }
-
-            // Wire up guest button
-            const guestBtn = document.getElementById('btn-continue-guest');
-            if (guestBtn && !guestBtn.dataset.wired) {
-                guestBtn.dataset.wired = "true";
-                guestBtn.addEventListener('click', () => {
-                    sessionStorage.setItem(BYPASS_KEY_STORAGE, 'UserOwnerKey759-jrpf');
-                    localStorage.setItem(BYPASS_KEY_STORAGE, 'UserOwnerKey759-jrpf');
-                    window.location.reload();
-                });
-            }
-
-            if (window.Telegram?.WebApp) {
-                window.Telegram.WebApp.ready();
-                forceFullscreen();
-            }
-            return false;
         }
+
+        // Если обычный браузер и нет авторизации — НЕ блокируем страницу сразу,
+        // позволяем просматривать главную страницу
+        if (window.Telegram?.WebApp) {
+            window.Telegram.WebApp.ready();
+            forceFullscreen();
+        }
+
+        // Навешиваем перехватчик кликов на карточки функций
+        document.querySelectorAll('.feature-card-new').forEach(card => {
+            card.addEventListener('click', (e) => {
+                if (!isUserAuthorized()) {
+                    e.preventDefault(); // Запрещаем переход по ссылке
+                    showAuthModal();    // Показываем окно авторизации
+                }
+            });
+        });
+
+        return true; // Разрешаем выполнение дальнейшего кода (прелоад и т.д.)
     };
 
     const signalTelegramAppReady = () => {
@@ -495,8 +607,13 @@ document.addEventListener('DOMContentLoaded', () => {
         finally { await initCarousel(); signalTelegramAppReady(); }
     };
 
-    if (checkEnvironmentAndGate()) {
-        preloadGiftNames();
-        handleDeepLink();
-    }
+    // Сначала проверяем — вернулись ли мы из OAuth redirect
+    handleOAuthCallback().then(wasCallback => {
+        if (!wasCallback) {
+            if (checkEnvironmentAndGate()) {
+                preloadGiftNames();
+                handleDeepLink();
+            }
+        }
+    });
 });
