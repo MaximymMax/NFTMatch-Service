@@ -80,15 +80,28 @@ document.addEventListener('DOMContentLoaded', () => {
         container.dataset.rendered = 'true';
 
         if (window.Telegram && window.Telegram.Login) {
-            Telegram.Login.init(
-                {
-                    client_id: window.CONFIG?.BOT_CLIENT_ID || '7544432373',
-                    request_access: 'write',
-                },
-                (data) => onTelegramAuth(data)
-            );
-            // Создаём кнопку через библиотеку
-            Telegram.Login.open();
+            // Создаём кнопку которая при клике запускает Telegram.Login.auth()
+            const btn = document.createElement('button');
+            btn.innerHTML = `
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="white" style="margin-right:8px;vertical-align:middle;">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 0 0-.05-.18c-.06-.05-.14-.03-.2-.02-.08.02-1.32.84-3.73 2.46-.35.24-.67.36-.97.35-.32-.01-.95-.18-1.41-.33-.57-.18-1.02-.28-1.01-.59.01-.16.23-.33.68-.51 2.76-1.2 4.6-2 5.53-2.4 2.64-1.1 3.19-1.3 3.55-1.3.08 0 .25.02.36.11.09.08.12.19.13.27 0 .05-.01.15-.02.21z"/>
+                </svg>
+                Войти через Telegram`;
+            btn.style.cssText = 'display:inline-flex;align-items:center;background:#2ea6da;color:#fff;border:none;border-radius:8px;padding:10px 20px;font-size:15px;font-weight:600;cursor:pointer;width:100%;justify-content:center;';
+            btn.addEventListener('mouseenter', () => btn.style.background = '#1d8bbf');
+            btn.addEventListener('mouseleave', () => btn.style.background = '#2ea6da');
+
+            btn.addEventListener('click', () => {
+                Telegram.Login.auth(
+                    {
+                        client_id: window.CONFIG?.BOT_CLIENT_ID || '7544432373',
+                        request_access: 'write',
+                    },
+                    (data) => onTelegramAuth(data)
+                );
+            });
+
+            container.appendChild(btn);
         } else {
             // Fallback: показываем ссылку на бота
             container.innerHTML = '<a href="https://t.me/NFTMatchBot" target="_blank" style="color:#54a9eb;text-decoration:none;">Открыть в Telegram →</a>';
