@@ -44,26 +44,57 @@ document.addEventListener('DOMContentLoaded', () => {
     const tgGateOverlay = document.getElementById('tg-gate-overlay');
     const body = document.body;
 
-    // Global callback for Telegram Login Widget
-    window.onTelegramAuth = function(user) {
-        if (!user) return;
-        const params = new URLSearchParams(user);
-        const queryString = params.toString();
-        
-        localStorage.setItem(INIT_DATA_KEY, queryString);
-        sessionStorage.setItem(INIT_DATA_KEY, queryString);
-        
-        const userData = {
-            telegramId: parseInt(user.id, 10),
-            username: user.username || null,
-            firstName: user.first_name || null,
-            lastName: user.last_name || null,
-        };
-        localStorage.setItem('tgUser', JSON.stringify(userData));
-        sessionStorage.setItem('tgUser', JSON.stringify(userData));
-        
+    // Callback для нового Telegram Login API
+    function onTelegramAuth(data) {
+        if (!data) return;
+
+        // Новый API возвращает id_token (JWT) + user объект
+        const token = data.id_token || null;
+        const user = data.user || data; // совместимость со старым форматом
+
+        // Сохраняем токен для авторизации запросов к API
+        if (token) {
+            localStorage.setItem(INIT_DATA_KEY, token);
+            sessionStorage.setItem(INIT_DATA_KEY, token);
+        }
+
+        // Сохраняем данные пользователя
+        if (user && user.id) {
+            const userData = {
+                telegramId: parseInt(user.id, 10),
+                username: user.username || user.preferred_username || null,
+                firstName: user.first_name || user.name?.split(' ')[0] || null,
+                lastName: user.last_name || null,
+            };
+            localStorage.setItem('tgUser', JSON.stringify(userData));
+            sessionStorage.setItem('tgUser', JSON.stringify(userData));
+        }
+
         window.location.reload();
-    };
+    }
+
+    // Рендерим кнопку через новый Telegram.Login API
+    function renderTelegramButton() {
+        const container = document.getElementById('tg-login-container');
+        if (!container || container.dataset.rendered) return;
+        container.dataset.rendered = 'true';
+
+        if (window.Telegram && window.Telegram.Login) {
+            Telegram.Login.init(
+                {
+                    client_id: window.CONFIG?.BOT_CLIENT_ID || '7544432373',
+                    request_access: 'write',
+                },
+                (data) => onTelegramAuth(data)
+            );
+            // Создаём кнопку через библиотеку
+            Telegram.Login.open();
+        } else {
+            // Fallback: показываем ссылку на бота
+            container.innerHTML = '<a href="https://t.me/NFTMatchBot" target="_blank" style="color:#54a9eb;text-decoration:none;">Открыть в Telegram →</a>';
+        }
+    }
+
 
     function saveInitData() {
         // Sync from localStorage if present
@@ -136,18 +167,16 @@ document.addEventListener('DOMContentLoaded', () => {
             if (tgGateOverlay) tgGateOverlay.classList.remove('hidden');
             body.classList.add('body-gated');
 
-            // Dynamically load Telegram Login Widget
-            const container = document.getElementById('tg-login-container');
-            if (container && !container.dataset.rendered) {
-                container.dataset.rendered = "true";
+            // Load new Telegram Login library
+            if (!document.getElementById('tg-login-script')) {
                 const script = document.createElement('script');
+                script.id = 'tg-login-script';
+                script.src = 'https://telegram.org/js/telegram-login.js';
                 script.async = true;
-                script.src = 'https://telegram.org/js/telegram-widget.js?22';
-                script.setAttribute('data-telegram-login', window.CONFIG?.BOT_USERNAME || 'NFTMatchBot');
-                script.setAttribute('data-size', 'large');
-                script.setAttribute('data-onauth', 'onTelegramAuth(user)');
-                script.setAttribute('data-request-access', 'write');
-                container.appendChild(script);
+                script.onload = () => renderTelegramButton();
+                document.head.appendChild(script);
+            } else {
+                renderTelegramButton();
             }
 
             // Wire up guest button
