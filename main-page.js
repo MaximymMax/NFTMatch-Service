@@ -32,7 +32,20 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         if (tg.initData) {
-            sessionStorage.setItem('tgInitData', tg.initData);
+            // Сохраняем в обоих хранилищах через единый модуль
+            if (window.NFTAuth) {
+                const tgUser = tg.initDataUnsafe?.user;
+                const userData = tgUser ? {
+                    telegramId: tgUser.id,
+                    username: tgUser.username || null,
+                    firstName: tgUser.first_name || null,
+                    lastName: tgUser.last_name || null,
+                } : null;
+                window.NFTAuth.saveInitData(tg.initData, userData);
+            } else {
+                sessionStorage.setItem('tgInitData', tg.initData);
+                localStorage.setItem('tgInitData', tg.initData);
+            }
         }
     }
 
@@ -121,20 +134,25 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const data = await resp.json();
-            // Сохраняем API-ключ как bypass-ключ, он будет использован для всех запросов
-            sessionStorage.setItem(BYPASS_KEY_STORAGE, data.apiKey);
-            localStorage.setItem(BYPASS_KEY_STORAGE, data.apiKey);
 
-            // Сохраняем данные пользователя
-            if (data.telegramId) {
-                const userData = {
-                    telegramId: data.telegramId,
-                    username: data.username || null,
-                    firstName: data.username || null,
-                    lastName: null
-                };
-                sessionStorage.setItem('tgUser', JSON.stringify(userData));
-                localStorage.setItem('tgUser', JSON.stringify(userData));
+            // Сохраняем API-ключ через единый модуль (localStorage + sessionStorage)
+            const userData = data.telegramId ? {
+                telegramId: data.telegramId,
+                username: data.username || null,
+                firstName: data.username || null,
+                lastName: null
+            } : null;
+
+            if (window.NFTAuth) {
+                window.NFTAuth.saveApiKey(data.apiKey, userData);
+            } else {
+                sessionStorage.setItem(BYPASS_KEY_STORAGE, data.apiKey);
+                localStorage.setItem(BYPASS_KEY_STORAGE, data.apiKey);
+                if (userData) {
+                    const json = JSON.stringify(userData);
+                    sessionStorage.setItem('tgUser', json);
+                    localStorage.setItem('tgUser', json);
+                }
             }
 
             // Чистим временные данные PKCE

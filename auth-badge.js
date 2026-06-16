@@ -1,15 +1,11 @@
-(function() {
-    // 1. Проверяем авторизацию
-    const BYPASS_KEY_STORAGE = 'apiBypassKey';
-    const INIT_DATA_KEY = 'tgInitData';
+(function () {
+    // Ждём загрузку NFTAuth (auth.js подключается раньше)
+    const hasAuth = window.NFTAuth ? window.NFTAuth.isAuthenticated() : false;
     const isTelegramWebApp = !!(window.Telegram?.WebApp?.initData);
-    const hasAuth = !!(sessionStorage.getItem(INIT_DATA_KEY) || localStorage.getItem(INIT_DATA_KEY) || 
-                       sessionStorage.getItem(BYPASS_KEY_STORAGE) || localStorage.getItem(BYPASS_KEY_STORAGE) ||
-                       isTelegramWebApp);
 
-    const isSubPage = window.location.pathname.includes('/Monohrome/') || 
-                      window.location.pathname.includes('/nft-page/') || 
-                      window.location.pathname.includes('/Thematic/');
+    const isSubPage = window.location.pathname.includes('/Monohrome/') ||
+        window.location.pathname.includes('/nft-page/') ||
+        window.location.pathname.includes('/Thematic/');
 
     // Если нет авторизации и мы на дочерней странице — редирект на главную
     if (!hasAuth && isSubPage) {
@@ -20,15 +16,24 @@
     document.addEventListener('DOMContentLoaded', () => {
         if (isTelegramWebApp) return; // Внутри Telegram Web App кнопка не нужна
 
-        // Если пользователь авторизован, добавим кнопку "Выйти" сверху справа
         if (hasAuth) {
+            // Кнопка «Выйти»
             const badge = document.createElement('div');
             badge.id = 'tg-auth-badge';
+
+            // Пробуем показать имя пользователя
+            const user = window.NFTAuth ? window.NFTAuth.getUser() : null;
+            const label = user?.username
+                ? `@${user.username}`
+                : user?.firstName
+                    ? user.firstName
+                    : 'Выйти';
+
             badge.innerHTML = `
                 <svg viewBox="0 0 24 24" style="width: 16px; height: 16px; fill: currentColor;">
                     <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 0 0-.05-.18c-.06-.05-.14-.03-.2-.02-.08.02-1.32.84-3.73 2.46-.35.24-.67.36-.97.35-.32-.01-.95-.18-1.41-.33-.57-.18-1.02-.28-1.01-.59.01-.16.23-.33.68-.51 2.76-1.2 4.6-2 5.53-2.4 2.64-1.1 3.19-1.3 3.55-1.3.08 0 .25.02.36.11.09.08.12.19.13.27 0 .05-.01.15-.02.21z"/>
                 </svg>
-                <span>Выйти</span>
+                <span>${label}</span>
             `;
 
             Object.assign(badge.style, {
@@ -58,27 +63,31 @@
                 badge.style.backgroundColor = '#ef4444';
                 badge.style.borderColor = '#f87171';
                 badge.style.transform = 'translateY(-1px)';
+                badge.querySelector('span').textContent = 'Выйти';
             });
 
             badge.addEventListener('mouseleave', () => {
                 badge.style.backgroundColor = 'rgba(36, 48, 73, 0.85)';
                 badge.style.borderColor = 'rgba(255, 255, 255, 0.15)';
                 badge.style.transform = 'none';
+                badge.querySelector('span').textContent = label;
             });
 
             badge.addEventListener('click', () => {
-                sessionStorage.removeItem(BYPASS_KEY_STORAGE);
-                localStorage.removeItem(BYPASS_KEY_STORAGE);
-                sessionStorage.removeItem(INIT_DATA_KEY);
-                localStorage.removeItem(INIT_DATA_KEY);
-                sessionStorage.removeItem('tgUser');
-                localStorage.removeItem('tgUser');
-                window.location.reload();
+                if (window.NFTAuth) {
+                    window.NFTAuth.logout();
+                }
+                // Редирект на главную если мы на подстранице
+                if (isSubPage) {
+                    window.location.href = '../index.html';
+                } else {
+                    window.location.reload();
+                }
             });
 
             document.body.appendChild(badge);
         } else {
-            // Если нет авторизации и мы на главной — добавляем кнопку "Войти" сверху справа
+            // Кнопка «Войти» — только на главной
             if (!isSubPage) {
                 const badge = document.createElement('div');
                 badge.id = 'tg-auth-badge';
