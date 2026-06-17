@@ -544,7 +544,15 @@ async function loadAndRenderModelView(collectionName, bgName = null, restoreScro
 }
 
 async function onModelCardClick(gift, cardElement) {
-    if (cardElement) {
+    const key = `${gift.GiftName}/${gift.ModelName}`;
+    const countKey = `${gift.GiftName}/${gift.ModelName}/${currentBgName || ''}`;
+
+    const isFullyCached = _v2ThemesCache.has(key) && 
+                          _similarCache.has(key) && 
+                          _colorsCache.has(key) && 
+                          (!currentBgName || (_bgScoresCache.has(key) && _countCache.has(countKey)));
+
+    if (!isFullyCached && cardElement) {
         if (cardElement.classList.contains('loading-click')) return;
         cardElement.classList.add('loading-click');
         const spinner = document.createElement('div');
@@ -564,34 +572,93 @@ async function onModelCardClick(gift, cardElement) {
             MonohromeModelsOnly: true
         };
 
-        const promises = [
-            fetch(themesUrl, { headers: { 'Authorization': getApiAuthHeader() } }).then(r => r.ok ? r.json() : []).catch(() => []),
-            fetch(similarUrl, { method: 'POST', headers: { 'Authorization': getApiAuthHeader(), 'Content-Type': 'application/json' }, body: JSON.stringify(similarBody) }).then(r => r.ok ? r.json() : null).catch(() => null),
-            fetch(colorsUrl, { headers: { 'Authorization': getApiAuthHeader() } }).then(r => r.ok ? r.text() : '').catch(() => '')
-        ];
+        let themesPromise;
+        if (_v2ThemesCache.has(key)) {
+            themesPromise = Promise.resolve(_v2ThemesCache.get(key));
+        } else {
+            themesPromise = fetch(themesUrl, { headers: { 'Authorization': getApiAuthHeader() } })
+                .then(r => r.ok ? r.json() : [])
+                .then(data => {
+                    _v2ThemesCache.set(key, data);
+                    return data;
+                })
+                .catch(() => []);
+        }
+
+        let similarPromise;
+        if (_similarCache.has(key)) {
+            similarPromise = Promise.resolve(_similarCache.get(key));
+        } else {
+            similarPromise = fetch(similarUrl, {
+                method: 'POST',
+                headers: { 'Authorization': getApiAuthHeader(), 'Content-Type': 'application/json' },
+                body: JSON.stringify(similarBody)
+            })
+                .then(r => r.ok ? r.json() : null)
+                .then(data => {
+                    _similarCache.set(key, data);
+                    return data;
+                })
+                .catch(() => null);
+        }
+
+        let colorsPromise;
+        if (_colorsCache.has(key)) {
+            colorsPromise = Promise.resolve(_colorsCache.get(key));
+        } else {
+            colorsPromise = fetch(colorsUrl, { headers: { 'Authorization': getApiAuthHeader() } })
+                .then(r => r.ok ? r.text() : '')
+                .then(data => {
+                    _colorsCache.set(key, data);
+                    return data;
+                })
+                .catch(() => '');
+        }
+
+        const promises = [themesPromise, similarPromise, colorsPromise];
 
         let bgScorePromise = Promise.resolve(null);
         let countPromise = Promise.resolve(null);
 
         if (currentBgName) {
-            const bgScoreUrl = `${BASE_URL}/api/MonoCoof/TopBackgroundColorsByNFT`;
-            const bgScoreBody = {
-                NameGift: gift.GiftName,
-                NameModel: gift.ModelName
-            };
-            bgScorePromise = fetch(bgScoreUrl, {
-                method: 'POST',
-                headers: { 'Authorization': getApiAuthHeader(), 'Content-Type': 'application/json' },
-                body: JSON.stringify(bgScoreBody)
-            }).then(r => r.ok ? r.json() : []).catch(() => []);
+            if (_bgScoresCache.has(key)) {
+                bgScorePromise = Promise.resolve(_bgScoresCache.get(key));
+            } else {
+                const bgScoreUrl = `${BASE_URL}/api/MonoCoof/TopBackgroundColorsByNFT`;
+                const bgScoreBody = {
+                    NameGift: gift.GiftName,
+                    NameModel: gift.ModelName
+                };
+                bgScorePromise = fetch(bgScoreUrl, {
+                    method: 'POST',
+                    headers: { 'Authorization': getApiAuthHeader(), 'Content-Type': 'application/json' },
+                    body: JSON.stringify(bgScoreBody)
+                })
+                    .then(r => r.ok ? r.json() : [])
+                    .then(data => {
+                        _bgScoresCache.set(key, data);
+                        return data;
+                    })
+                    .catch(() => []);
+            }
 
-            const countUrl = `${BASE_URL}/api/ListGifts/SearchGifts/1/1`;
-            const countBody = { GiftName: gift.GiftName, ModelName: gift.ModelName, BackgroundName: currentBgName };
-            countPromise = fetch(countUrl, {
-                method: 'POST',
-                headers: { 'Authorization': getApiAuthHeader(), 'Content-Type': 'application/json' },
-                body: JSON.stringify(countBody)
-            }).then(r => r.ok ? r.json() : null).catch(() => null);
+            if (_countCache.has(countKey)) {
+                countPromise = Promise.resolve(_countCache.get(countKey));
+            } else {
+                const countUrl = `${BASE_URL}/api/ListGifts/SearchGifts/1/1`;
+                const countBody = { GiftName: gift.GiftName, ModelName: gift.ModelName, BackgroundName: currentBgName };
+                countPromise = fetch(countUrl, {
+                    method: 'POST',
+                    headers: { 'Authorization': getApiAuthHeader(), 'Content-Type': 'application/json' },
+                    body: JSON.stringify(countBody)
+                })
+                    .then(r => r.ok ? r.json() : null)
+                    .then(data => {
+                        _countCache.set(countKey, data);
+                        return data;
+                    })
+                    .catch(() => null);
+            }
         }
 
         promises.push(bgScorePromise);

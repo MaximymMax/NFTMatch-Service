@@ -64,9 +64,9 @@ document.addEventListener('DOMContentLoaded', () => {
         // Закрываем модалку с предупреждением сразу
         closeModal();
 
-        const initData = window.Telegram?.WebApp?.initData;
-        if (!initData) {
-            alert("Пожалуйста, откройте приложение внутри Telegram.");
+        const authHeader = window.NFTAuth ? window.NFTAuth.getApiAuthHeader() : null;
+        if (!authHeader || authHeader === 'Tma invalid') {
+            alert("Пожалуйста, сначала авторизуйтесь через Telegram.");
             return;
         }
 
@@ -75,9 +75,10 @@ document.addEventListener('DOMContentLoaded', () => {
         preGenerateBtn.textContent = "Создание...";
 
         try {
-            const response = await fetch('https://nftmatchbot20250730152328.azurewebsites.net/api/Auth/GenerateKey', {
+            const baseUrl = window.CONFIG?.SERVER_BASE_URL || 'https://nftmatch.pro';
+            const response = await fetch(`${baseUrl}/api/Auth/GenerateKey`, {
                 method: 'POST',
-                headers: { 'Authorization': initData }
+                headers: { 'Authorization': authHeader }
             });
 
             // 📢 ПЕРЕХВАТ 403 (ОТСУТСТВИЕ ПОДПИСКИ)
@@ -96,6 +97,12 @@ document.addEventListener('DOMContentLoaded', () => {
             if (response.ok) {
                 const data = await response.json();
                 
+                // Обновляем ключ в сессии, чтобы не разлогинивало
+                if (window.NFTAuth && window.NFTAuth.getUser()) {
+                    const currentUser = window.NFTAuth.getUser();
+                    window.NFTAuth.saveApiKey(data.apiKey, currentUser);
+                }
+
                 // Прячем кнопку, показываем блок с ключом
                 preGenerateBtn.style.display = 'none';
                 newKeyValue.textContent = data.apiKey;

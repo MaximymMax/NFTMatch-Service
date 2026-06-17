@@ -87,28 +87,20 @@
             });
 
             badge.addEventListener('mouseenter', () => {
-                badge.style.backgroundColor = '#ef4444';
-                badge.style.borderColor = '#f87171';
-                badge.style.transform = 'translateY(-1px)';
-                badge.querySelector('span').textContent = 'Выйти';
+                badge.style.backgroundColor = 'rgba(59, 130, 246, 0.85)';
+                badge.style.borderColor = 'rgba(96, 165, 250, 0.5)';
+                badge.style.transform = 'translateY(-1.5px)';
             });
 
             badge.addEventListener('mouseleave', () => {
                 badge.style.backgroundColor = 'rgba(36, 48, 73, 0.85)';
                 badge.style.borderColor = 'rgba(255, 255, 255, 0.15)';
                 badge.style.transform = 'none';
-                badge.querySelector('span').textContent = label;
             });
 
             badge.addEventListener('click', () => {
-                if (window.NFTAuth) {
-                    window.NFTAuth.logout();
-                }
-                // Редирект на главную если мы на подстранице
-                if (isSubPage) {
-                    window.location.href = '../index.html';
-                } else {
-                    window.location.reload();
+                if (window.NFTAuth && window.NFTAuth.getUser()) {
+                    showProfileModal(window.NFTAuth.getUser(), isSubPage);
                 }
             });
 
@@ -170,6 +162,84 @@
 
                 document.body.appendChild(badge);
             }
+    function showProfileModal(user, isSubPage) {
+        const existing = document.getElementById('tg-profile-modal');
+        if (existing) {
+            existing.style.display = 'flex';
+            return;
         }
-    });
+
+        const displayName = [user.firstName, user.lastName].filter(Boolean).join(' ') || 'Пользователь';
+        const usernameText = user.username ? `@${user.username}` : 'нет';
+
+        const modalHtml = `
+            <div id="tg-profile-modal" class="modal-overlay" style="display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 100000; align-items: center; justify-content: center; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(8px); font-family: 'Inter', sans-serif;">
+                <div class="profile-modal-content" style="background: #16213a; width: 100%; max-width: 320px; border-radius: 20px; padding: 24px; text-align: center; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 10px 30px rgba(0,0,0,0.5); box-sizing: border-box; color: #fff; transform: scale(1); animation: popIn 0.2s ease-out;">
+                    <div style="width: 64px; height: 64px; background: linear-gradient(135deg, #3b82f6, #1d4ed8); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; box-shadow: 0 4px 15px rgba(37,99,235,0.4);">
+                        <svg viewBox="0 0 24 24" style="width: 32px; height: 32px; fill: white;">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/>
+                        </svg>
+                    </div>
+                    <h3 style="margin: 0 0 4px 0; font-size: 1.25rem; font-weight: 700; color: #fff;">${displayName}</h3>
+                    <p style="margin: 0 0 20px 0; color: #3b82f6; font-size: 0.9rem; font-weight: 600;">${usernameText}</p>
+                    
+                    <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 12px; margin-bottom: 24px; text-align: left; font-size: 0.85rem; line-height: 1.6;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                            <span style="color: rgba(255,255,255,0.4);">Telegram ID:</span>
+                            <code style="color: #fff; font-weight: 600;">${user.telegramId}</code>
+                        </div>
+                        <div style="display: flex; justify-content: space-between;">
+                            <span style="color: rgba(255,255,255,0.4);">Статус:</span>
+                            <span style="color: #10b981; font-weight: 600;">Авторизован</span>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; gap: 10px;">
+                        <button id="profile-logout-btn" style="background: #ef4444; color: #fff; border: none; padding: 12px; border-radius: 10px; font-weight: 700; font-size: 0.9rem; cursor: pointer; transition: all 0.2s;">
+                            Выйти из аккаунта
+                        </button>
+                        <button id="profile-relogin-btn" style="background: rgba(255,255,255,0.08); color: #fff; border: 1px solid rgba(255,255,255,0.15); padding: 12px; border-radius: 10px; font-weight: 600; font-size: 0.9rem; cursor: pointer; transition: all 0.2s;">
+                            Войти под другим аккаунтом
+                        </button>
+                        <button onclick="document.getElementById('tg-profile-modal').remove()" style="background: transparent; color: rgba(255,255,255,0.5); border: none; padding: 8px; font-weight: 600; font-size: 0.85rem; cursor: pointer; margin-top: 4px;">
+                            Закрыть
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <style>
+                @keyframes popIn {
+                    from { transform: scale(0.9); opacity: 0; }
+                    to { transform: scale(1); opacity: 1; }
+                }
+                #profile-logout-btn:hover { background: #dc2626 !important; }
+                #profile-relogin-btn:hover { background: rgba(255,255,255,0.12) !important; }
+            </style>
+        `;
+
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+        document.getElementById('profile-logout-btn').onclick = () => {
+            if (window.NFTAuth) {
+                window.NFTAuth.logout();
+            }
+            if (isSubPage) {
+                window.location.href = '../index.html';
+            } else {
+                window.location.reload();
+            }
+        };
+
+        document.getElementById('profile-relogin-btn').onclick = () => {
+            if (window.NFTAuth) {
+                window.NFTAuth.logout();
+            }
+            if (isSubPage) {
+                window.location.href = '../index.html?showAuth=true';
+            } else {
+                sessionStorage.setItem('openAuthOnLoad', 'true');
+                window.location.reload();
+            }
+        };
+    }
 })();

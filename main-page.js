@@ -638,6 +638,18 @@ document.addEventListener('DOMContentLoaded', () => {
             if (checkEnvironmentAndGate()) {
                 preloadGiftNames();
                 handleDeepLink();
+
+                // Проверяем, нужно ли автоматически открыть окно авторизации
+                const urlParams = new URLSearchParams(window.location.search);
+                if (urlParams.get('showAuth') === 'true' || sessionStorage.getItem('openAuthOnLoad') === 'true') {
+                    sessionStorage.removeItem('openAuthOnLoad');
+                    if (urlParams.get('showAuth') === 'true') {
+                        // Очищаем URL от параметра showAuth
+                        const newUrl = window.location.pathname + window.location.hash;
+                        window.history.replaceState({}, '', newUrl);
+                    }
+                    showAuthModal();
+                }
             }
         }
     });

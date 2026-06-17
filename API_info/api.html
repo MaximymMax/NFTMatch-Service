@@ -9,6 +9,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="api.css">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="../config.js"></script>
+    <script src="../auth.js"></script>
+    <script src="../auth-badge.js"></script>
 </head>
 <body>
 
@@ -30,8 +33,8 @@
                     <span>Base URL</span>
                 </div>
                 <div class="url-display">
-                    <code>https://nftmatchbot20250730152328.azurewebsites.net/api/</code>
-                    <button class="icon-btn" onclick="copyText('https://nftmatchbot20250730152328.azurewebsites.net/api/')">
+                    <code>https://nftmatch.pro/api/</code>
+                    <button class="icon-btn" onclick="copyText('https://nftmatch.pro/api/')">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
                     </button>
                 </div>
@@ -79,9 +82,9 @@
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
                     <span>Документация</span>
                 </div>
-                <button class="action-btn swagger-btn disabled" disabled>
-                    Скоро...
-                </button>
+                <a href="https://nftmatch.pro/api/swagger/ui" target="_blank" class="action-btn swagger-btn" style="text-decoration: none; text-align: center;">
+                    Открыть Swagger UI
+                </a>
             </div>
 
         </div>
