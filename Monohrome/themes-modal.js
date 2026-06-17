@@ -409,7 +409,7 @@ function createSimpleGiftCard(gift) {
     const card = document.createElement('div');
     card.className = 'model-card-simple';
 
-    const colorHex = gift.AverageColorHex || gift.averageColorHex || gift.GroupColorHex || gift.groupColorHex || '#38bdf8';
+    const colorHex = gift.AverageColorHex || gift.averageColorHex || gift.GroupColorHex || gift.groupColorHex || '#2563eb';
     card.style.setProperty('--card-gradient-color', colorHex); // Важно для нового CSS
 
     const imgUrl = `${PHOTO_URL}/${encodeURIComponent(gift.GiftName)}/png/${encodeURIComponent(gift.ModelName)}.png`;
@@ -696,7 +696,7 @@ function renderThemeListView() {
 
         const card = document.createElement('div');
         card.className = 'theme-card-modern';
-        const clusterHex = collection.ClusterAverageColorHex || '#38bdf8';
+        const clusterHex = collection.ClusterAverageColorHex || '#2563eb';
         card.style.setProperty('--glow-color', clusterHex);
 
         // ... генерация HTML карточки ...
@@ -1241,7 +1241,7 @@ function renderV2ThemeContent(models, container, nodeId, nodeType, isSingleColle
     const renderCard = (m, parentNode) => {
         const giftName = m.GiftName || m.giftName;
         const modelName = m.ModelName || m.modelName;
-        const colorHex = m.AverageColorHex || m.averageColorHex || m.GroupColorHex || m.groupColorHex || '#38bdf8';
+        const colorHex = m.AverageColorHex || m.averageColorHex || m.GroupColorHex || m.groupColorHex || '#2563eb';
         
         const isCollectionMarker = modelName === 'CollectionMarker' || m.IsCollectionWide;
         const isBgVisualMode = !!currentBgName;
@@ -2759,7 +2759,7 @@ function renderV2ItemsGrid(itemsList, container, parentNodeId, parentNodeType, n
         const itemName = item.Name || item.name;
         const itemId = item.Id !== undefined ? item.Id : item.id;
         const itemType = item.Type || item.type;
-        const colorHex = item.ThemeColor || item.themeColor || '#38bdf8';
+        const colorHex = item.ThemeColor || item.themeColor || '#2563eb';
 
         // 1. ЕСЛИ ЭТО МЕЛКАЯ ТЕМАТИКА (до 3х моделей) -> ПОКАЗЫВАЕМ ВЛОЖЕНИЯ СРАЗУ
         if (isItemTheme && modelsCount > 0 && modelsCount <= 3) {
@@ -2783,7 +2783,7 @@ function renderV2ItemsGrid(itemsList, container, parentNodeId, parentNodeType, n
             inlineThemeBox.innerHTML = `
                 <div class="v2-card-bg-container">
                     <div class="v2-card-glow"></div>
-                    <div class="v2-tag-glow" style="--tag-color: #38bdf8;"></div>
+                    <div class="v2-tag-glow" style="--tag-color: #2563eb;"></div>
                 </div>
                 ${inlineThemeTagHtml}
                 <div class="v2-card-content-inline" style="position: relative; z-index: 2; padding: 0; margin-top: ${isDetailAccordion ? '16px' : '32px'}; display: flex; flex-direction: column; width: 100%; box-sizing: border-box;">
@@ -2912,11 +2912,11 @@ function renderV2ItemsGrid(itemsList, container, parentNodeId, parentNodeType, n
                 countLabel = `${modelsCount} шт.`;
             }
 
-            const mediaPriceTag = mediaPrice > 0 ? `<span class="v2-type-tag" style="position:static;transform:none;color:#7dd3fc;background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.25);box-shadow:0 2px 8px rgba(0,0,0,0.3);">${mediaPrice >= 1 ? '~' + mediaPrice.toFixed(2) + ' TON' : '~' + (mediaPrice * 1000).toFixed(0) + ' nTON'}</span>` : '';
+            const mediaPriceTag = mediaPrice > 0 ? `<span class="v2-type-tag" style="position:static;transform:none;color:#93c5fd;background:rgba(37,99,235,0.12);border:1px solid rgba(37,99,235,0.25);box-shadow:0 2px 8px rgba(0,0,0,0.3);">${mediaPrice >= 1 ? '~' + mediaPrice.toFixed(2) + ' TON' : '~' + (mediaPrice * 1000).toFixed(0) + ' nTON'}</span>` : '';
             const countTagHtml = countLabel ? `<span class="v2-type-tag" style="position:static;transform:none;color:rgba(255,255,255,0.7);background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.05);box-shadow:0 2px 8px rgba(0,0,0,0.3);">${countLabel}</span>` : '';
             const rightTagsHtml = (countTagHtml || mediaPriceTag) ? `<div style="position:absolute;top:0;right:12px;transform:translateY(-50%);display:flex;gap:6px;z-index:10;">${mediaPriceTag}${countTagHtml}</div>` : '';
 
-            const tagGlowColor = isGroup ? '#6366f1' : '#38bdf8';
+            const tagGlowColor = isGroup ? '#6366f1' : '#2563eb';
             
             // Прячем тег, если рендеримся внутри аккордеона деталей модели
             const mainTagHtml = isDetailAccordion ? '' : `<span class="v2-type-tag premium-tag ${typeTagClass}">${typeIcon}${typeLabel}</span>`;

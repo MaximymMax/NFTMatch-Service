@@ -460,7 +460,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 throw new Error('Not enough similar gifts found');
             }
 
-            const color = data.TargetGiftMainColorHex || '#38bdf8'; // Запасной синий
+            const color = data.TargetGiftMainColorHex || '#2563eb'; // Запасной синий
             link.style.setProperty('--similar-color', color);
 
             const imgLeftSrc = `${API_PHOTO_URL}/${encodeURIComponent(data.SimilarGifts[0].GiftName)}/png/${encodeURIComponent(data.SimilarGifts[0].ModelName)}.png`;
@@ -476,7 +476,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) {
             console.warn("[Similar Fallback] Ошибка:", error.message, "Создаем кнопку без картинок.");
             // Создаем кнопку, даже если API упал
-            link.style.setProperty('--similar-color', '#38bdf8'); // Запасной синий
+            link.style.setProperty('--similar-color', '#2563eb'); // Запасной синий
             link.innerHTML = `
             <div class="fallback-glow"></div>
             <span>Похожие по цвету</span>
