@@ -194,20 +194,11 @@ export function initNftDetailsModal() {
     }
 
     function getApiAuthHeader() {
-        try {
-            const initData = sessionStorage.getItem(INIT_DATA_KEY);
-            if (initData) return `Tma ${initData}`;
-        } catch (e) { }
-
-        try {
-            const bypassKey = sessionStorage.getItem(BYPASS_KEY_STORAGE);
-            if (bypassKey) return `Tma ${bypassKey}`;
-        } catch (e) { }
-
-        if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData) {
-            const directInitData = window.Telegram.WebApp.initData;
-            try { sessionStorage.setItem(INIT_DATA_KEY, directInitData); } catch (e) { }
-            return `Tma ${directInitData}`;
+        if (window.NFTAuth && typeof window.NFTAuth.getApiAuthHeader === 'function') {
+            return window.NFTAuth.getApiAuthHeader();
+        }
+        if (window.getApiAuthHeader && typeof window.getApiAuthHeader === 'function') {
+            return window.getApiAuthHeader();
         }
         return 'Tma invalid';
     }

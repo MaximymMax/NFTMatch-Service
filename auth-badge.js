@@ -1,7 +1,7 @@
 (function () {
     // Ждём загрузку NFTAuth (auth.js подключается раньше)
     const hasAuth = window.NFTAuth ? window.NFTAuth.isAuthenticated() : false;
-    const isTelegramWebApp = !!(window.Telegram?.WebApp?.initData);
+    const isTelegramWebApp = !!(window.Telegram?.WebApp?.initData || (window.Telegram?.WebApp?.platform && window.Telegram.WebApp.platform !== 'unknown'));
 
     const isSubPage = window.location.pathname.includes('/Monohrome/') ||
         window.location.pathname.includes('/nft-page/') ||
@@ -9,11 +9,38 @@
 
     // Если нет авторизации и мы на дочерней странице — редирект на главную
     if (!hasAuth && isSubPage) {
-        window.location.href = '../index.html';
+        const hash = window.location.hash;
+        window.location.href = '../index.html' + (hash && hash.includes('tgWebAppData') ? hash : '');
         return;
     }
 
     document.addEventListener('DOMContentLoaded', () => {
+        // Перехватчик для сохранения hash-параметров Telegram WebApp при переходах по ссылкам
+        document.addEventListener('click', (e) => {
+            const link = e.target.closest('a');
+            if (!link) return;
+
+            const href = link.getAttribute('href');
+            if (!href) return;
+
+            // Игнорируем внешние ссылки и якоря
+            if (href.startsWith('http://') || href.startsWith('https://') || href.startsWith('//') || href.startsWith('mailto:') || href.startsWith('tel:') || href.startsWith('#')) {
+                return;
+            }
+
+            const currentHash = window.location.hash;
+            if (currentHash && currentHash.includes('tgWebAppData')) {
+                e.preventDefault();
+                let targetUrl = href;
+                const hashIndex = targetUrl.indexOf('#');
+                if (hashIndex !== -1) {
+                    targetUrl = targetUrl.substring(0, hashIndex);
+                }
+                targetUrl += currentHash;
+                window.location.href = targetUrl;
+            }
+        });
+
         if (isTelegramWebApp) return; // Внутри Telegram Web App кнопка не нужна
 
         if (hasAuth) {

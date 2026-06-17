@@ -23,7 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     window.history.back();
                 } else {
                     // Если модалки нет - возвращаемся на главную
-                    window.location.href = '../index.html';
+                    window.location.href = '../index.html' + (window.location.hash || '');
                 }
             });
         }
@@ -296,20 +296,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function getApiAuthHeader() {
-        // 1. Сначала проверяем ключ разработчика (если есть)
-        const bypassKey = sessionStorage.getItem(BYPASS_KEY_STORAGE);
-        if (bypassKey) {
-            return `Tma ${bypassKey}`; // Или просто bypassKey, если на бэке так настроено
+        if (window.NFTAuth && typeof window.NFTAuth.getApiAuthHeader === 'function') {
+            return window.NFTAuth.getApiAuthHeader();
         }
-
-        // 2. Потом проверяем данные из Телеграма
-        const initData = sessionStorage.getItem(INIT_DATA_KEY);
-        if (initData) {
-            return `Tma ${initData}`;
+        if (window.getApiAuthHeader && typeof window.getApiAuthHeader === 'function') {
+            return window.getApiAuthHeader();
         }
-
-        // 3. Если ничего нет
-        console.warn("Auth token missing!");
         return 'Tma invalid';
     }
 
@@ -577,7 +569,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (onClickCallback) {
                     onClickCallback();
                 }
-                window.location.href = destUrl;
+                const hash = window.location.hash;
+                window.location.href = destUrl + (hash && hash.includes('tgWebAppData') ? hash : '');
             });
 
             // Добавляем в DOM
@@ -650,7 +643,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 link.onclick = (e) => {
                     e.preventDefault();
                     closeDetailsModal(false); // Закрываем модалку
-                    window.location.href = link.href;
+                    const hash = window.location.hash;
+                    window.location.href = link.href + (hash && hash.includes('tgWebAppData') ? hash : '');
                 };
 
                 container.innerHTML = ''; // Очищаем спиннер
@@ -1112,7 +1106,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
             btn.onclick = (e) => {
                 e.preventDefault();
-                window.location.href = href;
+                const hash = window.location.hash;
+                window.location.href = href + (hash && hash.includes('tgWebAppData') ? hash : '');
             };
 
             container.innerHTML = '';

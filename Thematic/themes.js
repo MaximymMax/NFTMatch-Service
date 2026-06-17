@@ -221,9 +221,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function getApiAuthHeader() {
-        try { const initData = sessionStorage.getItem(INIT_DATA_KEY); if (initData) return `Tma ${initData}`; } catch (e) { }
-        try { const bypassKey = sessionStorage.getItem(BYPASS_KEY_STORAGE); if (bypassKey) return `Tma ${bypassKey}`; } catch (e) { }
-        if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData) return `Tma ${window.Telegram.WebApp.initData}`;
+        if (window.NFTAuth && typeof window.NFTAuth.getApiAuthHeader === 'function') {
+            return window.NFTAuth.getApiAuthHeader();
+        }
+        if (window.getApiAuthHeader && typeof window.getApiAuthHeader === 'function') {
+            return window.getApiAuthHeader();
+        }
         return 'Tma invalid';
     }
 
@@ -417,7 +420,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     window.history.back();
                 } else {
                     // Если модалки нет, идем на главную страницу
-                    window.location.href = '../index.html';
+                    window.location.href = '../index.html' + (window.location.hash || '');
                 }
             });
         }

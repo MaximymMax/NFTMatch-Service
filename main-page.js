@@ -442,7 +442,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (targetUrl) {
             setTimeout(() => {
-                window.location.href = targetUrl;
+                const hash = window.location.hash;
+                if (hash && hash.includes('tgWebAppData')) {
+                    const hashIndex = targetUrl.indexOf('#');
+                    const cleanUrl = hashIndex !== -1 ? targetUrl.substring(0, hashIndex) : targetUrl;
+                    window.location.href = cleanUrl + hash;
+                } else {
+                    window.location.href = targetUrl;
+                }
             }, 100);
         } else {
             hideLoadingIndicator();

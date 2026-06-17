@@ -141,33 +141,12 @@ function getPlural(count, one, few, many) {
 }
 
 function getApiAuthHeader() {
-    // (Логика скопирована из background-finder.js)
-    try {
-        const initData = sessionStorage.getItem(INIT_DATA_KEY);
-        if (initData) {
-            console.log('[AUTH Themes] Using initData from sessionStorage.');
-            return `Tma ${initData}`;
-        }
-    } catch (e) { /* sessionStorage может быть недоступен */ }
-
-    try {
-        const bypassKey = sessionStorage.getItem(BYPASS_KEY_STORAGE);
-        if (bypassKey) {
-            console.warn(`[AUTH Themes] Using TEST BYPASS KEY for API auth.`);
-            return `Tma ${bypassKey}`;
-        }
-    } catch (e) { /* sessionStorage может быть недоступен */ }
-
-    if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData) {
-        const directInitData = window.Telegram.WebApp.initData;
-        if (directInitData) {
-            console.warn('[AUTH Themes] Using direct initData (fallback) and saving to sessionStorage.');
-            try { sessionStorage.setItem(INIT_DATA_KEY, directInitData); } catch (e) { }
-            return `Tma ${directInitData}`;
-        }
+    if (window.NFTAuth && typeof window.NFTAuth.getApiAuthHeader === 'function') {
+        return window.NFTAuth.getApiAuthHeader();
     }
-
-    console.error("[AUTH Themes] Не удалось получить initData или ключ обхода.");
+    if (window.getApiAuthHeader && typeof window.getApiAuthHeader === 'function') {
+        return window.getApiAuthHeader();
+    }
     return 'Tma invalid';
 }
 window.getApiAuthHeader = getApiAuthHeader;
@@ -924,7 +903,8 @@ async function renderSimilarGiftsButtonForDetailView(container, giftName, modelN
 
         btn.addEventListener('click', (e) => {
             e.preventDefault();
-            window.location.href = href;
+            const hash = window.location.hash;
+            window.location.href = href + (hash && hash.includes('tgWebAppData') ? hash : '');
         });
 
         container.innerHTML = '';
@@ -2002,7 +1982,8 @@ function renderSimilarButtonWithData(container, giftName, modelName, responseDat
 
     btn.addEventListener('click', (e) => {
         e.preventDefault();
-        window.location.href = href;
+        const hash = window.location.hash;
+        window.location.href = href + (hash && hash.includes('tgWebAppData') ? hash : '');
     });
 
     container.innerHTML = '';
@@ -3229,7 +3210,7 @@ window.updateTelegramBackButton = function (mode) {
         if (window.history.length > 1) {
             window.history.back();
         } else {
-            window.location.href = '../index.html';
+            window.location.href = '../index.html' + (window.location.hash || '');
         }
     });
 };
