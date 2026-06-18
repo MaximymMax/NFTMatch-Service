@@ -49,6 +49,16 @@ document.addEventListener('DOMContentLoaded', () => {
         if (tg.setHeaderColor) tg.setHeaderColor('#16213a');
     }
 
+    // Инициализация локализации лимитов
+    const basicLimitsEl = document.getElementById('basic-key-limits');
+    if (basicLimitsEl) {
+        basicLimitsEl.innerHTML = window.NFTi18n ? window.NFTi18n.t('key_limits', '40 / мин | 200 / час', {count: 40, hourCount: 200}) : '40 / мин | 200 / час';
+    }
+    const proLimitsEl = document.getElementById('pro-key-limits');
+    if (proLimitsEl) {
+        proLimitsEl.innerHTML = window.NFTi18n ? window.NFTi18n.t('key_limits', '100 / мин | 5000 / час', {count: 100, hourCount: 5000}) : '100 / мин | 5000 / час';
+    }
+
     const preGenerateBtn = document.getElementById('preGenerateBtn');
     const confirmGenerateBtn = document.getElementById('confirmGenerateBtn');
     const keyDisplayBox = document.getElementById('keyDisplayBox');
@@ -66,13 +76,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const authHeader = window.NFTAuth ? window.NFTAuth.getApiAuthHeader() : null;
         if (!authHeader || authHeader === 'Tma invalid') {
-            alert("Пожалуйста, сначала авторизуйтесь через Telegram.");
+            alert(window.NFTi18n ? window.NFTi18n.t('auth_required', "Пожалуйста, сначала авторизуйтесь через Telegram.") : "Пожалуйста, сначала авторизуйтесь через Telegram.");
             return;
         }
 
         // Блокируем кнопку и меняем текст
         preGenerateBtn.disabled = true;
-        preGenerateBtn.textContent = "Создание...";
+        preGenerateBtn.textContent = window.NFTi18n ? window.NFTi18n.t('api_creating', "Создание...") : "Создание...";
 
         try {
             const baseUrl = window.CONFIG?.SERVER_BASE_URL || 'https://nftmatch.pro';
@@ -88,7 +98,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (errData.error === 'subscription_required') {
                         window.showSubscriptionModal(); // Показываем модалку
                         preGenerateBtn.disabled = false;
-                        preGenerateBtn.textContent = "Сгенерировать ключ";
+                        preGenerateBtn.textContent = window.NFTi18n ? window.NFTi18n.t('btn_generate_key', "Сгенерировать ключ") : "Сгенерировать ключ";
                         return; // Прерываем выполнение
                     }
                 } catch(e) {}
@@ -112,14 +122,14 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 const errText = await response.text();
                 // Если ошибка другая, выводим алерт
-                alert("Ошибка генерации: " + errText);
+                alert(window.NFTi18n ? window.NFTi18n.t('api_error', "Ошибка генерации: {error}", {error: errText}) : "Ошибка генерации: " + errText);
                 preGenerateBtn.disabled = false;
-                preGenerateBtn.textContent = "Сгенерировать ключ";
+                preGenerateBtn.textContent = window.NFTi18n ? window.NFTi18n.t('btn_generate_key', "Сгенерировать ключ") : "Сгенерировать ключ";
             }
         } catch (err) {
-            alert("Ошибка сети. Не удалось связаться с сервером.");
+            alert(window.NFTi18n ? window.NFTi18n.t('net_error', "Ошибка сети. Не удалось связаться с сервером.") : "Ошибка сети. Не удалось связаться с сервером.");
             preGenerateBtn.disabled = false;
-            preGenerateBtn.textContent = "Сгенерировать ключ";
+            preGenerateBtn.textContent = window.NFTi18n ? window.NFTi18n.t('btn_generate_key', "Сгенерировать ключ") : "Сгенерировать ключ";
         }
     });
 });
@@ -142,16 +152,16 @@ window.showSubscriptionModal = function() {
                         <path stroke-linecap="round" stroke-linejoin="round" d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
                     </svg>
                 </div>
-                <h3 style="margin: 0 0 10px 0; color: #fff; font-size: 1.2rem;">Требуется подписка</h3>
+                <h3 style="margin: 0 0 10px 0; color: #fff; font-size: 1.2rem;">${window.NFTi18n ? window.NFTi18n.t('sub_required', 'Требуется подписка') : 'Требуется подписка'}</h3>
                 <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 24px; line-height: 1.5;">
-                    Для генерации API ключа необходимо быть подписчиком нашего Telegram канала.
+                    ${window.NFTi18n ? window.NFTi18n.t('sub_desc_api', 'Для генерации API ключа необходимо быть подписчиком нашего Telegram канала.') : 'Для генерации API ключа необходимо быть подписчиком нашего Telegram канала.'}
                 </p>
                 <div style="display: flex; flex-direction: column; gap: 10px;">
                     <a href="${channelUrl}" target="_blank" style="background: var(--primary-blue); color: #fff; text-decoration: none; padding: 12px; border-radius: 8px; font-weight: 700; font-size: 0.95rem; transition: transform 0.2s;">
-                        Перейти в канал
+                        ${window.NFTi18n ? window.NFTi18n.t('go_to_channel', 'Перейти в канал') : 'Перейти в канал'}
                     </a>
                     <button onclick="document.getElementById('sub-required-modal').style.display='none'" style="background: rgba(255,255,255,0.05); color: var(--text-primary); border: 1px solid rgba(255,255,255,0.1); padding: 12px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: background 0.2s;">
-                        Позже
+                        ${window.NFTi18n ? window.NFTi18n.t('later', 'Позже') : 'Позже'}
                     </button>
                 </div>
             </div>

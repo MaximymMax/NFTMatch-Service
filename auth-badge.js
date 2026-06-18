@@ -54,7 +54,7 @@
                 ? `@${user.username}`
                 : user?.firstName
                     ? user.firstName
-                    : 'Выйти';
+                    : (window.NFTi18n ? window.NFTi18n.t('badge_logout', 'Выйти') : 'Выйти');
 
             badge.innerHTML = `
                 <svg viewBox="0 0 24 24" style="width: 16px; height: 16px; fill: currentColor;">
@@ -114,7 +114,7 @@
                     <svg viewBox="0 0 24 24" style="width: 16px; height: 16px; fill: currentColor;">
                         <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 0 0-.05-.18c-.06-.05-.14-.03-.2-.02-.08.02-1.32.84-3.73 2.46-.35.24-.67.36-.97.35-.32-.01-.95-.18-1.41-.33-.57-.18-1.02-.28-1.01-.59.01-.16.23-.33.68-.51 2.76-1.2 4.6-2 5.53-2.4 2.64-1.1 3.19-1.3 3.55-1.3.08 0 .25.02.36.11.09.08.12.19.13.27 0 .05-.01.15-.02.21z"/>
                     </svg>
-                    <span>Войти</span>
+                    <span>${window.NFTi18n ? window.NFTi18n.t('badge_login', 'Войти') : 'Войти'}</span>
                 `;
 
                 Object.assign(badge.style, {
@@ -162,6 +162,9 @@
 
                 document.body.appendChild(badge);
             }
+        }
+    });
+
     function showProfileModal(user, isSubPage) {
         const existing = document.getElementById('tg-profile-modal');
         if (existing) {
@@ -169,8 +172,8 @@
             return;
         }
 
-        const displayName = [user.firstName, user.lastName].filter(Boolean).join(' ') || 'Пользователь';
-        const usernameText = user.username ? `@${user.username}` : 'нет';
+        const displayName = [user.firstName, user.lastName].filter(Boolean).join(' ') || (window.NFTi18n ? window.NFTi18n.t('badge_user', 'Пользователь') : 'Пользователь');
+        const usernameText = user.username ? `@${user.username}` : (window.NFTi18n ? window.NFTi18n.t('badge_no', 'нет') : 'нет');
 
         const modalHtml = `
             <div id="tg-profile-modal" class="modal-overlay" style="display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 100000; align-items: center; justify-content: center; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(8px); font-family: 'Inter', sans-serif;">
@@ -189,20 +192,20 @@
                             <code style="color: #fff; font-weight: 600;">${user.telegramId}</code>
                         </div>
                         <div style="display: flex; justify-content: space-between;">
-                            <span style="color: rgba(255,255,255,0.4);">Статус:</span>
-                            <span style="color: #10b981; font-weight: 600;">Авторизован</span>
+                            <span style="color: rgba(255,255,255,0.4);">${window.NFTi18n ? window.NFTi18n.t('badge_status', 'Статус:') : 'Статус:'}</span>
+                            <span style="color: #10b981; font-weight: 600;">${window.NFTi18n ? window.NFTi18n.t('badge_authorized', 'Авторизован') : 'Авторизован'}</span>
                         </div>
                     </div>
 
                     <div style="display: flex; flex-direction: column; gap: 10px;">
                         <button id="profile-logout-btn" style="background: #ef4444; color: #fff; border: none; padding: 12px; border-radius: 10px; font-weight: 700; font-size: 0.9rem; cursor: pointer; transition: all 0.2s;">
-                            Выйти из аккаунта
+                            ${window.NFTi18n ? window.NFTi18n.t('badge_btn_logout', 'Выйти из аккаунта') : 'Выйти из аккаунта'}
                         </button>
                         <button id="profile-relogin-btn" style="background: rgba(255,255,255,0.08); color: #fff; border: 1px solid rgba(255,255,255,0.15); padding: 12px; border-radius: 10px; font-weight: 600; font-size: 0.9rem; cursor: pointer; transition: all 0.2s;">
-                            Войти под другим аккаунтом
+                            ${window.NFTi18n ? window.NFTi18n.t('badge_btn_relogin', 'Войти под другим аккаунтом') : 'Войти под другим аккаунтом'}
                         </button>
                         <button onclick="document.getElementById('tg-profile-modal').remove()" style="background: transparent; color: rgba(255,255,255,0.5); border: none; padding: 8px; font-weight: 600; font-size: 0.85rem; cursor: pointer; margin-top: 4px;">
-                            Закрыть
+                            ${window.NFTi18n ? window.NFTi18n.t('badge_close', 'Закрыть') : 'Закрыть'}
                         </button>
                     </div>
                 </div>

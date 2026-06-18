@@ -579,7 +579,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         } catch (error) {
             console.error(`[Themes Fallback] Ошибка:`, error);
-            container.innerHTML = '<span style="font-size: 0.9rem; color: #f87171;">Ошибка загрузки</span>';
+            container.innerHTML = `<span style="font-size: 0.9rem; color: #f87171;">${window.NFTi18n ? window.NFTi18n.t('load_error_retry', 'Ошибка загрузки') : 'Ошибка загрузки'}</span>`;
         }
     }
 
@@ -602,19 +602,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (themes && themes.length > 0) {
                 const themeCount = themes.length;
-                const pluralName = getPlural(themeCount, 'тематике', 'тематикам', 'тематикам');
+                let pluralName;
+                if (window.NFTi18n && window.NFTi18n.getLanguage() === 'en') {
+                    pluralName = themeCount === 1 ? window.NFTi18n.t('plural_theme_loc_1') : window.NFTi18n.t('plural_theme_loc_2');
+                } else {
+                    pluralName = getPlural(themeCount, window.NFTi18n ? window.NFTi18n.t('plural_theme_loc_1') : 'тематике', window.NFTi18n ? window.NFTi18n.t('plural_theme_loc_2') : 'тематикам', window.NFTi18n ? window.NFTi18n.t('plural_theme_loc_5') : 'тематикам');
+                }
                 const ending = getCountEnding(themeCount);
 
                 const link = document.createElement('a');
                 link.href = '#';
                 link.id = 'show-themes-link';
 
+                const labelTemplate = window.NFTi18n ? window.NFTi18n.t('belongs_to_themes', '', {count: `${themeCount}${ending}`, plural: pluralName}) : `Принадлежит ${themeCount}${ending} ${pluralName}`;
+
                 link.innerHTML = `
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M9.568 3H5.25A2.25 2.25 0 0 0 3 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 0 0 5.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 0 0 9.568 3Z" />
                     <path stroke-linecap="round" stroke-linejoin="round" d="M6 6h.008v.008H6V6Z" />
                 </svg>
-                <span>Принадлежит ${themeCount}${ending} ${pluralName}</span>
+                <span>${labelTemplate}</span>
             `;
 
                 link.onclick = (e) => {
@@ -655,7 +662,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         } catch (error) {
             console.error('[API Error] Ошибка при загрузке тематик для модалки:', error);
-            container.innerHTML = '<span style="font-size: 0.9rem; color: #f87171;">Ошибка загрузки тем</span>';
+            container.innerHTML = `<span style="font-size: 0.9rem; color: #f87171;">${window.NFTi18n ? window.NFTi18n.t('load_error_retry', 'Ошибка загрузки тем') : 'Ошибка загрузки тем'}</span>`;
         }
     }
 
@@ -922,7 +929,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (themes && themes.length > 0) {
                 const count = themes.length;
-                const plural = getPlural(count, 'штука', 'штуки', 'штук');
+                let plural;
+                if (window.NFTi18n && window.NFTi18n.getLanguage() === 'en') {
+                    plural = count === 1 ? window.NFTi18n.t('plural_themes_1') : window.NFTi18n.t('plural_themes_2');
+                } else {
+                    plural = getPlural(count, window.NFTi18n ? window.NFTi18n.t('plural_themes_1') : 'тематика', window.NFTi18n ? window.NFTi18n.t('plural_themes_2') : 'тематики', window.NFTi18n ? window.NFTi18n.t('plural_themes_5') : 'тематик');
+                }
                 themesValueEl.classList.add('link-style');
                 themesValueEl.innerHTML = `${count} ${plural} ${iconSvg}`;
                 themesValueEl.onclick = () => {
@@ -1100,7 +1112,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             btn.innerHTML = `
                 ${img1}
-                <span style="display:inline-block; line-height:1; padding-top:1px;">Похожие по цвету</span>
+                <span style="display:inline-block; line-height:1; padding-top:1px;">${window.NFTi18n ? window.NFTi18n.t('btn_similar_colors') : 'Похожие по цвету'}</span>
                 ${img2}
             `;
 
@@ -1227,7 +1239,7 @@ async function fetchUniversalMonochromes(append = false) {
         } catch (error) {
             console.error('[API Error] Универсальный поиск:', error);
             hideLoading();
-            if (!append) resultsGrid.innerHTML = `<p style="text-align: center; color: #f87171;">Ошибка загрузки данных</p>`;
+            if (!append) resultsGrid.innerHTML = `<p style="text-align: center; color: #f87171;">${window.NFTi18n ? window.NFTi18n.t('load_error_retry', 'Ошибка загрузки данных') : 'Ошибка загрузки данных'}</p>`;
             state.findUniversal.isLoading = false;
         }
     }
@@ -1262,7 +1274,7 @@ async function fetchUniversalMonochromes(append = false) {
             dropdownObj.value.textContent = name;
             dropdownObj.header.classList.add('value-active');
         } else {
-            dropdownObj.value.textContent = `Выбрано: ${selectedArray.length}`;
+            dropdownObj.value.textContent = window.NFTi18n ? window.NFTi18n.t('selected_count', '', {count: selectedArray.length}) : `Выбрано: ${selectedArray.length}`;
             dropdownObj.header.classList.add('value-active');
         }
         
@@ -1364,7 +1376,7 @@ function renderUniversalResults(items, append = false) {
     }
     
     if (!append && (!items || items.length === 0)) {
-        resultsGrid.innerHTML = '<p style="text-align: center;">Ничего не найдено.</p>';
+        resultsGrid.innerHTML = `<p style="text-align: center;">${window.NFTi18n ? window.NFTi18n.t('no_results') : 'Ничего не найдено.'}</p>`;
         return;
     }
 
@@ -1436,7 +1448,7 @@ function populateUniversalDropdown(container, items, type) {
     const allOption = document.createElement('div');
     allOption.classList.add('list-option');
     allOption.dataset.value = 'ALL';
-    allOption.innerHTML = `<span class="option-text" style="font-weight:700; color:var(--primary-color);">Выбрать все</span>`;
+    allOption.innerHTML = `<span class="option-text" style="font-weight:700; color:var(--primary-color);">${window.NFTi18n ? window.NFTi18n.t('btn_select_all') : 'Выбрать все'}</span>`;
     fragment.appendChild(allOption);
 
     items.forEach((item, index) => {
@@ -1520,7 +1532,7 @@ if (sortSwitcher) {
             clearResults();
             resultsWrapper.classList.remove('results-initial-hide');
             loadingContainer.style.display = 'flex';
-            loadingContainer.innerHTML = `<div class="loading-indicator"><p><span class="spinner"></span> Анализ... Пожалуйста, подождите...</p></div>`;
+            loadingContainer.innerHTML = `<div class="loading-indicator"><p><span class="spinner"></span> ${window.NFTi18n ? window.NFTi18n.t('loading_analysis') : 'Анализ... Пожалуйста, подождите...'}</p></div>`;
         } else {
             resultsGrid.classList.add('loading');
         }
@@ -1636,7 +1648,7 @@ if (sortSwitcher) {
     async function fetchAllModelNames(giftName, updateDOM = true) {
         if (!giftName) {
             if (updateDOM) {
-                dropdowns.modelBgs.options.innerHTML = `<div class="list-option list-placeholder">Сначала выберите коллекцию</div>`;
+                dropdowns.modelBgs.options.innerHTML = `<div class="list-option list-placeholder">${window.NFTi18n ? window.NFTi18n.t('select_collection_first') : 'Сначала выберите коллекцию'}</div>`;
             }
             state.modelNames = [];
             return;
@@ -1660,7 +1672,7 @@ if (sortSwitcher) {
             console.error(`[API Error] Ошибка при загрузке моделей для ${giftName}:`, error);
             state.modelNames = [];
             if (updateDOM) {
-                dropdowns.modelBgs.options.innerHTML = `<div class="list-option list-placeholder">Модели не найдены</div>`;
+                dropdowns.modelBgs.options.innerHTML = `<div class="list-option list-placeholder">${window.NFTi18n ? window.NFTi18n.t('no_models_found') : 'Модели не найдены'}</div>`;
             }
         }
     }
@@ -1733,7 +1745,7 @@ if (sortSwitcher) {
             console.log(`%c[API Request] Using NFT-based search (Default) for: ${state.findBgs.selectedModel}`, 'color: dodgerblue');
         } else {
             hideLoading();
-            resultsGrid.innerHTML = `<p style="text-align: center;">Выберите модель для поиска.</p>`;
+            resultsGrid.innerHTML = `<p style="text-align: center;">${window.NFTi18n ? window.NFTi18n.t('select_model_to_search') : 'Выберите модель для поиска.'}</p>`;
             return;
         }
         // --- ИЗМЕНЕНИЕ КОНЕЦ ---
@@ -1756,7 +1768,7 @@ if (sortSwitcher) {
         } catch (error) {
             console.error('[API Error] Ошибка при поиске фонов:', error);
             hideLoading();
-            resultsGrid.innerHTML = `<p style="text-align: center;">Не удалось загрузить данные.</p>`;
+            resultsGrid.innerHTML = `<p style="text-align: center;">${window.NFTi18n ? window.NFTi18n.t('net_error') : 'Не удалось загрузить данные.'}</p>`;
         }
     }
 
@@ -1810,7 +1822,7 @@ if (sortSwitcher) {
         } catch (error) {
             console.error('[API Error] Ошибка при поиске моделей:', error);
             hideLoading();
-            resultsGrid.innerHTML = `<p style="text-align: center;">Не удалось загрузить данные. ${error}</p>`;
+            resultsGrid.innerHTML = `<p style="text-align: center;">${window.NFTi18n ? window.NFTi18n.t('net_error') : 'Не удалось загрузить данные.'} ${error}</p>`;
         }
     }
 
@@ -1818,7 +1830,7 @@ if (sortSwitcher) {
         resultsWrapper.classList.remove('results-initial-hide');
         resultsGrid.innerHTML = '';
         if (!backgroundData || backgroundData.length === 0) {
-            resultsGrid.innerHTML = '<p style="text-align: center;">Подходящих фонов не найдено.</p>';
+            resultsGrid.innerHTML = `<p style="text-align: center;">${window.NFTi18n ? window.NFTi18n.t('no_matching_bgs') : 'Подходящих фонов не найдено.'}</p>`;
             return;
         }
 
@@ -1827,7 +1839,7 @@ if (sortSwitcher) {
 
         backgroundData = backgroundData.filter(bg => bg.compatValue > 0);
         if (backgroundData.length === 0) {
-            resultsGrid.innerHTML = '<p style="text-align: center;">Подходящих фонов не найдено.</p>';
+            resultsGrid.innerHTML = `<p style="text-align: center;">${window.NFTi18n ? window.NFTi18n.t('no_matching_bgs') : 'Подходящих фонов не найдено.'}</p>`;
             return;
         }
         backgroundData.forEach(bg => {
@@ -1923,14 +1935,14 @@ if (sortSwitcher) {
         resultsWrapper.classList.remove('results-initial-hide');
         resultsGrid.innerHTML = '';
         if (!backgroundColor || !modelData || modelData.length === 0) {
-            resultsGrid.innerHTML = '<p style="text-align: center;">Подходящих моделей не найдено.</p>';
+            resultsGrid.innerHTML = `<p style="text-align: center;">${window.NFTi18n ? window.NFTi18n.t('no_matching_models') : 'Подходящих моделей не найдено.'}</p>`;
             return;
         }
 
         const fragment = document.createDocumentFragment();
         modelData = modelData.filter(model => model.compatValue > 0);
         if (modelData.length === 0) {
-            resultsGrid.innerHTML = '<p style="text-align: center;">Подходящих моделей не найдено.</p>';
+            resultsGrid.innerHTML = `<p style="text-align: center;">${window.NFTi18n ? window.NFTi18n.t('no_matching_models') : 'Подходящих моделей не найдено.'}</p>`;
             return;
         }
         modelData.forEach(model => {
@@ -2086,7 +2098,7 @@ if (sortSwitcher) {
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.398 16c-.77 1.333.192 3 1.732 3z"/>
                     </svg>
-                    Модель не является одноцветной
+                    ${window.NFTi18n ? window.NFTi18n.t('model_not_monochrome') : 'Модель не является одноцветной'}
                 </div>`;
         } else {
             wrapper.innerHTML = '';
@@ -2304,7 +2316,7 @@ if (sortSwitcher) {
                     // Если совсем ничего не найдено на первой странице
                     if (nftsState.page === 1) {
                         const grid = document.getElementById('nfts-grid-container');
-                        if (grid) grid.innerHTML = '<div style="grid-column: 1/-1; text-align:center; color: var(--text-muted); font-size: 0.9rem; padding: 10px;">NFT не найдены</div>';
+                        if (grid) grid.innerHTML = `<div style="grid-column: 1/-1; text-align:center; color: var(--text-muted); font-size: 0.9rem; padding: 10px;">${window.NFTi18n ? window.NFTi18n.t('no_nfts_found') : 'NFT не найдены'}</div>`;
                     }
                 }
             } else {
@@ -2571,7 +2583,7 @@ if (sortSwitcher) {
         populateDropdown(dropdowns.giftBgs.options, state.giftNames, 'gift');
 
         state.findBgs.selectedModel = null;
-        dropdowns.modelBgs.value.textContent = 'Выберите модель';
+        dropdowns.modelBgs.value.textContent = window.NFTi18n ? window.NFTi18n.t('placeholder_select_model') : 'Выберите модель';
         displayMonocolorAlert(null);
         updateModelThemes(null);
         resetPickerAreaToPlaceholder();

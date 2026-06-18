@@ -424,13 +424,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (modelDropdownHeader) {
             if (isGiftSelected) {
-                modelSelectedValue.textContent = selectedModel || 'Выберите модель';
+                modelSelectedValue.textContent = selectedModel || (window.NFTi18n ? window.NFTi18n.t('placeholder_select_model', 'Выберите модель') : 'Выберите модель');
                 if (!selectedModel) {
-                    modelSelectedValue.textContent = 'Выберите модель';
+                    modelSelectedValue.textContent = window.NFTi18n ? window.NFTi18n.t('placeholder_select_model', 'Выберите модель') : 'Выберите модель';
                 }
             } else {
                 selectedModel = null;
-                modelSelectedValue.textContent = 'Выберите модель';
+                modelSelectedValue.textContent = window.NFTi18n ? window.NFTi18n.t('placeholder_select_model', 'Выберите модель') : 'Выберите модель';
                 detailsContent.classList.remove('visible');
             }
         }
@@ -638,7 +638,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
-                <span>Поиск NFT</span>
+                <span>${window.NFTi18n ? window.NFTi18n.t('btn_search_nft', 'Поиск NFT') : 'Поиск NFT'}</span>
             `;
         }
 
@@ -703,9 +703,9 @@ document.addEventListener('DOMContentLoaded', () => {
             <div class="col-span-full loading-indicator">
                 <p style="display: flex; align-items: center; justify-content: center; gap: 10px;">
                     <span class="spinner"></span> 
-                    Анализ схожести. Пожалуйста, подождите...
+                    ${window.NFTi18n ? window.NFTi18n.t('analysis_loading', 'Анализ схожести. Пожалуйста, подождите...') : 'Анализ схожести. Пожалуйста, подождите...'}
                 </p>
-                <button id="cancel-search-btn" class="cancel-search-btn">Отменить поиск</button>
+                <button id="cancel-search-btn" class="cancel-search-btn">${window.NFTi18n ? window.NFTi18n.t('btn_cancel_search', 'Отменить поиск') : 'Отменить поиск'}</button>
             </div>
         `;
 
@@ -713,7 +713,7 @@ document.addEventListener('DOMContentLoaded', () => {
         controlsWithDisabledClass.forEach(control => { if (control) control.classList.add('disabled-control'); });
 
         if (submitBtn) {
-            submitBtn.innerHTML = '<span class="spinner"></span> <span>Идет поиск NFT...</span>';
+            submitBtn.innerHTML = `<span class="spinner"></span> <span>${window.NFTi18n ? window.NFTi18n.t('searching_nft', 'Идет поиск NFT...') : 'Идет поиск NFT...'}</span>`;
         }
 
         const cancelBtnElement = document.getElementById('cancel-search-btn');
@@ -863,7 +863,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             if (similarNFTsData.length === 0) {
-                resultsGrid.innerHTML = '<p class="col-span-full text-center text-muted" style="padding: 2rem;">Подходящих NFT не найдено.</p>';
+                resultsGrid.innerHTML = `<p class="col-span-full text-center text-muted" style="padding: 2rem;">${window.NFTi18n ? window.NFTi18n.t('nfts_not_found', 'Подходящих NFT не найдено.') : 'Подходящих NFT не найдено.'}</p>`;
             } else {
                 renderResults();
             }
@@ -876,7 +876,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 resultsGrid.innerHTML = '';
                 return;
             }
-            resultsGrid.innerHTML = `<p class="col-span-full text-center text-danger" style="padding: 2rem;">Не удалось загрузить данные. Попробуйте снова. (${error.message})</p>`;
+            resultsGrid.innerHTML = `<p class="col-span-full text-center text-danger" style="padding: 2rem;">${window.NFTi18n ? window.NFTi18n.t('error_load_try_again', 'Не удалось загрузить данные. Попробуйте снова.') : 'Не удалось загрузить данные. Попробуйте снова.'} (${error.message})</p>`;
         } finally {
             handleSearchCompletion(false);
         }
@@ -967,7 +967,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.398 16c-.77 1.333.192 3 1.732 3z"/>
                     </svg>
-                    Модель не является одноцветной
+                    ${window.NFTi18n ? window.NFTi18n.t('not_monochrome', 'Модель не является одноцветной') : 'Модель не является одноцветной'}
                 </div>
              `;
         } else {
@@ -1020,7 +1020,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function displayColors(colors) {
         colorsList.innerHTML = '';
         if (colors.length === 0) {
-            colorsList.innerHTML = '<p class="placeholder-text">Цвета не найдены</p>';
+            colorsList.innerHTML = `<p class="placeholder-text">${window.NFTi18n ? window.NFTi18n.t('colors_not_found', 'Цвета не найдены') : 'Цвета не найдены'}</p>`;
             return;
         }
 
@@ -1038,10 +1038,10 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateMultiSelectedSummary() {
         const count = selectedMultiItems.size;
         if (count === 0) {
-            multiSelectedSummary.textContent = 'Выберите набор коллекций';
+            multiSelectedSummary.textContent = window.NFTi18n ? window.NFTi18n.t('multi_collection_placeholder', 'Выберите набор коллекций') : 'Выберите набор коллекций';
             submitBtn.classList.add('hidden');
         } else {
-            multiSelectedSummary.textContent = `Выбрано (${count})`;
+            multiSelectedSummary.textContent = window.NFTi18n ? window.NFTi18n.t('selected_count', 'Выбрано: {count}', {count: count}) : `Выбрано (${count})`;
             if (selectedGift && selectedModel) {
                 submitBtn.classList.remove('hidden');
             }
@@ -1151,7 +1151,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                     <div class="card-bottom-info">
                         <div class="percent-big">${coefficient}%</div>
-                        <div class="count-small">${countText} шт</div>
+                        <div class="count-small">${countText} ${window.NFTi18n ? window.NFTi18n.t('pcs', 'шт.') : 'шт.'}</div>
                     </div>
                 </div>
             `;
@@ -1417,7 +1417,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function fetchAllModelNames(giftName) {
 
         if (!giftName || giftName.trim() === '') {
-            const placeholderHTML = `<li class="list-option list-placeholder"><span class="option-text">Сначала выберите подарок</span></li>`;
+            const placeholderHTML = `<li class="list-option list-placeholder"><span class="option-text">${window.NFTi18n ? window.NFTi18n.t('select_gift_first', 'Сначала выберите подарок') : 'Сначала выберите подарок'}</span></li>`;
             modelListOptions.innerHTML = placeholderHTML;
 
             modelNames = [];
@@ -1447,7 +1447,7 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error(`Ошибка при загрузке моделей для ${giftName}:`, error);
             modelNames = [];
             modelSelectedValue.textContent = 'Выберите модель';
-            const placeholderHTML = `<li class="list-option list-placeholder"><span class="option-text">Модели не найдены</span></li>`;
+            const placeholderHTML = `<li class="list-option list-placeholder"><span class="option-text">${window.NFTi18n ? window.NFTi18n.t('models_not_found', 'Модели не найдены') : 'Модели не найдены'}</span></li>`;
             modelListOptions.innerHTML = placeholderHTML;
         }
     }
@@ -1565,10 +1565,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // --- ОБНОВЛЕННЫЕ ОПЦИИ СОРТИРОВКИ ---
             const NEW_SORT_OPTIONS = [
-                { value: 'percent-desc', text: 'По совпадению' },
-                { value: 'count-desc', text: 'По количеству (убыв.)' },
-                { value: 'count-asc', text: 'По количеству (возр.)' },
-                { value: 'name', text: 'По имени' }
+                { value: 'percent-desc', text: window.NFTi18n ? window.NFTi18n.t('sort_opt_match_desc', 'По совпадению (убыв.)') : 'По совпадению (убыв.)' },
+                { value: 'count-desc', text: window.NFTi18n ? window.NFTi18n.t('sort_opt_count_desc', 'По количеству (убыв.)') : 'По количеству (убыв.)' },
+                { value: 'count-asc', text: window.NFTi18n ? window.NFTi18n.t('sort_opt_count_asc', 'По количеству (возр.)') : 'По количеству (возр.)' },
+                { value: 'name', text: window.NFTi18n ? window.NFTi18n.t('sort_opt_name', 'По имени') : 'По имени' }
             ];
 
             sortSelectDesktop.innerHTML = '';

@@ -9,6 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="api.css">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="../i18n.js"></script>
     <script src="../config.js"></script>
     <script src="../auth.js"></script>
     <script src="../auth-badge.js"></script>
@@ -19,11 +20,11 @@
         <div class="container">
             
             <section class="api-hero">
-                <h1>API Управление</h1>
+                <h1 data-i18n="api_title">API Управление</h1>
                 <div class="title-separator"></div>
-                <p class="api-description">
+                <p class="api-description" data-i18n="api_desc">
                     Сервис предоставляет программный интерфейс для разработчиков новых решений, связанных с NFT-подарками. 
-                    <strong>NFT Match предоставляет уникальную информацию</strong>, которая позволит вам интегрировать продвинутую аналитику и сделать свой сервис лучше.
+                    <strong>NFT Match предоставляет уникальную информацию</strong>, которая позволит вам integrarровать продвинутую аналитику и сделать свой сервис лучше.
                 </p>
             </section>
 
@@ -43,16 +44,16 @@
             <div class="api-card">
                 <div class="card-header">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path></svg>
-                    <span>Ключи доступа</span>
+                    <span data-i18n="api_keys">Ключи доступа</span>
                 </div>
                 
                 <div class="key-tier">
                     <div class="key-info">
-                        <span class="key-title basic-color">Базовый ключ</span>
-                        <span class="key-limits">40 / мин | 200 / час</span>
+                        <span class="key-title basic-color" data-i18n="key_basic">Базовый ключ</span>
+                        <span class="key-limits" id="basic-key-limits">40 / мин | 200 / час</span>
                     </div>
                     
-                    <button id="preGenerateBtn" class="action-btn primary-btn">Сгенерировать ключ</button>
+                    <button id="preGenerateBtn" class="action-btn primary-btn" data-i18n="btn_generate_key">Сгенерировать ключ</button>
                     
                     <div id="keyDisplayBox" class="key-display-wrapper" style="display: none;">
                         <code id="newKeyValue"></code>
@@ -66,12 +67,12 @@
 
                 <div class="key-tier">
                     <div class="key-info">
-                        <span class="key-title pro-color">Расширенный ключ</span>
-                        <span class="key-limits">100 / мин | 5000 / час</span>
+                        <span class="key-title pro-color" data-i18n="key_pro">Расширенный ключ</span>
+                        <span class="key-limits" id="pro-key-limits">100 / мин | 5000 / час</span>
                     </div>
                     
                     <a href="https://t.me/Criminal_hamster" target="_blank" class="action-btn pro-btn">
-                        <span>Обратиться к администратору</span>
+                        <span data-i18n="btn_contact_admin">Обратиться к администратору</span>
                         <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
                     </a>
                 </div>
@@ -80,9 +81,9 @@
             <div class="api-card swagger-card">
                 <div class="card-header swagger-header">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
-                    <span>Документация</span>
+                    <span data-i18n="api_doc">Документация</span>
                 </div>
-                <a href="https://nftmatch.pro/api/swagger/ui" target="_blank" class="action-btn swagger-btn" style="text-decoration: none; text-align: center;">
+                <a href="https://nftmatch.pro/api/swagger/ui" target="_blank" class="action-btn swagger-btn" style="text-decoration: none; text-align: center;" data-i18n="btn_open_swagger">
                     Открыть Swagger UI
                 </a>
             </div>
@@ -95,11 +96,11 @@
             <div class="modal-icon warning">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
             </div>
-            <h3>Вы уверены?</h3>
-            <p>Ваш старый ключ будет <strong>деактивирован</strong>. Новый ключ будет показан только один раз.</p>
+            <h3 data-i18n="modal_confirm_title">Вы уверены?</h3>
+            <p data-i18n="modal_confirm_desc">Ваш старый ключ будет <strong>деактивирован</strong>. Новый ключ будет показан только один раз.</p>
             <div class="modal-actions">
-                <button class="btn-cancel" onclick="closeModal()">Отмена</button>
-                <button class="btn-confirm" id="confirmGenerateBtn">Сгенерировать</button>
+                <button class="btn-cancel" onclick="closeModal()" data-i18n="btn_cancel">Отмена</button>
+                <button class="btn-confirm" id="confirmGenerateBtn" data-i18n="btn_confirm">Сгенерировать</button>
             </div>
         </div>
     </div>

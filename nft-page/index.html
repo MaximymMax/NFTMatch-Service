@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="../Monohrome/themes-modal.css">
     <link rel="stylesheet" href="../modals/subscription-modal.css">
 
+    <script src="../i18n.js"></script>
     <script src="../config.js"></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
@@ -23,15 +24,15 @@
     <main>
         <div class="main-container">
 
-            <h1 class="page-title centered-title">Похожие NFT</h1>
+            <h1 class="page-title centered-title" data-i18n="similar_title">Похожие NFT</h1>
 
             <div class="selection-block">
                 <div class="custom-dropdown-container" id="gift-container">
-                    <label for="gift-search">Название коллекции:</label>
+                    <label for="gift-search" data-i18n="collection_name">Название коллекции:</label>
                     <div class="dropdown-header with-search" id="gift-dropdown-header">
-                        <input type="text" id="gift-search" placeholder="Поиск..." class="dropdown-search"
+                        <input type="text" id="gift-search" data-i18n-placeholder="placeholder_search" placeholder="Поиск..." class="dropdown-search"
                             autocomplete="off">
-                        <span id="gift-selected-value" class="selected-value-placeholder">Выберите коллекцию</span>
+                        <span id="gift-selected-value" class="selected-value-placeholder" data-i18n="placeholder_select_collection">Выберите коллекцию</span>
                         <div class="arrow"></div>
                     </div>
                     <div class="dropdown-list hidden" id="gift-dropdown-list">
@@ -40,11 +41,11 @@
                 </div>
 
                 <div class="custom-dropdown-container" id="model-container">
-                    <label for="model-search">Название модели:</label>
+                    <label for="model-search" data-i18n="model_name">Название модели:</label>
                     <div class="dropdown-header with-search" id="model-dropdown-header">
-                        <input type="text" id="model-search" placeholder="Поиск..." class="dropdown-search"
+                        <input type="text" id="model-search" data-i18n-placeholder="placeholder_search" placeholder="Поиск..." class="dropdown-search"
                             autocomplete="off">
-                        <span id="model-selected-value" class="selected-value-placeholder">Выберите модель</span>
+                        <span id="model-selected-value" class="selected-value-placeholder" data-i18n="placeholder_select_model">Выберите модель</span>
                         <div class="arrow"></div>
                     </div>
                     <div class="dropdown-list hidden" id="model-dropdown-list">
@@ -61,26 +62,25 @@
                 </div>
                 <div class="colors-info">
                     <div class="colors-list" id="colors-list"></div>
-                    <button class="change-color-btn hidden" id="change-color-btn">Изменить цвет</button>
+                    <button class="change-color-btn hidden" id="change-color-btn" data-i18n="btn_change_color">Изменить цвет</button>
                 </div>
             </div>
 
             <div class="multi-select-container">
-                <label for="multi-gift-search">Набор коллекций для поиска:</label>
+                <label for="multi-gift-search" data-i18n="multi_collection_label">Набор коллекций для поиска:</label>
                 <div class="custom-dropdown-container" id="multi-container">
                     <div class="dropdown-header with-search" id="multi-select-header">
-                        <input type="text" id="multi-gift-search" placeholder="Поиск..." class="dropdown-search"
+                        <input type="text" id="multi-gift-search" data-i18n-placeholder="placeholder_search" placeholder="Поиск..." class="dropdown-search"
                             autocomplete="off">
-                        <span id="multi-selected-summary" class="selected-value-placeholder">Выберите набор
-                            коллекций</span>
+                        <span id="multi-selected-summary" class="selected-value-placeholder" data-i18n="multi_collection_placeholder">Выберите набор коллекций</span>
                         <div class="arrow"></div>
                     </div>
                     <div class="dropdown-list hidden" id="multi-select-content">
 
-                        <div class="dropdown-controls-wrapper">
+                         <div class="dropdown-controls-wrapper">
                             <div class="dropdown-controls-buttons">
-                                <button id="clear-all-btn" class="control-btn clear-btn">Очистить выбор</button>
-                                <button id="select-all-btn" class="control-btn select-all-btn">Выбрать все</button>
+                                <button id="clear-all-btn" class="control-btn clear-btn" data-i18n="btn_clear_selection">Очистить выбор</button>
+                                <button id="select-all-btn" class="control-btn select-all-btn" data-i18n="btn_select_all">Выбрать все</button>
                             </div>
                         </div>
 
@@ -100,7 +100,7 @@
 
             <div id="results-wrapper" class="content-section">
 
-                <div class="results-header-label">
+                <div class="results-header-label" data-i18n="btn_similar_colors">
                     Похожие по цвету
                 </div>
 
@@ -111,19 +111,19 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                         </svg>
-                        <span>Поиск NFT</span>
+                        <span data-i18n="btn_search_nft">Поиск NFT</span>
                     </button>
 
                     <div class="sort-and-display-group">
 
-                        <button id="display-mode-button-desktop" class="btn-icon-display-mode desktop-only" title="Вид">
+                        <button id="display-mode-button-desktop" class="btn-icon-display-mode desktop-only" data-i18n-title="btn_view" title="Вид">
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none"
                                 viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M4 6h16M4 10h16M4 14h16M4 18h16" />
                             </svg>
                         </button>
-                        <button id="display-mode-button" class="btn-icon-display-mode mobile-only" title="Вид">
+                        <button id="display-mode-button" class="btn-icon-display-mode mobile-only" data-i18n-title="btn_view" title="Вид">
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none"
                                 viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -131,7 +131,7 @@
                             </svg>
                         </button>
 
-                        <button id="sort-mobile-button" class="btn-icon-sort-mobile" title="Сортировка">
+                        <button id="sort-mobile-button" class="btn-icon-sort-mobile" data-i18n-title="btn_sort" title="Сортировка">
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none"
                                 viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -140,11 +140,11 @@
                         </button>
 
                         <div id="sort-desktop-wrapper" class="sort-control-group">
-                            <label for="sort-order-desktop">Сортировка:</label>
+                            <label for="sort-order-desktop" data-i18n="label_sort">Сортировка:</label>
                             <select id="sort-order-desktop">
-                                <option value="percent-desc">По совпадению (убыв.)</option>
-                                <option value="percent-asc">По совпадению (возр.)</option>
-                                <option value="name">По имени</option>
+                                <option value="percent-desc" data-i18n="sort_opt_match_desc">По совпадению (убыв.)</option>
+                                <option value="percent-asc" data-i18n="sort_opt_match_asc">По совпадению (возр.)</option>
+                                <option value="name" data-i18n="sort_opt_name">По имени</option>
                             </select>
                         </div>
                     </div>
@@ -161,17 +161,17 @@
 
     <div id="sort-modal-overlay" class="modal-overlay hidden">
         <div class="sort-modal">
-            <h3>Выберите сортировку</h3>
+            <h3 data-i18n="modal_select_sort">Выберите сортировку</h3>
             <div class="sort-modal-options" id="sort-modal-options">
             </div>
         </div>
     </div>
     <div id="display-mode-modal-overlay" class="modal-overlay hidden">
         <div class="display-mode-modal sort-modal">
-            <h3>Выберите вид карточек</h3>
+            <h3 data-i18n="modal_select_view">Выберите вид карточек</h3>
             <div class="display-mode-options sort-modal-options">
-                <button data-mode="top-3" class="mode-select-btn">Топ 3 модели (Детальный вид)</button>
-                <button data-mode="top-1" class="mode-select-btn">Топ 1 модель (Плотный вид)</button>
+                <button data-mode="top-3" class="mode-select-btn" data-i18n="view_opt_detailed">Топ 3 модели (Детальный вид)</button>
+                <button data-mode="top-1" class="mode-select-btn" data-i18n="view_opt_compact">Топ 1 модель (Плотный вид)</button>
             </div>
         </div>
     </div>
@@ -180,7 +180,7 @@
         <div class="card-modal color-picker-modal" id="colorPickerModalContent">
             <div class="modal-header">
                 <button class="close-modal-btn" id="closeColorPickerModalBtn" aria-label="Закрыть">&times;</button>
-                <button class="btn-primary" id="saveColorsBtn">Сохранить</button>
+                <button class="btn-primary" id="saveColorsBtn" data-i18n="btn_save">Сохранить</button>
             </div>
 
             <div class="modal-body color-picker-modal-body">
@@ -203,7 +203,7 @@
         <div class="card-modal nft-details-modal">
             <div class="modal-header">
                 <div></div>
-                <h3 id="nftDetailsModalTitle">Подарок</h3>
+                <h3 id="nftDetailsModalTitle" data-i18n="modal_title_gift">Подарок</h3>
                 <button class="close-modal-btn" id="closeNftDetailsModalBtn" aria-label="Закрыть">&times;</button>
             </div>
 
@@ -211,16 +211,16 @@
 
                 <div class="comparison-container">
                     <div class="comparison-photo-box selected-model-box" id="selectedModelPhoto">
-                        <p class="box-label">Сравнить с</p>
+                        <p class="box-label" data-i18n="label_compare_with">Сравнить с</p>
                     </div>
 
                     <div class="comparison-photo-box target-model-box" id="targetModelPhoto">
-                        <p class="box-label">Целевая модель</p>
+                        <p class="box-label" data-i18n="label_target_model">Целевая модель</p>
                     </div>
                 </div>
 
                 <div class="similar-models-cluster">
-                    <div class="similar-models-title">Похожие модели</div>
+                    <div class="similar-models-title" data-i18n="label_similar_models">Похожие модели</div>
 
                     <div class="similar-models-list-wrapper" id="similarModelsListWrapper">
                         <div class="similar-models-list" id="similarModelsList">

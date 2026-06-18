@@ -12,6 +12,7 @@
     <script src="../config.js"></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
+    <script src="../i18n.js"></script>
     <script src="../auth.js"></script>
     <script src="../auth-badge.js"></script>
 </head>
@@ -25,9 +26,9 @@
 
             <div class="mode-switcher-container">
     <div class="mode-switcher" id="main-mode-switcher" data-active-mode="findUniversal">
-        <button id="mode-find-universal" class="mode-tab active" data-mode="findUniversal">Комбо</button>
-        <button id="mode-find-bgs" class="mode-tab" data-mode="findBgs">Фоны</button>
-        <button id="mode-find-models" class="mode-tab" data-mode="findModels">Модели</button>
+        <button id="mode-find-universal" class="mode-tab active" data-mode="findUniversal" data-i18n="mode_combo">Комбо</button>
+        <button id="mode-find-bgs" class="mode-tab" data-mode="findBgs" data-i18n="mode_bgs">Фоны</button>
+        <button id="mode-find-models" class="mode-tab" data-mode="findModels" data-i18n="mode_models">Модели</button>
     </div>
 </div>
 
@@ -37,11 +38,11 @@
         <div class="selection-block">
             <div class="dropdowns-row">
                 <div class="sort-group-col">
-                    <span class="filter-label">Коллекции:</span>
+                    <span class="filter-label" data-i18n="filter_collections">Коллекции:</span>
                     <div class="custom-dropdown-container multi-select" id="gift-container-univ">
                         <div class="dropdown-header with-search" id="gift-dropdown-header-univ">
-                            <input type="text" id="gift-search-univ" placeholder="Поиск..." class="dropdown-search" autocomplete="off">
-                            <span id="gift-selected-value-univ" class="selected-value-placeholder">Все коллекции</span>
+                            <input type="text" id="gift-search-univ" placeholder="Поиск..." class="dropdown-search" autocomplete="off" data-i18n-placeholder="placeholder_search">
+                            <span id="gift-selected-value-univ" class="selected-value-placeholder" data-i18n="placeholder_all_collections">Все коллекции</span>
                             <div class="arrow"></div>
                         </div>
                         <div class="dropdown-list hidden" id="gift-dropdown-list-univ">
@@ -51,11 +52,11 @@
                 </div>
 
                 <div class="sort-group-col">
-                    <span class="filter-label">Фоны:</span>
+                    <span class="filter-label" data-i18n="filter_bgs">Фоны:</span>
                     <div class="custom-dropdown-container multi-select" id="color-container-univ">
                         <div class="dropdown-header with-search" id="color-dropdown-header-univ">
-                            <input type="text" id="color-search-univ" placeholder="Поиск..." class="dropdown-search" autocomplete="off">
-                            <span id="color-selected-value-univ" class="selected-value-placeholder">Все фоны</span>
+                            <input type="text" id="color-search-univ" placeholder="Поиск..." class="dropdown-search" autocomplete="off" data-i18n-placeholder="placeholder_search">
+                            <span id="color-selected-value-univ" class="selected-value-placeholder" data-i18n="placeholder_all_bgs">Все фоны</span>
                             <div class="arrow"></div>
                         </div>
                         <div class="dropdown-list hidden" id="color-dropdown-list-univ">
@@ -67,12 +68,12 @@
         </div>
 
         <div class="filter-wrapper">
-            <div class="filter-header-label">Фильтры</div>
+            <div class="filter-header-label" data-i18n="filters_title">Фильтры</div>
 
             <div class="filter-row sorting-row" style="margin-bottom: 24px; gap: 12px; width: 100%; align-items: center;">
                 <div class="mini-switcher" id="univ-sort-type" style="margin: 0; flex: 1;">
-                    <button class="mini-tab" data-sort="Coof">Коэф.</button>
-                    <button class="mini-tab active" data-sort="FloorPrice">Цена</button>
+                    <button class="mini-tab" data-sort="Coof" data-i18n="filter_sort_coof">Коэф.</button>
+                    <button class="mini-tab active" data-sort="FloorPrice" data-i18n="filter_sort_price">Цена</button>
                 </div>
                 <button id="univ-direction-btn" class="direction-toggle-btn asc" style="padding: 10px; border-radius: 10px; width: 44px; height: 44px; margin: 0; flex-shrink: 0;">
                     <svg class="dir-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" width="22" height="22">
@@ -83,14 +84,14 @@
 
             <div class="filter-row-slider">
                 <div class="slider-header">
-                    <span class="filter-label">Мин. совпадение: <span id="min-coof-value" class="highlight-val">85%</span></span>
+                    <span class="filter-label"><span data-i18n="filter_min_match">Мин. совпадение:</span> <span id="min-coof-value" class="highlight-val">85%</span></span>
                 </div>
                 <input type="range" id="univ-min-coof" min="0" max="100" value="85" class="modern-slider" style="background: linear-gradient(to right, var(--primary-color) 85%, rgba(0, 0, 0, 0.3) 85%);">
             </div>
 
             <button id="univ-search-btn" class="primary-search-btn" style="font-size: 0.95rem; padding: 12px; border-radius: 12px;">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" width="18" height="18"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607z" /></svg>
-                Найти сочетания
+                <span data-i18n="btn_find_combinations">Найти сочетания</span>
             </button>
         </div>
     </div>
@@ -100,11 +101,11 @@
         <div class="selection-block">
             <div class="dropdowns-row">
                 <div class="sort-group-col">
-                    <span class="filter-label">Коллекция:</span>
+                    <span class="filter-label" data-i18n="filter_collection">Коллекция:</span>
                     <div class="custom-dropdown-container" id="gift-container-bgs">
                         <div class="dropdown-header with-search" id="gift-dropdown-header-bgs">
-                            <input type="text" id="gift-search-bgs" placeholder="Поиск..." class="dropdown-search" autocomplete="off">
-                            <span id="gift-selected-value-bgs" class="selected-value-placeholder">Выберите коллекцию</span>
+                            <input type="text" id="gift-search-bgs" placeholder="Поиск..." class="dropdown-search" autocomplete="off" data-i18n-placeholder="placeholder_search">
+                            <span id="gift-selected-value-bgs" class="selected-value-placeholder" data-i18n="placeholder_select_collection">Выберите коллекцию</span>
                             <div class="arrow"></div>
                         </div>
                         <div class="dropdown-list hidden" id="gift-dropdown-list-bgs">
@@ -114,11 +115,11 @@
                 </div>
                 
                 <div class="sort-group-col">
-                    <span class="filter-label">Модель:</span>
+                    <span class="filter-label" data-i18n="filter_model">Модель:</span>
                     <div class="custom-dropdown-container" id="model-container-bgs">
                         <div class="dropdown-header with-search" id="model-dropdown-header-bgs">
-                            <input type="text" id="model-search-bgs" placeholder="Поиск..." class="dropdown-search" autocomplete="off">
-                            <span id="model-selected-value-bgs" class="selected-value-placeholder">Выберите модель</span>
+                            <input type="text" id="model-search-bgs" placeholder="Поиск..." class="dropdown-search" autocomplete="off" data-i18n-placeholder="placeholder_search">
+                            <span id="model-selected-value-bgs" class="selected-value-placeholder" data-i18n="placeholder_select_model">Выберите модель</span>
                             <div class="arrow"></div>
                         </div>
                         <div class="dropdown-list hidden" id="model-dropdown-list-bgs">
@@ -136,7 +137,7 @@
             <div class="gift-preview-container" id="pickerContainer">
                 <div class="picker-image-placeholder">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" /></svg>
-                    <span>Выберите модель</span>
+                    <span data-i18n="placeholder_select_model">Выберите модель</span>
                 </div>
             </div>
             <div class="target-color-display" id="pickerTargetColorsDisplay">
@@ -152,11 +153,11 @@
         <div class="selection-block">
             <div class="dropdowns-row">
                 <div class="sort-group-col">
-                    <span class="filter-label">Коллекция:</span>
+                    <span class="filter-label" data-i18n="filter_collection">Коллекция:</span>
                     <div class="custom-dropdown-container" id="gift-container-models">
                         <div class="dropdown-header with-search" id="gift-dropdown-header-models">
-                            <input type="text" id="gift-search-models" placeholder="Поиск..." class="dropdown-search" autocomplete="off">
-                            <span id="gift-selected-value-models" class="selected-value-placeholder">Выберите коллекцию</span>
+                            <input type="text" id="gift-search-models" placeholder="Поиск..." class="dropdown-search" autocomplete="off" data-i18n-placeholder="placeholder_search">
+                            <span id="gift-selected-value-models" class="selected-value-placeholder" data-i18n="placeholder_select_collection">Выберите коллекцию</span>
                             <div class="arrow"></div>
                         </div>
                         <div class="dropdown-list hidden" id="gift-dropdown-list-models">
@@ -165,11 +166,11 @@
                     </div>
                 </div>
                 <div class="sort-group-col">
-                    <span class="filter-label">Задний фон:</span>
+                    <span class="filter-label" data-i18n="filter_bg">Задний фон:</span>
                     <div class="custom-dropdown-container" id="color-container-models">
                         <div class="dropdown-header with-search" id="color-dropdown-header-models">
-                            <input type="text" id="color-search-models" placeholder="Поиск..." class="dropdown-search" autocomplete="off">
-                            <span id="color-selected-value-models" class="selected-value-placeholder">Выберите фон</span>
+                            <input type="text" id="color-search-models" placeholder="Поиск..." class="dropdown-search" autocomplete="off" data-i18n-placeholder="placeholder_search">
+                            <span id="color-selected-value-models" class="selected-value-placeholder" data-i18n="placeholder_select_bg">Выберите фон</span>
                             <div class="arrow"></div>
                         </div>
                         <div class="dropdown-list hidden" id="color-dropdown-list-models">
@@ -184,7 +185,7 @@
                 <div id="results-wrapper" class="content-section results-initial-hide">
                     <div id="loading-container"></div>
 
-                    <div class="results-header-label">
+                    <div class="results-header-label" data-i18n="results_best_combinations">
                         Лучшие сочетания
                     </div>
 
@@ -213,24 +214,24 @@
 
                     <div class="modal-info info-table">
                         <div class="info-row">
-                            <span class="info-label">Модель:</span>
+                            <span class="info-label" data-i18n="filter_model">Модель:</span>
                             <span id="modal-model-name" class="info-value">...</span>
                         </div>
                         <div class="info-row">
-                            <span class="info-label">Фон:</span>
+                            <span class="info-label" data-i18n="filter_bg">Фон:</span>
                             <span id="modal-bg-name" class="info-value">...</span>
                         </div>
                         <div class="info-row">
-                            <span class="info-label">Совпадение:</span>
+                            <span class="info-label" data-i18n="modal_compat">Совпадение:</span>
                             <span id="modal-compat-value" class="info-value compat">...</span>
                         </div>
                         <div class="info-row">
-                            <span class="info-label">Количество:</span>
+                            <span class="info-label" data-i18n="modal_count">Количество:</span>
                             <span id="modal-gift-count" class="info-value count">...</span>
                         </div>
                         <div class="info-row" id="row-themes">
-                            <span class="info-label">Тематики:</span>
-                            <span id="modal-themes-value" class="info-value link-style">Загрузка...</span>
+                            <span class="info-label" data-i18n="modal_themes">Тематики:</span>
+                            <span id="modal-themes-value" class="info-value link-style" data-i18n="deep_link_loading">Загрузка...</span>
                         </div>
                     </div>
 
@@ -240,7 +241,7 @@
                     <div class="nfts-section-container">
                         <div class="nfts-header" id="nfts-toggle-header">
                             <span class="nfts-header-line"></span>
-                            <span class="nfts-header-title">Найденные NFT</span>
+                            <span class="nfts-header-title" data-i18n="modal_nfts_found">Найденные NFT</span>
                             <svg id="nfts-arrow" class="nfts-arrow" xmlns="http://www.w3.org/2000/svg" fill="none"
                                 viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />

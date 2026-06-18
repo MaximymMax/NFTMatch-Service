@@ -178,14 +178,14 @@ document.addEventListener('DOMContentLoaded', () => {
             <svg viewBox="0 0 24 24" width="18" height="18" fill="white" style="margin-right:8px;vertical-align:middle;flex-shrink:0;">
                 <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 0 0-.05-.18c-.06-.05-.14-.03-.2-.02-.08.02-1.32.84-3.73 2.46-.35.24-.67.36-.97.35-.32-.01-.95-.18-1.41-.33-.57-.18-1.02-.28-1.01-.59.01-.16.23-.33.68-.51 2.76-1.2 4.6-2 5.53-2.4 2.64-1.1 3.19-1.3 3.55-1.3.08 0 .25.02.36.11.09.08.12.19.13.27 0 .05-.01.15-.02.21z"/>
             </svg>
-            Войти через Telegram`;
+            ${window.NFTi18n ? window.NFTi18n.t('btn_tg_login') : 'Войти через Telegram'}`;
         btn.style.cssText = 'display:inline-flex;align-items:center;background:#2ea6da;color:#fff;border:none;border-radius:8px;padding:10px 20px;font-size:15px;font-weight:600;cursor:pointer;width:100%;justify-content:center;transition:background 0.2s;';
         btn.addEventListener('mouseenter', () => btn.style.background = '#1d8bbf');
         btn.addEventListener('mouseleave', () => btn.style.background = '#2ea6da');
 
         btn.addEventListener('click', async () => {
             btn.disabled = true;
-            btn.textContent = 'Перенаправление...';
+            btn.textContent = window.NFTi18n ? window.NFTi18n.t('btn_tg_redirecting') : 'Перенаправление...';
 
             const verifier = generateCodeVerifier();
             const challenge = await generateCodeChallenge(verifier);
@@ -512,7 +512,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const loader = document.createElement('div');
         loader.id = 'deeplink-loader';
         loader.style.cssText = `position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(22, 33, 58, 0.95); display: flex; align-items: center; justify-content: center; z-index: 10000; backdrop-filter: blur(10px);`;
-        loader.innerHTML = `<div style="text-align: center; color: #fff;"><div style="width: 50px; height: 50px; border: 3px solid #38bdf8; border-top-color: transparent; border-radius: 50%; margin: 0 auto 20px; animation: spin 0.8s linear infinite;"></div><p style="font-weight: 500;">Загрузка...</p></div><style>@keyframes spin {to{transform: rotate(360deg);}}</style>`;
+        loader.innerHTML = `<div style="text-align: center; color: #fff;"><div style="width: 50px; height: 50px; border: 3px solid #38bdf8; border-top-color: transparent; border-radius: 50%; margin: 0 auto 20px; animation: spin 0.8s linear infinite;"></div><p style="font-weight: 500;">${window.NFTi18n ? window.NFTi18n.t('deep_link_loading') : 'Загрузка...'}</p></div><style>@keyframes spin {to{transform: rotate(360deg);}}</style>`;
         document.body.appendChild(loader);
     }
 

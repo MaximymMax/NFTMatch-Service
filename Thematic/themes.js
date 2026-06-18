@@ -140,22 +140,22 @@ document.addEventListener('DOMContentLoaded', () => {
                         <img src="${avatarUrl}" alt="Channel Avatar" class="sub-avatar-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='block'">
                         <div class="sub-icon-fallback" style="display:none">
                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+                                 <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
                             </svg>
                         </div>
                     </div>
-                    <h3 class="sub-title">Требуется подписка</h3>
-                    <p class="sub-text">Для просмотра результатов необходимо подписаться на наш канал.</p>
+                    <h3 class="sub-title">${window.NFTi18n ? window.NFTi18n.t('sub_required', 'Требуется подписка') : 'Требуется подписка'}</h3>
+                    <p class="sub-text">${window.NFTi18n ? window.NFTi18n.t('sub_desc', 'Для просмотра результатов необходимо подписаться на наш канал.') : 'Для просмотра результатов необходимо подписаться на наш канал.'}</p>
                     
                     <a href="https://t.me/NFTstyler" target="_blank" class="sub-btn">
-                        Подписаться
+                        ${window.NFTi18n ? window.NFTi18n.t('btn_subscribe', 'Подписаться') : 'Подписаться'}
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
                         </svg>
                     </a>
                     
                     <button class="sub-btn check-btn" onclick="window.closeSubscriptionModal()">
-                        Я подписался
+                        ${window.NFTi18n ? window.NFTi18n.t('btn_subscribed', 'Я подписался') : 'Я подписался'}
                     </button>
                 </div>
             </div>
@@ -312,10 +312,10 @@ document.addEventListener('DOMContentLoaded', () => {
             directionBtn.style.display = isTree ? 'none' : '';
             if (state.isAscending) {
                 directionBtn.classList.remove('rotated');
-                directionBtn.title = "По возрастанию";
+                directionBtn.title = window.NFTi18n ? window.NFTi18n.t('title_change_dir', 'Изменить направление') : "По возрастанию";
             } else {
                 directionBtn.classList.add('rotated');
-                directionBtn.title = "По убыванию";
+                directionBtn.title = window.NFTi18n ? window.NFTi18n.t('title_change_dir', 'Изменить направление') : "По убыванию";
             }
         }
 
@@ -353,10 +353,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (sortSelectedValue) {
             const map = {
-                'v2themes': 'Списком',
-                'v2tree': 'Деревом'
+                'v2themes': window.NFTi18n ? window.NFTi18n.t('sort_list', 'Списком') : 'Списком',
+                'v2tree': window.NFTi18n ? window.NFTi18n.t('sort_tree', 'Деревом') : 'Деревом'
             };
-            sortSelectedValue.textContent = map[state.sortCriteria] || 'Списком';
+            sortSelectedValue.textContent = map[state.sortCriteria] || (window.NFTi18n ? window.NFTi18n.t('sort_list', 'Списком') : 'Списком');
         }
         updateControlsUI(); // Теперь функция существует!
 
@@ -519,7 +519,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!gridWrapper) return;
 
         if (newItems.length === 0 && state.page === 1) {
-            gridWrapper.innerHTML = '<p style="text-align:center; color:var(--text-muted);">Ничего не найдено</p>';
+            gridWrapper.innerHTML = `<p style="text-align:center; color:var(--text-muted);">${window.NFTi18n ? window.NFTi18n.t('no_results', 'Ничего не найдено') : 'Ничего не найдено'}</p>`;
             return;
         }
 
@@ -528,7 +528,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!sectionGrid) {
                 const section = document.createElement('div');
                 section.className = 'letter-section';
-                section.innerHTML = `<div class="letter-header">Все тематики</div>`;
+                section.innerHTML = `<div class="letter-header">${window.NFTi18n ? window.NFTi18n.t('all_themes', 'Все тематики') : 'Все тематики'}</div>`;
                 sectionGrid = document.createElement('div');
                 sectionGrid.className = 'themes-page-grid all-themes-grid';
                 section.appendChild(sectionGrid);
@@ -577,11 +577,11 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderColorMode() {
         gridWrapper.innerHTML = '';
         if (!state.selectedColor) {
-            gridWrapper.innerHTML = '<p style="text-align:center; color:var(--text-muted); margin-top:2rem;">Выберите цвет для подбора</p>';
+            gridWrapper.innerHTML = `<p style="text-align:center; color:var(--text-muted); margin-top:2rem;">${window.NFTi18n ? window.NFTi18n.t('select_color_to_match', 'Выберите цвет для подбора') : 'Выберите цвет для подбора'}</p>`;
             return;
         }
         if (state.colorResults.length === 0) {
-            gridWrapper.innerHTML = '<p style="text-align:center; color:var(--text-muted);">Ничего не найдено</p>';
+            gridWrapper.innerHTML = `<p style="text-align:center; color:var(--text-muted);">${window.NFTi18n ? window.NFTi18n.t('no_results', 'Ничего не найдено') : 'Ничего не найдено'}</p>`;
             return;
         }
 
@@ -591,7 +591,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const section = document.createElement('div');
         section.className = 'letter-section';
-        section.innerHTML = `<div class="letter-header">Результаты подбора</div>`;
+        section.innerHTML = `<div class="letter-header">${window.NFTi18n ? window.NFTi18n.t('match_results', 'Результаты подбора') : 'Результаты подбора'}</div>`;
         const innerGrid = document.createElement('div');
         innerGrid.className = 'themes-page-grid';
 
@@ -645,31 +645,42 @@ document.addEventListener('DOMContentLoaded', () => {
                 let groupsCount = themeData.ChildGroupCount || 0;
                 
                 let details = [];
-                if (groupsCount > 0) details.push(`${groupsCount} ${getPlural(groupsCount, 'подгруппа', 'подгруппы', 'подгрупп')}`);
-                if (themesCount > 0) details.push(`${themesCount} ${getPlural(themesCount, 'подтема', 'подтемы', 'подтем')}`);
+                const lang = window.NFTi18n ? window.NFTi18n.getLanguage() : 'ru';
+                if (groupsCount > 0) {
+                    const groupWord = lang === 'en'
+                        ? (groupsCount === 1 ? 'subgroup' : 'subgroups')
+                        : getPlural(groupsCount, 'подгруппа', 'подгруппы', 'подгрупп');
+                    details.push(`${groupsCount} ${groupWord}`);
+                }
+                if (themesCount > 0) {
+                    const themeWord = lang === 'en'
+                        ? (themesCount === 1 ? 'subtheme' : 'subthemes')
+                        : getPlural(themesCount, 'подтема', 'подтемы', 'подтем');
+                    details.push(`${themesCount} ${themeWord}`);
+                }
                 let childText = details.length > 0 ? ` • ${details.join(', ')}` : '';
                 
                 typeBadgeHtml = `
                     <div style="margin-bottom: 4px;">
                         <span class="v2-type-tag premium-tag v2-group-tag" style="padding:2px 6px; font-size:0.6rem; display:inline-flex;">
-                            <svg fill="currentColor" viewBox="0 0 24 24" style="width:10px;height:10px;margin-right:4px;"><path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z"/></svg>Группа
+                            <svg fill="currentColor" viewBox="0 0 24 24" style="width:10px;height:10px;margin-right:4px;"><path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z"/></svg>${window.NFTi18n ? window.NFTi18n.t('v2_group', 'Группа') : 'Группа'}
                         </span>
                     </div>
                 `;
 
-                subtitleHtml = `<span class="tpc-count" style="margin-top:0;">${count} шт.${childText}</span>`;
+                subtitleHtml = `<span class="tpc-count" style="margin-top:0;">${count} ${window.NFTi18n ? window.NFTi18n.t('pcs', 'шт.') : 'шт.'}${childText}</span>`;
             } else {
                 typeBadgeHtml = `
                     <div style="margin-bottom: 4px;">
                         <span class="v2-type-tag v2-theme-tag" style="padding:2px 6px; font-size:0.6rem; display:inline-flex;">
-                            <svg fill="currentColor" viewBox="0 0 24 24" style="width:10px;height:10px;margin-right:4px;"><path d="M12 2L2 22h20L12 2zm0 3.8L18.4 19H5.6L12 5.8z"/></svg>Тематика
+                            <svg fill="currentColor" viewBox="0 0 24 24" style="width:10px;height:10px;margin-right:4px;"><path d="M12 2L2 22h20L12 2zm0 3.8L18.4 19H5.6L12 5.8z"/></svg>${window.NFTi18n ? window.NFTi18n.t('v2_theme', 'Тематика') : 'Тематика'}
                         </span>
                     </div>
                 `;
-                subtitleHtml = `<span class="tpc-count" style="margin-top:0;">${count} шт.</span>`;
+                subtitleHtml = `<span class="tpc-count" style="margin-top:0;">${count} ${window.NFTi18n ? window.NFTi18n.t('pcs', 'шт.') : 'шт.'}</span>`;
             }
         } else {
-            subtitleHtml = `<span class="tpc-count">${count} шт.</span>`;
+            subtitleHtml = `<span class="tpc-count">${count} ${window.NFTi18n ? window.NFTi18n.t('pcs', 'шт.') : 'шт.'}</span>`;
             if (isColorMatchMode && themeData.Score) {
                 const percent = Math.round(themeData.Score * 100);
                 subtitleHtml += `<div class="tpc-percent-badge">${percent}%</div>`;
@@ -782,7 +793,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             if (isReset && (!data || data.length === 0)) {
-                gridWrapper.innerHTML = '<p style="text-align:center; color:var(--text-muted);">Ничего не найдено</p>';
+                gridWrapper.innerHTML = `<p style="text-align:center; color:var(--text-muted);">${window.NFTi18n ? window.NFTi18n.t('no_results', 'Ничего не найдено') : 'Ничего не найдено'}</p>`;
             }
 
             hideLoading();
@@ -792,8 +803,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (isReset && gridWrapper) {
                 gridWrapper.innerHTML = `
                     <div style="text-align:center; padding: 20px;">
-                        <p style="color:#f87171; margin-bottom: 10px;">Ошибка загрузки данных</p>
-                        <button id="retry-btn" style="background:var(--surface-elevated); border:1px solid var(--border-color); color:white; padding:8px 16px; border-radius:8px; cursor:pointer;">Повторить</button>
+                        <p style="color:#f87171; margin-bottom: 10px;">${window.NFTi18n ? window.NFTi18n.t('load_error_retry', 'Ошибка загрузки данных') : 'Ошибка загрузки данных'}</p>
+                        <button id="retry-btn" style="background:var(--surface-elevated); border:1px solid var(--border-color); color:white; padding:8px 16px; border-radius:8px; cursor:pointer;">${window.NFTi18n ? window.NFTi18n.t('btn_retry', 'Повторить') : 'Повторить'}</button>
                     </div>`;
                 document.getElementById('retry-btn').onclick = () => loadThemes(true);
             }
@@ -837,7 +848,7 @@ document.addEventListener('DOMContentLoaded', () => {
             renderColorMode();
         } catch (e) {
             hideLoading();
-            if (gridWrapper) gridWrapper.innerHTML = '<p style="text-align:center; color:#f87171">Ошибка API</p>';
+            if (gridWrapper) gridWrapper.innerHTML = `<p style="text-align:center; color:#f87171">${window.NFTi18n ? window.NFTi18n.t('load_error_retry', 'Ошибка API') : 'Ошибка API'}</p>`;
         }
     }
 
@@ -1034,13 +1045,13 @@ document.addEventListener('DOMContentLoaded', () => {
             
             if (isReset && (!data || !data.Items || data.Items.length === 0)) {
                 const container = document.getElementById('themes-grid');
-                if (container) container.innerHTML = '<p style="text-align:center; color:var(--text-muted); margin-top: 2rem;">Ничего не найдено</p>';
+                if (container) container.innerHTML = `<p style="text-align:center; color:var(--text-muted); margin-top: 2rem;">${window.NFTi18n ? window.NFTi18n.t('no_results', 'Ничего не найдено') : 'Ничего не найдено'}</p>`;
             }
         } catch (err) {
             console.error("Ошибка загрузки тематик V2:", err);
             if (isReset) {
                 const container = document.getElementById('themes-grid');
-                if (container) container.innerHTML = '<p style="text-align:center; color:#f87171; margin-top: 2rem;">Ошибка API</p>';
+                if (container) container.innerHTML = `<p style="text-align:center; color:#f87171; margin-top: 2rem;">${window.NFTi18n ? window.NFTi18n.t('load_error_retry', 'Ошибка API') : 'Ошибка API'}</p>`;
             }
         } finally {
             state.isFetching = false;
@@ -1091,7 +1102,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function createV2Card(itemData) {
         const isGroup = (itemData._v2Type || '').toLowerCase() === 'group';
-        const typeLabel = isGroup ? 'Группа' : 'Тематика';
+        const typeLabel = isGroup ? (window.NFTi18n ? window.NFTi18n.t('v2_group', 'Группа') : 'Группа') : (window.NFTi18n ? window.NFTi18n.t('v2_theme', 'Тематика') : 'Тематика');
         const typeTagClass = isGroup ? 'v2-group-tag' : 'v2-theme-tag';
         const tagGlowColor = isGroup ? '#6366f1' : '#38bdf8'; 
         
@@ -1123,11 +1134,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const themes = itemData.ChildThemeCount || itemData.childThemeCount || 0;
             const groups = itemData.ChildGroupCount || itemData.childGroupCount || 0;
             let parts = [];
-            if (themes > 0) parts.push(`${themes} тем.`);
-            if (groups > 0) parts.push(`${groups} гр.`);
+            if (themes > 0) parts.push(`${themes} ${window.NFTi18n ? window.NFTi18n.t('short_themes', 'тем.') : 'тем.'}`);
+            if (groups > 0) parts.push(`${groups} ${window.NFTi18n ? window.NFTi18n.t('short_groups', 'гр.') : 'гр.'}`);
             if (parts.length > 0) countLabel = parts.join(' / ');
         } else if (count > 0) {
-            countLabel = `${count} шт.`;
+            countLabel = `${count} ${window.NFTi18n ? window.NFTi18n.t('pcs', 'шт.') : 'шт.'}`;
         }
 
         const countTagHtml = countLabel
@@ -1139,7 +1150,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Если выбрана сортировка по фону ('bg'), тег будет скрыт.
         if (state.v2SubSort === 'price') {
             if (affordableCount !== undefined && affordableCount !== null) {
-                medianTagHtml = `<span class="v2-type-tag" title="До ${state.maxPrice} TON">≤ ${state.maxPrice} T | ${affordableCount} шт.</span>`;
+                medianTagHtml = `<span class="v2-type-tag" title="До ${state.maxPrice} TON">≤ ${state.maxPrice} T | ${affordableCount} ${window.NFTi18n ? window.NFTi18n.t('pcs', 'шт.') : 'шт.'}</span>`;
             } else if (medianPrice > 0) {
                 const priceStr = medianPrice >= 1 ? `~${medianPrice.toFixed(2)} TON` : `~${(medianPrice * 1000).toFixed(0)} nTON`;
                 medianTagHtml = `<span class="v2-type-tag">${priceStr}</span>`;
@@ -1150,7 +1161,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (itemData.BgMatchCount !== undefined && itemData.BgMatchCount !== null) {
             bgTagHtml = `<span class="v2-type-tag" title="Моделей, подходящих под фон" style="color:#fcd34d;background:rgba(251,191,36,0.12);border:1px solid rgba(251,191,36,0.3);position:static;transform:none;box-shadow:0 2px 8px rgba(0,0,0,0.3);">
                 <svg fill="currentColor" viewBox="0 0 20 20" style="width:10px;height:10px;margin-right:3px;"><path fill-rule="evenodd" d="M10 2a6.005 6.005 0 00-6 6c0 4.314 6 10 6 10s6-5.686 6-10a6.005 6.005 0 00-6-6zM8 8a2 2 0 114 0 2 2 0 01-4 0z" clip-rule="evenodd" /></svg>
-                ${itemData.BgMatchCount} совп.
+                ${itemData.BgMatchCount} ${window.NFTi18n ? window.NFTi18n.t('matches', 'совп.') : 'совп.'}
             </span>`;
         }
 
@@ -1247,7 +1258,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } catch (e) {
             console.error('V2 Tree error:', e);
-            if (isReset && gridWrapper) gridWrapper.innerHTML = '<p style="color:#f87171; text-align:center; margin-top: 2rem;">Ошибка загрузки дерева</p>';
+            if (isReset && gridWrapper) gridWrapper.innerHTML = `<p style="color:#f87171; text-align:center; margin-top: 2rem;">${window.NFTi18n ? window.NFTi18n.t('load_error_retry', 'Ошибка загрузки дерева') : 'Ошибка загрузки дерева'}</p>`;
         } finally {
             state.isFetching = false;
             hideLoading();
@@ -1273,9 +1284,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 let subtitleParts = [];
                 // 🔥 КОРОТКИЕ НАЗВАНИЯ ДЛЯ ЭКОНОМИИ МЕСТА (т. = тематик, г. = групп)
-                if (childThemeCount > 0) subtitleParts.push(`${childThemeCount} тем.`);
-                if (childGroupCount > 0) subtitleParts.push(`${childGroupCount} гр.`);
-                const subtitle = subtitleParts.join(', ') || 'пусто';
+                if (childThemeCount > 0) subtitleParts.push(`${childThemeCount} ${window.NFTi18n ? window.NFTi18n.t('short_themes', 'тем.') : 'тем.'}`);
+                if (childGroupCount > 0) subtitleParts.push(`${childGroupCount} ${window.NFTi18n ? window.NFTi18n.t('short_groups', 'гр.') : 'гр.'}`);
+                const subtitle = subtitleParts.join(', ') || (window.NFTi18n ? window.NFTi18n.t('empty', 'пусто') : 'пусто');
 
                 // Генерируем превью (всегда до 5 штук)
                 const previews = nodePreviews.slice(0, 5);
@@ -1297,7 +1308,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 header.style.setProperty('--glow-color', nodeColor);
                 header.style.setProperty('--theme-color', nodeColor);
                 header.innerHTML = `
-                    <div class="tree-group-corner-badge">Группа</div>
+                    <div class="tree-group-corner-badge">${window.NFTi18n ? window.NFTi18n.t('v2_group', 'Группа') : 'Группа'}</div>
                     <div class="tpc-left-side">
                         <div class="tpc-title">${nodeName}</div>
                         <div class="tpc-meta"><span class="tpc-count">${subtitle}</span></div>
@@ -1355,12 +1366,12 @@ document.addEventListener('DOMContentLoaded', () => {
                             if (childrenData.length > 0) {
                                 renderLayer(childrenData, childrenWrap, depth + 1);
                             } else {
-                                childrenWrap.innerHTML = `<div class="tree-empty-hint">Пустая группа</div>`;
+                                childrenWrap.innerHTML = `<div class="tree-empty-hint">${window.NFTi18n ? window.NFTi18n.t('empty_group', 'Пустая группа') : 'Пустая группа'}</div>`;
                             }
                             childrenWrap.dataset.loaded = 'true';
                             
                         } catch (err) {
-                            childrenWrap.innerHTML = `<div class="tree-empty-hint" style="color:#f87171">Ошибка загрузки. Попробуйте еще раз.</div>`;
+                            childrenWrap.innerHTML = `<div class="tree-empty-hint" style="color:#f87171">${window.NFTi18n ? window.NFTi18n.t('load_error_retry', 'Ошибка загрузки. Попробуйте еще раз.') : 'Ошибка загрузки. Попробуйте еще раз.'}</div>`;
                             // Если ошибка - сворачиваем обратно
                             isCollapsed = true; 
                             childrenWrap.classList.add('collapsed');
@@ -1411,7 +1422,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 card.innerHTML = `
                     <div class="tpc-left-side">
                         <div class="tpc-title">${nodeName}</div>
-                        <div class="tpc-meta"><span class="tpc-count">${count} мод.</span></div>
+                        <div class="tpc-meta"><span class="tpc-count">${count} ${window.NFTi18n ? window.NFTi18n.t('short_models', 'мод.') : 'мод.'}</span></div>
                     </div>
                     <div class="tpc-visuals ${countClass}">${iconsHtml}</div>
                     <div class="tpc-arrow"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg></div>
@@ -1464,8 +1475,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 const childThemeCount = nodeChildren.filter(c => (c.Type || c.type || '').toLowerCase() === 'theme').length;
                 const childGroupCount = nodeChildren.filter(c => (c.Type || c.type || '').toLowerCase() === 'group').length;
                 let subtitleParts = [];
-                if (childThemeCount > 0) subtitleParts.push(`${childThemeCount} ${getPlural(childThemeCount, 'тематика', 'тематики', 'тематик')}`);
-                if (childGroupCount > 0) subtitleParts.push(`${childGroupCount} ${getPlural(childGroupCount, 'группа', 'группы', 'групп')}`);
+                const lang = window.NFTi18n ? window.NFTi18n.getLanguage() : 'ru';
+                if (childThemeCount > 0) {
+                    const themeWord = lang === 'en'
+                        ? (childThemeCount === 1 ? 'theme' : 'themes')
+                        : getPlural(childThemeCount, 'тематика', 'тематики', 'тематик');
+                    subtitleParts.push(`${childThemeCount} ${themeWord}`);
+                }
+                if (childGroupCount > 0) {
+                    const groupWord = lang === 'en'
+                        ? (childGroupCount === 1 ? 'group' : 'groups')
+                        : getPlural(childGroupCount, 'группа', 'группы', 'групп');
+                    subtitleParts.push(`${childGroupCount} ${groupWord}`);
+                }
                 const subtitle = subtitleParts.join(', ');
 
                 // Build stacked icons like createV2Card
@@ -1485,10 +1507,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 header.style.setProperty('--glow-color', accentColor);
                 header.style.setProperty('--theme-color', accentColor);
                 header.innerHTML = `
-                    <div class="tree-group-corner-badge">Группа</div>
+                    <div class="tree-group-corner-badge">${window.NFTi18n ? window.NFTi18n.t('v2_group', 'Группа') : 'Группа'}</div>
                     <div class="tpc-left-side">
                         <div class="tpc-title">${nodeName}</div>
-                        <div class="tpc-meta"><span class="tpc-count">${subtitle || 'группа'}</span></div>
+                        <div class="tpc-meta"><span class="tpc-count">${subtitle || (window.NFTi18n ? window.NFTi18n.t('v2_group', 'Группа').toLowerCase() : 'группа')}</span></div>
                     </div>
                     <div class="tpc-visuals ${countClass}">${iconsHtml}</div>
                     <div class="tpc-arrow tree-expand-arrow"><svg class="tree-arrow-svg" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg></div>
@@ -1538,7 +1560,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             card.innerHTML = `
                                 <div class="tpc-left-side">
                                     <div class="tpc-title">${cName}</div>
-                                    <div class="tpc-meta"><span class="tpc-count">тематика</span></div>
+                                    <div class="tpc-meta"><span class="tpc-count">${window.NFTi18n ? window.NFTi18n.t('v2_theme', 'Тематика').toLowerCase() : 'тематика'}</span></div>
                                 </div>
                                 <div class="tpc-visuals ${cCountClass}">${cIconsHtml}</div>
                                 <div class="tpc-arrow"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg></div>
@@ -1565,7 +1587,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
                     });
                 } else {
-                    childrenWrap.innerHTML = `<div class="tree-empty-hint">Нет вложенных элементов</div>`;
+                    childrenWrap.innerHTML = `<div class="tree-empty-hint">${window.NFTi18n ? window.NFTi18n.t('no_nested_elements', 'Нет вложенных элементов') : 'Нет вложенных элементов'}</div>`;
                 }
 
                 let isCollapsed = true;
@@ -1606,7 +1628,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 card.innerHTML = `
                     <div class="tpc-left-side">
                         <div class="tpc-title">${nodeName}</div>
-                        <div class="tpc-meta"><span class="tpc-count">тематика</span></div>
+                        <div class="tpc-meta"><span class="tpc-count">${window.NFTi18n ? window.NFTi18n.t('v2_theme', 'Тематика').toLowerCase() : 'тематика'}</span></div>
                     </div>
                     <div class="tpc-visuals ${countClass}">${iconsHtml}</div>
                     <div class="tpc-arrow"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg></div>
@@ -1654,7 +1676,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                 `;
             } else {
-                label.textContent = 'Не выбран';
+                label.textContent = window.NFTi18n ? window.NFTi18n.t('not_selected', 'Не выбран') : 'Не выбран';
             }
         }
     };
@@ -1834,18 +1856,18 @@ document.addEventListener('DOMContentLoaded', () => {
                     </svg>
                 </div>
                 
-                <h3 style="margin: 0 0 10px 0; color: #fff; font-size: 1.2rem;">Требуется подписка</h3>
+                <h3 style="margin: 0 0 10px 0; color: #fff; font-size: 1.2rem;">${window.NFTi18n ? window.NFTi18n.t('sub_required', 'Требуется подписка') : 'Требуется подписка'}</h3>
                 
                 <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 24px; line-height: 1.5;">
-                    Чтобы пользоваться поиском маркета и продвинутой аналитикой, необходимо быть подписчиком нашего Telegram канала.
+                    ${window.NFTi18n ? window.NFTi18n.t('sub_desc', 'Чтобы пользоваться поиском маркета и продвинутой аналитикой, необходимо быть подписчиком нашего Telegram канала.') : 'Чтобы пользоваться поиском маркета и продвинутой аналитикой, необходимо быть подписчиком нашего Telegram канала.'}
                 </p>
                 
                 <div style="display: flex; flex-direction: column; gap: 10px;">
                     <a href="${channelUrl}" target="_blank" style="background: var(--primary-color); color: #0a1020; text-decoration: none; padding: 12px; border-radius: 12px; font-weight: 700; font-size: 0.95rem; transition: transform 0.2s;">
-                        Перейти в канал
+                        ${window.NFTi18n ? window.NFTi18n.t('go_to_channel', 'Перейти в канал') : 'Перейти в канал'}
                     </a>
                     <button onclick="document.getElementById('sub-required-modal').style.display='none'" style="background: rgba(255,255,255,0.05); color: var(--text-primary); border: 1px solid rgba(255,255,255,0.1); padding: 12px; border-radius: 12px; font-weight: 600; cursor: pointer; transition: background 0.2s;">
-                        Позже
+                        ${window.NFTi18n ? window.NFTi18n.t('later', 'Позже') : 'Позже'}
                     </button>
                 </div>
                 

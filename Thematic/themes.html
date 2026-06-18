@@ -14,6 +14,7 @@
     <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
     <script src="../auth.js"></script>
     <script src="../auth-badge.js"></script>
+    <script src="../i18n.js"></script>
 </head>
 
 <body>
@@ -24,26 +25,26 @@
         <div class="main-container">
 
             <div class="title-section">
-                <h1 class="page-main-title">ТЕМАТИКИ</h1>
+                <h1 class="page-main-title" data-i18n="themes_title">ТЕМАТИКИ</h1>
             </div>
 
             <div class="toolbar-section">
                 <div class="toolbar-group">
-                    <label class="control-label">Способ сортировки</label>
+                    <label class="control-label" data-i18n="sort_method">Способ сортировки</label>
                     <div class="sort-row" style="position: relative;">
 
                         <div class="custom-dropdown-container" id="sort-dropdown-container">
                             <div class="dropdown-header" id="sort-dropdown-header">
-                                <span id="sort-selected-value">Списком</span>
+                                <span id="sort-selected-value" data-i18n="sort_list">Списком</span>
                                 <div class="arrow"></div>
                             </div>
                             <div class="dropdown-list hidden" id="sort-dropdown-list">
-                                <div class="list-option" data-value="v2themes">Списком</div>
-                                <div class="list-option" data-value="v2tree">Деревом</div>
+                                <div class="list-option" data-value="v2themes" data-i18n="sort_list">Списком</div>
+                                <div class="list-option" data-value="v2tree" data-i18n="sort_tree">Деревом</div>
                             </div>
                         </div>
 
-                        <button id="sort-direction-btn" class="direction-btn" title="Изменить направление">
+                        <button id="sort-direction-btn" class="direction-btn" title="Изменить направление" data-i18n-title="title_change_dir">
                             <svg id="dir-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
                                 stroke="currentColor" stroke-width="2">
                                 <path stroke-linecap="round" stroke-linejoin="round"
@@ -51,7 +52,7 @@
                             </svg>
                         </button>
 
-                        <button id="main-filter-btn" class="direction-btn" title="Фильтры">
+                        <button id="main-filter-btn" class="direction-btn" title="Фильтры" data-i18n-title="filters">
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 01-.659 1.591l-5.432 5.432a2.25 2.25 0 00-.659 1.591v2.927a2.25 2.25 0 01-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 00-.659-1.591L3.659 7.409A2.25 2.25 0 013 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0112 3z" />
                             </svg>
@@ -59,25 +60,25 @@
 
                         <div id="main-filter-popup" class="filter-popup-panel hidden">
                             <div class="fp-section" id="fp-v2-sort-section">
-                                <label class="fp-label">Режим отображения:</label>
+                                <label class="fp-label" data-i18n="display_mode">Режим отображения:</label>
                                 <div class="v2-segmented-control">
-                                    <button class="v2-seg-btn active" data-sort="count">Кол-во</button>
-                                    <button class="v2-seg-btn" data-sort="price">Цена</button>
-                                    <button class="v2-seg-btn" data-sort="name">Имя</button>
-                                    <button class="v2-seg-btn" data-sort="bg">Фон</button>
+                                    <button class="v2-seg-btn active" data-sort="count" data-i18n="sort_count">Кол-во</button>
+                                    <button class="v2-seg-btn" data-sort="price" data-i18n="filter_sort_price">Цена</button>
+                                    <button class="v2-seg-btn" data-sort="name" data-i18n="sort_name">Имя</button>
+                                    <button class="v2-seg-btn" data-sort="bg" data-i18n="filter_bg">Фон</button>
                                 </div>
                             </div>
 
                             <div class="fp-row fp-hidden" id="fp-price-row">
                                 <div class="fp-col">
-                                    <label class="fp-label">Ограничение цены (TON):</label>
-                                    <input type="number" id="fp-max-price" class="fp-input" placeholder="До скольки?">
+                                    <label class="fp-label" data-i18n="price_limit">Ограничение цены (TON):</label>
+                                    <input type="number" id="fp-max-price" class="fp-input" placeholder="До скольки?" data-i18n-placeholder="price_limit_placeholder">
                                 </div>
                             </div>
 
                             <div class="fp-row fp-hidden" id="fp-bg-row">
                                 <div class="fp-col">
-                                    <label class="fp-label">Мин. совпадение:</label>
+                                    <label class="fp-label" data-i18n="min_compat">Мин. совпадение:</label>
                                     <div class="custom-dropdown-container" id="percent-dropdown-container">
                                         <div class="dropdown-header" id="percent-dropdown-header">
                                             <span id="percent-selected-value">От 80%</span>
@@ -94,11 +95,11 @@
                             </div>
 
                             <div class="fp-section fp-hidden" id="fp-color-section" style="margin-bottom: 16px; margin-top: 10px;">
-                                <label class="fp-label">Цвет фона:</label>
+                                <label class="fp-label" data-i18n="bg_color">Цвет фона:</label>
                                 <div class="custom-dropdown-container" id="color-input-container">
                                     <div class="dropdown-header with-search" id="color-dropdown-header">
-                                        <span class="selected-value-placeholder" id="color-selected-value">Выберите цвет...</span>
-                                        <input type="text" class="dropdown-search" id="color-search-input" placeholder="Поиск цвета..." autocomplete="off">
+                                        <span class="selected-value-placeholder" id="color-selected-value" data-i18n="placeholder_select_color">Выберите цвет...</span>
+                                        <input type="text" class="dropdown-search" id="color-search-input" placeholder="Поиск цвета..." autocomplete="off" data-i18n-placeholder="placeholder_search_color">
                                         <div class="arrow"></div>
                                     </div>
                                     <div class="dropdown-list hidden" id="color-dropdown-list">
@@ -107,21 +108,21 @@
                                 </div>
                             </div>
 
-                            <button id="fp-apply-btn" class="fp-apply-btn">Применить</button>
+                            <button id="fp-apply-btn" class="fp-apply-btn" data-i18n="btn_apply">Применить</button>
                         </div>
                     </div>
                 </div>
 
                 <div class="toolbar-group bottom-group" style="margin-top: -10px;">
                     <div id="text-input-container" class="custom-dropdown-container">
-                        <label class="control-label" for="theme-text-search">Поиск</label>
+                        <label class="control-label" for="theme-text-search" data-i18n="search_title">Поиск</label>
                         <div class="input-wrapper">
                             <div class="search-icon">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                                 </svg>
                             </div>
-                            <input type="text" id="theme-text-search" class="theme-search-input" placeholder="Поиск тематики..." autocomplete="off">
+                            <input type="text" id="theme-text-search" class="theme-search-input" placeholder="Поиск тематики..." autocomplete="off" data-i18n-placeholder="placeholder_search_theme">
                         </div>
                     </div>
                     </div>
@@ -131,7 +132,7 @@
                 <div id="themes-grid-wrapper">
                     <div id="themes-loading" class="loading-container hidden">
                         <div class="spinner"></div>
-                        <span style="margin-left: 10px; color: var(--text-muted);">Загрузка...</span>
+                        <span style="margin-left: 10px; color: var(--text-muted);" data-i18n="deep_link_loading">Загрузка...</span>
                     </div>
                     <div id="themes-grid" class="themes-page-grid-container"></div>
                 </div>

@@ -15,6 +15,7 @@
     <script src="./config.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="./i18n.js"></script>
     <script src="./auth.js"></script>
     <script src="./auth-badge.js"></script>
 </head>
@@ -24,13 +25,13 @@
     <div id="tg-gate-overlay" class="tg-gate-overlay hidden">
         <div class="tg-gate-modal" style="position: relative;">
             <button id="tg-gate-close" style="position: absolute; top: 15px; right: 15px; background: none; border: none; color: rgba(255,255,255,0.5); font-size: 24px; cursor: pointer; line-height: 1; padding: 0;">&times;</button>
-            <h2>NFT MATCH</h2>
-            <p>Для использования функций приложения необходимо авторизоваться через Telegram.</p>
+            <h2 data-i18n="tg_gate_title">NFT MATCH</h2>
+            <p data-i18n="tg_gate_desc">Для использования функций приложения необходимо авторизоваться через Telegram.</p>
             
             <div id="tg-login-container" style="margin: 20px 0; display: flex; justify-content: center; min-height: 40px; width: 100%;"></div>
             
             <div style="display: flex; flex-direction: column; gap: 10px; width: 100%;">
-                <a href="https://t.me/NFTMatchBot" target="_blank" class="tg-gate-link" style="text-align: center;">Открыть в Telegram-боте</a>
+                <a href="https://t.me/NFTMatchBot" target="_blank" class="tg-gate-link" style="text-align: center;" data-i18n="tg_gate_link">Открыть в Telegram-боте</a>
             </div>
         </div>
     </div>
@@ -53,38 +54,38 @@
             <img src="./NFTMATCH_site_mainpage.png" alt="NFT Match" class="hero-main-image">
 
             <section class="tools-wrapper-styled">
-                <div class="tools-header-label">
+                <div class="tools-header-label" data-i18n="tools_header">
                     Доступные функции
                 </div>
 
                 <div class="features-container">
                     <a href="./Monohrome/background-finder.html" class="feature-card-new">
-                        <div class="card-header-title">Монохромы</div>
+                        <div class="card-header-title" data-i18n="card_monochrome">Монохромы</div>
                         <div class="card-body-gradient">
                             <div class="inner-blue-card">
                                 <img src="https://cdn.changes.tg/gifts/models/Spring%20Basket/png/Knitty%20Kitty.png"
                                     alt="Mono">
                             </div>
                         </div>
-                        <div class="card-footer-btn">Открыть</div>
+                        <div class="card-footer-btn" data-i18n="btn_open">Открыть</div>
                     </a>
 
                     <a href="./nft-page/index.html" class="feature-card-new">
-                        <div class="card-header-title">Похожие</div>
+                        <div class="card-header-title" data-i18n="card_similar">Похожие</div>
                         <div class="card-body-gradient">
                             <img src="https://cdn.changes.tg/gifts/models/Snake%20Box/png/Seashore.png" alt="Similar"
                                 class="img-shadow">
                         </div>
-                        <div class="card-footer-btn">Открыть</div>
+                        <div class="card-footer-btn" data-i18n="btn_open">Открыть</div>
                     </a>
 
                     <a href="./Thematic/themes.html" class="feature-card-new">
-                        <div class="card-header-title">Тематики</div>
+                        <div class="card-header-title" data-i18n="card_themes">Тематики</div>
                         <div class="card-body-gradient">
                             <img src="https://cdn.changes.tg/gifts/models/Restless%20Jar/png/Kittens.png" alt="Themes"
                                 class="img-shadow">
                         </div>
-                        <div class="card-footer-btn">Открыть</div>
+                        <div class="card-footer-btn" data-i18n="btn_open">Открыть</div>
                     </a>
                 </div>
             </section>
@@ -98,8 +99,8 @@
                         </svg>
                     </div>
                     <div class="info-card-text">
-                        <h3>Наш канал</h3>
-                        <p>Подпишитесь, чтобы следить за обновлениями</p>
+                        <h3 data-i18n="card_channel_title">Наш канал</h3>
+                        <p data-i18n="card_channel_desc">Подпишитесь, чтобы следить за обновлениями</p>
                     </div>
                 </a>
 
@@ -111,8 +112,8 @@
                         </svg>
                     </div>
                     <div class="info-card-text">
-                        <h3>API</h3>
-                        <p>Открытый доступ к данным.</p>
+                        <h3 data-i18n="card_api_title">API</h3>
+                        <p data-i18n="card_api_desc">Открытый доступ к данным.</p>
                     </div>
                 </a>
 
@@ -125,8 +126,8 @@
                         </svg>
                     </div>
                     <div class="info-card-text">
-                        <h3>Поддержка</h3>
-                        <p>Поддержать развитие проекта.</p>
+                        <h3 data-i18n="card_support_title">Поддержка</h3>
+                        <p data-i18n="card_support_desc">Поддержать развитие проекта.</p>
                     </div>
                 </a>
 

@@ -28,11 +28,12 @@ export function initNftDetailsModal() {
     const tg = window.Telegram?.WebApp;
 
     function formatCount(count) {
+        const suffix = window.NFTi18n ? window.NFTi18n.t('pcs', 'шт.') : 'шт.';
         if (count === null || count === undefined) {
-            return '<span class="price-value">0 шт.</span>';
+            return `<span class="price-value">0 ${suffix}</span>`;
         }
         const formatted = count.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
-        return `<span class="price-value">${formatted} шт.</span>`;
+        return `<span class="price-value">${formatted} ${suffix}</span>`;
     }
 
     function updateScrollShadows() {
@@ -67,7 +68,7 @@ export function initNftDetailsModal() {
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    Подробнее
+                    ${window.NFTi18n ? window.NFTi18n.t('btn_more_info', 'Подробнее') : 'Подробнее'}
                 </button>
             `;
 
@@ -97,7 +98,7 @@ export function initNftDetailsModal() {
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    Подробнее
+                    ${window.NFTi18n ? window.NFTi18n.t('btn_more_info', 'Подробнее') : 'Подробнее'}
                 </button>
             `;
 
@@ -136,7 +137,7 @@ export function initNftDetailsModal() {
         similarModelsList.innerHTML = '';
 
         if (currentSimilarModels.length === 0) {
-            similarModelsList.innerHTML = '<p class="list-placeholder">Не удалось загрузить данные.</p>';
+            similarModelsList.innerHTML = `<p class="list-placeholder">${window.NFTi18n ? window.NFTi18n.t('error_load_try_again', 'Не удалось загрузить данные.') : 'Не удалось загрузить данные.'}</p>`;
             updatePhotoContainers();
             return;
         }
@@ -217,7 +218,7 @@ export function initNftDetailsModal() {
             console.error('[NFT Details Modal] ❌ similarModelsList не найден!');
             return;
         }
-        similarModelsList.innerHTML = '<div class="list-loading"><span class="spinner" style="display:inline-block; width:16px; height:16px; border:2px solid #6b7fa7; border-top-color:#fff; border-radius:50%; animation:spin 1s linear infinite; margin-right:8px;"></span> Загрузка...</div>';
+        similarModelsList.innerHTML = `<div class="list-loading"><span class="spinner" style="display:inline-block; width:16px; height:16px; border:2px solid #6b7fa7; border-top-color:#fff; border-radius:50%; animation:spin 1s linear infinite; margin-right:8px;"></span> ${window.NFTi18n ? window.NFTi18n.t('deep_link_loading', 'Загрузка...') : 'Загрузка...'}</div>`;
 
         try {
             const getTelegramUserData = () => {
@@ -284,12 +285,13 @@ export function initNftDetailsModal() {
                         if (typeof window.showSubscriptionModal === 'function') {
                             window.showSubscriptionModal(errorData.channelId || '@NFTstyler');
                         } else {
-                            alert('Для использования этой функции необходимо подписаться на наш канал: @NFTstyler');
+                            const alertMsg = window.NFTi18n ? window.NFTi18n.t('sub_required_alert', 'Для использования этой функции необходимо подписаться на наш канал: {channel}', {channel: errorData.channelId || '@NFTstyler'}) : `Для использования этой функции необходимо подписаться на наш канал: ${errorData.channelId || '@NFTstyler'}`;
+                            alert(alertMsg);
                         }
 
                         // Скрываем список и показываем сообщение
                         if (similarModelsList) {
-                            similarModelsList.innerHTML = '<p class="list-placeholder">Требуется подписка на канал</p>';
+                            similarModelsList.innerHTML = `<p class="list-placeholder">${window.NFTi18n ? window.NFTi18n.t('sub_required_list', 'Требуется подписка на канал') : 'Требуется подписка на канал'}</p>`;
                         }
                         return;
                     }
@@ -359,7 +361,7 @@ export function initNftDetailsModal() {
 
         } catch (error) {
             console.error('Ошибка при загрузке похожих моделей:', error);
-            if (similarModelsList) similarModelsList.innerHTML = `<p class="list-placeholder">Не удалось загрузить данные.</p>`;
+            if (similarModelsList) similarModelsList.innerHTML = `<p class="list-placeholder">${window.NFTi18n ? window.NFTi18n.t('error_load_try_again', 'Не удалось загрузить данные.') : 'Не удалось загрузить данные.'}</p>`;
             updatePhotoContainers();
             updateScrollShadows();
         }
