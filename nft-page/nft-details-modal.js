@@ -81,7 +81,8 @@ export function initNftDetailsModal() {
 
         } else {
             // Заглушка, если цели нет
-            targetModelPhotoContainer.innerHTML = '<p class="box-label">Целевая модель</p><div class="photo-wrapper" style="opacity:0.3"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>';
+            const targetModelLabel = window.NFTi18n ? window.NFTi18n.t('label_target_model', 'Целевая модель') : 'Целевая модель';
+            targetModelPhotoContainer.innerHTML = `<p class="box-label">${targetModelLabel}</p><div class="photo-wrapper" style="opacity:0.3"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>`;
         }
 
         // Логика отображения Выбранной модели (слева)
@@ -110,7 +111,8 @@ export function initNftDetailsModal() {
             }
 
         } else {
-            selectedModelPhotoContainer.innerHTML = '<p class="box-label">Сравнить с</p>';
+            const compareWithLabel = window.NFTi18n ? window.NFTi18n.t('label_compare_with', 'Сравнить с') : 'Сравнить с';
+            selectedModelPhotoContainer.innerHTML = `<p class="box-label">${compareWithLabel}</p>`;
         }
     }
 

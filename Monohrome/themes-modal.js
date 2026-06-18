@@ -46,6 +46,8 @@ const BYPASS_KEY_STORAGE = 'apiBypassKey';
 let currentBgName = null;
 let currentSearchQuery = ''; // Поисковый запрос для блока ВЛОЖЕНИЯ
 
+const t = (key, fallback) => window.NFTi18n ? window.NFTi18n.t(key, fallback) : fallback;
+
 // --- In-memory кэши (живут на время сессии) ---
 const _allModelsCache = new Map(); // key: giftName  → AllModelNames array
 const _v2ThemesCache = new Map(); // key: `${gift}/${model}` → V2 themes array
@@ -140,6 +142,21 @@ function getPlural(count, one, few, many) {
     return many;
 }
 
+function getLocalizedPlural(count, type) {
+    const isEn = window.NFTi18n ? window.NFTi18n.getLanguage() === 'en' : false;
+    if (isEn) {
+        if (type === 'model') return count === 1 ? 'model' : 'models';
+        if (type === 'gift') return count === 1 ? 'gift' : 'gifts';
+        if (type === 'theme') return count === 1 ? 'theme' : 'themes';
+        return '';
+    } else {
+        if (type === 'model') return getPlural(count, 'модель', 'модели', 'моделей');
+        if (type === 'gift') return getPlural(count, 'подарок', 'подарка', 'подарков');
+        if (type === 'theme') return getPlural(count, 'тематика', 'тематики', 'тематик');
+        return '';
+    }
+}
+
 function getApiAuthHeader() {
     if (window.NFTAuth && typeof window.NFTAuth.getApiAuthHeader === 'function') {
         return window.NFTAuth.getApiAuthHeader();
@@ -152,11 +169,11 @@ function getApiAuthHeader() {
 window.getApiAuthHeader = getApiAuthHeader;
 
 function getModelPlural(count) {
-    return getPlural(count, 'модель', 'модели', 'моделей');
+    return getLocalizedPlural(count, 'model');
 }
 
 function getGiftPlural(count) {
-    return getPlural(count, 'подарок', 'подарка', 'подарков');
+    return getLocalizedPlural(count, 'gift');
 }
 
 const tonIconSvg = `<svg xmlns="http://www.w3.org/2000/svg" class="price-icon" width="24" height="24" viewBox="0 0 24 24"><title>Ton SVG Icon</title><path fill="currentColor" d="M19.012 9.201L12.66 19.316a.857.857 0 0 1-1.453-.005L4.98 9.197a1.8 1.8 0 0 1-.266-.943a1.856 1.856 0 0 1 1.882-1.826h10.817c1.033 0 1.873.815 1.873 1.822a1.8 1.8 0 0 1-.274.951M6.51 8.863l4.633 7.144V8.143H6.994c-.48 0-.694.317-.484.72m6.347 7.144l4.633-7.144c.214-.403-.004-.72-.484-.72h-4.149z"/></svg>`;
@@ -244,7 +261,7 @@ function populateModelGrid() {
     container.innerHTML = '';
 
     if (currentThemeGifts.length === 0) {
-        container.innerHTML = '<p style="text-align:center; color:var(--text-muted);">Нет подарков.</p>';
+        container.innerHTML = `<p style="text-align:center; color:var(--text-muted);">${t('modal_no_gifts', 'Нет подарков.')}</p>`;
         return;
     }
 
@@ -257,7 +274,7 @@ function populateModelGrid() {
             bgHeader.className = 'selected-bg-header';
             bgHeader.innerHTML = `
                 <div class="sbh-text-wrapper">
-                    <span class="sbh-label">Цвет фона: <span class="sbh-name">${bgObj.name}</span></span>
+                    <span class="sbh-label">${t('modal_backdrop_color', 'Цвет фона:')} <span class="sbh-name">${bgObj.name}</span></span>
                 </div>
                 <div class="sbh-square" style="background: ${bgObj.gradient};"></div>
             `;
@@ -323,7 +340,7 @@ function populateModelGrid() {
                 const leftHeader = document.createElement('div');
                 leftHeader.className = 'group-header-left';
                 leftHeader.innerHTML = `
-                    <span class="group-text">Средний цвет группы:</span>
+                    <span class="group-text">${t('modal_group_average_color', 'Средний цвет группы:')}</span>
                     <span class="group-badge" style="background-color:${colorHex}; border: 1px solid rgba(255,255,255,0.2);">${colorHex}</span>
                 `;
                 clusterDiv.appendChild(leftHeader);
@@ -392,7 +409,7 @@ function createCountGiftCard(gift) {
         <div class="mcs-info">
             <h4 class="mcs-model-name">${gift.ModelName}</h4>
             <div style="margin-top: 4px; display: flex; justify-content: center;">
-                 <span class="count-mode-badge">${gift.Count} шт</span>
+                 <span class="count-mode-badge">${gift.Count} ${t('pcs', 'шт.')}</span>
             </div>
         </div>
     `;
@@ -448,9 +465,9 @@ function renderModelListViewUI() {
     modalContent.innerHTML = `
         <div class="tm-sort-controls">
             <div class="tm-buttons-wrapper">
-                <button class="tm-sort-button" data-sort="group">Кластеры</button>
-                <button class="tm-sort-button" data-sort="count">По кол-ву</button>
-                <button class="tm-sort-button active" data-sort="price">По флорам</button>
+                <button class="tm-sort-button" data-sort="group">${t('modal_clusters', 'Кластеры')}</button>
+                <button class="tm-sort-button" data-sort="count">${t('modal_by_count', 'По кол-ву')}</button>
+                <button class="tm-sort-button active" data-sort="price">${t('modal_by_floors', 'По флорам')}</button>
             </div>
         </div>
         <div id="tm-models-grid-container">
@@ -539,7 +556,7 @@ async function loadAndRenderModelView(collectionName, bgName = null, restoreScro
 
     } catch (e) {
         console.error('[loadAndRenderModelView] Error:', e);
-        modalContent.innerHTML = '<p style="text-align:center; margin-top:2rem;">Ошибка загрузки коллекции</p>';
+        modalContent.innerHTML = `<p style="text-align:center; margin-top:2rem;">${t('modal_load_collection_error', 'Ошибка загрузки коллекции')}</p>`;
     }
 }
 
@@ -778,7 +795,7 @@ function renderThemeListView() {
         card.innerHTML = `
             <div class="tc-left">
                 <div class="tc-title">${collection.CollectionName}</div>
-                <div class="tc-subtitle">${count} ${getPlural(count, 'модель', 'модели', 'моделей')}</div>
+                <div class="tc-subtitle">${count} ${getLocalizedPlural(count, 'model')}</div>
             </div>
             <div class="tc-right">
                 <div class="tc-glow" style="--glow-color: ${clusterHex};"></div>
@@ -964,7 +981,7 @@ async function renderSimilarGiftsButtonForDetailView(container, giftName, modelN
 
         btn.innerHTML = `
             ${img1}
-            Похожие по цвету
+            ${t('modal_similar_colors', 'Похожие по цвету')}
             ${img2}
         `;
 
@@ -992,7 +1009,7 @@ function updateThemesRowUI(themesValEl, themes, modelData, fullData) {
 
     if (filteredThemes.length > 0) {
         const count = filteredThemes.length;
-        const plural = getPlural(count, 'тематика', 'тематики', 'тематик');
+        const plural = getLocalizedPlural(count, 'theme');
 
         themesValEl.innerHTML = `${count} ${plural} <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width:14px; height:14px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>`;
         themesValEl.classList.add('link-style');
@@ -1062,16 +1079,16 @@ async function renderModelDetailView(modelData, preloadedData = null) {
             
             <div class="modal-info info-table">
                 <div class="info-row">
-                    <span class="info-label">Модель</span>
+                    <span class="info-label">${t('modal_model', 'Модель')}</span>
                     <a href="../Monohrome/background-finder.html?mode=findBgs&gift=${encodeURIComponent(modelData.GiftName)}&model=${encodeURIComponent(modelData.ModelName)}${modelPrice > 0 ? `&price=${modelPrice}` : ''}" class="info-value link-style">
                         ${modelData.ModelName}${priceHtml}
                     </a>
                 </div>
                 
                 <div class="info-row" id="tm-bg-accordion-trigger" style="cursor: pointer;">
-                    <span class="info-label">Фон</span>
+                    <span class="info-label">${t('modal_backdrop', 'Фон')}</span>
                     <div class="info-value link-style" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-                        <span id="tm-current-bg-text">${initialBgName || 'Выбрать...'}</span>
+                        <span id="tm-current-bg-text">${initialBgName || t('modal_choose', 'Выбрать...')}</span>
                         <svg id="tm-bg-arrow" class="nfts-arrow" style="width:16px;height:16px; transition: transform 0.3s;" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M19 9l-7 7-7-7" stroke-width="3"/></svg>
                     </div>
                 </div>
@@ -1081,17 +1098,17 @@ async function renderModelDetailView(modelData, preloadedData = null) {
                 </div>
 
                 <div class="info-row">
-                    <span class="info-label">Совпадение</span>
+                    <span class="info-label">${t('modal_match', 'Совпадение')}</span>
                     <span id="tm-compat-val" class="info-value compat">${initialPercent}${initialPercent !== '—' ? '%' : ''}</span>
                 </div>
 
                 <div class="info-row">
-                    <span class="info-label">Количество</span>
-                    <span class="info-value count">${modelData.Count || '-'} шт.</span>
+                    <span class="info-label">${t('modal_quantity', 'Количество')}</span>
+                    <span class="info-value count">${modelData.Count || '-'} ${t('pcs', 'шт.')}</span>
                 </div>
 
                 <div class="info-row" id="tm-v2-accordion-trigger" style="cursor: pointer; border-bottom: none; display: none;">
-                    <span class="info-label">Тематики</span>
+                    <span class="info-label">${t('v2_theme', 'Тематики')}</span>
                     <div class="info-value link-style" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
                         <span id="tm-v2-count-val"></span>
                         <svg id="tm-v2-arrow" class="nfts-arrow" style="width:16px;height:16px; transition: transform 0.3s;" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M19 9l-7 7-7-7" stroke-width="3"/></svg>
@@ -1106,13 +1123,13 @@ async function renderModelDetailView(modelData, preloadedData = null) {
             <div class="gold-button-container" id="tm-similar-btn-container"></div>
 
             <div class="market-tree-v2">
-                <div class="mt-root">ПОИСК НА МАРКЕТАХ</div>
+                <div class="mt-root">${t('modal_search_on_markets', 'ПОИСК НА МАРКЕТАХ')}</div>
                 <div class="mt-branches">
                     
                     <div class="mt-item-container">
                         <div class="mt-item">
-                            <div class="mt-label">Самые дешевые</div>
-                            <button class="mt-btn" data-scenario="2">Найти</button>
+                            <div class="mt-label">${t('modal_cheapest', 'Самые дешевые')}</div>
+                            <button class="mt-btn" data-scenario="2">${t('modal_find', 'Найти')}</button>
                         </div>
                         <div class="mt-content hidden" id="content-scenario-2">
                             <div class="mt-horizontal-scroll" id="grid-scenario-2"></div>
@@ -1122,8 +1139,8 @@ async function renderModelDetailView(modelData, preloadedData = null) {
 
                     <div class="mt-item-container">
                         <div class="mt-item">
-                            <div class="mt-label">Лучшие монохромы</div>
-                            <button class="mt-btn" data-scenario="1">Найти</button>
+                            <div class="mt-label">${t('modal_best_monochromes', 'Лучшие монохромы')}</div>
+                            <button class="mt-btn" data-scenario="1">${t('modal_find', 'Найти')}</button>
                         </div>
                         <div class="mt-content hidden" id="content-scenario-1">
                             <div class="mt-horizontal-scroll" id="grid-scenario-1"></div>
@@ -1133,8 +1150,8 @@ async function renderModelDetailView(modelData, preloadedData = null) {
 
                     <div class="mt-item-container" id="branch-3-container" style="display:none;">
                         <div class="mt-item">
-                            <div class="mt-label">На фоне <span id="tree-bg-label" style="color:var(--primary-color)"></span></div>
-                            <button class="mt-btn" data-scenario="3">Найти</button>
+                            <div class="mt-label">${t('modal_on_backdrop', 'На фоне')} <span id="tree-bg-label" style="color:var(--primary-color)"></span></div>
+                            <button class="mt-btn" data-scenario="3">${t('modal_find', 'Найти')}</button>
                         </div>
                         <div class="mt-content hidden" id="content-scenario-3">
                             <div class="mt-horizontal-scroll" id="grid-scenario-3"></div>
@@ -1147,8 +1164,8 @@ async function renderModelDetailView(modelData, preloadedData = null) {
 
             <div class="market-tree-v2 standalone-search-zone" id="branch-4-container" style="margin-top: 12px; border-top: none; display: none;">
                 <div class="mt-root standalone" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0;">
-                    <span>ПОИСК <span style="color:var(--primary-color)">модель+фон</span></span>
-                    <button class="mt-btn" data-scenario="4">Найти</button>
+                    <span>${t('modal_search_model_backdrop', 'ПОИСК модель+фон')}</span>
+                    <button class="mt-btn" data-scenario="4">${t('modal_find', 'Найти')}</button>
                 </div>
                 <div class="mt-content hidden" id="content-scenario-4" style="margin-top: 16px;">
                     <div class="nfts-grid grid-3" id="grid-scenario-4"></div>
@@ -1206,7 +1223,7 @@ async function renderModelDetailView(modelData, preloadedData = null) {
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;color:var(--text-muted);"><path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /></svg>
             </div>
             <div class="bg-palette-percent" style="font-size:0.6rem;">—</div>
-            <div style="font-size: 0.65rem; color: var(--text-muted); font-weight: 600; margin-top: 2px; text-align: center; width: 100%; white-space: nowrap;">Без фона</div>
+            <div style="font-size: 0.65rem; color: var(--text-muted); font-weight: 600; margin-top: 2px; text-align: center; width: 100%; white-space: nowrap;">${t('modal_no_backdrop', 'Без фона')}</div>
         `;
         noBgItem.onclick = (e) => {
             e.stopPropagation();
@@ -2563,7 +2580,7 @@ async function openV2Node(nodeId, nodeType, clearHistory = true, explicitName = 
                     <div class="bg-palette-color" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); display:flex; align-items:center; justify-content:center;">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px;height:20px;color:var(--text-muted);"><path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /></svg>
                     </div>
-                    <div style="font-size: 0.65rem; color: var(--text-muted); font-weight: 600; margin-top: 4px; text-align: center; width: 100%; white-space: nowrap;">Без фона</div>
+                    <div style="font-size: 0.65rem; color: var(--text-muted); font-weight: 600; margin-top: 4px; text-align: center; width: 100%; white-space: nowrap;">${t('modal_no_backdrop', 'Без фона')}</div>
                 </div>
             `;
 
@@ -2594,7 +2611,7 @@ async function openV2Node(nodeId, nodeType, clearHistory = true, explicitName = 
         contentSection.innerHTML = `
             <div class="v2-section-wrapper ${isCollapsible ? 'is-collapsed' : ''}" id="v2-content-wrapper" style="padding-top: 24px; padding-bottom: 24px;">
                 <div class="v2-section-title-box" style="margin-bottom: 12px;">
-                    <span>СОДЕРЖИМОЕ</span>
+                    <span>${t('modal_content_label', 'СОДЕРЖИМОЕ')}</span>
                     ${hasModels ? `
                     <div class="v2-section-controls">
                         <button id="v2-filter-toggle" class="v2-filter-btn" title="Фильтры">
@@ -2602,13 +2619,13 @@ async function openV2Node(nodeId, nodeType, clearHistory = true, explicitName = 
                         </button>
                         <div id="v2-sort-menu" class="v2-sort-dropdown hidden">
                             <div class="v2-sort-dir-toggle" id="v2-dir-toggle-inside" style="justify-content: center; background: rgba(255,255,255,0.05); margin-bottom: 6px;">
-                                <span id="v2-dir-text">${currentBgName ? 'По убыванию' : 'По возрастанию'}</span>
+                                <span id="v2-dir-text">${currentBgName ? t('modal_descending', 'По убыванию') : t('modal_ascending', 'По возрастанию')}</span>
                                 <svg id="v2-dir-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:16px;height:16px; margin-left:6px; transform: ${currentBgName ? 'rotate(180deg)' : 'none'};"><path stroke-linecap="round" stroke-linejoin="round" d="M3 4.5h14.25M3 9h9.75M3 13.5h9.75m4.5-4.5v12m0 0l-3.75-3.75M17.25 21L21 17.25"/></svg>
                             </div>
-                            ${currentBgName ? `<div class="v2-sort-option active" data-sort="bg">По проценту</div>` : ''}
-                            <div class="v2-sort-option" data-sort="name">По названию</div>
-                            <div class="v2-sort-option" data-sort="count">По количеству</div>
-                            <div class="v2-sort-option ${!currentBgName ? 'active' : ''}" data-sort="price">По флорам</div>
+                            ${currentBgName ? `<div class="v2-sort-option active" data-sort="bg">${t('modal_by_percent', 'По проценту')}</div>` : ''}
+                            <div class="v2-sort-option" data-sort="name">${t('modal_by_name', 'По названию')}</div>
+                            <div class="v2-sort-option" data-sort="count">${t('modal_by_quantity', 'По количеству')}</div>
+                            <div class="v2-sort-option ${!currentBgName ? 'active' : ''}" data-sort="price">${t('modal_by_floors', 'По флорам')}</div>
                         </div>
                     </div>` : ''}
                 </div>
@@ -2620,7 +2637,7 @@ async function openV2Node(nodeId, nodeType, clearHistory = true, explicitName = 
                 ${isCollapsible ? `
                 <div class="v2-section-fade"></div>
                 <button class="v2-section-toggle-btn" id="v2-content-toggle">
-                    <span id="v2-toggle-text">Развернуть</span>
+                    <span id="v2-toggle-text">${t('modal_expand', 'Развернуть')}</span>
                     <svg id="v2-toggle-icon" style="transform: rotate(180deg);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
                 </button>
                 ` : ''}
@@ -2649,12 +2666,12 @@ async function openV2Node(nodeId, nodeType, clearHistory = true, explicitName = 
                 const collArea = contentSection.querySelector('.v2-section-collapsible');
                 if (isCollapsed) {
                     contentWrapper.classList.remove('is-collapsed');
-                    document.getElementById('v2-toggle-text').textContent = 'Свернуть';
+                    document.getElementById('v2-toggle-text').textContent = t('modal_collapse', 'Свернуть');
                     document.getElementById('v2-toggle-icon').style.transform = 'none';
                     if (collArea) collArea.style.maxHeight = 'none'; // Отключаем CSS лимит 5000px
                 } else {
                     contentWrapper.classList.add('is-collapsed');
-                    document.getElementById('v2-toggle-text').textContent = 'Развернуть';
+                    document.getElementById('v2-toggle-text').textContent = t('modal_expand', 'Развернуть');
                     document.getElementById('v2-toggle-icon').style.transform = 'rotate(180deg)';
                     if (collArea) collArea.style.maxHeight = ''; // Возвращаем CSS лимит
                     contentWrapper.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -2682,19 +2699,19 @@ async function openV2Node(nodeId, nodeType, clearHistory = true, explicitName = 
             extraSection.innerHTML = `
                 <div class="v2-section-wrapper" style="padding-top: 6px;">
                     <div class="v2-section-title-box" style="margin-bottom: 8px;">
-                        <span>ВЛОЖЕНИЯ</span>
+                        <span>${t('modal_attachments_label', 'ВЛОЖЕНИЯ')}</span>
                         <div class="v2-section-controls" style="display:flex; gap:6px; align-items:center;">
                             <button id="v2-extra-filter-toggle" class="v2-filter-btn" title="Фильтры">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 01-.659 1.591l-5.432 5.432a2.25 2.25 0 00-.659 1.591v2.927a2.25 2.25 0 01-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 00-.659-1.591L3.659 7.409A2.25 2.25 0 013 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0112 3z"/></svg>
                             </button>
                             <div id="v2-extra-sort-menu" class="v2-sort-dropdown hidden">
                                 <div class="v2-sort-dir-toggle" id="v2-extra-dir-toggle-inside" style="justify-content: center; background: rgba(255,255,255,0.05); margin-bottom: 6px;">
-                                    <span id="v2-extra-dir-text">По возрастанию</span>
+                                    <span id="v2-extra-dir-text">${t('modal_ascending', 'По возрастанию')}</span>
                                     <svg id="v2-extra-dir-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:16px;height:16px; margin-left:6px; transform: none;"><path stroke-linecap="round" stroke-linejoin="round" d="M3 4.5h14.25M3 9h9.75M3 13.5h9.75m4.5-4.5v12m0 0l-3.75-3.75M17.25 21L21 17.25"/></svg>
                                 </div>
-                                <div class="v2-sort-option" data-sort="name">По названию</div>
-                                <div class="v2-sort-option" data-sort="count">По количеству</div>
-                                <div class="v2-sort-option active" data-sort="price">По флорам</div>
+                                <div class="v2-sort-option" data-sort="name">${t('modal_by_name', 'По названию')}</div>
+                                <div class="v2-sort-option" data-sort="count">${t('modal_by_quantity', 'По количеству')}</div>
+                                <div class="v2-sort-option active" data-sort="price">${t('modal_by_floors', 'По флорам')}</div>
                             </div>
                         </div>
                     </div>
@@ -2724,7 +2741,7 @@ async function openV2Node(nodeId, nodeType, clearHistory = true, explicitName = 
                     dirBtnExtraInside.onclick = (e) => {
                         e.stopPropagation();
                         isAscendingExtra = !isAscendingExtra;
-                        document.getElementById('v2-extra-dir-text').textContent = isAscendingExtra ? 'По возрастанию' : 'По убыванию';
+                        document.getElementById('v2-extra-dir-text').textContent = isAscendingExtra ? t('modal_ascending', 'По возрастанию') : t('modal_descending', 'По убыванию');
                         document.getElementById('v2-extra-dir-icon').style.transform = isAscendingExtra ? 'none' : 'rotate(180deg)';
                         renderDefault();
                     };
@@ -2739,11 +2756,11 @@ async function openV2Node(nodeId, nodeType, clearHistory = true, explicitName = 
 
                         if (currentExtraSort === 'name') {
                             isAscendingExtra = true;
-                            document.getElementById('v2-extra-dir-text').textContent = 'По возрастанию';
+                            document.getElementById('v2-extra-dir-text').textContent = t('modal_ascending', 'По возрастанию');
                             document.getElementById('v2-extra-dir-icon').style.transform = 'none';
                         } else {
                             isAscendingExtra = false;
-                            document.getElementById('v2-extra-dir-text').textContent = 'По убыванию';
+                            document.getElementById('v2-extra-dir-text').textContent = t('modal_descending', 'По убыванию');
                             document.getElementById('v2-extra-dir-icon').style.transform = 'rotate(180deg)';
                         }
                         sortMenuExtra.classList.add('hidden');
@@ -2794,13 +2811,13 @@ async function openV2Node(nodeId, nodeType, clearHistory = true, explicitName = 
     } catch (e) {
         console.error('[openV2Node] Error:', e);
         hideLoadingState();
-        if (modalContent) modalContent.innerHTML = '<p style="text-align:center; color:#f87171; margin-top:2rem;">Ошибка загрузки V2</p>';
+        if (modalContent) modalContent.innerHTML = `<p style="text-align:center; color:#f87171; margin-top:2rem;">${t('modal_load_v2_error', 'Ошибка загрузки V2')}</p>`;
     }
 }
 
 function renderV2ItemsGrid(itemsList, container, parentNodeId, parentNodeType, noTree = false, backRestoreFn = null) {
     if (!itemsList || itemsList.length === 0) {
-        container.innerHTML = '<p style="text-align:center; color:var(--text-muted); margin:0;">Пусто</p>';
+        container.innerHTML = `<p style="text-align:center; color:var(--text-muted); margin:0;">${t('empty', 'Пусто')}</p>`;
         return;
     }
 
@@ -3318,7 +3335,7 @@ window.showSubscriptionModal = function() {
         return;
     }
 
-    const channelUrl = "https://t.me/Criminal_hamster"; // Ссылка на твой канал
+    const channelUrl = "https://t.me/NFTstyler"; // Ссылка на твой канал
 
     const modalHtml = `
         <div id="sub-required-modal" class="modal-overlay" style="display: flex; z-index: 100000; flex-direction: column; align-items: center; justify-content: center; background: rgba(0, 0, 0, 0.8); backdrop-filter: blur(5px);">
@@ -3329,16 +3346,16 @@ window.showSubscriptionModal = function() {
                         <path stroke-linecap="round" stroke-linejoin="round" d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
                     </svg>
                 </div>
-                <h3 style="margin: 0 0 10px 0; color: #fff; font-size: 1.2rem;">Требуется подписка</h3>
+                <h3 style="margin: 0 0 10px 0; color: #fff; font-size: 1.2rem;">${window.NFTi18n ? window.NFTi18n.t('sub_required', 'Требуется подписка') : 'Требуется подписка'}</h3>
                 <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 24px; line-height: 1.5;">
-                    Чтобы пользоваться поиском маркета и продвинутой аналитикой, необходимо быть подписчиком нашего Telegram канала.
+                    ${window.NFTi18n ? window.NFTi18n.t('sub_desc', 'Чтобы пользоваться поиском маркета и продвинутой аналитикой, необходимо быть подписчиком нашего Telegram канала.') : 'Чтобы пользоваться поиском маркета и продвинутой аналитикой, необходимо быть подписчиком нашего Telegram канала.'}
                 </p>
                 <div style="display: flex; flex-direction: column; gap: 10px;">
                     <a href="${channelUrl}" target="_blank" style="background: var(--primary-color); color: #0a1020; text-decoration: none; padding: 12px; border-radius: 12px; font-weight: 700; font-size: 0.95rem; transition: transform 0.2s;">
-                        Перейти в канал
+                        ${window.NFTi18n ? window.NFTi18n.t('go_to_channel', 'Перейти в канал') : 'Перейти в канал'}
                     </a>
                     <button onclick="document.getElementById('sub-required-modal').style.display='none'" style="background: rgba(255,255,255,0.05); color: var(--text-primary); border: 1px solid rgba(255,255,255,0.1); padding: 12px; border-radius: 12px; font-weight: 600; cursor: pointer; transition: background 0.2s;">
-                        Позже
+                        ${window.NFTi18n ? window.NFTi18n.t('later', 'Позже') : 'Позже'}
                     </button>
                 </div>
             </div>

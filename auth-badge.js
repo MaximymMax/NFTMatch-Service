@@ -15,6 +15,24 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => {
+        // Добавляем стиль для скрытия плашки при открытых модалках
+        const style = document.createElement('style');
+        style.textContent = `
+            body.modal-open #tg-auth-badge,
+            body.body-gated #tg-auth-badge,
+            body:has(#tg-profile-modal) #tg-auth-badge,
+            body:has(.sub-modal-overlay) #tg-auth-badge,
+            body:has(.sub-modal-overlay.active) #tg-auth-badge,
+            body:has(#themes-modal-overlay:not(.hidden)) #tg-auth-badge,
+            body:has(#nftDetailsModalOverlay:not(.hidden)) #tg-auth-badge,
+            body:has([id*="modal-overlay"]) #tg-auth-badge,
+            body:has([id*="ModalOverlay"]) #tg-auth-badge,
+            body:has([class*="modal-overlay"]) #tg-auth-badge {
+                display: none !important;
+            }
+        `;
+        document.head.appendChild(style);
+
         // Перехватчик для сохранения hash-параметров Telegram WebApp при переходах по ссылкам
         document.addEventListener('click', (e) => {
             const link = e.target.closest('a');
@@ -67,7 +85,7 @@
                 position: 'fixed',
                 top: '15px',
                 right: '15px',
-                zIndex: '99999',
+                zIndex: '99',
                 backgroundColor: 'rgba(36, 48, 73, 0.85)',
                 backdropFilter: 'blur(8px)',
                 border: '1px solid rgba(255, 255, 255, 0.15)',
@@ -121,7 +139,7 @@
                     position: 'fixed',
                     top: '15px',
                     right: '15px',
-                    zIndex: '99999',
+                    zIndex: '99',
                     backgroundColor: 'rgba(36, 48, 73, 0.85)',
                     backdropFilter: 'blur(8px)',
                     border: '1px solid rgba(255, 255, 255, 0.15)',

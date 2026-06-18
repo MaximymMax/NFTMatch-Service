@@ -412,18 +412,18 @@ document.addEventListener('DOMContentLoaded', () => {
                             </svg>
                         </div>
                     </div>
-                    <h3 class="sub-title">Требуется подписка</h3>
-                    <p class="sub-text">Для использования поиска необходимо подписаться на наш Telegram канал.</p>
+                    <h3 class="sub-title">${window.NFTi18n ? window.NFTi18n.t('sub_required', 'Требуется подписка') : 'Требуется подписка'}</h3>
+                    <p class="sub-text">${window.NFTi18n ? window.NFTi18n.t('sub_desc', 'Для использования поиска необходимо подписаться на наш Telegram канал.') : 'Для использования поиска необходимо подписаться на наш Telegram канал.'}</p>
                     
                     <a href="https://t.me/NFTstyler" target="_blank" class="sub-btn">
-                        Подписаться
+                        ${window.NFTi18n ? window.NFTi18n.t('btn_subscribe', 'Подписаться') : 'Подписаться'}
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
                         </svg>
                     </a>
                     
                     <button class="sub-btn check-btn" onclick="window.closeSubscriptionModal()">
-                        Я подписался
+                        ${window.NFTi18n ? window.NFTi18n.t('btn_subscribed', 'Я подписался') : 'Я подписался'}
                     </button>
                 </div>
             </div>
@@ -469,7 +469,7 @@ document.addEventListener('DOMContentLoaded', () => {
             link.innerHTML = `
             <div class="fallback-glow"></div>
             <img src="${imgLeftSrc}" alt="similar 1" class="fallback-img left">
-            <span>Похожие по цвету</span>
+            <span>${window.NFTi18n ? window.NFTi18n.t('btn_similar_colors', 'Похожие по цвету') : 'Похожие по цвету'}</span>
             <img src="${imgRightSrc}" alt="similar 2" class="fallback-img right">
         `;
 
@@ -479,7 +479,7 @@ document.addEventListener('DOMContentLoaded', () => {
             link.style.setProperty('--similar-color', '#2563eb'); // Запасной синий
             link.innerHTML = `
             <div class="fallback-glow"></div>
-            <span>Похожие по цвету</span>
+            <span>${window.NFTi18n ? window.NFTi18n.t('btn_similar_colors', 'Похожие по цвету') : 'Похожие по цвету'}</span>
         `;
         }
 
@@ -491,7 +491,7 @@ document.addEventListener('DOMContentLoaded', () => {
         container.innerHTML = `
         <span style="font-size: 0.9rem; color: var(--text-muted);">
             <span class="loading-spinner-mini" style="width:14px; height: 14px; border-width: 2px;"></span>
-            Загрузка...
+            ${window.NFTi18n ? window.NFTi18n.t('deep_link_loading', 'Загрузка...') : 'Загрузка...'}
         </span>`;
 
         const url = `${SERVER_BASE_URL}/api/BaseInfo/GetSimilarGiftsForVisualization/${encodeURIComponent(giftName)}/${encodeURIComponent(modelName)}`;
@@ -538,10 +538,10 @@ document.addEventListener('DOMContentLoaded', () => {
             infoDiv.className = 'theme-card-stylized-info';
 
             const title = document.createElement('h3');
-            title.textContent = "Похожие";
+            title.textContent = window.NFTi18n ? window.NFTi18n.t('similar_label', 'Похожие') : 'Похожие';
 
             const subtitle = document.createElement('p');
-            subtitle.textContent = "по цвету";
+            subtitle.textContent = window.NFTi18n ? window.NFTi18n.t('similar_by_color', 'по цвету') : 'по цвету';
             subtitle.style.color = "var(--text-primary)"; // Делаем белым
 
             infoDiv.appendChild(title);
@@ -579,7 +579,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         } catch (error) {
             console.error(`[Themes Fallback] Ошибка:`, error);
-            container.innerHTML = `<span style="font-size: 0.9rem; color: #f87171;">${window.NFTi18n ? window.NFTi18n.t('load_error_retry', 'Ошибка загрузки') : 'Ошибка загрузки'}</span>`;
+            container.innerHTML = `<span style="font-size: 0.9rem; color: #f87171;">${window.NFTi18n ? window.NFTi18n.t('modal_load_error', 'Ошибка загрузки') : 'Ошибка загрузки'}</span>`;
         }
     }
 

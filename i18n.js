@@ -133,6 +133,9 @@
             "sub_desc_api": "Для генерации API ключа необходимо быть подписчиком нашего Telegram канала.",
             "btn_subscribe": "Подписаться",
             "btn_subscribed": "Я подписался",
+            "go_to_channel": "Перейти в канал",
+            "similar_by_color": "по цвету",
+            "similar_label": "Похожие",
             
             // Global / General
             "btn_close": "Закрыть",
@@ -194,7 +197,45 @@
             "badge_close": "Закрыть",
             "btn_more_info": "Подробнее",
             "sub_required_alert": "Для использования этой функции необходимо подписаться на наш канал: {channel}",
-            "sub_required_list": "Требуется подписка на канал"
+            "sub_required_list": "Требуется подписка на канал",
+            
+            // Modal themes-modal
+            "modal_no_gifts": "Нет подарков.",
+            "modal_backdrop_color": "Цвет фона:",
+            "modal_group_average_color": "Средний цвет группы:",
+            "modal_clusters": "Кластеры",
+            "modal_by_count": "По кол-ву",
+            "modal_by_floors": "По флорам",
+            "modal_load_collection_error": "Ошибка загрузки коллекции",
+            "modal_model": "Модель",
+            "modal_backdrop": "Фон",
+            "modal_choose": "Выбрать...",
+            "modal_match": "Совпадение",
+            "modal_quantity": "Количество",
+            "modal_search_on_markets": "ПОИСК НА МАРКЕТАХ",
+            "modal_cheapest": "Самые дешевые",
+            "modal_find": "Найти",
+            "modal_hide": "Скрыть",
+            "modal_best_monochromes": "Лучшие монохромы",
+            "modal_on_backdrop": "На фоне",
+            "modal_search_model_backdrop": "ПОИСК модель+фон",
+            "modal_no_backdrop": "Без фона",
+            "modal_ascending": "По возрастанию",
+            "modal_descending": "По убыванию",
+            "modal_by_percent": "По проценту",
+            "modal_by_name": "По названию",
+            "modal_by_quantity": "По количеству",
+            "modal_content_label": "СОДЕРЖИМОЕ",
+            "modal_attachments_label": "ВЛОЖЕНИЯ",
+            "modal_expand": "Развернуть",
+            "modal_collapse": "Свернуть",
+            "modal_load_v2_error": "Ошибка загрузки V2",
+            "modal_similar_colors": "Похожие по цвету",
+            "modal_no": "Нет",
+            "modal_no_results": "Ничего не найдено",
+            "modal_load_error": "Ошибка загрузки",
+            "modal_subscription_required": "Требуется подписка",
+            "modal_premium_only_search": "Этот поиск доступен только Premium пользователям."
         },
         en: {
             "title": "NFT MATCH",
@@ -324,6 +365,9 @@
             "sub_desc_api": "To generate an API key, you must be a subscriber of our Telegram channel.",
             "btn_subscribe": "Subscribe",
             "btn_subscribed": "I subscribed",
+            "go_to_channel": "Go to Channel",
+            "similar_by_color": "by color",
+            "similar_label": "Similar",
             
             // Global / General
             "btn_close": "Close",
@@ -385,7 +429,45 @@
             "badge_close": "Close",
             "btn_more_info": "More info",
             "sub_required_alert": "To use this feature, you must subscribe to our channel: {channel}",
-            "sub_required_list": "Channel subscription required"
+            "sub_required_list": "Channel subscription required",
+            
+            // Modal themes-modal
+            "modal_no_gifts": "No gifts.",
+            "modal_backdrop_color": "Background color:",
+            "modal_group_average_color": "Average group color:",
+            "modal_clusters": "Clusters",
+            "modal_by_count": "By count",
+            "modal_by_floors": "By floors",
+            "modal_load_collection_error": "Failed to load collection",
+            "modal_model": "Model",
+            "modal_backdrop": "Background",
+            "modal_choose": "Choose...",
+            "modal_match": "Match",
+            "modal_quantity": "Quantity",
+            "modal_search_on_markets": "SEARCH ON MARKETPLACES",
+            "modal_cheapest": "Cheapest",
+            "modal_find": "Search",
+            "modal_hide": "Hide",
+            "modal_best_monochromes": "Best monochromes",
+            "modal_on_backdrop": "On background",
+            "modal_search_model_backdrop": "SEARCH model+bg",
+            "modal_no_backdrop": "No background",
+            "modal_ascending": "Ascending",
+            "modal_descending": "Descending",
+            "modal_by_percent": "By percentage",
+            "modal_by_name": "By name",
+            "modal_by_quantity": "By quantity",
+            "modal_content_label": "CONTENT",
+            "modal_attachments_label": "ATTACHMENTS",
+            "modal_expand": "Expand",
+            "modal_collapse": "Collapse",
+            "modal_load_v2_error": "Failed to load V2",
+            "modal_similar_colors": "Similar by color",
+            "modal_no": "No",
+            "modal_no_results": "No results found",
+            "modal_load_error": "Loading error",
+            "modal_subscription_required": "Subscription required",
+            "modal_premium_only_search": "This search is only available to Premium users."
         }
     };
 
@@ -485,35 +567,49 @@
         container.appendChild(ruBtn);
         container.appendChild(enBtn);
 
+        const isTelegramWebApp = !!(window.Telegram?.WebApp?.initData || (window.Telegram?.WebApp?.platform && window.Telegram.WebApp.platform !== 'unknown'));
+
         // Стили для переключателя
         const style = document.createElement('style');
         style.textContent = `
             .lang-switcher-container {
                 position: fixed;
-                top: 10px;
-                left: 50%;
-                transform: translateX(-50%);
-                z-index: 100000;
+                top: 60px;
+                left: ${isTelegramWebApp ? '50%' : '15px'};
+                ${isTelegramWebApp ? 'transform: translateX(-50%);' : 'transform: none;'}
+                z-index: 99;
                 display: flex;
                 gap: 4px;
                 background: rgba(22, 33, 58, 0.7);
                 backdrop-filter: blur(10px);
                 -webkit-backdrop-filter: blur(10px);
                 border: 1px solid rgba(255, 255, 255, 0.08);
-                border-radius: 20px;
-                padding: 3px;
+                border-radius: 24px;
+                padding: 4px;
                 box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
                 font-family: 'Inter', sans-serif;
+            }
+            body.modal-open .lang-switcher-container,
+            body.body-gated .lang-switcher-container,
+            body:has(#tg-profile-modal) .lang-switcher-container,
+            body:has(.sub-modal-overlay) .lang-switcher-container,
+            body:has(.sub-modal-overlay.active) .lang-switcher-container,
+            body:has(#themes-modal-overlay:not(.hidden)) .lang-switcher-container,
+            body:has(#nftDetailsModalOverlay:not(.hidden)) .lang-switcher-container,
+            body:has([id*="modal-overlay"]) .lang-switcher-container,
+            body:has([id*="ModalOverlay"]) .lang-switcher-container,
+            body:has([class*="modal-overlay"]) .lang-switcher-container {
+                display: none !important;
             }
             .lang-btn {
                 background: none;
                 border: none;
                 color: rgba(255, 255, 255, 0.5);
-                font-size: 11px;
+                font-size: 13px;
                 font-weight: 700;
                 text-transform: uppercase;
-                padding: 5px 12px;
-                border-radius: 17px;
+                padding: 7px 16px;
+                border-radius: 20px;
                 cursor: pointer;
                 transition: all 0.2s ease;
                 outline: none;

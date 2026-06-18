@@ -1,3 +1,5 @@
+const t = (key, fallback) => window.NFTi18n ? window.NFTi18n.t(key, fallback) : fallback;
+
 window.initNFTsSection = function (giftName, modelName, bgName) {
     window.nftsState = {
         currentGift: giftName,
@@ -17,7 +19,7 @@ window.initNFTsSection = function (giftName, modelName, bgName) {
     const bgLabel = document.getElementById('tree-bg-label');
     const branch4 = document.getElementById('branch-4-container');
     const mtBranches = document.querySelector('.mt-branches'); 
-    const hasValidBg = bgName && bgName !== 'Default' && bgName !== 'Выбрать...';
+    const hasValidBg = bgName && bgName !== 'Default' && bgName !== 'Выбрать...' && bgName !== t('modal_choose', 'Выбрать...');
 
     if (hasValidBg) {
         if (branch3) branch3.style.display = 'block';
@@ -39,7 +41,7 @@ window.initNFTsSection = function (giftName, modelName, bgName) {
         
         const btn = document.querySelector(`.mt-btn[data-scenario="${sc}"]`);
         if (btn) {
-            btn.textContent = 'Найти';
+            btn.textContent = t('modal_find', 'Найти');
             btn.classList.remove('active');
         }
     });
@@ -60,7 +62,7 @@ window.initNFTsSection = function (giftName, modelName, bgName) {
             
             if (content.classList.contains('hidden')) {
                 content.classList.remove('hidden');
-                newBtn.textContent = 'Скрыть';
+                newBtn.textContent = t('modal_hide', 'Скрыть');
                 newBtn.classList.add('active');
                 
                 const grid = document.getElementById(window.nftsState.branches[scenario].gridId);
@@ -69,7 +71,7 @@ window.initNFTsSection = function (giftName, modelName, bgName) {
                 }
             } else {
                 content.classList.add('hidden');
-                newBtn.textContent = 'Найти';
+                newBtn.textContent = t('modal_find', 'Найти');
                 newBtn.classList.remove('active');
             }
         });
@@ -132,7 +134,7 @@ window.loadMarketData = async function(scenario) {
                 GiftName: window.nftsState.currentGift, 
                 ModelName: window.nftsState.currentModel 
             };
-            if (window.nftsState.currentBg && window.nftsState.currentBg !== 'Default' && window.nftsState.currentBg !== 'Выбрать...') {
+            if (window.nftsState.currentBg && window.nftsState.currentBg !== 'Default' && window.nftsState.currentBg !== 'Выбрать...' && window.nftsState.currentBg !== t('modal_choose', 'Выбрать...')) {
                 body.BackgroundName = window.nftsState.currentBg; // Тут все правильно
             }
         }
@@ -153,7 +155,7 @@ window.loadMarketData = async function(scenario) {
                     // Сбрасываем кнопку обратно
                     const btn = document.querySelector(`.mt-btn[data-scenario="${scenario}"]`);
                     if (btn) {
-                        btn.textContent = 'Найти';
+                        btn.textContent = t('modal_find', 'Найти');
                         btn.classList.remove('active');
                         const content = document.getElementById(`content-scenario-${scenario}`);
                         if (content) content.classList.add('hidden');
@@ -175,7 +177,7 @@ window.loadMarketData = async function(scenario) {
             if (state.page === 1) window.nftsState.seenUniqueBgs.clear();
             let uniqueItems = [];
             items.forEach(item => {
-                const bg = item.BackdropName || item.backdropName || item.Backdrop || item.backdrop || 'Без фона';
+                const bg = item.BackdropName || item.backdropName || item.Backdrop || item.backdrop || t('modal_no_backdrop', 'Без фона');
                 if (!window.nftsState.seenUniqueBgs.has(bg)) {
                     window.nftsState.seenUniqueBgs.add(bg);
                     uniqueItems.push(item);
@@ -219,13 +221,13 @@ window.loadMarketData = async function(scenario) {
 
             state.hasMore = false;
             if (state.page === 1) {
-                 gridContainer.innerHTML = '<div style="width:100%; text-align:center; color: var(--text-muted); font-size: 0.85rem; padding: 10px;">Ничего не найдено</div>';
+                 gridContainer.innerHTML = `<div style="width:100%; text-align:center; color: var(--text-muted); font-size: 0.85rem; padding: 10px;">${t('modal_no_results', 'Ничего не найдено')}</div>`;
             }
         }
     } catch (err) {
         console.error("Market/Search Load Error:", err);
         if (state.page === 1) {
-            gridContainer.innerHTML = '<div style="width:100%; text-align:center; color: #f87171; font-size: 0.85rem; padding: 10px;">Ошибка загрузки</div>';
+            gridContainer.innerHTML = `<div style="width:100%; text-align:center; color: #f87171; font-size: 0.85rem; padding: 10px;">${t('modal_load_error', 'Ошибка загрузки')}</div>`;
         }
     } finally {
         state.isLoading = false;
@@ -243,8 +245,8 @@ window.showPremiumRequiredNotification = function() {
     toast.innerHTML = `
         <div class="pt-icon">👑</div>
         <div class="pt-text">
-            <strong>Требуется подписка</strong>
-            <span>Этот поиск доступен только Premium пользователям.</span>
+            <strong>${t('modal_subscription_required', 'Требуется подписка')}</strong>
+            <span>${t('modal_premium_only_search', 'Этот поиск доступен только Premium пользователям.')}</span>
         </div>
         <button class="pt-close-btn" onclick="this.parentElement.remove()">✕</button>
     `;
@@ -267,7 +269,7 @@ window.renderCompactCards = function(items, container, showBg = true, showScore 
         const marketplace = item.Marketplace || item.marketplace || 'TON';
         const url = item.Url || item.url || item.TelegramUrl || item.telegramUrl || '#';
         const imageUrl = item.ImageUrl || item.imageUrl;
-        const backdrop = item.BackdropName || item.backdropName || item.Backdrop || item.backdrop || 'Фон';
+        const backdrop = item.BackdropName || item.backdropName || item.Backdrop || item.backdrop || t('modal_backdrop', 'Фон');
         const score = item.MonochromeScore !== undefined ? item.MonochromeScore : (item.monochromeScore || 0);
 
         const card = document.createElement('a');
