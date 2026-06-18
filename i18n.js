@@ -574,7 +574,7 @@
         style.textContent = `
             .lang-switcher-container {
                 position: fixed;
-                top: 60px;
+                top: ${isTelegramWebApp ? '60px' : '15px'};
                 left: ${isTelegramWebApp ? '50%' : '15px'};
                 ${isTelegramWebApp ? 'transform: translateX(-50%);' : 'transform: none;'}
                 z-index: 99;

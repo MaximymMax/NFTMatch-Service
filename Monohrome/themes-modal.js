@@ -1271,7 +1271,7 @@ async function renderModelDetailView(modelData, preloadedData = null) {
         const v2Grid = document.getElementById('tm-v2-grid');
 
         v2Trigger.style.display = 'grid';
-        document.getElementById('tm-v2-count-val').textContent = v2Themes.length + ' шт.';
+        document.getElementById('tm-v2-count-val').textContent = v2Themes.length + ' ' + (window.NFTi18n ? window.NFTi18n.t('pcs', 'шт.') : 'шт.');
 
         v2Trigger.onclick = () => {
             v2Content.classList.toggle('hidden');
@@ -1695,6 +1695,7 @@ async function openModelDetail(giftName, modelName, bgName = null, onBack = null
 
 // 🔥 Вспомогательная функция, которая заполняет нижнюю часть модалки, не трогая Lottie-анимацию
 function renderModelDetailViewBody(modelData, preloadedData) {
+    const t = (key, fallback) => window.NFTi18n ? window.NFTi18n.t(key, fallback) : fallback;
     const dataZone = document.getElementById('details-data-zone');
     const visualArea = document.getElementById('visual-area-container');
     
@@ -1714,16 +1715,16 @@ function renderModelDetailViewBody(modelData, preloadedData) {
     dataZone.innerHTML = `
         <div class="modal-info info-table">
             <div class="info-row">
-                <span class="info-label">Модель</span>
+                <span class="info-label">${t('modal_model', 'Модель')}</span>
                 <a href="../Monohrome/background-finder.html?mode=findBgs&gift=${encodeURIComponent(modelData.GiftName)}&model=${encodeURIComponent(modelData.ModelName)}${modelPrice > 0 ? `&price=${modelPrice}` : ''}" class="info-value link-style">
                     ${modelData.ModelName}${priceHtml}
                 </a>
             </div>
             
             <div class="info-row" id="tm-bg-accordion-trigger" style="cursor: pointer;">
-                <span class="info-label">Фон</span>
+                <span class="info-label">${t('modal_backdrop', 'Фон')}</span>
                 <div class="info-value link-style" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-                    <span id="tm-current-bg-text">${initialBgName || 'Выбрать...'}</span>
+                    <span id="tm-current-bg-text">${initialBgName || t('modal_choose', 'Выбрать...')}</span>
                     <svg id="tm-bg-arrow" class="nfts-arrow" style="width:16px;height:16px; transition: transform 0.3s;" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M19 9l-7 7-7-7" stroke-width="3"/></svg>
                 </div>
             </div>
@@ -1733,17 +1734,17 @@ function renderModelDetailViewBody(modelData, preloadedData) {
             </div>
 
             <div class="info-row">
-                <span class="info-label">Совпадение</span>
+                <span class="info-label">${t('modal_compat', 'Совпадение')}</span>
                 <span id="tm-compat-val" class="info-value compat">${initialPercent}${initialPercent !== '—' ? '%' : ''}</span>
             </div>
 
             <div class="info-row">
-                <span class="info-label">Количество</span>
-                <span class="info-value count">${modelData.Count || '-'} шт.</span>
+                <span class="info-label">${t('modal_quantity', 'Количество')}</span>
+                <span class="info-value count">${modelData.Count || '-'} ${t('pcs', 'шт.')}</span>
             </div>
 
             <div class="info-row" id="tm-v2-accordion-trigger" style="cursor: pointer; border-bottom: none; display: none;">
-                <span class="info-label">Тематики</span>
+                <span class="info-label">${t('modal_themes', 'Тематики')}</span>
                 <div class="info-value link-style" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
                     <span id="tm-v2-count-val"></span>
                     <svg id="tm-v2-arrow" class="nfts-arrow" style="width:16px;height:16px; transition: transform 0.3s;" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M19 9l-7 7-7-7" stroke-width="3"/></svg>
@@ -1757,18 +1758,18 @@ function renderModelDetailViewBody(modelData, preloadedData) {
         <div class="gold-button-container" id="tm-similar-btn-container"></div>
 
         <div class="market-tree-v2">
-            <div class="mt-root">ПОИСК НА МАРКЕТАХ</div>
+            <div class="mt-root">${t('modal_search_on_markets', 'ПОИСК НА МАРКЕТАХ')}</div>
             <div class="mt-branches">
                 <div class="mt-item-container">
-                    <div class="mt-item"><div class="mt-label">Самые дешевые</div><button class="mt-btn" data-scenario="2">Найти</button></div>
+                    <div class="mt-item"><div class="mt-label">${t('modal_cheapest', 'Самые дешевые')}</div><button class="mt-btn" data-scenario="2">${t('modal_find', 'Найти')}</button></div>
                     <div class="mt-content hidden" id="content-scenario-2"><div class="mt-horizontal-scroll" id="grid-scenario-2"></div><div class="nfts-loading hidden"><span class="loading-spinner-mini"></span></div></div>
                 </div>
                 <div class="mt-item-container">
-                    <div class="mt-item"><div class="mt-label">Лучшие монохромы</div><button class="mt-btn" data-scenario="1">Найти</button></div>
+                    <div class="mt-item"><div class="mt-label">${t('modal_best_monochromes', 'Лучшие монохромы')}</div><button class="mt-btn" data-scenario="1">${t('modal_find', 'Найти')}</button></div>
                     <div class="mt-content hidden" id="content-scenario-1"><div class="mt-horizontal-scroll" id="grid-scenario-1"></div><div class="nfts-loading hidden"><span class="loading-spinner-mini"></span></div></div>
                 </div>
                 <div class="mt-item-container" id="branch-3-container" style="display:none;">
-                    <div class="mt-item"><div class="mt-label">На фоне <span id="tree-bg-label" style="color:var(--primary-color)"></span></div><button class="mt-btn" data-scenario="3">Найти</button></div>
+                    <div class="mt-item"><div class="mt-label">${t('modal_on_backdrop', 'На фоне')} <span id="tree-bg-label" style="color:var(--primary-color)"></span></div><button class="mt-btn" data-scenario="3">${t('modal_find', 'Найти')}</button></div>
                     <div class="mt-content hidden" id="content-scenario-3"><div class="mt-horizontal-scroll" id="grid-scenario-3"></div><div class="nfts-loading hidden"><span class="loading-spinner-mini"></span></div></div>
                 </div>
             </div>
@@ -1776,8 +1777,8 @@ function renderModelDetailViewBody(modelData, preloadedData) {
 
         <div class="market-tree-v2 standalone-search-zone" id="branch-4-container" style="margin-top: 12px; border-top: none; display: none;">
             <div class="mt-root standalone" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0;">
-                <span>ПОИСК <span style="color:var(--primary-color)">модель+фон</span></span>
-                <button class="mt-btn" data-scenario="4">Найти</button>
+                <span>${t('modal_search_model_backdrop', 'ПОИСК модель+фон')}</span>
+                <button class="mt-btn" data-scenario="4">${t('modal_find', 'Найти')}</button>
             </div>
             <div class="mt-content hidden" id="content-scenario-4" style="margin-top: 16px;">
                 <div class="nfts-grid grid-3" id="grid-scenario-4"></div>
@@ -1821,7 +1822,7 @@ function renderModelDetailViewBody(modelData, preloadedData) {
             if (vArea) vArea.style.background = 'transparent';
         }
 
-        if (bgText) bgText.textContent = newBgName || 'Выбрать...';
+        if (bgText) bgText.textContent = newBgName || t('modal_choose', 'Выбрать...');
         if (compatVal) compatVal.textContent = `${matchPrc}${matchPrc !== '—' ? '%' : ''}`;
 
         pItems.forEach(item => {
@@ -1831,9 +1832,9 @@ function renderModelDetailViewBody(modelData, preloadedData) {
 
         // 3. СТАВИМ ПРОЧЕРК ВМЕСТО ТЯЖЕЛОГО ЗАПРОСА
         if (newBgName) {
-            countEls.forEach(el => el.textContent = '- шт.');
+            countEls.forEach(el => el.textContent = `- ${t('pcs', 'шт.')}`);
         } else {
-            countEls.forEach(el => el.textContent = `${modelData.Count || '-'} шт.`);
+            countEls.forEach(el => el.textContent = `${modelData.Count || '-'} ${t('pcs', 'шт.')}`);
         }
 
         // Обновляем маркет-зону под новый фон
@@ -1849,7 +1850,7 @@ function renderModelDetailViewBody(modelData, preloadedData) {
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;color:var(--text-muted);"><path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /></svg>
             </div>
             <div class="bg-palette-percent" style="font-size:0.6rem;">—</div>
-            <div style="font-size: 0.65rem; color: var(--text-muted); font-weight: 600; margin-top: 2px; text-align: center; width: 100%; white-space: nowrap;">Без фона</div>
+            <div style="font-size: 0.65rem; color: var(--text-muted); font-weight: 600; margin-top: 2px; text-align: center; width: 100%; white-space: nowrap;">${t('modal_no_backdrop', 'Без фона')}</div>
         </div>
     `;
     paletteContainer.firstElementChild.onclick = (e) => { e.stopPropagation(); if (currentBgName !== null) reloadWithBg(null); };
@@ -1879,7 +1880,7 @@ function renderModelDetailViewBody(modelData, preloadedData) {
         const v2Grid = document.getElementById('tm-v2-grid');
 
         v2Trigger.style.display = 'grid';
-        document.getElementById('tm-v2-count-val').textContent = preloadedData.v2Themes.length + ' шт.';
+        document.getElementById('tm-v2-count-val').textContent = preloadedData.v2Themes.length + ' ' + t('pcs', 'шт.');
 
         v2Trigger.onclick = () => {
             v2Content.classList.toggle('hidden');
@@ -1914,6 +1915,7 @@ function renderModelDetailViewBody(modelData, preloadedData) {
 // Функцию `renderModelDetailView` можно вообще удалить, так как мы используем `renderModelDetailViewBody`
 
 function updateModelDetailView(modelData, preloadedData) {
+    const t = (key, fallback) => window.NFTi18n ? window.NFTi18n.t(key, fallback) : fallback;
     let initialBgName = preloadedData?.bgData?.name || currentBgName || null;
     let initialPercent = preloadedData?.bgData?.matchPercent || '—';
 
@@ -1928,13 +1930,13 @@ function updateModelDetailView(modelData, preloadedData) {
     }
 
     const bgText = document.getElementById('tm-current-bg-text');
-    if (bgText) bgText.textContent = initialBgName || 'Выбрать...';
+    if (bgText) bgText.textContent = initialBgName || t('modal_choose', 'Выбрать...');
 
     const compatVal = document.getElementById('tm-compat-val');
     if (compatVal) compatVal.textContent = `${initialPercent}${initialPercent !== '—' ? '%' : ''}`;
 
     const countEls = document.querySelectorAll('.info-value.count');
-    countEls.forEach(el => { el.textContent = `${modelData.Count || '-'} шт.`; });
+    countEls.forEach(el => { el.textContent = `${modelData.Count || '-'} ${t('pcs', 'шт.')}`; });
 
     const paletteItems = document.querySelectorAll('.bg-palette-item');
     paletteItems.forEach(item => {
@@ -2060,7 +2062,7 @@ function renderSimilarButtonWithData(container, giftName, modelName, responseDat
     // 2. Оборачиваем текст в SPAN и даем ему line-height: 1 для вертикального центра
     btn.innerHTML = `
         ${img1}
-        <span style="display:inline-block; line-height:1; padding-top:1px;">Похожие по цвету</span>
+        <span style="display:inline-block; line-height:1; padding-top:1px;">${window.NFTi18n ? window.NFTi18n.t('btn_similar_colors', 'Похожие по цвету') : 'Похожие по цвету'}</span>
         ${img2}
     `;
 
