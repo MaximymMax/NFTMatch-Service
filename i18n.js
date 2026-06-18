@@ -577,27 +577,24 @@
         const style = document.createElement('style');
         style.textContent = `
             #nft-top-bar {
+                position: fixed;
+                top: 8px;
+                left: 0;
+                right: 0;
+                z-index: 10001;
                 display: flex;
                 align-items: center;
                 justify-content: ${isTelegramWebApp ? 'center' : 'space-between'};
-                padding: 8px 16px;
+                padding: 0 16px;
                 box-sizing: border-box;
-                width: 100%;
-                min-height: 52px;
-                position: relative;
-            }
-            body.modal-open #nft-top-bar,
-            body.body-gated #nft-top-bar,
-            body:has(#tg-profile-modal) #nft-top-bar,
-            body:has(.sub-modal-overlay.active) #nft-top-bar,
-            body:has(#themes-modal-overlay:not(.hidden)) #nft-top-bar,
-            body:has(#nftDetailsModalOverlay:not(.hidden)) #nft-top-bar {
-                display: none !important;
+                height: 48px;
+                pointer-events: none;
             }
             .lang-switcher-container {
+                pointer-events: all;
                 display: flex;
                 gap: 4px;
-                background: rgba(22, 33, 58, 0.75);
+                background: rgba(22, 33, 58, 0.85);
                 backdrop-filter: blur(10px);
                 -webkit-backdrop-filter: blur(10px);
                 border: 1px solid rgba(255, 255, 255, 0.08);
@@ -628,14 +625,16 @@
                 color: rgba(255, 255, 255, 0.9);
                 background: rgba(255, 255, 255, 0.05);
             }
-            /* auth-badge внутри бара — позиционируется само flex-ом */
+            /* auth-badge внутри бара */
             #tg-auth-badge {
                 position: static !important;
                 transform: none !important;
                 top: auto !important;
                 right: auto !important;
+                pointer-events: all !important;
             }
         `;
+
 
         document.head.appendChild(style);
         // Вставляем бар первым элементом в body
