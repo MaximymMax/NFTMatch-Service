@@ -578,7 +578,7 @@
         style.textContent = `
             #nft-top-bar {
                 position: fixed;
-                top: 8px;
+                top: 20px;
                 left: 0;
                 right: 0;
                 z-index: 10001;

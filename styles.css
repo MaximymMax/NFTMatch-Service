@@ -76,7 +76,7 @@ main {
     align-items: center;    /* Центрируем их */
     justify-content: flex-start;
     padding: 1rem;
-    padding-top: 60px;
+    padding-top: 100px;
     padding-bottom: 40px;
     width: 100%;
 }
