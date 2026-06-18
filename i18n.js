@@ -545,15 +545,21 @@
         document.documentElement.lang = currentLang;
     }
 
-    // Динамическое добавление плашки переключения языка сверху по центру
+    // Динамическое добавление верхней шапки с переключателем языка
     function injectLangSwitcher() {
-        if (document.getElementById('lang-switcher-container')) return;
+        if (document.getElementById('nft-top-bar')) return;
 
-        // Создаем контейнер переключателя
+        const isTelegramWebApp = !!(window.Telegram?.WebApp?.initData || (window.Telegram?.WebApp?.platform && window.Telegram.WebApp.platform !== 'unknown'));
+
+        // Создаём общую шапку-бар
+        const bar = document.createElement('div');
+        bar.id = 'nft-top-bar';
+
+        // Создаем контейнер переключателя языка
         const container = document.createElement('div');
         container.id = 'lang-switcher-container';
         container.className = 'lang-switcher-container';
-        
+
         const ruBtn = document.createElement('button');
         ruBtn.className = `lang-btn ${currentLang === 'ru' ? 'active' : ''}`;
         ruBtn.textContent = 'RU';
@@ -566,21 +572,45 @@
 
         container.appendChild(ruBtn);
         container.appendChild(enBtn);
+        bar.appendChild(container);
 
-        const isTelegramWebApp = !!(window.Telegram?.WebApp?.initData || (window.Telegram?.WebApp?.platform && window.Telegram.WebApp.platform !== 'unknown'));
+        // Стили
+        const BAR_HEIGHT = 48;
+        const TOP_OFFSET = isTelegramWebApp ? 44 : 0;
 
-        // Стили для переключателя
         const style = document.createElement('style');
         style.textContent = `
-            .lang-switcher-container {
+            #nft-top-bar {
                 position: fixed;
-                top: ${isTelegramWebApp ? '60px' : '15px'};
-                left: ${isTelegramWebApp ? '50%' : '15px'};
-                ${isTelegramWebApp ? 'transform: translateX(-50%);' : 'transform: none;'}
+                top: ${TOP_OFFSET}px;
+                left: 0;
+                right: 0;
+                height: ${BAR_HEIGHT}px;
                 z-index: 99;
                 display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 0 12px;
+                box-sizing: border-box;
+                pointer-events: none;
+            }
+            body.modal-open #nft-top-bar,
+            body.body-gated #nft-top-bar,
+            body:has(#tg-profile-modal) #nft-top-bar,
+            body:has(.sub-modal-overlay) #nft-top-bar,
+            body:has(.sub-modal-overlay.active) #nft-top-bar,
+            body:has(#themes-modal-overlay:not(.hidden)) #nft-top-bar,
+            body:has(#nftDetailsModalOverlay:not(.hidden)) #nft-top-bar,
+            body:has([id*="modal-overlay"]) #nft-top-bar,
+            body:has([id*="ModalOverlay"]) #nft-top-bar,
+            body:has([class*="modal-overlay"]) #nft-top-bar {
+                display: none !important;
+            }
+            .lang-switcher-container {
+                pointer-events: all;
+                display: flex;
                 gap: 4px;
-                background: rgba(22, 33, 58, 0.7);
+                background: rgba(22, 33, 58, 0.75);
                 backdrop-filter: blur(10px);
                 -webkit-backdrop-filter: blur(10px);
                 border: 1px solid rgba(255, 255, 255, 0.08);
@@ -588,18 +618,6 @@
                 padding: 4px;
                 box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
                 font-family: 'Inter', sans-serif;
-            }
-            body.modal-open .lang-switcher-container,
-            body.body-gated .lang-switcher-container,
-            body:has(#tg-profile-modal) .lang-switcher-container,
-            body:has(.sub-modal-overlay) .lang-switcher-container,
-            body:has(.sub-modal-overlay.active) .lang-switcher-container,
-            body:has(#themes-modal-overlay:not(.hidden)) .lang-switcher-container,
-            body:has(#nftDetailsModalOverlay:not(.hidden)) .lang-switcher-container,
-            body:has([id*="modal-overlay"]) .lang-switcher-container,
-            body:has([id*="ModalOverlay"]) .lang-switcher-container,
-            body:has([class*="modal-overlay"]) .lang-switcher-container {
-                display: none !important;
             }
             .lang-btn {
                 background: none;
@@ -623,11 +641,23 @@
                 color: rgba(255, 255, 255, 0.9);
                 background: rgba(255, 255, 255, 0.05);
             }
+            /* Слот для плашки авторизации справа */
+            #tg-auth-badge {
+                position: absolute !important;
+                top: 50% !important;
+                right: 12px !important;
+                transform: translateY(-50%) !important;
+                pointer-events: all;
+            }
         `;
 
         document.head.appendChild(style);
-        document.body.appendChild(container);
+        document.body.insertBefore(bar, document.body.firstChild);
+
+        // Добавляем отступ сверху чтобы контент не уходил под шапку
+        document.body.style.paddingTop = (TOP_OFFSET + BAR_HEIGHT) + 'px';
     }
+
 
     function setLanguage(lang) {
         if (SUPPORTED_LANGS.includes(lang)) {
