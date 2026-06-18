@@ -551,11 +551,11 @@
 
         const isTelegramWebApp = !!(window.Telegram?.WebApp?.initData || (window.Telegram?.WebApp?.platform && window.Telegram.WebApp.platform !== 'unknown'));
 
-        // Создаём общую шапку-бар
+        // Создаём шапку-бар
         const bar = document.createElement('div');
         bar.id = 'nft-top-bar';
 
-        // Создаем контейнер переключателя языка
+        // Переключатель языка
         const container = document.createElement('div');
         container.id = 'lang-switcher-container';
         container.className = 'lang-switcher-container';
@@ -574,40 +574,27 @@
         container.appendChild(enBtn);
         bar.appendChild(container);
 
-        // Стили
-        const BAR_HEIGHT = 48;
-        const TOP_OFFSET = isTelegramWebApp ? 44 : 0;
-
         const style = document.createElement('style');
         style.textContent = `
             #nft-top-bar {
-                position: fixed;
-                top: ${TOP_OFFSET}px;
-                left: 0;
-                right: 0;
-                height: ${BAR_HEIGHT}px;
-                z-index: 99;
                 display: flex;
                 align-items: center;
-                justify-content: center;
-                padding: 0 12px;
+                justify-content: ${isTelegramWebApp ? 'center' : 'space-between'};
+                padding: 8px 16px;
                 box-sizing: border-box;
-                pointer-events: none;
+                width: 100%;
+                min-height: 52px;
+                position: relative;
             }
             body.modal-open #nft-top-bar,
             body.body-gated #nft-top-bar,
             body:has(#tg-profile-modal) #nft-top-bar,
-            body:has(.sub-modal-overlay) #nft-top-bar,
             body:has(.sub-modal-overlay.active) #nft-top-bar,
             body:has(#themes-modal-overlay:not(.hidden)) #nft-top-bar,
-            body:has(#nftDetailsModalOverlay:not(.hidden)) #nft-top-bar,
-            body:has([id*="modal-overlay"]) #nft-top-bar,
-            body:has([id*="ModalOverlay"]) #nft-top-bar,
-            body:has([class*="modal-overlay"]) #nft-top-bar {
+            body:has(#nftDetailsModalOverlay:not(.hidden)) #nft-top-bar {
                 display: none !important;
             }
             .lang-switcher-container {
-                pointer-events: all;
                 display: flex;
                 gap: 4px;
                 background: rgba(22, 33, 58, 0.75);
@@ -641,22 +628,20 @@
                 color: rgba(255, 255, 255, 0.9);
                 background: rgba(255, 255, 255, 0.05);
             }
-            /* Слот для плашки авторизации справа */
+            /* auth-badge внутри бара — позиционируется само flex-ом */
             #tg-auth-badge {
-                position: absolute !important;
-                top: 50% !important;
-                right: 12px !important;
-                transform: translateY(-50%) !important;
-                pointer-events: all;
+                position: static !important;
+                transform: none !important;
+                top: auto !important;
+                right: auto !important;
             }
         `;
 
         document.head.appendChild(style);
+        // Вставляем бар первым элементом в body
         document.body.insertBefore(bar, document.body.firstChild);
-
-        // Добавляем отступ сверху чтобы контент не уходил под шапку
-        document.body.style.paddingTop = (TOP_OFFSET + BAR_HEIGHT) + 'px';
     }
+
 
 
     function setLanguage(lang) {
