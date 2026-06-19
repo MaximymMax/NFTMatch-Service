@@ -527,7 +527,17 @@ document.addEventListener('DOMContentLoaded', () => {
         const track = document.getElementById('hero-carousel-track');
         if (!wrapper || !track) return;
 
-        const CAROUSEL_CACHE_KEY = 'heroCarouselItems';
+        const CAROUSEL_CACHE_KEY = 'heroCarouselItemsMonochrome';
+        const BACKGROUND_COLORS = {
+            "Amber": "#C59937",
+            "Celtic Blue": "#3E9FE3",
+            "French Violet": "#A957DF",
+            "Mexican Pink": "#D65787",
+            "Mint Green": "#61B46E",
+            "Fire Engine": "#DA4C4C",
+            "Carbon": "#32373F",
+            "Gold": "#F5C453"
+        };
 
         const renderCards = (items) => {
             track.innerHTML = '';
@@ -535,11 +545,28 @@ document.addEventListener('DOMContentLoaded', () => {
                 items.forEach(item => {
                     const card = document.createElement('div');
                     card.className = 'carousel-card';
-                    card.style.backgroundColor = item.ColorHex || '#333';
+                    card.addEventListener('click', () => {
+                        if (item.TelegramUrl) {
+                            window.open(item.TelegramUrl, '_blank');
+                        }
+                    });
+
+                    const imgWrapper = document.createElement('div');
+                    imgWrapper.className = 'carousel-card-img-wrapper';
+                    imgWrapper.style.backgroundColor = BACKGROUND_COLORS[item.BackgroundName] || '#333';
+
                     const img = document.createElement('img');
-                    img.src = `https://cdn.changes.tg/gifts/models/${encodeURIComponent(item.GiftName)}/png/${encodeURIComponent(item.ModelName)}.png`;
+                    img.src = item.ImageUrl;
                     img.alt = item.ModelName;
-                    card.appendChild(img);
+
+                    imgWrapper.appendChild(img);
+                    card.appendChild(imgWrapper);
+
+                    const priceSpan = document.createElement('span');
+                    priceSpan.className = 'carousel-card-price';
+                    priceSpan.textContent = `${item.Price} TON`;
+                    card.appendChild(priceSpan);
+
                     track.appendChild(card);
                 });
             }
@@ -558,22 +585,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // 2. Если данных не было в кэше, грузим с сервера
         if (!data) {
-            let authHeader = 'Tma invalid';
-            const initData = sessionStorage.getItem(INIT_DATA_KEY);
-            if (initData) authHeader = `Tma ${initData}`;
-            else {
-                const bypass = sessionStorage.getItem(BYPASS_KEY_STORAGE);
-                if (bypass) authHeader = `Tma ${bypass}`;
-            }
-
-            const TARGET_COLLECTION = [];
-
             try {
-                const response = await fetch(`${SERVER_BASE_URL}/api/MonoCoof/GetCollectionGradient/40`, {
-                    method: 'POST',
-                    headers: { 'Authorization': authHeader, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ "CollectionNames": TARGET_COLLECTION })
-                });
+                const response = await fetch(`${SERVER_BASE_URL}/api/MonoCoof/LiveMonochromeCache?backgroundName=random`);
 
                 if (!response.ok) throw new Error('API Error');
                 data = await response.json();

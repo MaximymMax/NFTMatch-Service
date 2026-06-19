@@ -115,20 +115,39 @@ main {
     background: var(--surface-color);
     border-radius: var(--radius);
     box-shadow: var(--card-shadow);
-    padding: 5px 1rem; /* Небольшой отступ внутри */
-    margin-bottom: 1rem; /* Отступ до главного контейнера */
+    padding: 14px 1rem 8px 1rem;
+    margin-bottom: 1rem;
     position: relative;
     overflow: hidden;
     z-index: 10;
+}
+
+.carousel-ribbon {
+    position: absolute;
+    top: 8px;
+    left: -28px;
+    background: linear-gradient(135deg, #f43f5e 0%, #ec4899 100%);
+    color: #fff;
+    font-size: 0.55rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    padding: 2px 28px;
+    transform: rotate(-45deg);
+    text-align: center;
+    letter-spacing: 0.05em;
+    z-index: 15;
+    pointer-events: none;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+    box-sizing: border-box;
 }
 
 /* --- CAROUSEL STYLES --- */
 .hero-carousel-wrapper {
     position: relative;
     width: 100%;
-    height: 70px;
+    height: 90px;
     overflow: hidden;
-    margin-bottom: 0; /* Убрали старый отступ */
+    margin-bottom: 0;
     -webkit-mask-image: linear-gradient(to right, transparent 0%, black 15%, black 85%, transparent 100%);
     mask-image: linear-gradient(to right, transparent 0%, black 15%, black 85%, transparent 100%);
     opacity: 1;
@@ -160,6 +179,19 @@ main {
 .carousel-card {
     flex: 0 0 auto;
     width: 50px;
+    height: 85px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 5px;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.carousel-card-img-wrapper {
+    width: 50px;
     height: 50px;
     border-radius: 12px;
     display: flex;
@@ -168,11 +200,10 @@ main {
     position: relative;
     overflow: hidden;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-    user-select: none;
-    -webkit-user-select: none;
+    transition: transform 0.2s ease;
 }
 
-.carousel-card::after {
+.carousel-card-img-wrapper::after {
     content: '';
     position: absolute;
     top: 0;
@@ -184,13 +215,22 @@ main {
     pointer-events: none;
 }
 
-.carousel-card img {
+.carousel-card-img-wrapper img {
     width: 80%;
     height: 80%;
     object-fit: contain;
     z-index: 2;
     filter: drop-shadow(0 4px 4px rgba(0, 0, 0, 0.2));
     pointer-events: none;
+}
+
+.carousel-card-price {
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    text-align: center;
+    white-space: nowrap;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.5);
 }
 
 /* --- СВЕЧЕНИЕ (Опущено ниже и осветлено) --- */

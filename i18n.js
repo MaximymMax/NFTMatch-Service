@@ -23,6 +23,7 @@
             "card_support_title": "Поддержка",
             "card_support_desc": "Поддержать развитие проекта.",
             "deep_link_loading": "Загрузка...",
+            "ribbon_on_sale": "в продаже",
             
             // Monochrome page
             "mode_combo": "Комбо",
@@ -255,6 +256,7 @@
             "card_support_title": "Support",
             "card_support_desc": "Support the project development.",
             "deep_link_loading": "Loading...",
+            "ribbon_on_sale": "on sale",
             
             // Monochrome page
             "mode_combo": "Combo",
