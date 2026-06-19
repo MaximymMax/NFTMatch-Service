@@ -527,7 +527,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const track = document.getElementById('hero-carousel-track');
         if (!wrapper || !track) return;
 
-        const CAROUSEL_CACHE_KEY = 'heroCarouselItemsMonochrome';
         const BACKGROUND_COLORS = {
             "Amber": "#C59937",
             "Celtic Blue": "#3E9FE3",
@@ -537,6 +536,15 @@ document.addEventListener('DOMContentLoaded', () => {
             "Fire Engine": "#DA4C4C",
             "Carbon": "#32373F",
             "Gold": "#F5C453"
+        };
+
+        const shuffleItems = (items) => {
+            const shuffled = [...items];
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            return shuffled;
         };
 
         const renderCards = (items) => {
@@ -575,22 +583,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
         let data = null;
 
-        // 2. Если данных не было в кэше, грузим с сервера
-        if (!data) {
-            try {
-                const response = await fetch(`${SERVER_BASE_URL}/api/MonoCoof/LiveMonochromeCache?backgroundName=random`);
-
-                if (!response.ok) throw new Error('API Error');
-                data = await response.json();
-
-                if (data && data.length > 0) {
-                    renderCards(data);
+        try {
+            const cacheBust = `${Date.now().toString(36)}${Math.random().toString(36).slice(2)}`;
+            const response = await fetch(`${SERVER_BASE_URL}/api/MonoCoof/LiveMonochromeCache?backgroundName=Random&_=${cacheBust}`, {
+                cache: 'no-store',
+                headers: {
+                    'Cache-Control': 'no-cache',
+                    'Pragma': 'no-cache'
                 }
-            } catch (e) {
-                console.error(e);
-                wrapper.classList.add('hidden');
-                return;
+            });
+
+            if (!response.ok) throw new Error('API Error');
+            const payload = await response.json();
+            const items = Array.isArray(payload) ? payload : (Array.isArray(payload?.value) ? payload.value : []);
+            data = shuffleItems(items).slice(0, 50);
+
+            if (data.length > 0) {
+                renderCards(data);
             }
+        } catch (e) {
+            console.error(e);
+            wrapper.classList.add('hidden');
+            return;
         }
 
         if (data && data.length > 0) {
