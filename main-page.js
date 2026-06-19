@@ -564,7 +564,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     const priceSpan = document.createElement('span');
                     priceSpan.className = 'carousel-card-price';
-                    priceSpan.textContent = `${item.Price} TON`;
+                    priceSpan.textContent = `${Number(item.Price).toFixed(1)} TON`;
                     card.appendChild(priceSpan);
 
                     track.appendChild(card);
@@ -573,15 +573,7 @@ document.addEventListener('DOMContentLoaded', () => {
             wrapper.classList.remove('hidden');
         };
 
-        const cachedData = sessionStorage.getItem(CAROUSEL_CACHE_KEY);
         let data = null;
-
-        if (cachedData) {
-            try {
-                data = JSON.parse(cachedData);
-                renderCards(data);
-            } catch (e) { console.error('Cache parse error', e); }
-        }
 
         // 2. Если данных не было в кэше, грузим с сервера
         if (!data) {
@@ -592,7 +584,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 data = await response.json();
 
                 if (data && data.length > 0) {
-                    sessionStorage.setItem(CAROUSEL_CACHE_KEY, JSON.stringify(data));
                     renderCards(data);
                 }
             } catch (e) {
