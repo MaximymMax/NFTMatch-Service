@@ -586,11 +586,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const cacheBust = `${Date.now().toString(36)}${Math.random().toString(36).slice(2)}`;
             const response = await fetch(`${SERVER_BASE_URL}/api/MonoCoof/LiveMonochromeCache?backgroundName=Random&_=${cacheBust}`, {
-                cache: 'no-store',
-                headers: {
-                    'Cache-Control': 'no-cache',
-                    'Pragma': 'no-cache'
-                }
+                cache: 'no-store'
             });
 
             if (!response.ok) throw new Error('API Error');
