@@ -8,6 +8,40 @@ let observerMap = new Map();
 
 const tg = window.Telegram.WebApp;
 
+let idToNameDictLocal = null;
+fetch('https://cdn.changes.tg/gifts/id-to-name.json')
+    .then(r => r.json())
+    .then(data => {
+        idToNameDictLocal = data;
+        window.idToNameDict = data;
+    })
+    .catch(err => console.error("Failed to load collection dict in gift-page", err));
+
+function getGiftIdByName(name) {
+    if (!name) return null;
+    const searchStr = name.toLowerCase().trim();
+    
+    // 1. Ищем в динамически загруженном словаре
+    const dict = idToNameDictLocal || window.idToNameDict;
+    if (dict) {
+        const entry = Object.entries(dict).find(([id, val]) => (val || '').toLowerCase().trim() === searchStr);
+        if (entry) return entry[0];
+    }
+    
+    // 2. Фолбэк на статический словарь
+    if (GIFT_NAME_TO_ID && GIFT_NAME_TO_ID[name]) {
+        return GIFT_NAME_TO_ID[name];
+    }
+    
+    // 3. Фолбэк на нечеткий поиск в статическом словаре
+    if (GIFT_NAME_TO_ID) {
+        const entry = Object.entries(GIFT_NAME_TO_ID).find(([key, id]) => key.toLowerCase().trim() === searchStr);
+        if (entry) return entry[1];
+    }
+    
+    return null;
+}
+
 const GIFT_NAME_TO_ID = {
     "Santa Hat": "5983471780763796287",
     "Signet Ring": "5936085638515261992",
@@ -573,7 +607,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         if (type === 'gift') {
-            const giftId = GIFT_NAME_TO_ID[name];
+            const giftId = getGiftIdByName(name);
             if (giftId) {
                 const imageUrl = `${API_GIFT_ORIGINALS_URL}/${giftId}/Original.png`;
                 imageHtml = generateImageTag(imageUrl);
@@ -609,7 +643,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const placeholderImg = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
         let imageHtml = '';
-        const giftId = GIFT_NAME_TO_ID[name];
+        const giftId = getGiftIdByName(name);
 
         if (giftId) {
             const imageUrl = `${API_GIFT_ORIGINALS_URL}/${giftId}/Original.png`;
