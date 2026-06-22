@@ -2139,6 +2139,7 @@ if (sortSwitcher) {
             let name = '';
             if (type === 'color') name = item.name;
             else if (type === 'model') name = item.NameModel; 
+            else if (type === 'gift') name = typeof item === 'string' ? item : item.Name;
             else name = item; 
 
             return name.toLowerCase().includes(searchText);
