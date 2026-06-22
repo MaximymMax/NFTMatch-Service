@@ -1916,10 +1916,10 @@ if (sortSwitcher) {
             requestBody = results.map(bg => ({
                 NameGift: giftName,
                 NameModel: modelName,
-                BackgroundName: bg.id // id здесь это имя цвета (напр. "Amber")
+                BackgroundName: bg.name
             }));
         } else if (mode === 'findModels') {
-            const bgName = state.findModels.selectedColor.id;
+            const bgName = state.findModels.selectedColor.name;
             requestBody = results.map(model => ({
                 NameGift: giftName,
                 NameModel: model.modelName,
@@ -1945,7 +1945,7 @@ if (sortSwitcher) {
                 });
 
                 results.forEach(bg => {
-                    bg.count = countMap.has(bg.id) ? countMap.get(bg.id) : null;
+                    bg.count = countMap.has(bg.name) ? countMap.get(bg.name) : null;
                 });
             } else if (mode === 'findModels') {
                 countsData.forEach(item => {
