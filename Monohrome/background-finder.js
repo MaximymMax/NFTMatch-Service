@@ -1789,7 +1789,7 @@ if (sortSwitcher) {
             console.log('%c[API Success] Received background data:', 'color: green', serverData);
 
             const enrichedBgs = serverData.map(item => {
-                const foundColor = fixedColors.find(fc => fc.id === item.Key);
+                const foundColor = fixedColors.find(fc => fc.id === item.Key || fc.name === item.Key);
                 return foundColor ? { ...foundColor, compatValue: item.Value } : null;
             }).filter(Boolean);
 
