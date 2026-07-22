@@ -42,6 +42,14 @@ function isNonUniqueGift(g) {
 function buildGiftBuyLink(modelId) {
     return `https://t.me/NFTMatchBot?start=buy-${modelId}`;
 }
+// У неуникальных подарков нет своей папки models/{GiftName}/... (GiftName у них всегда служебный "Default") —
+// их картинка/анимация лежат под собственным Telegram-ID подарка, как и у иконок целых коллекций.
+function getNonUniqueImageUrl(sourceId) {
+    return `https://cdn.changes.tg/gifts/originals/${sourceId}/Original.png`;
+}
+function getNonUniqueLottieUrl(sourceId) {
+    return `https://cdn.changes.tg/gifts/originals/${sourceId}/Original.json`;
+}
 
 
 let currentThemeName = '';
@@ -1349,7 +1357,7 @@ function renderV2ThemeContent(models, container, nodeId, nodeType, isSingleColle
         card.className = 'v2-model-card';
         card.style.setProperty('--card-gradient-color', colorHex);
 
-        const imgUrl = window.getModelImageUrl(giftName, modelName);
+        const imgUrl = isNonUniqueGift(m) ? getNonUniqueImageUrl(m.SourceId) : window.getModelImageUrl(giftName, modelName);
 
         let gradientHtml = `<div class="v2-mc-gradient"></div>`;
         // Заменяем src на прозрачный GIF, а реальный URL прячем в data-src
@@ -1571,7 +1579,9 @@ function renderV2ThemeContent(models, container, nodeId, nodeType, isSingleColle
 // происходит в самом Telegram по ссылке, апп ничего не покупает.
 function renderNonUniqueDetailView(modelData) {
     const t = (key, fallback) => window.NFTi18n ? window.NFTi18n.t(key, fallback) : fallback;
-    const lottieUrl = `${PHOTO_URL}/${encodeURIComponent(modelData.GiftName)}/lottie/${encodeURIComponent(modelData.ModelName)}.json`;
+    const lottieUrl = modelData.SourceId
+        ? getNonUniqueLottieUrl(modelData.SourceId)
+        : `${PHOTO_URL}/${encodeURIComponent(modelData.GiftName)}/lottie/${encodeURIComponent(modelData.ModelName)}.json`;
     const stars = modelData.StarsPrice || 50;
     const buyLink = buildGiftBuyLink(modelData.ModelId);
 
@@ -1581,7 +1591,7 @@ function renderNonUniqueDetailView(modelData) {
                 <button id="dm-back-btn" class="themes-modal-back-btn" style="visibility: hidden; pointer-events: none; display: flex;">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" /></svg>
                 </button>
-                <h3 class="modal-title">${modelData.GiftName}</h3>
+                <h3 class="modal-title"></h3>
                 <button id="dm-close-btn" class="themes-modal-close-btn">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
@@ -1591,10 +1601,8 @@ function renderNonUniqueDetailView(modelData) {
                 <lottie-player src="${lottieUrl}" background="transparent" speed="1" loop autoplay></lottie-player>
             </div>
 
-            <div class="modal-info info-table" style="border: none;">
-                <div class="info-row" style="justify-content: center; border-bottom: none;">
-                    <span class="info-label" style="font-size: 1.05rem; font-weight: 700; color: #fff;">${modelData.ModelName}</span>
-                </div>
+            <div style="text-align: center; padding: 1rem 1.5rem 0.5rem 1.5rem;">
+                <span style="font-size: 1.1rem; font-weight: 700; color: #fff;">${modelData.ModelName}</span>
             </div>
 
             <div class="gold-button-container">
@@ -2984,7 +2992,7 @@ function renderV2ItemsGrid(itemsList, container, parentNodeId, parentNodeType, n
                     const card = document.createElement('div');
                     card.className = 'v2-model-card';
                     card.style.setProperty('--card-gradient-color', mColorHex);
-                    const imgUrl = window.getModelImageUrl(giftName, modelName);
+                    const imgUrl = isNonUniqueGift(m) ? getNonUniqueImageUrl(m.SourceId) : window.getModelImageUrl(giftName, modelName);
 
                     if (isCollectionMarker) {
                         card.style.cursor = 'default';
