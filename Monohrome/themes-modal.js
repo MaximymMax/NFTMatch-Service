@@ -35,6 +35,14 @@ window.getModelImageUrl = function(giftName, modelName) {
     return `https://cdn.changes.tg/gifts/models/${encodeURIComponent(giftName)}/png/${encodeURIComponent(modelName)}.png`;
 };
 
+// Поддержка неуникальных (обычных) подарков: их можно только купить через бота, никакого фона/матчей/маркета у них нет.
+function isNonUniqueGift(g) {
+    return !!g && g.IsUnique === false;
+}
+function buildGiftBuyLink(modelId) {
+    return `https://t.me/NFTMatchBot?start=buy-${modelId}`;
+}
+
 
 let currentThemeName = '';
 let currentThemeGifts = [];
@@ -1046,6 +1054,11 @@ async function renderModelDetailView(modelData, preloadedData = null) {
     const footer = document.querySelector('#themes-modal-overlay .themes-modal-footer');
     if (footer) footer.style.display = 'none';
 
+    if (isNonUniqueGift(modelData)) {
+        renderNonUniqueDetailView(modelData);
+        return;
+    }
+
     const lottieUrl = `${PHOTO_URL}/${encodeURIComponent(modelData.GiftName)}/lottie/${encodeURIComponent(modelData.ModelName)}.json`;
     const searchIconSvg = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width:16px; height:16px; min-width:16px; display:inline-block; vertical-align:middle; margin-left:4px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607z" /></svg>`;
 
@@ -1391,6 +1404,9 @@ function renderV2ThemeContent(models, container, nodeId, nodeType, isSingleColle
 
             let statsHtmlContent = '';
 
+            if (isNonUniqueGift(m)) {
+                statsHtmlContent = `<div class="v2-mc-stat-badge"><span>⭐ ${m.StarsPrice || 50}</span></div>`;
+            } else {
             if (bgObj && matchPercent) {
                 statsHtmlContent += `<div class="v2-mc-stat-badge" style="background: rgba(0,0,0,0.6); color: #fff; border: 1px solid rgba(255,255,255,0.2); margin-bottom: 4px;"><span>coof. ${matchPercent}%</span></div>`;
             }
@@ -1410,6 +1426,7 @@ function renderV2ThemeContent(models, container, nodeId, nodeType, isSingleColle
             } else if (currentSort === 'count') {
                 statsHtmlContent = `<div class="v2-mc-stat-badge"><span>${count}</span></div>`;
             }
+            }
 
             card.innerHTML = `
                 ${gradientHtml}
@@ -1423,8 +1440,12 @@ function renderV2ThemeContent(models, container, nodeId, nodeType, isSingleColle
 
             card.addEventListener('click', (e) => {
                 e.stopPropagation();
-                const savedBg = currentBgName; 
+                const savedBg = currentBgName;
                 pushToHistory(() => openV2Node(nodeId, nodeType, false, currentName, savedBg));
+                if (isNonUniqueGift(m)) {
+                    renderModelDetailView(m); // без доп. запроса — всё нужное уже в m
+                    return;
+                }
                 openModelDetail(giftName, modelName, savedBg, null, true);
             });
         }
@@ -1542,6 +1563,61 @@ function renderV2ThemeContent(models, container, nodeId, nodeType, isSingleColle
                 renderGrid();
             };
         });
+    }
+}
+
+// Упрощённый детальный вид для неуникального (обычного) подарка: только анимация, название и кнопка покупки —
+// никакого фона/% совпадения/дерева "Поиск на маркетах" (этих концепций у таких подарков нет), покупка целиком
+// происходит в самом Telegram по ссылке, апп ничего не покупает.
+function renderNonUniqueDetailView(modelData) {
+    const t = (key, fallback) => window.NFTi18n ? window.NFTi18n.t(key, fallback) : fallback;
+    const lottieUrl = `${PHOTO_URL}/${encodeURIComponent(modelData.GiftName)}/lottie/${encodeURIComponent(modelData.ModelName)}.json`;
+    const stars = modelData.StarsPrice || 50;
+    const buyLink = buildGiftBuyLink(modelData.ModelId);
+
+    modalContent.innerHTML = `
+        <div class="details-content-wrapper">
+            <div class="details-modal-header">
+                <button id="dm-back-btn" class="themes-modal-back-btn" style="visibility: hidden; pointer-events: none; display: flex;">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" /></svg>
+                </button>
+                <h3 class="modal-title">${modelData.GiftName}</h3>
+                <button id="dm-close-btn" class="themes-modal-close-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+            </div>
+
+            <div class="modal-visual-area" style="background: transparent;">
+                <lottie-player src="${lottieUrl}" background="transparent" speed="1" loop autoplay></lottie-player>
+            </div>
+
+            <div class="modal-info info-table" style="border: none;">
+                <div class="info-row" style="justify-content: center; border-bottom: none;">
+                    <span class="info-label" style="font-size: 1.05rem; font-weight: 700; color: #fff;">${modelData.ModelName}</span>
+                </div>
+            </div>
+
+            <div class="gold-button-container">
+                <a href="${buyLink}" target="_blank" rel="noopener" class="similar-color-btn">
+                    ${t('modal_buy_for_stars', 'Купить за')} ${stars} ⭐
+                </a>
+            </div>
+        </div>
+    `;
+
+    document.getElementById('dm-close-btn').onclick = () => close();
+    const backBtn = document.getElementById('dm-back-btn');
+    if (backBtn) {
+        const canGoBack = navigationStack.length > 0 || onBackCallback;
+        backBtn.style.display = 'flex';
+        if (canGoBack) {
+            backBtn.style.visibility = 'visible';
+            backBtn.style.pointerEvents = 'auto';
+            backBtn.onclick = handleBackNavigation;
+        } else {
+            backBtn.style.visibility = 'hidden';
+            backBtn.style.pointerEvents = 'none';
+        }
     }
 }
 
@@ -2921,10 +2997,33 @@ function renderV2ItemsGrid(itemsList, container, parentNodeId, parentNodeType, n
                                 <div class="v2-mc-subtitle">Вся коллекция</div>
                             </div>
                         `;
+                    } else if (isNonUniqueGift(m)) {
+                        const statRows = `<div class="v2-mc-stat-badge"><span>⭐ ${m.StarsPrice || 50}</span></div>`;
+
+                        card.innerHTML = `
+                            <div class="v2-mc-gradient"></div>
+                            <div class="v2-mc-image"><img src="${imgUrl}" loading="lazy"></div>
+                            <div class="v2-mc-info">
+                                <div class="v2-mc-title">${modelName}</div>
+                                <div class="v2-mc-subtitle">${giftName}</div>
+                                <div class="v2-mc-stats" style="flex-direction: column; align-items: flex-end; gap: 0;">${statRows}</div>
+                            </div>
+                        `;
+
+                        card.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            const savedBg = currentBgName;
+                            if (parentNodeId != null) {
+                                pushToHistory(() => openV2Node(parentNodeId, parentNodeType, false, null, savedBg));
+                            } else if (backRestoreFn) {
+                                pushToHistory(backRestoreFn);
+                            }
+                            renderModelDetailView(m); // без доп. запроса — всё нужное уже в m
+                        });
                     } else {
                         const count = m.TotalCount !== undefined ? m.TotalCount : (m.Count !== undefined ? m.Count : (m.count || m.totalCount || 0));
                         const price = m.AVGPrice !== undefined ? m.AVGPrice : (m.Price || m.avgPrice || m.price || 0);
-                        
+
                         const priceIcon = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M19.012 9.201L12.66 19.316a.857.857 0 0 1-1.453-.005L4.98 9.197a1.8 1.8 0 0 1-.266-.943a1.856 1.856 0 0 1 1.882-1.826h10.817c1.033 0 1.873.815 1.873 1.822a1.8 1.8 0 0 1-.274.951M6.51 8.863l4.633 7.144V8.143H6.994c-.48 0-.694.317-.484.72m6.347 7.144l4.633-7.144c.214-.403-.004-.72-.484-.72h-4.149z"/></svg>`;
                         const countIcon = `<svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 4a1 1 0 00-1 1v1a1 1 0 001 1h14a1 1 0 001-1V5a1 1 0 00-1-1H3zM2 9.5A1.5 1.5 0 013.5 8h13A1.5 1.5 0 0118 9.5v6.042a1.5 1.5 0 01-1.5 1.5h-13A1.5 1.5 0 012 15.542V9.5z" clip-rule="evenodd"/></svg>`;
 
@@ -2942,7 +3041,7 @@ function renderV2ItemsGrid(itemsList, container, parentNodeId, parentNodeType, n
                                 <div class="v2-mc-stats" style="flex-direction: column; align-items: flex-end; gap: 0;">${statRows}</div>
                             </div>
                         `;
-                        
+
                         card.addEventListener('click', (e) => {
                             e.stopPropagation();
                             const savedBg = currentBgName;
