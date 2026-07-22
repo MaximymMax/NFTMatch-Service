@@ -514,6 +514,22 @@ main {
     box-shadow: 0 6px 20px rgba(37, 99, 235, 0.25);
 }
 
+/* --- СТИЛИ ДЛЯ НЕУНИКАЛЬНЫХ ПОДАРКОВ (Фиолетовое) --- */
+.card-nonunique {
+    background-image: linear-gradient(90deg, rgba(168, 85, 247, 0.1) 0%, transparent 40%);
+    border-left: 2px solid #a855f7;
+    box-shadow: 0 4px 15px rgba(168, 85, 247, 0.1);
+}
+
+.card-nonunique .info-card-icon {
+    color: #c084fc;
+    background: rgba(168, 85, 247, 0.15);
+}
+
+.card-nonunique:hover {
+    box-shadow: 0 6px 20px rgba(168, 85, 247, 0.25);
+}
+
 /* --- СТИЛИ ДЛЯ API (Зеленое) --- */
 .card-api {
     background-image: linear-gradient(90deg, rgba(16, 185, 129, 0.1) 0%, transparent 40%);

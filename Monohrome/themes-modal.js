@@ -1610,6 +1610,19 @@ function renderNonUniqueDetailView(modelData) {
                     ${t('modal_buy_for_stars', 'Купить за')} ${stars} ⭐
                 </a>
             </div>
+
+            <div class="modal-info info-table" style="border: none;">
+                <div class="info-row" id="tm-v2-accordion-trigger" style="cursor: pointer; border-bottom: none; display: none;">
+                    <span class="info-label">${t('v2_theme', 'Тематики')}</span>
+                    <div class="info-value link-style" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                        <span id="tm-v2-count-val"></span>
+                        <svg id="tm-v2-arrow" class="nfts-arrow" style="width:16px;height:16px; transition: transform 0.3s;" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M19 9l-7 7-7-7" stroke-width="3"/></svg>
+                    </div>
+                </div>
+                <div id="tm-v2-accordion-content" class="bg-accordion-content hidden" style="padding: 12px 0;">
+                    <div id="tm-v2-grid" style="padding: 0 16px;"></div>
+                </div>
+            </div>
         </div>
     `;
 
@@ -1627,6 +1640,36 @@ function renderNonUniqueDetailView(modelData) {
             backBtn.style.pointerEvents = 'none';
         }
     }
+
+    // Тематики этого подарка — отдельным запросом (GetModelAggregatedInfo для неуникальных не подходит,
+    // у них нет GiftColor-записи), но GetThemesByGift ищет по (GiftName, ModelName) в дереве V2 напрямую и работает одинаково для обоих типов.
+    const cleanBaseUrl = BASE_URL.replace(/\/$/, '');
+    fetch(`${cleanBaseUrl}/api/Thematic/V2/GetThemesByGift/${encodeURIComponent(modelData.GiftName)}/${encodeURIComponent(modelData.ModelName)}`, {
+        headers: { 'Authorization': getApiAuthHeader() }
+    })
+        .then(r => r.ok ? r.json() : [])
+        .then(themes => {
+            if (!themes || !themes.length) return;
+            const v2Trigger = document.getElementById('tm-v2-accordion-trigger');
+            const v2Content = document.getElementById('tm-v2-accordion-content');
+            const v2Arrow = document.getElementById('tm-v2-arrow');
+            const v2Grid = document.getElementById('tm-v2-grid');
+            if (!v2Trigger) return;
+
+            v2Trigger.style.display = 'grid';
+            document.getElementById('tm-v2-count-val').textContent = themes.length + ' ' + t('pcs', 'шт.');
+
+            v2Trigger.onclick = () => {
+                v2Content.classList.toggle('hidden');
+                v2Arrow.style.transform = v2Content.classList.contains('hidden') ? 'rotate(0deg)' : 'rotate(180deg)';
+            };
+
+            if (typeof renderV2ItemsGrid === 'function') {
+                const detailRestoreFn = () => renderModelDetailView(modelData);
+                renderV2ItemsGrid(themes, v2Grid, null, null, false, detailRestoreFn);
+            }
+        })
+        .catch(() => {});
 }
 
 // 3. ЗАМЕНИТЬ ФУНКЦИЮ ЦЕЛИКОМ:
@@ -2183,6 +2226,22 @@ async function openCollection(collectionName, bgName = null) {
 async function open(giftName, modelName, onBack) {
     // Открываем детальный вид напрямую через V2 (без старых тематик)
     openModelDetail(giftName, modelName, null, onBack, false);
+}
+
+// Открыть детальный вид неуникального подарка напрямую из уже готового объекта (без похода за GetModelAggregatedInfo —
+// тот эндпоинт всё равно ничего не найдёт для неуникальных, у них нет GiftColor-записи).
+function openNonUniqueDetail(modelData) {
+    onBackCallback = null;
+    navigationStack = [];
+    currentGift = modelData.GiftName;
+    currentModel = modelData.ModelName;
+    currentBgName = null;
+
+    document.body.classList.add('modal-open');
+    if (modalOverlay) modalOverlay.classList.remove('hidden');
+    updateBackButtonState();
+
+    renderModelDetailView(modelData);
 }
 
 function renderThemes(data) {
@@ -3203,6 +3262,7 @@ window.themesModal = {
     openModelDetail,
     openCollection,
     openV2Node,    // НОВОЕ: открытие V2-ноды с хлебными крошками
+    openNonUniqueDetail,
     close
 };
 
