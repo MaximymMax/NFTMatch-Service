@@ -1,0 +1,54 @@
+.hidden { display: none !important; }
+
+.loading-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+}
+
+.spinner {
+    width: 24px; height: 24px;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    border-top: 3px solid var(--primary-color);
+    border-radius: 50%;
+    animation: nu-spin 1s linear infinite;
+}
+
+@keyframes nu-spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Центрируем заголовок страницы (main-container не задаёт это сам по себе) */
+.main-container > .title-section {
+    display: block;
+    width: 100%;
+    text-align: center;
+    margin: 1.5rem 0 0.5rem 0;
+}
+
+.page-main-title {
+    font-size: 1.8rem;
+    font-weight: 900;
+    color: #fff;
+    text-align: center;
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.page-subtitle {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    margin: 0.4rem 0 1.2rem 0;
+}
+
+.nu-theme-count {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.65rem;
+    font-weight: 600;
+    margin-top: 2px;
+}

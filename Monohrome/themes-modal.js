@@ -1611,16 +1611,16 @@ function renderNonUniqueDetailView(modelData) {
                 </a>
             </div>
 
-            <div class="modal-info info-table" style="border: none;">
-                <div class="info-row" id="tm-v2-accordion-trigger" style="cursor: pointer; border-bottom: none; display: none;">
-                    <span class="info-label">${t('v2_theme', 'Тематики')}</span>
-                    <div class="info-value link-style" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+            <div style="margin: 0.5rem 1.5rem 1.5rem 1.5rem;">
+                <div id="tm-v2-accordion-trigger" style="cursor: pointer; display: none; align-items: center; justify-content: space-between; padding: 0.8rem 1rem; background: var(--surface-elevated); border: 1px solid var(--border-color); border-radius: 12px;">
+                    <span style="font-size: 0.9rem; color: var(--text-secondary); font-weight: 600;">${t('v2_theme', 'Тематики')}</span>
+                    <div style="display: flex; align-items: center; gap: 8px; color: #fff;">
                         <span id="tm-v2-count-val"></span>
                         <svg id="tm-v2-arrow" class="nfts-arrow" style="width:16px;height:16px; transition: transform 0.3s;" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M19 9l-7 7-7-7" stroke-width="3"/></svg>
                     </div>
                 </div>
-                <div id="tm-v2-accordion-content" class="bg-accordion-content hidden" style="padding: 12px 0;">
-                    <div id="tm-v2-grid" style="padding: 0 16px;"></div>
+                <div id="tm-v2-accordion-content" class="bg-accordion-content hidden" style="padding-top: 12px;">
+                    <div id="tm-v2-grid"></div>
                 </div>
             </div>
         </div>
@@ -1656,7 +1656,7 @@ function renderNonUniqueDetailView(modelData) {
             const v2Grid = document.getElementById('tm-v2-grid');
             if (!v2Trigger) return;
 
-            v2Trigger.style.display = 'grid';
+            v2Trigger.style.display = 'flex';
             document.getElementById('tm-v2-count-val').textContent = themes.length + ' ' + t('pcs', 'шт.');
 
             v2Trigger.onclick = () => {

@@ -26,6 +26,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         card.style.setProperty('--card-gradient-color', '#a855f7');
 
         const imgUrl = `https://cdn.changes.tg/gifts/originals/${m.SourceId}/Original.png`;
+        const themeCount = m.Count || 0;
+        const themeCountText = themeCount > 0
+            ? `<div class="nu-theme-count">${themeCount === 1 ? 'в 1 тематике' : `в ${themeCount} тематиках`}</div>`
+            : '';
 
         card.innerHTML = `
             <div class="v2-mc-gradient"></div>
@@ -35,6 +39,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <div class="v2-mc-stats" style="flex-direction: column; align-items: flex-end;">
                     <div class="v2-mc-stat-badge"><span>⭐ ${m.StarsPrice || 50}</span></div>
                 </div>
+                ${themeCountText}
             </div>
         `;
 
