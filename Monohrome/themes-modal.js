@@ -1611,15 +1611,15 @@ function renderNonUniqueDetailView(modelData) {
                 </a>
             </div>
 
-            <div style="margin: 0.5rem 1.5rem 1.5rem 1.5rem;">
-                <div id="tm-v2-accordion-trigger" style="cursor: pointer; display: none; align-items: center; justify-content: space-between; padding: 0.8rem 1rem; background: var(--surface-elevated); border: 1px solid var(--border-color); border-radius: 12px;">
+            <div style="margin-top: 0.5rem; width: 100%; box-sizing: border-box;">
+                <div id="tm-v2-accordion-trigger" style="cursor: pointer; display: none; align-items: center; justify-content: space-between; width: 100%; box-sizing: border-box; padding: 0.8rem 1.5rem; background: var(--surface-elevated); border-top: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color);">
                     <span style="font-size: 0.9rem; color: var(--text-secondary); font-weight: 600;">${t('v2_theme', 'Тематики')}</span>
                     <div style="display: flex; align-items: center; gap: 8px; color: #fff;">
                         <span id="tm-v2-count-val"></span>
                         <svg id="tm-v2-arrow" class="nfts-arrow" style="width:16px;height:16px; transition: transform 0.3s;" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M19 9l-7 7-7-7" stroke-width="3"/></svg>
                     </div>
                 </div>
-                <div id="tm-v2-accordion-content" class="bg-accordion-content hidden" style="padding-top: 12px;">
+                <div id="tm-v2-accordion-content" class="bg-accordion-content hidden" style="width: 100%; box-sizing: border-box; padding: 12px 1.5rem;">
                     <div id="tm-v2-grid"></div>
                 </div>
             </div>
