@@ -370,22 +370,47 @@
 .multi-swatches { display: flex; align-items: center; justify-content: center; gap: 4px; flex-wrap: wrap; }
 .multi-swatch { width: 12px; height: 12px; border-radius: 50%; box-shadow: 0 0 3px rgba(0,0,0,.4); flex: 0 0 auto; }
 
-/* putya: "надо чтобы модалка открывалась, а не перекидывалось на монохромы" — своя лёгкая модалка
-   (не тянем чужой themes-modal.js/nft-details-modal.js с их состоянием под конкретные страницы). */
+/* putya: "не та модалка, должна быть как та что открывается из монохромов при нажатии на
+   карточку" — тот же язык, что у .details-modal/.themes-modal на background-finder.html: тёмный
+   размытый оверлей, карточка с крупным скруглением, фото на всю ширину с плавающей шапкой
+   (градиент+название+крестик) поверх него — не отдельная строка-шапка над фото. Своя лёгкая
+   реализация (не тянем чужой themes-modal.js с состоянием под конкретные страницы), но тот же вид. */
 .cw-modal-overlay {
-    position: fixed; inset: 0; background: rgba(10, 16, 32, .7);
+    position: fixed; inset: 0; background: rgba(10, 16, 32, .85); backdrop-filter: blur(8px);
     display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 16px;
 }
 .cw-modal-overlay.hidden { display: none; }
 .cw-modal {
-    width: 100%; max-width: 380px; max-height: 85vh; overflow-y: auto;
-    background: var(--surface-color); border: 1px solid var(--border-color); border-radius: 16px;
-    box-shadow: 0 20px 60px rgba(0,0,0,.5);
+    width: 100%; max-width: 350px; max-height: 90vh; overflow: hidden;
+    background: var(--surface-elevated); border: 1px solid var(--border-color); border-radius: 28px;
+    box-shadow: 0 20px 50px rgba(0,0,0,.5);
+    display: flex; flex-direction: column;
 }
-.cw-modal-body { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 16px; }
+.cw-modal-photo-header { position: relative; flex: 0 0 auto; }
 .cw-modal-photo {
-    width: 160px; height: 160px; object-fit: contain; border-radius: 12px;
+    width: 100%; aspect-ratio: 1 / 1; object-fit: contain; display: block;
     background: rgba(255,255,255,.06);
+}
+.cw-modal-header-bar {
+    position: absolute; top: 0; left: 0; width: 100%; z-index: 2;
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 1rem 1.1rem; box-sizing: border-box;
+    background: linear-gradient(to bottom, rgba(0,0,0,.6) 0%, rgba(0,0,0,0) 100%);
+}
+.cw-modal-title {
+    text-align: center; flex-grow: 1; color: #fff; text-shadow: 0 2px 4px rgba(0,0,0,.6);
+    margin: 0; font-size: 1rem; font-weight: 800;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 8px;
+}
+.cw-modal-close-btn {
+    width: 32px; height: 32px; border-radius: 50%; flex: 0 0 auto;
+    background: rgba(0,0,0,.4); border: none; color: #fff;
+    display: flex; align-items: center; justify-content: center; cursor: pointer;
+}
+.cw-modal-close-btn svg { width: 16px; height: 16px; }
+.cw-modal-scroll {
+    display: flex; flex-direction: column; align-items: center; gap: 12px;
+    padding: 16px; overflow-y: auto;
 }
 #cw-modal-backgrounds { border: none; padding: 0; width: 100%; justify-content: center; }
 #cw-modal-open-full { width: 100%; text-align: center; text-decoration: none; }

@@ -8,14 +8,22 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../styles.css">
     <link rel="stylesheet" href="../shared-admin-nav.css">
-    <link rel="stylesheet" href="./color-wheel.css?v=19">
+    <link rel="stylesheet" href="./color-wheel.css?v=20">
     <script src="../config.js"></script>
+    <!-- putya: "везде должны быть кнопки на шапке с верификацией по тг и переключением языков" —
+         те же скрипты, что и на остальных страницах (background-finder.html и т.д.); auth-badge.js
+         сам инжектит переключатель RU/EN и профиль-бейдж, редиректа на index.html для ColorWheel не
+         будет — его условие isSubPage проверяет только /Monohrome/, /nft-page/, /Thematic/. -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="../i18n.js"></script>
+    <script src="../auth.js"></script>
+    <script src="../auth-badge.js"></script>
 </head>
 
 <body>
-    <!-- putya: "нижние кнопки... перенеси вообще вверх в шапку, слева... тг канал и гитхаб" —
-         бывший info-cards-wrapper теперь живёт тут как компактные иконки. GitHub-иконку пока не
-         добавляю — putya ещё не прислал ссылку, добавлю рядом с TG сразу как придёт. -->
+    <!-- putya: "кнопку с поддержкой проекта пока можешь убрать как и с покупкой не уникальных
+         подарков" — из правой группы остался только API. GitHub-иконку пока не добавляю — putya
+         ещё не прислал ссылку, добавлю рядом с TG сразу как придёт. -->
     <header class="cw-page-header">
         <div class="cw-header-group">
             <a href="https://t.me/NFTStyler" target="_blank" class="cw-header-link cw-header-link-tg" title="Наш Telegram-канал">
@@ -23,19 +31,9 @@
             </a>
         </div>
         <div class="cw-header-group">
-            <a href="../NonUnique/nonunique.html" class="cw-header-link cw-header-link-nonunique" title="Неуникальные подарки">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12v8a2 2 0 01-2 2H6a2 2 0 01-2-2v-8M2 7h20v5H2V7zm10 0V3.5a2.5 2.5 0 10-2.5 2.5H12zm0 0V3.5A2.5 2.5 0 1114.5 6H12z" />
-                </svg>
-            </a>
             <a href="../API_info/api.html" class="cw-header-link cw-header-link-api" title="API">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
-                </svg>
-            </a>
-            <a href="../Support/support.html" class="cw-header-link cw-header-link-support" title="Поддержка">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
             </a>
         </div>
@@ -166,18 +164,25 @@
         </div>
     </main>
 
-    <!-- putya: "когда открывается карточка, надо чтобы модалка открывалась, а не
-         перекидывалось" — клик по карточке результата открывает модалку тут же, вместо перехода на
-         страницу "Похожие" (та ссылка остаётся внутри модалки как доп. опция). Вынесена за <main> —
-         не хотим, чтобы position:fixed зависел от overflow/трансформаций предков внутри main-container. -->
+    <!-- putya: "не та модалка, должна быть как та что открывается из монохромов при нажатии на
+         карточку" — то же построение, что у .details-modal на background-finder.html: фото на всю
+         ширину с плавающей шапкой (градиент + название + крестик) поверх него, а не обычная шапка
+         строкой выше фото. Вынесена за <main> — не хотим, чтобы position:fixed зависел от
+         overflow/трансформаций предков внутри main-container. -->
     <div id="cw-model-modal" class="cw-modal-overlay hidden">
         <div class="cw-modal">
-            <div class="cw-drilldown-header">
-                <span id="cw-modal-title">—</span>
-                <button type="button" id="cw-modal-close" class="cw-drilldown-close">&times;</button>
-            </div>
-            <div class="cw-modal-body">
+            <div class="cw-modal-photo-header">
                 <img id="cw-modal-photo" class="cw-modal-photo" src="" alt="">
+                <div class="cw-modal-header-bar">
+                    <span id="cw-modal-title" class="cw-modal-title">—</span>
+                    <button type="button" id="cw-modal-close" class="cw-modal-close-btn" aria-label="Закрыть">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <div class="cw-modal-scroll">
                 <div id="cw-modal-swatches" class="multi-swatches"></div>
                 <div id="cw-modal-backgrounds" class="cw-drilldown-backgrounds"></div>
                 <a id="cw-modal-open-full" class="cw-color-search-btn" target="_blank" href="#">Открыть на странице «Похожие»</a>
