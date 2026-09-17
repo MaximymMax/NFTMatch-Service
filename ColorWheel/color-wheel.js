@@ -489,49 +489,125 @@
     }
     tabButtons.forEach(btn => btn.addEventListener('click', () => setActiveTab(btn.dataset.tab)));
 
-    // --- Поиск моделей по точному цвету (пикер + hex), сортировка по Lab-дистанции ---
-    const colorPicker = document.getElementById('color-search-picker');
-    const colorHexInput = document.getElementById('color-search-hex');
+    // --- putya: "сделай чтобы можно было выбрать несколько цветов, а не только один" — строка №1
+    // всегда есть, дальше добавляются кнопкой (тот же паттерн, что на MatchV2Demo: пикер + hex +
+    // мин.%). 1 строка → обычный поиск ближайших (GetGlobalColorWheelNearestModels, без потери
+    // текущего поведения), 2+ → поиск по всем цветам сразу (GetGlobalColorWheelMultiColorModels). ---
+    const colorFiltersList = document.getElementById('color-filters-list');
+    const addColorFilterBtn = document.getElementById('add-color-filter-btn');
     const colorSearchBtn = document.getElementById('color-search-btn');
     const colorSearchResults = document.getElementById('color-search-results');
 
-    colorPicker.addEventListener('input', () => {
-        colorHexInput.value = colorPicker.value.toUpperCase();
+    function randomHex() {
+        const h = Math.floor(Math.random() * 360), s = 70, l = 55;
+        const c = (1 - Math.abs(2 * l / 100 - 1)) * s / 100;
+        const x = c * (1 - Math.abs((h / 60) % 2 - 1));
+        const m = l / 100 - c / 2;
+        let rgb;
+        if (h < 60) rgb = [c, x, 0]; else if (h < 120) rgb = [x, c, 0]; else if (h < 180) rgb = [0, c, x];
+        else if (h < 240) rgb = [0, x, c]; else if (h < 300) rgb = [x, 0, c]; else rgb = [c, 0, x];
+        const toHex = v => Math.round((v + m) * 255).toString(16).padStart(2, '0');
+        return `#${toHex(rgb[0])}${toHex(rgb[1])}${toHex(rgb[2])}`.toUpperCase();
+    }
+
+    function addColorFilterRow() {
+        const hex = randomHex();
+        const row = document.createElement('div');
+        row.className = 'cw-color-filter-row';
+        row.innerHTML = `
+            <input type="color" class="filter-color-picker" value="${hex}" title="Выбрать цвет">
+            <input type="text" class="filter-color-hex cw-hex-input" value="${hex}" maxlength="7" spellcheck="false">
+            <input type="number" class="filter-color-pct" min="1" max="100" value="15" title="Мин. %">
+            <button type="button" class="cw-remove-filter-btn" title="Убрать">&times;</button>
+        `;
+        colorFiltersList.appendChild(row);
+    }
+    addColorFilterBtn.addEventListener('click', addColorFilterRow);
+
+    colorFiltersList.addEventListener('input', (e) => {
+        if (e.target.classList.contains('filter-color-picker')) {
+            e.target.closest('.cw-color-filter-row').querySelector('.filter-color-hex').value = e.target.value.toUpperCase();
+        }
     });
-    colorHexInput.addEventListener('change', () => {
-        const v = colorHexInput.value.trim();
-        if (/^#[0-9a-fA-F]{6}$/.test(v)) colorPicker.value = v;
+    colorFiltersList.addEventListener('change', (e) => {
+        if (e.target.classList.contains('filter-color-hex')) {
+            const v = e.target.value.trim();
+            if (/^#[0-9a-fA-F]{6}$/.test(v)) e.target.closest('.cw-color-filter-row').querySelector('.filter-color-picker').value = v;
+        }
     });
+    colorFiltersList.addEventListener('click', (e) => {
+        const btn = e.target.closest('.cw-remove-filter-btn');
+        if (btn) btn.closest('.cw-color-filter-row').remove();
+    });
+
+    // putya: "сделай такие же карточки моделей как у меня везде... сделай чтобы их можно было
+    // открывать" — те же классы карточки, что на background-finder.html; клик ведёт на "Похожие"
+    // с уже подставленными gift/model (там уже есть весь функционал сравнения и деталей).
+    function renderColorSearchCards(items, isMulti) {
+        if (!items.length) {
+            colorSearchResults.innerHTML = '<div class="cw-drilldown-note">Ничего не найдено.</div>';
+            return;
+        }
+        colorSearchResults.innerHTML = items.map(m => {
+            const swatches = isMulti
+                ? `<div class="multi-swatches">${m.MatchedColors.map(mc => `<span class="multi-swatch" style="background:${mc.Hex}" title="${mc.Hex} · ${mc.Weight}%"></span>`).join('')}</div>`
+                : '';
+            const badge = isMulti ? `${m.Score}%` : `${m.Weight}%`;
+            return `
+                <a class="result-card-bg" target="_blank"
+                   href="../nft-page/index.html?giftName=${encodeURIComponent(m.GiftName)}&modelName=${encodeURIComponent(m.ModelName)}">
+                    <div class="image-container">
+                        <img class="model-image" src="${modelImageUrl(m.GiftName, m.ModelName)}" alt=""
+                             loading="lazy" onerror="this.style.visibility='hidden'">
+                    </div>
+                    <div class="info-container">
+                        <div class="info-text">
+                            <div class="info-collection">${escapeHtml(m.GiftName)}</div>
+                            <div class="info-model">${escapeHtml(m.ModelName)}</div>
+                        </div>
+                        ${swatches}
+                        <div class="info-badges"><div class="badge-percent">${badge}</div></div>
+                    </div>
+                </a>
+            `;
+        }).join('');
+    }
 
     async function runColorSearch() {
-        const hex = colorPicker.value;
+        const rows = [...colorFiltersList.querySelectorAll('.cw-color-filter-row')];
         colorSearchResults.innerHTML = '<div class="cw-drilldown-note">Загрузка…</div>';
         try {
-            const resp = await fetch(`${API_BASE}/GetGlobalColorWheelNearestModels?hex=${encodeURIComponent(hex)}`);
-            if (!resp.ok) throw new Error('HTTP ' + resp.status);
-            const data = await resp.json();
-
-            if (!data.Items.length) {
-                colorSearchResults.innerHTML = '<div class="cw-drilldown-note">Ничего не найдено.</div>';
-                return;
+            let data, isMulti;
+            if (rows.length <= 1) {
+                isMulti = false;
+                const hex = rows[0].querySelector('.filter-color-picker').value;
+                const resp = await fetch(`${API_BASE}/GetGlobalColorWheelNearestModels?hex=${encodeURIComponent(hex)}`);
+                if (!resp.ok) throw new Error('HTTP ' + resp.status);
+                data = await resp.json();
+            } else {
+                isMulti = true;
+                const filters = rows.map(row => ({
+                    Hex: row.querySelector('.filter-color-picker').value,
+                    MinPercent: parseFloat(row.querySelector('.filter-color-pct').value) || 10
+                }));
+                const resp = await fetch(`${API_BASE}/GetGlobalColorWheelMultiColorModels`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(filters)
+                });
+                if (!resp.ok) throw new Error('HTTP ' + resp.status);
+                data = await resp.json();
             }
-            colorSearchResults.innerHTML = data.Items.map(m => `
-                <div class="cw-model-row">
-                    <img class="cw-model-photo" src="${modelImageUrl(m.GiftName, m.ModelName)}" alt=""
-                         loading="lazy" onerror="this.style.visibility='hidden'">
-                    <span class="cw-model-swatch" style="background:${m.Hex}" title="${m.Hex}"></span>
-                    <span class="cw-model-name"><span class="gift">${escapeHtml(m.GiftName)}</span> — ${escapeHtml(m.ModelName)}</span>
-                    <span class="cw-model-weight">${m.Weight}%</span>
-                </div>
-            `).join('') + (data.TotalCount > data.Shown
-                ? `<div class="cw-drilldown-note">Показано ${data.Shown} из ${data.TotalCount}, по близости к выбранному цвету.</div>`
-                : '');
+            renderColorSearchCards(data.Items, isMulti);
         } catch (err) {
             colorSearchResults.innerHTML = `<div class="cw-drilldown-note">Не удалось загрузить: ${escapeHtml(err.message)}</div>`;
         }
     }
     colorSearchBtn.addEventListener('click', runColorSearch);
-    colorPicker.addEventListener('change', runColorSearch);
+
+    // putya: "все страницы... адаптированы под главную страницу" — с других страниц "Поиск по
+    // цвету" ведёт на ../ColorWheel/color-wheel.html#search, тут просто открываем нужную вкладку.
+    if (location.hash === '#search') setActiveTab('search');
 
     Promise.all([loadGiftIdMap(), loadCollectionNames()]).then(([, names]) => populateCollections(names));
     loadCharts();

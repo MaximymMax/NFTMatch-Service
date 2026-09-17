@@ -1,0 +1,53 @@
+/* putya: "все страницы (пока только для меня) были адаптированы под главную страницу, где сверху
+   переключатели эти" — общий header+ряд вкладок, вынесенный из color-wheel.css, чтобы не дублировать
+   на каждой странице. Подключается вторым тегом <link> после основного styles.css/global.css той
+   страницы (переменные --surface-elevated/--text-*/--accent и т.д. уже определены там). */
+
+.cw-page-header {
+    display: flex; align-items: center; justify-content: space-between;
+    max-width: 950px; width: 100%; margin: 0 auto;
+    padding: 14px 16px 0; gap: 10px; position: relative; z-index: 20;
+    background: none; box-shadow: none; border-radius: 0;
+}
+.cw-header-group { display: flex; align-items: center; gap: 8px; }
+.cw-header-link {
+    display: flex; align-items: center; justify-content: center;
+    width: 46px; height: 40px; border-radius: 12px; flex: 0 0 auto;
+    transition: transform .15s ease, filter .15s ease;
+}
+.cw-header-link svg { width: 20px; height: 20px; }
+.cw-header-link:hover { transform: translateY(-2px); filter: brightness(1.2); }
+.cw-header-link-tg { background: rgba(37, 99, 235, .16); color: #60a5fa; }
+.cw-header-link-gh { background: rgba(255, 255, 255, .1); color: #e5e7eb; }
+.cw-header-link-nonunique { background: rgba(168, 85, 247, .16); color: #c084fc; }
+.cw-header-link-api { background: rgba(16, 185, 129, .16); color: #34d399; }
+.cw-header-link-support { background: rgba(245, 158, 11, .16); color: #fbbf24; }
+
+/* putya: "кнопка с главным экраном должна быть по центру" — Главная стоит третьей из пяти в
+   разметке каждой страницы (см. HTML), тут только визуальное оформление ряда. */
+.cw-tabs {
+    display: flex; flex-wrap: wrap; gap: 8px; width: 100%;
+    max-width: 950px; margin: 0 auto;
+}
+.cw-tab {
+    flex: 1 1 140px; min-width: 110px;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    background: var(--surface-elevated); border: 1px solid transparent; border-radius: 14px;
+    padding: 12px 10px; text-decoration: none; text-align: center;
+    color: var(--text-secondary); font-size: 13px; font-weight: 700; font-family: inherit;
+    cursor: pointer; transition: transform .15s ease, background-color .15s ease, border-color .15s ease, color .15s ease;
+}
+.cw-tab img { width: 26px; height: 26px; object-fit: contain; border-radius: 7px; flex: 0 0 auto; }
+.cw-tab svg { width: 20px; height: 20px; flex: 0 0 auto; }
+.cw-tab:hover { transform: translateY(-2px); background: #263355; color: var(--text-primary); }
+.cw-tab.active {
+    background: linear-gradient(135deg, rgba(37, 99, 235, .35), rgba(37, 99, 235, .12));
+    border-color: rgba(37, 99, 235, .5); color: #fff;
+    box-shadow: 0 4px 14px rgba(37, 99, 235, .25);
+}
+
+/* putya: "пока только для меня" — на страницах, куда эта панель ДОБАВЛЯЕТСЯ поверх уже готового
+   публичного дизайна (не color-wheel.html, у неё она и так всегда видна), по умолчанию скрыта и
+   раскрывается только админу — см. shared-admin-nav.js. */
+.cw-admin-nav { display: flex; flex-direction: column; gap: 10px; padding: 14px 16px 0; }
+.cw-admin-nav.cw-admin-nav-hidden { display: none; }
