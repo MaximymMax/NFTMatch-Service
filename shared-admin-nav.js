@@ -55,6 +55,14 @@
         .then(resp => {
             if (resp.ok) {
                 root.classList.remove('cw-admin-nav-hidden');
+                // putya: "теперь кнопки вверх уехали, а не на блоке" — .cw-page-header (#cw-admin-nav)
+                // и .cw-tabs (#cw-admin-tabs) лежат в РАЗНЫХ местах разметки (шапка — в body сразу
+                // после <head>, вкладки — внутри main-container, на самой карточке, которая идёт
+                // ПОСЛЕ этого <script>-тега в документе). Ищем #cw-admin-tabs только тут, а не в
+                // начале файла — до этого момента main-container с ним ещё не распарсен, и
+                // querySelector вернул бы null.
+                const tabsRoot = document.getElementById('cw-admin-tabs');
+                if (tabsRoot) tabsRoot.classList.remove('cw-admin-nav-hidden');
                 runMergeWhenReady();
             }
         })

@@ -50,13 +50,12 @@
     box-shadow: 0 4px 14px rgba(37, 99, 235, .25);
 }
 
-/* putya: "на поиске по цвету нет затемнения и кнопки сверху" (в отличие от Похожих) — #cw-admin-nav
-   раньше жил ВНУТРИ .main-container, из-за чего задевал её padding-top:100px и декоративный
-   safe-area-gradient страницы, съезжая ниже, чем на color-wheel.html. Теперь #cw-admin-nav — такой
-   же прямой потомок body, как .cw-page-header на колесе, поэтому свой padding у .cw-page-header
-   больше не обнуляем — нужен тот же, что и там. */
-.cw-admin-nav { display: flex; flex-direction: column; gap: 10px; }
-.cw-admin-nav.cw-admin-nav-hidden { display: none; }
+/* putya: "теперь кнопки вверх уехали, а не на блоке" — #cw-admin-nav (шапка) и #cw-admin-tabs
+   (вкладки) теперь два отдельных контейнера в разных местах разметки: шапка — прямой потомок body
+   рядом с safe-area-gradient (как .cw-page-header на color-wheel.html, не задевает padding-top:100px
+   у main), вкладки — первый элемент внутри .main-container, на самой карточке. Один и тот же класс
+   скрытия/показа вешается на оба, поэтому селектор не завязан на конкретный id. */
+.cw-admin-nav-hidden { display: none; }
 
 /* putya: "в сжатом режиме сделай чтобы снизу была кнопка не поиск по цветам, а главная" — на
    десктопе (широкий ряд) Главная и так по центру за счёт порядка в HTML; при переносе строк на

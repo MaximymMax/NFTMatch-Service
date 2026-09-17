@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="gift-page.css">
     <link rel="stylesheet" href="../Monohrome/themes-modal.css">
     <link rel="stylesheet" href="../modals/subscription-modal.css">
-    <link rel="stylesheet" href="../shared-admin-nav.css?v=6">
+    <link rel="stylesheet" href="../shared-admin-nav.css?v=7">
 
     <script src="../i18n.js"></script>
     <script src="../config.js"></script>
@@ -22,13 +22,15 @@
 
     <header class="safe-area-gradient"></header>
 
-    <!-- putya: "на поиске по цвету нет затемнения и кнопки сверху" — на ColorWheel/color-wheel.html
-         .cw-page-header стоит СНАРУЖИ main-container, прямо в body, поэтому не задевается его
-         padding-top:100px (запас под старый плавающий #nft-top-bar) и рендерится сразу вверху.
-         Раньше здесь #cw-admin-nav лежал ВНУТРИ main-container — из-за этого запаса и декоративного
-         safe-area-gradient админ-шапка оказывалась ниже и с тёмным пятном сверху, не как на колесе.
-         Выносим сюда же, к safe-area-gradient, чтобы позиция совпадала один в один. -->
-    <div id="cw-admin-nav" class="cw-admin-nav cw-admin-nav-hidden">
+    <!-- putya: "теперь кнопки вверх уехали, а не на блоке" — на ColorWheel/color-wheel.html
+         .cw-page-header (иконки/RU-EN/бейдж) стоит СНАРУЖИ main-container, а вот .cw-tabs — ВНУТРИ
+         неё, первым элементом на самой карточке. Раньше весь #cw-admin-nav (шапка+вкладки вместе)
+         был вынесен наружу целиком — из-за этого вкладки зависли на голом фоне отдельно от карточки
+         вместо того, чтобы быть на ней. Разносим по разным контейнерам, как на колесе: шапка — сюда,
+         к safe-area-gradient; вкладки — внутрь main-container (см. ниже). Видимость обоих
+         синхронизирует shared-admin-nav.js (один и тот же IP-гейт снимает cw-admin-nav-hidden сразу
+         с обоих). -->
+    <div id="cw-admin-nav" class="cw-admin-nav-hidden">
         <div class="cw-page-header">
             <div class="cw-header-group">
                 <a href="https://t.me/NFTStyler" target="_blank" class="cw-header-link cw-header-link-tg" title="Наш Telegram-канал">
@@ -43,33 +45,36 @@
                 </a>
             </div>
         </div>
-        <div class="cw-tabs">
-            <a href="../Monohrome/background-finder.html" class="cw-tab">
-                <img src="https://cdn.changes.tg/gifts/models/Spring%20Basket/png/Knitty%20Kitty.png" alt="">
-                <span>Монохромы</span>
-            </a>
-            <a href="../Thematic/themes.html" class="cw-tab">
-                <img src="https://cdn.changes.tg/gifts/models/Restless%20Jar/png/Kittens.png" alt="">
-                <span>Тематики</span>
-            </a>
-            <a href="../ColorWheel/color-wheel.html" class="cw-tab">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 11.5 12 4l9 7.5M5 10v9a1 1 0 001 1h4v-6h4v6h4a1 1 0 001-1v-9"/></svg>
-                <span>Главная</span>
-            </a>
-            <a href="../nft-page/index.html" class="cw-tab active">
-                <img src="https://cdn.changes.tg/gifts/models/Snake%20Box/png/Seashore.png" alt="">
-                <span>Похожие</span>
-            </a>
-            <a href="../ColorWheel/color-wheel.html#search" class="cw-tab">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7" stroke-linecap="round"/><path stroke-linecap="round" d="M21 21l-4.3-4.3"/></svg>
-                <span>Поиск по цвету</span>
-            </a>
-        </div>
     </div>
-    <script src="../shared-admin-nav.js?v=4"></script>
+    <script src="../shared-admin-nav.js?v=6"></script>
 
     <main>
         <div class="main-container">
+
+            <div id="cw-admin-tabs" class="cw-admin-nav-hidden">
+                <div class="cw-tabs">
+                    <a href="../Monohrome/background-finder.html" class="cw-tab">
+                        <img src="https://cdn.changes.tg/gifts/models/Spring%20Basket/png/Knitty%20Kitty.png" alt="">
+                        <span>Монохромы</span>
+                    </a>
+                    <a href="../Thematic/themes.html" class="cw-tab">
+                        <img src="https://cdn.changes.tg/gifts/models/Restless%20Jar/png/Kittens.png" alt="">
+                        <span>Тематики</span>
+                    </a>
+                    <a href="../ColorWheel/color-wheel.html" class="cw-tab">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 11.5 12 4l9 7.5M5 10v9a1 1 0 001 1h4v-6h4v6h4a1 1 0 001-1v-9"/></svg>
+                        <span>Главная</span>
+                    </a>
+                    <a href="../nft-page/index.html" class="cw-tab active">
+                        <img src="https://cdn.changes.tg/gifts/models/Snake%20Box/png/Seashore.png" alt="">
+                        <span>Похожие</span>
+                    </a>
+                    <a href="../ColorWheel/color-wheel.html#search" class="cw-tab">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7" stroke-linecap="round"/><path stroke-linecap="round" d="M21 21l-4.3-4.3"/></svg>
+                        <span>Поиск по цвету</span>
+                    </a>
+                </div>
+            </div>
 
             <h1 class="page-title centered-title" data-i18n="similar_title">Похожие NFT</h1>
 
