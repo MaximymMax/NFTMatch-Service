@@ -60,21 +60,64 @@
     let currentHueWheel = [];
     let openBucketIndex = null;
 
+    // putya: "добавь обводку на выбранный цвет чтобы было видно" — подсвечиваем текущий выбор
+    // сразу по клику, не дожидаясь перезагрузки диаграммы.
+    function applySelectionHighlight() {
+        svg.querySelectorAll('.cw-sector').forEach(el => {
+            el.classList.toggle('selected', el.dataset.bucketIndex === String(openBucketIndex));
+        });
+    }
+
     function renderWheel(hueWheel) {
         currentHueWheel = hueWheel;
         svg.innerHTML = '';
-        const maxShare = Math.max(1, ...hueWheel.map(h => h.SharePercent));
-        const minR = 30, maxR = 200;
         const ns = 'http://www.w3.org/2000/svg';
+        const extreme = isExtremeLightness();
+
+        // putya: "когда в 0 или в максимум уходит... на диаграме один черный или один белый
+        // кружок остаются" — на самых краях светлоты оттенок не имеет смысла (всё ахроматично),
+        // поэтому вместо 12 секторов рисуем один сплошной чёрный/белый круг.
+        if (extreme) {
+            const circle = document.createElementNS(ns, 'circle');
+            circle.setAttribute('cx', 0);
+            circle.setAttribute('cy', 0);
+            circle.setAttribute('r', 170);
+            circle.setAttribute('fill', extreme === 'black' ? '#000000' : '#ffffff');
+            circle.setAttribute('class', 'cw-sector cw-sector-extreme');
+            circle.dataset.bucketIndex = 'EXTREME';
+            circle.addEventListener('click', () => {
+                openBucketIndex = 'EXTREME';
+                applySelectionHighlight();
+                refreshDrilldown();
+            });
+            svg.appendChild(circle);
+            applySelectionHighlight();
+            return;
+        }
+
+        // putya: "не отрисовывай вообще те блоки где нет моделей" — сектора без кластеров не рисуем.
+        const activeBuckets = hueWheel.filter(b => b.Count > 0);
+        if (activeBuckets.length === 0) {
+            const text = document.createElementNS(ns, 'text');
+            text.setAttribute('text-anchor', 'middle');
+            text.setAttribute('dominant-baseline', 'middle');
+            text.setAttribute('fill', 'rgba(255,255,255,.4)');
+            text.setAttribute('font-size', '14');
+            text.textContent = 'Нет данных для этого среза';
+            svg.appendChild(text);
+            return;
+        }
+        const maxShare = Math.max(1, ...activeBuckets.map(h => h.SharePercent));
+        const minR = 30, maxR = 200;
 
         hueWheel.forEach((bucket, i) => {
-            const outerR = bucket.Count > 0
-                ? minR + (bucket.SharePercent / maxShare) * (maxR - minR)
-                : minR + 6;
+            if (bucket.Count === 0) return;
+            const outerR = minR + (bucket.SharePercent / maxShare) * (maxR - minR);
             const path = document.createElementNS(ns, 'path');
             path.setAttribute('d', wedgePath(bucket.HueStart, bucket.HueEnd, outerR));
             path.setAttribute('fill', bucket.Hex || '#555');
             path.setAttribute('class', 'cw-sector');
+            path.dataset.bucketIndex = String(i);
             path.addEventListener('mousemove', (e) => showHueTooltip(e, bucket, i));
             path.addEventListener('mouseleave', hideTooltip);
             // putya: "при нажатии на цвет под блоком с диаграммами появляется блок с конкретно
@@ -82,6 +125,7 @@
             // (Gift, Model) + подходящие фоны для этого сектора прямо на странице.
             path.addEventListener('click', () => {
                 openBucketIndex = i;
+                applySelectionHighlight();
                 refreshDrilldown();
             });
             svg.appendChild(path);
@@ -92,6 +136,8 @@
         baseCircle.setAttribute('fill', 'none');
         baseCircle.setAttribute('stroke', 'rgba(255,255,255,.15)');
         svg.appendChild(baseCircle);
+
+        applySelectionHighlight();
     }
 
     function showHueTooltip(e, bucket, i) {
@@ -110,17 +156,27 @@
     // сектору, и движение ползунка (через loadCharts) дают один и тот же путь обновления.
     async function refreshDrilldown() {
         if (openBucketIndex === null) return;
-        const bucket = currentHueWheel[openBucketIndex];
-        if (!bucket) return;
-        const i = openBucketIndex;
 
-        const title = `${HUE_NAMES[i]} (${Math.round(bucket.HueStart)}°–${Math.round(bucket.HueEnd)}°)`;
+        let title, hex, range;
+        if (openBucketIndex === 'EXTREME') {
+            const extreme = isExtremeLightness();
+            if (!extreme) { openBucketIndex = null; applySelectionHighlight(); drilldown.classList.add('hidden'); return; }
+            title = extreme === 'black' ? 'Чёрный' : 'Белый';
+            hex = extreme === 'black' ? '#000000' : '#ffffff';
+            range = { hueStart: 0, hueEnd: 360 };
+        } else {
+            const bucket = currentHueWheel[openBucketIndex];
+            if (!bucket || bucket.Count === 0) { openBucketIndex = null; applySelectionHighlight(); drilldown.classList.add('hidden'); return; }
+            title = `${HUE_NAMES[openBucketIndex]} (${Math.round(bucket.HueStart)}°–${Math.round(bucket.HueEnd)}°)`;
+            hex = bucket.Hex;
+            range = { hueStart: bucket.HueStart, hueEnd: bucket.HueEnd };
+        }
+
         drilldownTitle.textContent = title;
         drilldownBody.innerHTML = '<div class="cw-drilldown-note">Загрузка…</div>';
         drilldown.classList.remove('hidden');
         drilldown.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
-        const range = { hueStart: bucket.HueStart, hueEnd: bucket.HueEnd };
         if (lightnessRangeActive) { range.lStart = lightnessRange[0]; range.lEnd = lightnessRange[1]; }
 
         try {
@@ -129,7 +185,7 @@
 
             const [modelsResp, bgResp] = await Promise.all([
                 fetch(`${API_BASE}/GetGlobalColorWheelBucketModels?${params}`),
-                fetch(`${API_BASE}/GetGlobalColorWheelMatchingBackgrounds?hex=${encodeURIComponent(bucket.Hex)}`)
+                fetch(`${API_BASE}/GetGlobalColorWheelMatchingBackgrounds?hex=${encodeURIComponent(hex)}`)
             ]);
 
             // putya: "в этом блоке который выбран так же укажи подходящие фоны под этот цвет" —
@@ -177,6 +233,7 @@
 
     drilldownClose.addEventListener('click', () => {
         openBucketIndex = null;
+        applySelectionHighlight();
         drilldown.classList.add('hidden');
     });
 
@@ -189,6 +246,16 @@
     function lightnessBand(v) {
         const half = Math.max(1, Math.min(v, 100 - v, 12));
         return [Math.max(0, v - half), Math.min(100, v + half)];
+    }
+
+    // putya: "когда в 0 или в максимум уходит, то независимо от блока показывает просто белый
+    // или просто черный" — на самых краях ползунка оттенок больше не имеет смысла.
+    function isExtremeLightness() {
+        if (!lightnessRangeActive) return null;
+        const v = parseInt(lightnessSlider.value, 10);
+        if (v <= 0) return 'black';
+        if (v >= 100) return 'white';
+        return null;
     }
 
     function updateLightnessSliderLabel() {
@@ -344,7 +411,6 @@
             statsEl.innerHTML = `
                 <span>Моделей просканировано: <b>${data.ModelsScanned}</b></span>
                 <span>Кластеров учтено: <b>${data.ClustersUsed}</b></span>
-                <span>Серые/нейтральные: <b>${data.GreySharePercent}%</b></span>
             `;
 
             renderWheel(data.HueWheel);
