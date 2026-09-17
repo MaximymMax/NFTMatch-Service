@@ -7,60 +7,69 @@
     <title>Цветовой круг каталога</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../styles.css">
-    <link rel="stylesheet" href="./color-wheel.css?v=13">
+    <link rel="stylesheet" href="./color-wheel.css?v=14">
     <script src="../config.js"></script>
 </head>
 
 <body>
-    <header class="safe-area-gradient"></header>
+    <!-- putya: "нижние кнопки... перенеси вообще вверх в шапку, слева... тг канал и гитхаб" —
+         бывший info-cards-wrapper теперь живёт тут как компактные иконки. GitHub-иконку пока не
+         добавляю — putya ещё не прислал ссылку, добавлю рядом с TG сразу как придёт. -->
+    <header class="cw-page-header">
+        <div class="cw-header-group">
+            <a href="https://t.me/NFTStyler" target="_blank" class="cw-header-link cw-header-link-tg" title="Наш Telegram-канал">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M21.94 4.11a1.5 1.5 0 00-1.6-.2L3.4 10.8a1.4 1.4 0 00.06 2.6l4.42 1.54 1.7 5.36a1.4 1.4 0 002.31.6l2.47-2.31 4.3 3.16a1.4 1.4 0 002.2-.86l3.06-14.6a1.5 1.5 0 00-.98-1.68zM9.7 14.5l-.3 3.4-1.4-4.4 9.9-6.2-8.2 7.2z"/></svg>
+            </a>
+        </div>
+        <div class="cw-header-group">
+            <a href="../NonUnique/nonunique.html" class="cw-header-link cw-header-link-nonunique" title="Неуникальные подарки">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12v8a2 2 0 01-2 2H6a2 2 0 01-2-2v-8M2 7h20v5H2V7zm10 0V3.5a2.5 2.5 0 10-2.5 2.5H12zm0 0V3.5A2.5 2.5 0 1114.5 6H12z" />
+                </svg>
+            </a>
+            <a href="../API_info/api.html" class="cw-header-link cw-header-link-api" title="API">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                </svg>
+            </a>
+            <a href="../Support/support.html" class="cw-header-link cw-header-link-support" title="Поддержка">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+            </a>
+        </div>
+    </header>
 
     <main>
         <div class="main-container">
             <div class="glow-effect glow-left"></div>
             <div class="glow-effect glow-right"></div>
 
-            <!-- putya: "добавь все что есть на основной странице, кроме фото... и карусели" —
-                 те же карточки функций, что на index.html, без hero-картинки и карусели продаж. -->
-            <section class="tools-wrapper-styled">
-                <div class="tools-header-label">Доступные функции</div>
+            <!-- putya: "переделай кнопки монохромов, коллекций, похожих, сделай их более
+                 компактными" — вместо больших feature-card-new теперь узкая строка ссылок. -->
+            <div class="cw-quicklinks">
+                <a href="../Monohrome/background-finder.html" class="cw-quicklink">
+                    <img src="https://cdn.changes.tg/gifts/models/Spring%20Basket/png/Knitty%20Kitty.png" alt="">
+                    <span>Монохромы</span>
+                </a>
+                <a href="../Thematic/themes.html" class="cw-quicklink">
+                    <img src="https://cdn.changes.tg/gifts/models/Restless%20Jar/png/Kittens.png" alt="">
+                    <span>Тематики</span>
+                </a>
+                <a href="../nft-page/index.html" class="cw-quicklink">
+                    <img src="https://cdn.changes.tg/gifts/models/Snake%20Box/png/Seashore.png" alt="">
+                    <span>Похожие</span>
+                </a>
+            </div>
 
-                <div class="features-container">
-                    <a href="../Monohrome/background-finder.html" class="feature-card-new">
-                        <div class="card-header-title">Монохромы</div>
-                        <div class="card-body-gradient">
-                            <div class="inner-blue-card">
-                                <img src="https://cdn.changes.tg/gifts/models/Spring%20Basket/png/Knitty%20Kitty.png" alt="Mono">
-                            </div>
-                        </div>
-                        <div class="card-footer-btn">Открыть</div>
-                    </a>
-
-                    <a href="../nft-page/index.html" class="feature-card-new">
-                        <div class="card-header-title">Похожие</div>
-                        <div class="card-body-gradient">
-                            <img src="https://cdn.changes.tg/gifts/models/Snake%20Box/png/Seashore.png" alt="Similar" class="img-shadow">
-                        </div>
-                        <div class="card-footer-btn">Открыть</div>
-                    </a>
-
-                    <a href="../Thematic/themes.html" class="feature-card-new">
-                        <div class="card-header-title">Тематики</div>
-                        <div class="card-body-gradient">
-                            <img src="https://cdn.changes.tg/gifts/models/Restless%20Jar/png/Kittens.png" alt="Themes" class="img-shadow">
-                        </div>
-                        <div class="card-footer-btn">Открыть</div>
-                    </a>
-                </div>
-            </section>
-
-            <!-- putya: "Основным будет вот эта диаграма, на главном экране" — сам круг, теперь
-                 главный (и самый широкий) блок страницы. -->
             <div class="cw-container">
                 <h1 class="cw-title">Цветовой круг каталога</h1>
                 <p class="cw-subtitle">Только кластеры с весом выше <span id="cw-threshold">10</span>%. Клик по сектору — список подарков и подходящих фонов.</p>
 
                 <div id="cw-stats" class="cw-stats"></div>
 
+                <!-- putya: "слева была диаграмма, справа блок с моделями" (на ПК) —
+                     #cw-wheel-view слева, .cw-models-panel (фильтр + drilldown) справа. -->
                 <div class="cw-charts-row">
                     <div id="cw-wheel-view" class="cw-view">
                         <div class="cw-diagram-box">
@@ -74,87 +83,34 @@
                             <button id="lightness-reset" class="cw-slider-reset hidden" title="Сбросить срез">&times;</button>
                         </div>
                     </div>
-                </div>
 
-                <div class="cw-filter-row">
-                    <span class="cw-filter-label">Коллекции:</span>
-                    <div class="custom-dropdown-container multi-select" id="collections-container">
-                        <div class="dropdown-header with-search" id="collections-header">
-                            <input type="text" id="collections-search" class="dropdown-search" placeholder="Поиск..." autocomplete="off">
-                            <span id="collections-value" class="selected-value-placeholder">Все коллекции</span>
-                            <div class="arrow"></div>
+                    <div class="cw-models-panel">
+                        <div class="cw-filter-row">
+                            <span class="cw-filter-label">Коллекции:</span>
+                            <div class="custom-dropdown-container multi-select" id="collections-container">
+                                <div class="dropdown-header with-search" id="collections-header">
+                                    <input type="text" id="collections-search" class="dropdown-search" placeholder="Поиск..." autocomplete="off">
+                                    <span id="collections-value" class="selected-value-placeholder">Все коллекции</span>
+                                    <div class="arrow"></div>
+                                </div>
+                                <div class="dropdown-list hidden" id="collections-list">
+                                    <div id="collections-options"></div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="dropdown-list hidden" id="collections-list">
-                            <div id="collections-options"></div>
+
+                        <div id="cw-drilldown" class="cw-drilldown hidden">
+                            <div class="cw-drilldown-header">
+                                <span id="cw-drilldown-title">—</span>
+                                <button id="cw-drilldown-close" class="cw-drilldown-close">&times;</button>
+                            </div>
+                            <div id="cw-drilldown-backgrounds" class="cw-drilldown-backgrounds"></div>
+                            <div id="cw-drilldown-body" class="cw-drilldown-body"></div>
                         </div>
                     </div>
-                </div>
-
-                <div id="cw-drilldown" class="cw-drilldown hidden">
-                    <div class="cw-drilldown-header">
-                        <span id="cw-drilldown-title">—</span>
-                        <button id="cw-drilldown-close" class="cw-drilldown-close">&times;</button>
-                    </div>
-                    <div id="cw-drilldown-backgrounds" class="cw-drilldown-backgrounds"></div>
-                    <div id="cw-drilldown-body" class="cw-drilldown-body"></div>
                 </div>
 
                 <div id="cw-error" class="cw-error hidden"></div>
-            </div>
-
-            <div class="info-cards-wrapper section-separator">
-
-                <a href="../NonUnique/nonunique.html" class="info-card card-nonunique">
-                    <div class="info-card-icon">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12v8a2 2 0 01-2 2H6a2 2 0 01-2-2v-8M2 7h20v5H2V7zm10 0V3.5a2.5 2.5 0 10-2.5 2.5H12zm0 0V3.5A2.5 2.5 0 1114.5 6H12z" />
-                        </svg>
-                    </div>
-                    <div class="info-card-text">
-                        <h3>Неуникальные подарки</h3>
-                        <p>Купить обычный подарок за звёзды</p>
-                    </div>
-                </a>
-
-                <a href="https://t.me/NFTStyler" target="_blank" class="info-card card-channel">
-                    <div class="info-card-icon">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                        </svg>
-                    </div>
-                    <div class="info-card-text">
-                        <h3>Наш канал</h3>
-                        <p>Подпишитесь, чтобы следить за обновлениями</p>
-                    </div>
-                </a>
-
-                <a href="../API_info/api.html" class="info-card card-api">
-                    <div class="info-card-icon">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
-                        </svg>
-                    </div>
-                    <div class="info-card-text">
-                        <h3>API</h3>
-                        <p>Открытый доступ к данным.</p>
-                    </div>
-                </a>
-
-                <a href="../Support/support.html" class="info-card card-support">
-                    <div class="info-card-icon">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                            stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round"
-                                d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                    </div>
-                    <div class="info-card-text">
-                        <h3>Поддержка</h3>
-                        <p>Поддержать развитие проекта.</p>
-                    </div>
-                </a>
-
             </div>
 
             <div class="footer-credits">
@@ -164,7 +120,7 @@
         </div>
     </main>
 
-    <script src="./color-wheel.js?v=15"></script>
+    <script src="./color-wheel.js?v=16"></script>
 </body>
 
 </html>

@@ -262,6 +262,18 @@
         return null;
     }
 
+    // putya: "по умолчанию без выбора выбери наибольший кластер для демонстрации" — мутирует
+    // openBucketIndex (глобальный), рендер/подсветку вызывающая сторона делает сама.
+    function autoSelectDefault(hueWheel) {
+        const extreme = isExtremeLightness();
+        if (extreme) { openBucketIndex = 'EXTREME'; return; }
+        let bestIdx = -1, bestShare = -1;
+        hueWheel.forEach((b, i) => {
+            if (b.Count > 0 && b.SharePercent > bestShare) { bestShare = b.SharePercent; bestIdx = i; }
+        });
+        if (bestIdx >= 0) openBucketIndex = bestIdx;
+    }
+
     function updateLightnessSliderLabel() {
         lightnessSliderValue.textContent = lightnessRangeActive
             ? `${Math.round(lightnessRange[0])}–${Math.round(lightnessRange[1])}`
@@ -418,6 +430,13 @@
             `;
 
             renderWheel(data.HueWheel);
+            // putya: "по умолчанию без выбора выбери наибольший кластер для демонстрации" —
+            // если ничего не выбрано (первая загрузка или после закрытия блока), сами выбираем
+            // самый крупный по доле сектор (или чёрный/белый круг на краях светлоты).
+            if (openBucketIndex === null) {
+                autoSelectDefault(data.HueWheel);
+                applySelectionHighlight();
+            }
             if (openBucketIndex !== null) refreshDrilldown();
         } catch (err) {
             showError('Не удалось загрузить: ' + err.message);

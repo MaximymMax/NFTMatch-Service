@@ -24,6 +24,44 @@
 .cw-title { font-size: 20px; font-weight: 800; text-align: center; }
 .cw-subtitle { font-size: 12.5px; color: var(--text-muted); text-align: center; line-height: 1.5; max-width: 560px; }
 
+/* putya: "нижние кнопки... перенеси вообще вверх в шапку, слева... тг канал и гитхаб" — обычный
+   header сайта декоративный (position:absolute, pointer-events:none, `header a{display:none}`),
+   поэтому тут отдельный настоящий header-бар со своими стилями. */
+.cw-page-header {
+    display: flex; align-items: center; justify-content: space-between;
+    max-width: 950px; width: 100%; margin: 0 auto;
+    padding: 14px 16px 0; gap: 10px; position: relative; z-index: 20;
+}
+.cw-header-group { display: flex; align-items: center; gap: 8px; }
+.cw-header-link {
+    display: flex; align-items: center; justify-content: center;
+    width: 36px; height: 36px; border-radius: 10px; flex: 0 0 auto;
+    background: var(--surface-elevated); color: var(--text-secondary);
+    transition: transform .15s ease, color .15s ease, background-color .15s ease;
+}
+.cw-header-link svg { width: 18px; height: 18px; }
+.cw-header-link:hover { transform: translateY(-2px); }
+.cw-header-link-tg:hover { color: #60a5fa; background: rgba(37, 99, 235, .18); }
+.cw-header-link-gh:hover { color: #f1f5fa; background: rgba(255, 255, 255, .12); }
+.cw-header-link-nonunique:hover { color: #c084fc; background: rgba(168, 85, 247, .18); }
+.cw-header-link-api:hover { color: #34d399; background: rgba(16, 185, 129, .18); }
+.cw-header-link-support:hover { color: #fbbf24; background: rgba(245, 158, 11, .18); }
+
+/* putya: "переделай кнопки монохромов, коллекций, похожих, сделай их более компактными" — узкие
+   пилюли вместо больших feature-card-new с картинкой на всю карточку. */
+.cw-quicklinks {
+    display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; width: 100%;
+}
+.cw-quicklink {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--surface-elevated); border-radius: 12px;
+    padding: 6px 14px 6px 6px; text-decoration: none;
+    color: var(--text-primary); font-size: 13px; font-weight: 600;
+    transition: transform .15s ease, background-color .15s ease;
+}
+.cw-quicklink:hover { transform: translateY(-2px); background: #263355; }
+.cw-quicklink img { width: 30px; height: 30px; object-fit: contain; border-radius: 8px; flex: 0 0 auto; }
+
 /* --- Фильтр коллекций: тот же multi-select dropdown, что и на background-finder.html --- */
 .cw-filter-row { display: flex; align-items: center; gap: 10px; width: 100%; }
 .cw-filter-label { font-size: 13px; color: var(--text-muted); flex: 0 0 auto; }
@@ -107,11 +145,26 @@
 }
 .cw-stats b { color: var(--text-primary); font-weight: 700; }
 
-.cw-charts-row { width: 100%; display: flex; justify-content: center; }
+/* putya: "на пк... слева была диаграмма, справа блок с моделями" — на мобильном остаётся
+   одна колонка (диаграмма, потом фильтр+модели), на ПК становится двумя. */
+.cw-charts-row {
+    width: 100%; display: flex; flex-direction: column; gap: 16px; align-items: stretch;
+}
 
 .cw-view {
     width: 100%;
     display: flex; flex-direction: column; align-items: center; gap: 8px;
+}
+
+.cw-models-panel {
+    width: 100%; display: flex; flex-direction: column; gap: 10px;
+}
+
+@media (min-width: 860px) {
+    .cw-charts-row { flex-direction: row; align-items: flex-start; }
+    #cw-wheel-view { flex: 0 0 380px; }
+    .cw-models-panel { flex: 1 1 auto; min-width: 0; }
+    .cw-drilldown-body { max-height: 460px; }
 }
 
 .cw-diagram-box {
