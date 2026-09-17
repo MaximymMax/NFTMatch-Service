@@ -1954,13 +1954,6 @@ if (sortSwitcher) {
         return significant.length >= BGS2_RADAR_MIN_AXES ? significant : list.slice(0, Math.min(BGS2_RADAR_MIN_AXES, list.length));
     }
 
-    function bgs2AnchorBadge(anchor) {
-        if (anchor === 'vivid') return `<span class="bgs2-anchor-badge bgs2-anchor-vivid" title="Совпал с самой насыщенной реально наблюдённой точкой материала (блик/акцент)">🔆 сочный</span>`;
-        if (anchor === 'avg') return `<span class="bgs2-anchor-badge bgs2-anchor-avg" title="Совпал с честным средним цветом материала">⚪ средний</span>`;
-        if (anchor === 'blend') return `<span class="bgs2-anchor-badge bgs2-anchor-vivid" title="Совпал с точкой между средним цветом и бликом материала">🌗 смешанный</span>`;
-        return '';
-    }
-
     function bgs2MonoDots(monoBreakdown) {
         return (monoBreakdown || []).map(m => {
             const cubeHex = bgs2Pick(m, 'cubeHex') || '#000000';
@@ -1987,11 +1980,13 @@ if (sortSwitcher) {
         const bestCubeWeight = bgs2Pick(b, 'bestCubeWeight');
         const anchor = bgs2Pick(b, 'matchedAnchor');
 
+        // putya: "без сочности" — не показываем бейдж средний/сочный (matchedAnchor), только сам
+        // цвет лучшего куба точкой. Разница avg/vivid — деталь для отладки алгоритма, не для сайта.
         let breakdownHtml;
         if (isMono) {
             breakdownHtml = bgs2MonoDots(bgs2Pick(b, 'monoBreakdown'));
         } else if (bestCubeHex) {
-            breakdownHtml = `<span class="bgs2-mini-dot" style="background:${bestCubeHex}" title="Лучший куб: ${bgs2EscapeHtml(bestCubeHex)}"></span>${bgs2AnchorBadge(anchor)}`;
+            breakdownHtml = `<span class="bgs2-mini-dot" style="background:${bestCubeHex}" title="Лучший куб: ${bgs2EscapeHtml(bestCubeHex)}"></span>`;
         } else {
             breakdownHtml = '';
         }
@@ -2052,35 +2047,28 @@ if (sortSwitcher) {
         `;
     }
 
+    // putya: "не надо прям все добавлять что есть в тестовом режиме, просто ... группы (без
+    // сочности, именно по самим цветам группировка)" — убрана разбивка на МОНО/Средний/Сочный
+    // внутри группы: один плоский список, отсортированный по %. Монохромы сюда не дублируем — они
+    // уже показаны отдельной плашкой выше (bgs2RenderMonoSection). Мелкие группы (незначительная
+    // доля массы модели) не показываем вовсе — те же 5%, что и порог значимого кластера на
+    // диаграмме (BGS2_RADAR_SIGNIFICANT_WEIGHT), чтобы не плодить группы почти без веса.
+    const BGS2_GROUP_MIN_MASS_PCT = 5;
+
     function bgs2RenderGroups(groups, isAdmin) {
         return (groups || []).map(g => {
             const colors = bgs2Pick(g, 'colors') || [];
             const color = colors[0] || {};
             const colorHex = bgs2Pick(color, 'hex') || '#000000';
             const colorPct = bgs2Pick(color, 'percentage') || 0;
-            const backgrounds = bgs2Pick(g, 'backgrounds') || [];
+            if (colorPct < BGS2_GROUP_MIN_MASS_PCT) return '';
 
-            const buckets = { mono: [], avg: [], vivid: [] };
-            backgrounds.forEach(b => {
-                const isMono = !!bgs2Pick(b, 'isMonochrome');
-                const anchor = bgs2Pick(b, 'matchedAnchor');
-                const bucket = isMono ? 'mono' : (anchor === 'vivid' ? 'vivid' : 'avg');
-                buckets[bucket].push(b);
-            });
+            const backgrounds = (bgs2Pick(g, 'backgrounds') || [])
+                .filter(b => !bgs2Pick(b, 'isMonochrome'))
+                .sort((a, b) => (bgs2Pick(b, 'similarity') || 0) - (bgs2Pick(a, 'similarity') || 0));
+            if (!backgrounds.length) return '';
 
-            const renderBucket = (items, label) => {
-                if (!items.length) return '';
-                const cards = items.map(b => bgs2Card(b, { isAdmin })).join('');
-                return `
-                  <div class="bgs2-anchor-bucket">
-                    <div class="bgs2-anchor-bucket-label">${label} (${items.length})</div>
-                    <div class="bgs2-grid">${cards}</div>
-                  </div>
-                `;
-            };
-
-            const bgHtml = renderBucket(buckets.mono, '★ МОНО') + renderBucket(buckets.avg, '⚪ Средний') + renderBucket(buckets.vivid, '🔆 Сочный');
-            if (!bgHtml) return '';
+            const cards = backgrounds.map(b => bgs2Card(b, { isAdmin })).join('');
 
             return `
               <div class="bgs2-group-card">
@@ -2089,7 +2077,7 @@ if (sortSwitcher) {
                   <span class="bgs2-group-title">${colorHex}</span>
                   <span class="bgs2-group-pct">${Number(colorPct).toFixed(1)}% массы модели</span>
                 </div>
-                ${bgHtml}
+                <div class="bgs2-grid">${cards}</div>
               </div>
             `;
         }).join('');

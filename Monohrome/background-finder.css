@@ -1441,12 +1441,6 @@ main {
 
 .bgs2-card-breakdown { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; padding: 6px 8px; background: rgba(0, 0, 0, .15); }
 .bgs2-mini-dot { width: 10px; height: 10px; border-radius: 50%; border: 1px solid rgba(255, 255, 255, .25); flex: 0 0 auto; cursor: help; }
-.bgs2-anchor-badge {
-    font-size: 9px; font-weight: 600; letter-spacing: .02em; padding: 1px 5px; border-radius: 4px;
-    flex: 0 0 auto; cursor: help; white-space: nowrap;
-}
-.bgs2-anchor-badge.bgs2-anchor-vivid { background: rgba(255, 170, 0, .22); color: #ffb347; }
-.bgs2-anchor-badge.bgs2-anchor-avg { background: rgba(255, 255, 255, .12); color: var(--text-muted); }
 
 .bgs2-flag-btn, .bgs2-mono-add-btn {
     background: transparent; border: none; color: var(--text-muted); cursor: pointer;
@@ -1465,14 +1459,6 @@ main {
 .bgs2-mono-section-sub { font-size: 11px; color: var(--text-muted); margin-bottom: 12px; }
 .bgs2-all-section { background: rgba(255, 255, 255, .03); border-color: var(--border-color); }
 .bgs2-all-title { color: var(--primary-color); }
-
-.bgs2-anchor-bucket { margin-top: 10px; }
-.bgs2-anchor-bucket:first-of-type { margin-top: 0; }
-.bgs2-anchor-bucket-label {
-    font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;
-    letter-spacing: .03em; margin-bottom: 6px; padding-top: 8px; border-top: 1px solid rgba(255, 255, 255, .08);
-}
-.bgs2-anchor-bucket:first-of-type .bgs2-anchor-bucket-label { border-top: none; padding-top: 0; }
 
 .bgs2-group-card {
     background: var(--surface-elevated); border: 1px solid var(--border-color);
