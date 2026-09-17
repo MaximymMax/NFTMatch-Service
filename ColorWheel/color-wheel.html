@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Цветовой круг каталога</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="./color-wheel.css?v=3">
+    <link rel="stylesheet" href="./color-wheel.css?v=4">
     <script src="../config.js"></script>
 </head>
 
@@ -14,25 +14,38 @@
     <main>
         <div class="cw-container">
             <h1 class="cw-title">Цветовой круг каталога</h1>
-            <p class="cw-subtitle">Агрегация по всем моделям: только кластеры с весом выше <span id="cw-threshold">10</span>%, позиция — только по тону (Hue), без учёта яркости.</p>
+            <p class="cw-subtitle">Агрегация по всем моделям: только кластеры с весом выше <span id="cw-threshold">10</span>%, позиция на круге — только по тону (Hue), без учёта яркости.</p>
 
-            <div class="cw-tabs">
-                <button class="cw-tab active" data-view="wheel">Круг</button>
-                <button class="cw-tab" data-view="cube">3D-куб</button>
+            <div class="cw-filter-row">
+                <span class="cw-filter-label">Коллекции:</span>
+                <div class="custom-dropdown-container multi-select" id="collections-container">
+                    <div class="dropdown-header with-search" id="collections-header">
+                        <input type="text" id="collections-search" class="dropdown-search" placeholder="Поиск..." autocomplete="off">
+                        <span id="collections-value" class="selected-value-placeholder">Все коллекции</span>
+                        <div class="arrow"></div>
+                    </div>
+                    <div class="dropdown-list hidden" id="collections-list">
+                        <div id="collections-options"></div>
+                    </div>
+                </div>
             </div>
 
             <div id="cw-stats" class="cw-stats"></div>
 
-            <div id="cw-wheel-view" class="cw-view">
-                <svg id="cw-svg" viewBox="-220 -220 440 440"></svg>
-                <div id="cw-tooltip" class="cw-tooltip hidden"></div>
-            </div>
-
-            <div id="cw-cube-view" class="cw-view hidden">
-                <div class="cube-scene" id="cube-scene">
-                    <div class="cube-inner" id="cube-inner"></div>
+            <div class="cw-charts-row">
+                <div id="cw-wheel-view" class="cw-view">
+                    <h2 class="cw-view-title">Круг</h2>
+                    <svg id="cw-svg" viewBox="-220 -220 440 440"></svg>
+                    <div id="cw-tooltip" class="cw-tooltip hidden"></div>
                 </div>
-                <p class="cw-hint">Перетаскивай мышью, чтобы повернуть. Вверху — светлые оттенки, внизу — тёмные; чем дальше от оси — тем насыщеннее цвет.</p>
+
+                <div id="cw-cube-view" class="cw-view">
+                    <h2 class="cw-view-title">3D-куб</h2>
+                    <div class="cube-scene" id="cube-scene">
+                        <div class="cube-inner" id="cube-inner"></div>
+                    </div>
+                    <p class="cw-hint">Перетаскивай мышью, чтобы повернуть. Вверху — светлые оттенки, внизу — тёмные; чем дальше от оси — тем насыщеннее цвет.</p>
+                </div>
             </div>
 
             <div id="cw-legend" class="cw-legend"></div>
@@ -41,7 +54,7 @@
         </div>
     </main>
 
-    <script src="./color-wheel.js?v=3"></script>
+    <script src="./color-wheel.js?v=4"></script>
 </body>
 
 </html>

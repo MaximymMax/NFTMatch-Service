@@ -8,6 +8,7 @@
     --text-secondary: #d8d8d8;
     --text-muted: #6b7fa7;
     --accent: #2563eb;
+    --border-color: rgba(255, 255, 255, .14);
     --card-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.18);
     --radius: 0.8rem;
 }
@@ -23,7 +24,7 @@ main { display: flex; justify-content: center; padding: 24px 16px 60px; }
 
 .cw-container {
     width: 100%;
-    max-width: 720px;
+    max-width: 980px;
     background: var(--surface-color);
     border-radius: var(--radius);
     box-shadow: var(--card-shadow);
@@ -35,18 +36,78 @@ main { display: flex; justify-content: center; padding: 24px 16px 60px; }
 }
 
 .cw-title { font-size: 22px; font-weight: 800; text-align: center; }
-.cw-subtitle { font-size: 13px; color: var(--text-muted); text-align: center; max-width: 520px; line-height: 1.5; }
+.cw-subtitle { font-size: 13px; color: var(--text-muted); text-align: center; max-width: 620px; line-height: 1.5; }
 
-.cw-tabs {
-    display: flex; gap: 6px; background: var(--surface-elevated);
-    border-radius: 10px; padding: 4px;
+/* --- Фильтр коллекций: тот же multi-select dropdown, что и на background-finder.html --- */
+.cw-filter-row { display: flex; align-items: center; gap: 10px; width: 100%; max-width: 360px; }
+.cw-filter-label { font-size: 13px; color: var(--text-muted); flex: 0 0 auto; }
+
+.custom-dropdown-container { position: relative; flex: 1 1 auto; }
+
+.dropdown-header {
+    display: flex; align-items: center; justify-content: space-between;
+    background-color: var(--surface-elevated);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all .2s ease;
+    position: relative;
 }
-.cw-tab {
-    border: none; background: transparent; color: var(--text-secondary);
-    padding: 8px 18px; border-radius: 8px; font-size: 14px; font-weight: 600;
-    cursor: pointer; transition: background .15s, color .15s;
+.dropdown-header.active { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(37, 99, 235, .18); }
+
+.dropdown-header .arrow {
+    width: 8px; height: 8px;
+    border-right: 2px solid var(--text-muted); border-bottom: 2px solid var(--text-muted);
+    transition: transform .2s;
+    position: absolute; right: 14px; top: 50%;
+    transform: translateY(-60%) rotate(45deg);
 }
-.cw-tab.active { background: var(--accent); color: #fff; }
+.dropdown-header.active .arrow { transform: translateY(-40%) rotate(225deg); }
+
+.dropdown-header.with-search {
+    padding: 0; display: flex; align-items: center; justify-content: space-between;
+}
+.dropdown-header .dropdown-search {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    box-sizing: border-box; background: transparent; border: none; outline: none;
+    z-index: 2; opacity: 0; transition: opacity .2s;
+    color: var(--text-primary); font-size: 13px; padding: 10px 30px 10px 14px;
+    pointer-events: none;
+}
+.dropdown-header .selected-value-placeholder {
+    font-size: 13px; color: var(--text-secondary); padding: 10px 30px 10px 14px;
+    overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+    flex-grow: 1; transition: opacity .2s;
+}
+.dropdown-header.open .dropdown-search,
+.dropdown-header.value-active .dropdown-search { opacity: 1; pointer-events: auto; }
+.dropdown-header.open .selected-value-placeholder,
+.dropdown-header.value-active .selected-value-placeholder { opacity: 0; pointer-events: none; }
+
+.dropdown-list {
+    position: absolute; top: calc(100% + 6px); left: 0; right: 0;
+    background-color: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    box-shadow: 0 16px 40px rgba(0,0,0,.55);
+    z-index: 50; padding: 6px;
+    max-height: 280px; overflow-y: auto;
+}
+.dropdown-list.hidden { display: none; }
+.dropdown-list::-webkit-scrollbar { width: 7px; }
+.dropdown-list::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
+
+.list-option {
+    padding: 8px 12px; cursor: pointer; border-radius: 7px;
+    font-size: 13px; color: var(--text-secondary); transition: background-color .15s;
+}
+.list-option:hover { background-color: var(--surface-elevated); }
+.list-option.selected {
+    background-color: rgba(37, 99, 235, .18);
+    border-left: 3px solid var(--accent);
+    color: var(--text-primary); font-weight: 600;
+}
+.list-option.hidden-by-search { display: none; }
 
 .cw-stats {
     display: flex; flex-wrap: wrap; justify-content: center; gap: 10px 22px;
@@ -54,16 +115,25 @@ main { display: flex; justify-content: center; padding: 24px 16px 60px; }
 }
 .cw-stats b { color: var(--text-primary); font-weight: 700; }
 
-.cw-view { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 10px; }
-.cw-view.hidden { display: none; }
+/* --- Оба графика рядом --- */
+.cw-charts-row {
+    width: 100%; display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; align-items: flex-start;
+}
 
-#cw-svg { width: 100%; max-width: 440px; height: auto; overflow: visible; }
+.cw-view {
+    flex: 1 1 320px; max-width: 420px;
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+    background: rgba(255,255,255,.02); border-radius: 12px; padding: 14px;
+}
+.cw-view-title { font-size: 14px; font-weight: 700; color: var(--text-secondary); }
+
+#cw-svg { width: 100%; max-width: 340px; height: auto; overflow: visible; }
 
 .cw-sector { cursor: pointer; stroke: rgba(255,255,255,.08); stroke-width: 1; transition: opacity .15s; }
 .cw-sector:hover { opacity: .82; }
 
 .cw-sector-label {
-    font-size: 13px; font-weight: 700; fill: #fff; pointer-events: none;
+    font-size: 12px; font-weight: 700; fill: #fff; pointer-events: none;
     paint-order: stroke; stroke: rgba(10,16,32,.85); stroke-width: 3px; stroke-linejoin: round;
 }
 
@@ -84,33 +154,35 @@ main { display: flex; justify-content: center; padding: 24px 16px 60px; }
 .cw-tooltip.hidden { display: none; }
 .cw-tooltip b { display: block; margin-bottom: 2px; }
 
-.cw-hint { font-size: 12px; color: var(--text-muted); }
+.cw-hint { font-size: 11.5px; color: var(--text-muted); text-align: center; }
 
 .cube-scene {
-    width: 260px; height: 260px; perspective: 900px;
+    width: 240px; height: 240px; perspective: 900px;
     display: flex; align-items: center; justify-content: center;
     cursor: grab; user-select: none;
 }
 .cube-scene:active { cursor: grabbing; }
 
 .cube-inner {
-    width: 200px; height: 200px; position: relative;
+    width: 190px; height: 190px; position: relative;
     transform-style: preserve-3d;
     transform: rotateX(-20deg) rotateY(35deg);
 }
 
+/* putya: "кружки эти 3д сделай" — радиальный градиент вместо плоской заливки, чтобы читалось как
+   объёмный шарик, а не плоский кружок. */
 .cube-point {
     position: absolute; border-radius: 50%;
     top: 50%; left: 50%;
-    box-shadow: 0 0 6px currentColor;
+    box-shadow: 0 1px 4px rgba(0,0,0,.5);
 }
 
 /* Ось "светлота" — единственный ориентир: верх светлый, низ тёмный. */
 .lab-axis {
-    position: absolute; left: 50%; top: 50%; width: 2px; height: 190px;
-    margin-left: -1px; margin-top: -95px;
+    position: absolute; left: 50%; top: 50%; width: 2px; height: 180px;
+    margin-left: -1px; margin-top: -90px;
     background: linear-gradient(180deg, #fff, #888 50%, #000);
-    opacity: .35; border-radius: 2px;
+    opacity: .3; border-radius: 2px;
 }
 
 .cw-error {
@@ -120,6 +192,7 @@ main { display: flex; justify-content: center; padding: 24px 16px 60px; }
 
 @media (max-width: 480px) {
     .cw-container { padding: 16px; }
+    .cw-filter-row { max-width: 100%; }
     .cube-scene { width: 220px; height: 220px; }
     .cube-inner { width: 170px; height: 170px; }
 }

@@ -4,14 +4,19 @@
     const svg = document.getElementById('cw-svg');
     const statsEl = document.getElementById('cw-stats');
     const errorEl = document.getElementById('cw-error');
-    const wheelView = document.getElementById('cw-wheel-view');
-    const cubeView = document.getElementById('cw-cube-view');
+    const chartsRow = document.querySelector('.cw-charts-row');
     const tooltip = document.getElementById('cw-tooltip');
     const cubeInner = document.getElementById('cube-inner');
     const cubeScene = document.getElementById('cube-scene');
-    const tabs = document.querySelectorAll('.cw-tab');
     const thresholdEl = document.getElementById('cw-threshold');
     const legendEl = document.getElementById('cw-legend');
+    const filterRow = document.querySelector('.cw-filter-row');
+
+    const collectionsHeader = document.getElementById('collections-header');
+    const collectionsSearch = document.getElementById('collections-search');
+    const collectionsValue = document.getElementById('collections-value');
+    const collectionsList = document.getElementById('collections-list');
+    const collectionsOptions = document.getElementById('collections-options');
 
     // 12 секторов по 30° начиная с 0° (красный) — классические названия цветового круга художника,
     // тот же порядок, что и HueWheel с бэкенда.
@@ -21,21 +26,9 @@
     function showError(msg) {
         errorEl.textContent = msg;
         errorEl.classList.remove('hidden');
-        wheelView.classList.add('hidden');
-        cubeView.classList.add('hidden');
-        document.querySelector('.cw-tabs').style.display = 'none';
+        chartsRow.classList.add('hidden');
+        filterRow.style.display = 'none';
     }
-
-    // --- Вкладки "Круг" / "3D-куб" ---
-    tabs.forEach(tab => {
-        tab.addEventListener('click', () => {
-            tabs.forEach(t => t.classList.remove('active'));
-            tab.classList.add('active');
-            const view = tab.dataset.view;
-            wheelView.classList.toggle('hidden', view !== 'wheel');
-            cubeView.classList.toggle('hidden', view !== 'cube');
-        });
-    });
 
     // --- Круг: 12 секторов по Hue, радиус ~ доля веса (roza diagram) ---
     function polar(r, deg) {
@@ -51,6 +44,7 @@
     }
 
     function renderWheel(hueWheel) {
+        svg.innerHTML = '';
         const maxShare = Math.max(1, ...hueWheel.map(h => h.SharePercent));
         const minR = 30, maxR = 200;
         const ns = 'http://www.w3.org/2000/svg';
@@ -67,8 +61,6 @@
             path.addEventListener('mouseleave', hideTooltip);
             svg.appendChild(path);
 
-            // putya: "только еще бы какие-то обозначения добавить" — процент прямо на крупных
-            // секторах (мелкие подписаны только в легенде ниже, иначе текст не влезает).
             if (bucket.SharePercent >= 4) {
                 const midAngle = (bucket.HueStart + bucket.HueEnd) / 2;
                 const [lx, ly] = polar(outerR * 0.62, midAngle);
@@ -83,7 +75,6 @@
             }
         });
 
-        // Тонкая базовая окружность-ориентир для внутреннего радиуса.
         const baseCircle = document.createElementNS(ns, 'circle');
         baseCircle.setAttribute('r', minR);
         baseCircle.setAttribute('fill', 'none');
@@ -91,8 +82,6 @@
         svg.appendChild(baseCircle);
     }
 
-    // Легенда: название цвета + доля, одним списком — общая для обоих видов (круг и 3D-бары
-    // используют одни и те же 12 hue-бакетов и цвета).
     function renderLegend(hueWheel) {
         legendEl.innerHTML = hueWheel.map((b, i) => `
             <div class="cw-legend-item">
@@ -112,12 +101,8 @@
     }
     function hideTooltip() { tooltip.classList.add('hidden'); }
 
-    // --- 3D: настоящее цветовое пространство (цилиндр Hue/Saturation/Lightness) — putya:
-    // "я имел ввиду что там будут учтены именно 3д кубы, чтобы и темные и светлые цвета были" —
-    // высота = светлота (вверху светлые оттенки, внизу тёмные), расстояние от центральной оси =
-    // насыщенность (серые — у оси, яркие/сочные — снаружи), угол вокруг оси = тон (тот же Hue,
-    // что и на круге). Считается на фронтенде из тех же CubePoints (усреднённые R/G/B по
-    // квантованным ячейкам, см. GetGlobalColorWheel на бэке) — не нужен отдельный запрос.
+    // --- 3D: цилиндр Hue/Saturation/Lightness (высота=светлота, расстояние от оси=насыщенность,
+    // угол=тон) — считается на фронтенде из CubePoints (усреднённые R/G/B по квантованным ячейкам).
     let rotX = -20, rotY = 35;
     function applyCubeRotation() {
         cubeInner.style.transform = `rotateX(${rotX}deg) rotateY(${rotY}deg)`;
@@ -141,18 +126,24 @@
         return { h, s: s * 100, l: l * 100 };
     }
 
+    // putya: "кружки эти 3д сделай" — радиальный градиент (блик + затемнённый край), чтобы читалось
+    // как объёмный шарик, а не плоский кружок.
+    function shade(r, g, b, percent) {
+        const t = percent < 0 ? 0 : 255;
+        const p = Math.abs(percent) / 100;
+        return `rgb(${Math.round((t - r) * p) + r}, ${Math.round((t - g) * p) + g}, ${Math.round((t - b) * p) + b})`;
+    }
+
     function renderCube3D(cubePoints) {
         cubeInner.innerHTML = '';
 
-        // Центральная ось "светлота" — единственный простой ориентир, который нужен: верх = светлое,
-        // низ = тёмное.
         const axis = document.createElement('div');
         axis.className = 'lab-axis';
         cubeInner.appendChild(axis);
 
         if (!cubePoints.length) return;
         const maxWeight = Math.max(...cubePoints.map(p => p.WeightSum));
-        const maxRadius = 95, halfHeight = 95;
+        const maxRadius = 88, halfHeight = 88;
 
         cubePoints.forEach(p => {
             const { h, s, l } = rgbToHsl(p.R, p.G, p.B);
@@ -160,15 +151,14 @@
             const radius = (s / 100) * maxRadius;
             const x = radius * Math.cos(rad);
             const z = radius * Math.sin(rad);
-            const y = ((50 - l) / 50) * halfHeight; // светлое (l=100) — вверх (y отрицательный)
-            const size = 4 + Math.sqrt(p.WeightSum / maxWeight) * 15;
+            const y = ((50 - l) / 50) * halfHeight;
+            const size = 5 + Math.sqrt(p.WeightSum / maxWeight) * 13;
 
             const dot = document.createElement('div');
             dot.className = 'cube-point';
             dot.style.width = size + 'px';
             dot.style.height = size + 'px';
-            dot.style.background = p.Hex;
-            dot.style.color = p.Hex;
+            dot.style.background = `radial-gradient(circle at 32% 28%, ${shade(p.R, p.G, p.B, 60)}, ${p.Hex} 55%, ${shade(p.R, p.G, p.B, -35)} 100%)`;
             dot.style.marginLeft = -(size / 2) + 'px';
             dot.style.marginTop = -(size / 2) + 'px';
             dot.style.transform = `translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, ${z.toFixed(1)}px)`;
@@ -203,10 +193,105 @@
     }
     requestAnimationFrame(tick);
 
-    // --- Загрузка данных ---
-    async function load() {
+    // --- putya: "список выбранный коллекций... в таком же стиле сделай выпадающий список как у
+    // меня все остальное" — тот же multi-select (клик по "Все" сбрасывает выбор, клик по пункту
+    // тогглит его в массиве), что и на background-finder.html, только текстовый (без картинок).
+    let selectedCollections = [];
+
+    function updateCollectionsHeaderText() {
+        if (selectedCollections.length === 0) {
+            collectionsValue.textContent = 'Все коллекции';
+            collectionsHeader.classList.remove('value-active');
+        } else if (selectedCollections.length === 1) {
+            collectionsValue.textContent = selectedCollections[0];
+            collectionsHeader.classList.add('value-active');
+        } else {
+            collectionsValue.textContent = `Выбрано: ${selectedCollections.length}`;
+            collectionsHeader.classList.add('value-active');
+        }
+        collectionsOptions.querySelectorAll('.list-option').forEach(opt => {
+            const val = opt.dataset.value;
+            opt.classList.toggle('selected', val === 'ALL' ? selectedCollections.length === 0 : selectedCollections.includes(val));
+        });
+    }
+
+    function populateCollections(names) {
+        collectionsOptions.innerHTML = '';
+        const allOpt = document.createElement('div');
+        allOpt.className = 'list-option selected';
+        allOpt.dataset.value = 'ALL';
+        allOpt.textContent = 'Все коллекции';
+        collectionsOptions.appendChild(allOpt);
+
+        names.forEach(name => {
+            const opt = document.createElement('div');
+            opt.className = 'list-option';
+            opt.dataset.value = name;
+            opt.textContent = name;
+            collectionsOptions.appendChild(opt);
+        });
+    }
+
+    let refetchTimer = null;
+    function scheduleRefetch() {
+        clearTimeout(refetchTimer);
+        refetchTimer = setTimeout(loadCharts, 300);
+    }
+
+    collectionsOptions.addEventListener('click', (e) => {
+        const opt = e.target.closest('.list-option');
+        if (!opt) return;
+        const val = opt.dataset.value;
+        if (val === 'ALL') {
+            selectedCollections = [];
+        } else {
+            const idx = selectedCollections.indexOf(val);
+            if (idx > -1) selectedCollections.splice(idx, 1);
+            else selectedCollections.push(val);
+        }
+        updateCollectionsHeaderText();
+        scheduleRefetch();
+    });
+
+    collectionsHeader.addEventListener('click', () => {
+        const opening = collectionsList.classList.contains('hidden');
+        collectionsList.classList.toggle('hidden', !opening);
+        collectionsHeader.classList.toggle('active', opening);
+        collectionsHeader.classList.toggle('open', opening);
+        if (opening) collectionsSearch.focus();
+    });
+
+    collectionsSearch.addEventListener('input', () => {
+        const q = collectionsSearch.value.trim().toLowerCase();
+        collectionsOptions.querySelectorAll('.list-option').forEach(opt => {
+            const text = opt.textContent.toLowerCase();
+            opt.classList.toggle('hidden-by-search', q.length > 0 && !text.includes(q));
+        });
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('#collections-container')) {
+            collectionsList.classList.add('hidden');
+            collectionsHeader.classList.remove('active', 'open');
+        }
+    });
+
+    async function loadCollectionsList() {
         try {
-            const resp = await fetch(`${API_BASE}/GetGlobalColorWheel`);
+            const resp = await fetch(`${API_BASE}/GetGlobalColorWheelCollections`);
+            if (!resp.ok) return;
+            const names = await resp.json();
+            populateCollections(names);
+        } catch (err) { /* фильтр — необязательная надстройка, тихо пропускаем при ошибке */ }
+    }
+
+    // --- Загрузка и отрисовка диаграмм (переиспользуется при смене фильтра) ---
+    async function loadCharts() {
+        try {
+            const url = selectedCollections.length > 0
+                ? `${API_BASE}/GetGlobalColorWheel?collections=${encodeURIComponent(selectedCollections.join(','))}`
+                : `${API_BASE}/GetGlobalColorWheel`;
+            const resp = await fetch(url);
             if (resp.status === 403) {
                 showError('Страница недоступна.');
                 return;
@@ -230,5 +315,6 @@
         }
     }
 
-    load();
+    loadCollectionsList();
+    loadCharts();
 })();
