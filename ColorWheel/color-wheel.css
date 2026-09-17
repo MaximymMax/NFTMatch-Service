@@ -142,7 +142,11 @@ main { display: flex; justify-content: center; padding: 24px 16px 60px; }
     width: 100%; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
     gap: 6px 14px; padding-top: 6px; border-top: 1px solid rgba(255,255,255,.08);
 }
-.cw-legend-item { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--text-secondary); }
+.cw-legend-item {
+    display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--text-secondary);
+    cursor: pointer; border-radius: 6px; padding: 3px 4px; margin: -3px -4px; transition: background-color .15s;
+}
+.cw-legend-item:hover { background-color: var(--surface-elevated); }
 .cw-legend-swatch { width: 12px; height: 12px; border-radius: 3px; flex: 0 0 auto; box-shadow: 0 0 4px rgba(0,0,0,.3); }
 .cw-legend-name { flex: 1 1 auto; }
 .cw-legend-pct { color: var(--text-primary); font-weight: 700; }
@@ -192,31 +196,29 @@ main { display: flex; justify-content: center; padding: 24px 16px 60px; }
 }
 .cw-error.hidden { display: none; }
 
-/* --- Модалка со списком подарков для сектора --- */
-.cw-modal-overlay {
-    position: fixed; inset: 0; background: rgba(5, 8, 16, .72);
-    display: flex; align-items: center; justify-content: center;
-    z-index: 500; padding: 20px;
+/* putya: "не в окне отдельном, а блок внизу" — список подарков для выбранного цвета рендерится
+   прямо на странице, под блоком с диаграммами, а не всплывающим окном. */
+.cw-drilldown {
+    width: 100%;
+    background: rgba(255,255,255,.03); border: 1px solid var(--border-color);
+    border-radius: 12px; overflow: hidden;
 }
-.cw-modal-overlay.hidden { display: none; }
+.cw-drilldown.hidden { display: none; }
 
-.cw-modal {
-    width: 100%; max-width: 420px; max-height: 80vh;
-    background: var(--surface-color); border: 1px solid var(--border-color);
-    border-radius: 14px; box-shadow: var(--card-shadow);
-    display: flex; flex-direction: column; overflow: hidden;
-}
-.cw-modal-header {
+.cw-drilldown-header {
     display: flex; align-items: center; justify-content: space-between;
-    padding: 14px 16px; border-bottom: 1px solid rgba(255,255,255,.08);
-    font-size: 15px; font-weight: 700;
+    padding: 12px 14px; border-bottom: 1px solid rgba(255,255,255,.08);
+    font-size: 14px; font-weight: 700;
 }
-.cw-modal-close {
-    background: none; border: none; color: var(--text-muted); font-size: 22px;
+.cw-drilldown-close {
+    background: none; border: none; color: var(--text-muted); font-size: 20px;
     line-height: 1; cursor: pointer; padding: 0 4px;
 }
-.cw-modal-close:hover { color: var(--text-primary); }
-.cw-modal-body { overflow-y: auto; padding: 8px; }
+.cw-drilldown-close:hover { color: var(--text-primary); }
+.cw-drilldown-body {
+    max-height: 360px; overflow-y: auto; padding: 8px;
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 2px;
+}
 
 .cw-model-row {
     display: flex; align-items: center; gap: 10px;
@@ -227,7 +229,7 @@ main { display: flex; justify-content: center; padding: 24px 16px 60px; }
 .cw-model-name { flex: 1 1 auto; color: var(--text-primary); }
 .cw-model-name .gift { color: var(--text-muted); font-weight: 400; }
 .cw-model-weight { color: var(--text-muted); font-weight: 600; font-size: 12px; }
-.cw-modal-note { font-size: 12px; color: var(--text-muted); padding: 8px 10px; }
+.cw-drilldown-note { grid-column: 1 / -1; font-size: 12px; color: var(--text-muted); padding: 8px 10px; }
 
 @media (max-width: 480px) {
     .cw-container { padding: 16px; }

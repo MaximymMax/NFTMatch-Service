@@ -12,10 +12,10 @@
     const legendEl = document.getElementById('cw-legend');
     const filterRow = document.querySelector('.cw-filter-row');
 
-    const modalOverlay = document.getElementById('cw-modal-overlay');
-    const modalTitle = document.getElementById('cw-modal-title');
-    const modalBody = document.getElementById('cw-modal-body');
-    const modalClose = document.getElementById('cw-modal-close');
+    const drilldown = document.getElementById('cw-drilldown');
+    const drilldownTitle = document.getElementById('cw-drilldown-title');
+    const drilldownBody = document.getElementById('cw-drilldown-body');
+    const drilldownClose = document.getElementById('cw-drilldown-close');
 
     const collectionsHeader = document.getElementById('collections-header');
     const collectionsSearch = document.getElementById('collections-search');
@@ -64,9 +64,10 @@
             path.setAttribute('class', 'cw-sector');
             path.addEventListener('mousemove', (e) => showTooltip(e, bucket, i));
             path.addEventListener('mouseleave', hideTooltip);
-            // putya: "при нажатии на блок будет показывать список подарков который подходит под
-            // этот кластер" — клик открывает модалку со списком (Gift, Model) для этого сектора.
-            path.addEventListener('click', () => openBucketModal(bucket, i));
+            // putya: "при нажатии на цвет под блоком с диаграммами появляется блок с конкретно
+            // моделями которые наиболее подходят под данный цвет" — клик подгружает список
+            // (Gift, Model) для этого сектора прямо на странице, под диаграммами.
+            path.addEventListener('click', () => showBucketDrilldown(bucket, i));
             svg.appendChild(path);
         });
 
@@ -79,12 +80,18 @@
 
     function renderLegend(hueWheel) {
         legendEl.innerHTML = hueWheel.map((b, i) => `
-            <div class="cw-legend-item">
+            <div class="cw-legend-item" data-bucket-index="${i}" title="Показать подходящие подарки">
                 <span class="cw-legend-swatch" style="background:${b.Hex}"></span>
                 <span class="cw-legend-name">${HUE_NAMES[i]}</span>
                 <span class="cw-legend-pct">${b.SharePercent}%</span>
             </div>
         `).join('');
+        legendEl.querySelectorAll('.cw-legend-item').forEach(el => {
+            el.addEventListener('click', () => {
+                const i = parseInt(el.dataset.bucketIndex, 10);
+                showBucketDrilldown(hueWheel[i], i);
+            });
+        });
     }
 
     function showTooltip(e, bucket, i) {
@@ -96,11 +103,13 @@
     }
     function hideTooltip() { tooltip.classList.add('hidden'); }
 
-    // --- Модалка "какие подарки подходят под этот сектор" ---
-    async function openBucketModal(bucket, i) {
-        modalTitle.textContent = `${HUE_NAMES[i]} (${Math.round(bucket.HueStart)}°–${Math.round(bucket.HueEnd)}°)`;
-        modalBody.innerHTML = '<div class="cw-modal-note">Загрузка…</div>';
-        modalOverlay.classList.remove('hidden');
+    // --- putya: "не в окне отдельном, а блок внизу" — список подходящих подарков рендерится
+    // прямо на странице, в блоке под диаграммами (см. #cw-drilldown в HTML), не всплывающим окном.
+    async function showBucketDrilldown(bucket, i) {
+        drilldownTitle.textContent = `${HUE_NAMES[i]} (${Math.round(bucket.HueStart)}°–${Math.round(bucket.HueEnd)}°)`;
+        drilldownBody.innerHTML = '<div class="cw-drilldown-note">Загрузка…</div>';
+        drilldown.classList.remove('hidden');
+        drilldown.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
         try {
             let url = `${API_BASE}/GetGlobalColorWheelBucketModels?hueStart=${bucket.HueStart}&hueEnd=${bucket.HueEnd}`;
@@ -110,20 +119,20 @@
             const data = await resp.json();
 
             if (!data.Items.length) {
-                modalBody.innerHTML = '<div class="cw-modal-note">Ничего не найдено.</div>';
+                drilldownBody.innerHTML = '<div class="cw-drilldown-note">Ничего не найдено.</div>';
                 return;
             }
-            modalBody.innerHTML = data.Items.map(m => `
+            drilldownBody.innerHTML = data.Items.map(m => `
                 <div class="cw-model-row">
                     <span class="cw-model-swatch" style="background:${m.Hex}"></span>
                     <span class="cw-model-name"><span class="gift">${escapeHtml(m.GiftName)}</span> — ${escapeHtml(m.ModelName)}</span>
                     <span class="cw-model-weight">${m.Weight}%</span>
                 </div>
             `).join('') + (data.TotalCount > data.Shown
-                ? `<div class="cw-modal-note">Показано ${data.Shown} из ${data.TotalCount}, по убыванию веса цвета.</div>`
+                ? `<div class="cw-drilldown-note">Показано ${data.Shown} из ${data.TotalCount}, по убыванию веса цвета.</div>`
                 : '');
         } catch (err) {
-            modalBody.innerHTML = `<div class="cw-modal-note">Не удалось загрузить: ${escapeHtml(err.message)}</div>`;
+            drilldownBody.innerHTML = `<div class="cw-drilldown-note">Не удалось загрузить: ${escapeHtml(err.message)}</div>`;
         }
     }
 
@@ -131,8 +140,7 @@
         return (s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     }
 
-    modalClose.addEventListener('click', () => modalOverlay.classList.add('hidden'));
-    modalOverlay.addEventListener('click', (e) => { if (e.target === modalOverlay) modalOverlay.classList.add('hidden'); });
+    drilldownClose.addEventListener('click', () => drilldown.classList.add('hidden'));
 
     // --- 3D: putya: "3д куб переделай, чтобы был прям куб как изначально было" — настоящие
     // координаты R/G/B (куб реально заполняется точками, не цилиндр), плюс проволочный каркас
