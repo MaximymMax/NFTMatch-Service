@@ -7,14 +7,19 @@
     <title>Цветовой круг каталога</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../styles.css">
-    <link rel="stylesheet" href="../shared-admin-nav.css?v=3">
-    <link rel="stylesheet" href="./color-wheel.css?v=21">
+    <link rel="stylesheet" href="../shared-admin-nav.css?v=5">
+    <!-- putya: "модалка themes-modal-content должна быть при открытии любой карточки" — реальный
+         themesModal (тот же, что на Монохромах/Тематиках/Похожих), а не своя. -->
+    <link rel="stylesheet" href="../Monohrome/themes-modal.css">
+    <link rel="stylesheet" href="./color-wheel.css?v=23">
     <script src="../config.js"></script>
-    <!-- putya: "везде должны быть кнопки на шапке с верификацией по тг и переключением языков" —
-         те же скрипты, что и на остальных страницах (background-finder.html и т.д.); auth-badge.js
-         сам инжектит переключатель RU/EN и профиль-бейдж, редиректа на index.html для ColorWheel не
-         будет — его условие isSubPage проверяет только /Monohrome/, /nft-page/, /Thematic/. -->
+    <!-- putya: "единая шапка для всех страниц... кнопки переключения языка, регистрации через тг" —
+         те же скрипты, что и на остальных страницах; RU/EN и TG-бейдж переносятся в .cw-page-header
+         через shared-admin-nav.js (см. mergeTopBarIntoHeader). Редиректа на index.html для
+         ColorWheel не будет — isSubPage в auth-badge.js проверяет только /Monohrome/, /nft-page/,
+         /Thematic/. -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
     <script src="../i18n.js"></script>
     <script src="../auth.js"></script>
     <script src="../auth-badge.js"></script>
@@ -23,7 +28,7 @@
 <body>
     <!-- putya: "кнопку с поддержкой проекта пока можешь убрать как и с покупкой не уникальных
          подарков" — из правой группы остался только API. GitHub-иконку пока не добавляю — putya
-         ещё не прислал ссылку, добавлю рядом с TG сразу как придёт. -->
+         ещё не прислал ссылку. RU/EN и TG-логин добавляются сюда же скриптом (shared-admin-nav.js). -->
     <header class="cw-page-header">
         <div class="cw-header-group">
             <a href="https://t.me/NFTStyler" target="_blank" class="cw-header-link cw-header-link-tg" title="Наш Telegram-канал">
@@ -38,6 +43,7 @@
             </a>
         </div>
     </header>
+    <script src="../shared-admin-nav.js?v=3"></script>
 
     <main>
         <div class="main-container">
@@ -71,16 +77,16 @@
                 </button>
             </div>
 
-            <!-- putya: "напиши что такое нфт матч, что в нем используется такой-то алгоритм" -->
-            <p class="cw-about">
-                <b>NFT MATCH</b> — сервис для подбора подарков, фонов и коллекций по цвету в Telegram.
-                Мы анализируем изображение каждой модели, выделяем доминирующие цветовые кластеры в
-                перцептивном пространстве Lab и сравниваем их по цветовой дистанции, чтобы находить
-                похожие модели, подходящие фоны и монохромные сочетания.
-            </p>
-
             <div id="cw-panel-home" class="cw-container cw-panel">
                 <h1 class="cw-title">Диаграмма цветов моделей</h1>
+
+                <!-- putya: "текст cw-about должен быть только на главной" -->
+                <p class="cw-about">
+                    <b>NFT MATCH</b> — сервис для подбора подарков, фонов и коллекций по цвету в Telegram.
+                    Мы анализируем изображение каждой модели, выделяем доминирующие цветовые кластеры в
+                    перцептивном пространстве Lab и сравниваем их по цветовой дистанции, чтобы находить
+                    похожие модели, подходящие фоны и монохромные сочетания.
+                </p>
 
                 <div id="cw-stats" class="cw-stats"></div>
 
@@ -131,29 +137,34 @@
 
             <!-- putya: "вкладка с поиском моделей по выбранным цветам" → "точный подбор по
                  HEX/цвету" — пикер, дальше подбор ближайших моделей по Lab-дистанции
-                 (GetGlobalColorWheelNearestModels), тот же принцип, что уже работает для фонов. -->
+                 (GetGlobalColorWheelNearestModels), тот же принцип, что уже работает для фонов.
+                 putya: "убери cw-results-hint и cw-subtitle... рядом с filter-color-pct писать
+                 символ процента" — пояснения убраны, "%" теперь просто в самой строке фильтра. -->
             <div id="cw-panel-search" class="cw-container cw-panel hidden">
                 <h1 class="cw-title">Поиск моделей по цвету</h1>
-                <p class="cw-subtitle">Один цвет — покажем ближайшие модели. Несколько — только те, где есть все сразу.</p>
 
                 <div id="color-filters-list" class="cw-color-filters-list">
                     <div class="cw-color-filter-row">
                         <input type="color" class="filter-color-picker" value="#2563eb" title="Выбрать цвет">
                         <input type="text" class="filter-color-hex cw-hex-input" value="#2563EB" maxlength="7" spellcheck="false">
-                        <input type="number" class="filter-color-pct" min="1" max="100" value="15" title="Мин. % (учитывается при нескольких цветах)">
+                        <div class="cw-pct-field">
+                            <input type="number" class="filter-color-pct" min="1" max="100" value="15" title="Мин. % (учитывается при нескольких цветах)">
+                            <span class="cw-pct-sign">%</span>
+                        </div>
                     </div>
                 </div>
 
                 <div class="cw-color-search-actions">
                     <button type="button" id="add-color-filter-btn" class="cw-add-color-btn">+ Добавить цвет</button>
-                    <label class="cw-exclude-toggle" id="exclude-off-recipe-label" title="Только при 2+ цветах">
-                        <input type="checkbox" id="exclude-off-recipe">
-                        Исключить модели с посторонними цветами
-                    </label>
                     <button type="button" id="color-search-btn" class="cw-color-search-btn">Найти</button>
                 </div>
 
-                <p class="cw-results-hint" id="color-search-hint">% — доля этого цвета в модели, ближе к 100% — точнее совпадение.</p>
+                <!-- putya: "исключить модели должна быть под cw-color-search-actions" -->
+                <label class="cw-exclude-toggle" id="exclude-off-recipe-label" title="Только при 2+ цветах">
+                    <input type="checkbox" id="exclude-off-recipe">
+                    Исключить модели с посторонними цветами
+                </label>
+
                 <div id="color-search-results" class="cw-color-search-results"></div>
             </div>
 
@@ -164,33 +175,8 @@
         </div>
     </main>
 
-    <!-- putya: "не та модалка, должна быть как та что открывается из монохромов при нажатии на
-         карточку" — то же построение, что у .details-modal на background-finder.html: фото на всю
-         ширину с плавающей шапкой (градиент + название + крестик) поверх него, а не обычная шапка
-         строкой выше фото. Вынесена за <main> — не хотим, чтобы position:fixed зависел от
-         overflow/трансформаций предков внутри main-container. -->
-    <div id="cw-model-modal" class="cw-modal-overlay hidden">
-        <div class="cw-modal">
-            <div class="cw-modal-photo-header">
-                <img id="cw-modal-photo" class="cw-modal-photo" src="" alt="">
-                <div class="cw-modal-header-bar">
-                    <span id="cw-modal-title" class="cw-modal-title">—</span>
-                    <button type="button" id="cw-modal-close" class="cw-modal-close-btn" aria-label="Закрыть">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                    </button>
-                </div>
-            </div>
-            <div class="cw-modal-scroll">
-                <div id="cw-modal-swatches" class="multi-swatches"></div>
-                <div id="cw-modal-backgrounds" class="cw-drilldown-backgrounds"></div>
-                <a id="cw-modal-open-full" class="cw-color-search-btn" target="_blank" href="#">Открыть на странице «Похожие»</a>
-            </div>
-        </div>
-    </div>
-
-    <script src="./color-wheel.js?v=20"></script>
+    <script type="module" src="../Monohrome/themes-modal.js"></script>
+    <script src="./color-wheel.js?v=21"></script>
 </body>
 
 </html>

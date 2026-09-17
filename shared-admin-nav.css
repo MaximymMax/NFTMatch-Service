@@ -10,7 +10,7 @@
 
 .cw-page-header {
     display: flex; align-items: center; justify-content: space-between;
-    max-width: 950px; width: 100%; margin: 0 auto;
+    max-width: 900px; width: 100%; margin: 0 auto;
     padding: 14px 16px 0; gap: 10px; position: relative; z-index: 20;
     background: none; box-shadow: none; border-radius: 0;
 }
@@ -27,10 +27,11 @@
 .cw-header-link-api { background: rgba(16, 185, 129, .16); color: #34d399; }
 
 /* putya: "кнопка с главным экраном должна быть по центру" — Главная стоит третьей из пяти в
-   разметке каждой страницы (см. HTML), тут только визуальное оформление ряда. */
+   разметке каждой страницы (см. HTML), тут только визуальное оформление ряда. "нет отступа у
+   кнопок сверху" — добавлен margin-top. */
 .cw-tabs {
     display: flex; flex-wrap: wrap; gap: 8px; width: 100%;
-    max-width: 950px; margin: 0 auto;
+    max-width: 900px; margin: 10px auto 0;
 }
 .cw-tab {
     flex: 1 1 140px; min-width: 110px;
@@ -58,3 +59,11 @@
 .cw-admin-nav { display: flex; flex-direction: column; gap: 10px; }
 .cw-admin-nav .cw-page-header { padding: 0; }
 .cw-admin-nav.cw-admin-nav-hidden { display: none; }
+
+/* putya: "в сжатом режиме сделай чтобы снизу была кнопка не поиск по цветам, а главная" — на
+   десктопе (широкий ряд) Главная и так по центру за счёт порядка в HTML; при переносе строк на
+   узких экранах явно переставляем её в конец, чтобы одна снизу оставалась именно Главная. */
+@media (max-width: 600px) {
+    .cw-tab[data-tab="home"] { order: 5; }
+    .cw-tab[data-tab="search"] { order: 3; }
+}

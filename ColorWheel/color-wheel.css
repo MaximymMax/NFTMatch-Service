@@ -12,6 +12,12 @@
     --accent: #2563eb;
 }
 
+/* putya: "другая ширина у главной секции, должна быть такая же" — на Монохромах/Тематиках/Похожих
+   .main-container исторически 900px (background-finder.css/gift-page.css/themes.css), а тут
+   наследуется дефолт 950px из styles.css. Сужаем только эту страницу до 900px, чтобы совпадало
+   со всеми остальными тремя, вместо того чтобы менять публичную ширину других страниц. */
+.main-container { max-width: 900px; }
+
 /* putya: "Основным будет вот эта диаграма... сделай красиво" — карточка круга чуть светлее
    основного фона main-container (surface-elevated, как у info-card), чтобы выделяться как главный
    блок страницы, а не сливаться с фоном. */
@@ -27,7 +33,6 @@
 }
 
 .cw-title { font-size: 20px; font-weight: 800; text-align: center; }
-.cw-subtitle { font-size: 12.5px; color: var(--text-muted); text-align: center; line-height: 1.5; max-width: 560px; }
 
 /* putya: "все страницы... были адаптированы под главную страницу" — header-бар (иконки) и ряд
    вкладок вынесены в общий ../shared-admin-nav.css (подключён в color-wheel.html), чтобы те же
@@ -290,13 +295,19 @@
     padding: 10px 12px; text-transform: uppercase;
 }
 .cw-hex-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(37, 99, 235, .18); }
+/* putya: "убери cw-results-hint... рядом с filter-color-pct писать символ процента" */
+.cw-pct-field { position: relative; flex: 0 0 auto; }
 .filter-color-pct {
-    width: 60px; flex: 0 0 auto; background: var(--surface-elevated);
+    width: 60px; background: var(--surface-elevated);
     border: 1px solid var(--border-color); border-radius: 10px;
     color: var(--text-primary); font-size: 13px; font-family: inherit;
-    padding: 10px 4px; text-align: center;
+    padding: 10px 16px 10px 8px; text-align: center;
 }
 .filter-color-pct:focus { outline: none; border-color: var(--accent); }
+.cw-pct-sign {
+    position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+    font-size: 12px; color: var(--text-muted); pointer-events: none;
+}
 .cw-remove-filter-btn {
     flex: 0 0 auto; width: 32px; height: 32px; border-radius: 8px;
     background: rgba(255,255,255,.06); border: none; color: var(--text-muted);
@@ -313,22 +324,22 @@
     padding: 9px 14px; cursor: pointer; transition: border-color .15s ease, color .15s ease;
 }
 .cw-add-color-btn:hover { border-color: var(--accent); color: var(--text-primary); }
-/* putya: "должна быть возможность как и на тестовом сайте исключить далекие от заданных цветов" —
-   чекбокс активен только при 2+ цветах (см. JS), выключен и приглушён при одном. */
-.cw-exclude-toggle {
-    display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-muted);
-    cursor: pointer; user-select: none;
-}
-.cw-exclude-toggle input[type="checkbox"] { accent-color: var(--accent); cursor: pointer; }
-.cw-exclude-toggle.disabled { opacity: .45; pointer-events: none; }
 .cw-color-search-btn {
     flex: 0 0 auto; background: var(--accent); color: #fff; border: none; border-radius: 10px;
     padding: 10px 18px; font-size: 13px; font-weight: 700; font-family: inherit; cursor: pointer;
     transition: background-color .15s ease;
 }
 .cw-color-search-btn:hover { background: #1d4ed8; }
-/* putya: "должно быть указано что справа указан процент..." — поясняем, что означает % на карточках. */
-.cw-results-hint { font-size: 11px; color: var(--text-muted); text-align: center; width: 100%; }
+
+/* putya: "исключить модели должна быть под cw-color-search-actions" — своя строка ниже, а не
+   внутри ряда действий. "должна быть возможность... исключить далекие от заданных цветов" —
+   чекбокс активен только при 2+ цветах (см. JS), выключен и приглушён при одном. */
+.cw-exclude-toggle {
+    display: flex; align-items: center; gap: 6px; width: 100%; max-width: 460px;
+    font-size: 12px; color: var(--text-muted); cursor: pointer; user-select: none;
+}
+.cw-exclude-toggle input[type="checkbox"] { accent-color: var(--accent); cursor: pointer; }
+.cw-exclude-toggle.disabled { opacity: .45; pointer-events: none; }
 
 /* putya: "сделай такие же карточки моделей как у меня везде... сделай чтобы их можно было
    открывать" — те же классы карточки, что на background-finder.html (.result-card-bg). */
@@ -374,51 +385,6 @@
 }
 .multi-swatches { display: flex; align-items: center; justify-content: center; gap: 4px; flex-wrap: wrap; }
 .multi-swatch { width: 12px; height: 12px; border-radius: 50%; box-shadow: 0 0 3px rgba(0,0,0,.4); flex: 0 0 auto; }
-
-/* putya: "не та модалка, должна быть как та что открывается из монохромов при нажатии на
-   карточку" — тот же язык, что у .details-modal/.themes-modal на background-finder.html: тёмный
-   размытый оверлей, карточка с крупным скруглением, фото на всю ширину с плавающей шапкой
-   (градиент+название+крестик) поверх него — не отдельная строка-шапка над фото. Своя лёгкая
-   реализация (не тянем чужой themes-modal.js с состоянием под конкретные страницы), но тот же вид. */
-.cw-modal-overlay {
-    position: fixed; inset: 0; background: rgba(10, 16, 32, .85); backdrop-filter: blur(8px);
-    display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 16px;
-}
-.cw-modal-overlay.hidden { display: none; }
-.cw-modal {
-    width: 100%; max-width: 350px; max-height: 90vh; overflow: hidden;
-    background: var(--surface-elevated); border: 1px solid var(--border-color); border-radius: 28px;
-    box-shadow: 0 20px 50px rgba(0,0,0,.5);
-    display: flex; flex-direction: column;
-}
-.cw-modal-photo-header { position: relative; flex: 0 0 auto; }
-.cw-modal-photo {
-    width: 100%; aspect-ratio: 1 / 1; object-fit: contain; display: block;
-    background: rgba(255,255,255,.06);
-}
-.cw-modal-header-bar {
-    position: absolute; top: 0; left: 0; width: 100%; z-index: 2;
-    display: flex; justify-content: space-between; align-items: center;
-    padding: 1rem 1.1rem; box-sizing: border-box;
-    background: linear-gradient(to bottom, rgba(0,0,0,.6) 0%, rgba(0,0,0,0) 100%);
-}
-.cw-modal-title {
-    text-align: center; flex-grow: 1; color: #fff; text-shadow: 0 2px 4px rgba(0,0,0,.6);
-    margin: 0; font-size: 1rem; font-weight: 800;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 8px;
-}
-.cw-modal-close-btn {
-    width: 32px; height: 32px; border-radius: 50%; flex: 0 0 auto;
-    background: rgba(0,0,0,.4); border: none; color: #fff;
-    display: flex; align-items: center; justify-content: center; cursor: pointer;
-}
-.cw-modal-close-btn svg { width: 16px; height: 16px; }
-.cw-modal-scroll {
-    display: flex; flex-direction: column; align-items: center; gap: 12px;
-    padding: 16px; overflow-y: auto;
-}
-#cw-modal-backgrounds { border: none; padding: 0; width: 100%; justify-content: center; }
-#cw-modal-open-full { width: 100%; text-align: center; text-decoration: none; }
 
 @media (max-width: 480px) {
     .cw-container { padding: 16px; }

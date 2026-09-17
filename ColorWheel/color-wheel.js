@@ -1,5 +1,6 @@
 (function () {
-    const API_BASE = (window.CONFIG && window.CONFIG.SERVER_BASE_URL || 'https://nftmatch.pro') + '/api/MonoCoof';
+    const SERVER_BASE_URL = window.CONFIG && window.CONFIG.SERVER_BASE_URL || 'https://nftmatch.pro';
+    const API_BASE = SERVER_BASE_URL + '/api/MonoCoof';
     const API_PHOTO_URL = 'https://cdn.changes.tg/gifts/models';
     const API_GIFT_ORIGINALS_URL = 'https://cdn.changes.tg/gifts/originals';
     const modelImageUrl = (giftName, modelName) => `${API_PHOTO_URL}/${encodeURIComponent(giftName)}/png/${encodeURIComponent(modelName)}.png`;
@@ -230,7 +231,7 @@
                 return;
             }
             drilldownBody.innerHTML = data.Items.map(m => `
-                <div class="cw-model-row">
+                <div class="cw-model-row" data-gift="${escapeHtml(m.GiftName)}" data-model="${escapeHtml(m.ModelName)}">
                     <img class="cw-model-photo" src="${modelImageUrl(m.GiftName, m.ModelName)}" alt=""
                          loading="lazy" onerror="this.style.visibility='hidden'">
                     <span class="cw-model-swatch" style="background:${m.Hex}" title="${m.Hex}"></span>
@@ -261,6 +262,13 @@
         openBucketIndex = null;
         applySelectionHighlight();
         drilldown.classList.add('hidden');
+    });
+
+    // putya: "модалка themes-modal-content должна быть при открытии любой карточки" — та же
+    // themesModal, что на Монохромах/Тематиках/Похожих (см. init() ниже), не своя.
+    drilldownBody.addEventListener('click', (e) => {
+        const row = e.target.closest('.cw-model-row');
+        if (row && window.themesModal) window.themesModal.openModelDetail(row.dataset.gift, row.dataset.model);
     });
 
     // --- putya: "0 это просто черный, а 100 просто белый... даже если выкрутить на максимум" —
@@ -554,23 +562,21 @@
     });
 
     // putya: "сделай такие же карточки моделей как у меня везде... сделай чтобы их можно было
-    // открывать, ... надо чтобы модалка открывалась, а не перекидывалось" — те же классы карточки,
-    // что на background-finder.html, но клик открывает лёгкую модалку тут же (см. openModelModal),
-    // а не уводит со страницы; переход на "Похожие" остался внутри модалки как доп. ссылка.
-    let lastSearchResults = [];
+    // открывать" — те же классы карточки, что на background-finder.html. "модалка themes-modal-
+    // content должна быть при открытии любой карточки, в том числе и той где поиск по цвету" —
+    // клик открывает настоящую themesModal.openModelDetail (не свою модалку).
     function renderColorSearchCards(items, isMulti) {
-        lastSearchResults = items;
         if (!items.length) {
             colorSearchResults.innerHTML = '<div class="cw-drilldown-note">Ничего не найдено.</div>';
             return;
         }
-        colorSearchResults.innerHTML = items.map((m, i) => {
+        colorSearchResults.innerHTML = items.map(m => {
             const swatches = isMulti
                 ? `<div class="multi-swatches">${m.MatchedColors.map(mc => `<span class="multi-swatch" style="background:${mc.Hex}" title="${mc.Hex} · ${mc.Weight}%"></span>`).join('')}</div>`
                 : '';
             const badge = isMulti ? `${m.Score}%` : `${m.Weight}%`;
             return `
-                <div class="result-card-bg" data-idx="${i}">
+                <div class="result-card-bg" data-gift="${escapeHtml(m.GiftName)}" data-model="${escapeHtml(m.ModelName)}">
                     <div class="image-container">
                         <img class="model-image" src="${modelImageUrl(m.GiftName, m.ModelName)}" alt=""
                              loading="lazy" onerror="this.style.visibility='hidden'">
@@ -589,7 +595,7 @@
     }
     colorSearchResults.addEventListener('click', (e) => {
         const card = e.target.closest('.result-card-bg');
-        if (card) openModelModal(lastSearchResults[Number(card.dataset.idx)]);
+        if (card && window.themesModal) window.themesModal.openModelDetail(card.dataset.gift, card.dataset.model);
     });
 
     async function runColorSearch() {
@@ -627,49 +633,20 @@
     colorSearchBtn.addEventListener('click', runColorSearch);
     updateExcludeToggleState();
 
-    // --- putya: "надо чтобы модалка открывалась" — лёгкая модалка с фото/свотчами/подходящими
-    // фонами (переиспользует GetGlobalColorWheelMatchingBackgrounds), плюс ссылка на полную
-    // страницу "Похожие" для тех, кому нужно сравнение/детали.
-    const modelModal = document.getElementById('cw-model-modal');
-    const modalTitle = document.getElementById('cw-modal-title');
-    const modalPhoto = document.getElementById('cw-modal-photo');
-    const modalSwatches = document.getElementById('cw-modal-swatches');
-    const modalBackgrounds = document.getElementById('cw-modal-backgrounds');
-    const modalOpenFull = document.getElementById('cw-modal-open-full');
-    const modalClose = document.getElementById('cw-modal-close');
-
-    async function openModelModal(item) {
-        if (!item) return;
-        modalTitle.textContent = `${item.GiftName} — ${item.ModelName}`;
-        modalPhoto.src = modelImageUrl(item.GiftName, item.ModelName);
-        const hexes = item.MatchedColors ? item.MatchedColors.map(mc => mc.Hex) : [item.Hex];
-        modalSwatches.innerHTML = hexes.map(h => `<span class="multi-swatch" style="background:${h}" title="${h}"></span>`).join('');
-        modalOpenFull.href = `../nft-page/index.html?giftName=${encodeURIComponent(item.GiftName)}&modelName=${encodeURIComponent(item.ModelName)}`;
-        modalBackgrounds.innerHTML = '';
-        modelModal.classList.remove('hidden');
-
-        try {
-            const resp = await fetch(`${API_BASE}/GetGlobalColorWheelMatchingBackgrounds?hex=${encodeURIComponent(hexes[0])}`);
-            if (resp.ok) {
-                const bg = await resp.json();
-                if (bg.Backgrounds && bg.Backgrounds.length) {
-                    modalBackgrounds.innerHTML = '<span class="cw-bg-label">Подходящие фоны:</span>' +
-                        bg.Backgrounds.map(b => `
-                            <span class="cw-bg-chip" title="${escapeHtml(b.Hex)}">
-                                <span class="cw-bg-chip-swatch" style="background:${b.Hex}"></span>${escapeHtml(b.Name)}
-                            </span>
-                        `).join('');
-                }
-            }
-        } catch (err) { /* фоны необязательны, тихо пропускаем */ }
-    }
-    function closeModelModal() { modelModal.classList.add('hidden'); }
-    modalClose.addEventListener('click', closeModelModal);
-    modelModal.addEventListener('click', (e) => { if (e.target === modelModal) closeModelModal(); });
-
     // putya: "все страницы... адаптированы под главную страницу" — с других страниц "Поиск по
     // цвету" ведёт на ../ColorWheel/color-wheel.html#search, тут просто открываем нужную вкладку.
     if (location.hash === '#search') setActiveTab('search');
+
+    // putya: "модалка themes-modal-content должна быть при открытии любой карточки" — та же
+    // themesModal, что использует background-finder.js/themes.js/gift-page.js (init создаёт
+    // #themes-modal-overlay сама, если его ещё нет). themes-modal.js подключён как type="module" —
+    // он выполняется отложенно, поэтому ждём DOMContentLoaded, чтобы window.themesModal точно
+    // существовал (наш <script> — обычный, синхронный, выполняется раньше модулей).
+    document.addEventListener('DOMContentLoaded', () => {
+        if (window.themesModal && window.themesModal.init) {
+            window.themesModal.init(SERVER_BASE_URL, API_PHOTO_URL, null, []);
+        }
+    });
 
     Promise.all([loadGiftIdMap(), loadCollectionNames()]).then(([, names]) => populateCollections(names));
     loadCharts();
