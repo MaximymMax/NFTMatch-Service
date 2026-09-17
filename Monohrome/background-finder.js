@@ -709,6 +709,7 @@ document.addEventListener('DOMContentLoaded', () => {
             selectedModel: null,
             targetColors: [],
             lastResults: [],
+            v2Data: null,
         },
         findModels: {
             selectedGift: null,
@@ -804,6 +805,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const pickerArea = document.getElementById('picker-area');
     const pickerContainer = document.getElementById('pickerContainer');
     const pickerTargetColorsDisplay = document.getElementById('pickerTargetColorsDisplay');
+
+    const bgsV2Wrapper = document.getElementById('bgs-v2-wrapper');
+    const bgsV2Loading = document.getElementById('bgs-v2-loading');
+    const bgsV2Diagram = document.getElementById('bgs-v2-diagram');
+    const bgsV2Body = document.getElementById('bgs-v2-body');
 
     const detailsModalOverlay = document.getElementById('details-modal-overlay');
     const modalCloseBtn = document.getElementById('modal-close-btn');
@@ -948,7 +954,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     dropdowns.modelBgs.value.textContent = data.modelName;
                     await fetchAllModelNames(data.giftName, true);
                     displayMonocolorAlert(data.modelName);
-                    setupInPageColorPicker();
+                    fetchBgsV2();
                 };
             }
 
@@ -1203,19 +1209,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (mode === 'findBgs') {
         findBgsControls.classList.add('active');
-        pickerArea.style.display = 'flex';
-        if (state.findBgs.lastResults.length > 0) renderBackgroundResults(state.findBgs.lastResults);
-        else if (state.findBgs.selectedModel) fetchMatchingBackgrounds();
-        else clearResults();
+        resultsWrapper.classList.add('results-initial-hide');
+        bgsV2Wrapper.classList.remove('results-initial-hide');
+        if (state.findBgs.v2Data) renderBgsV2(state.findBgs.v2Data);
+        else if (state.findBgs.selectedModel) fetchBgsV2();
+        else clearBgsV2();
     } else if (mode === 'findModels') {
         findModelsControls.classList.add('active');
-        pickerArea.style.display = 'none';
+        bgsV2Wrapper.classList.add('results-initial-hide');
         if (state.findModels.lastResults.length > 0) renderModelResults(state.findModels.lastResults, state.findModels.selectedColor);
         else if (state.findModels.selectedGift && state.findModels.selectedColor) fetchMatchingModels();
         else clearResults();
     } else if (mode === 'findUniversal') {
         if (findUniversalControls) findUniversalControls.classList.add('active');
-        pickerArea.style.display = 'none';
+        bgsV2Wrapper.classList.add('results-initial-hide');
         if (state.findUniversal.lastResults.length > 0) {
             renderUniversalResults(state.findUniversal.lastResults);
         } else {
@@ -1748,6 +1755,514 @@ if (sortSwitcher) {
             return [];
         }
     }
+
+    // ==========================================================================================
+    // "ФОНЫ" v2 — putya: "интегрируй новый алгоритм в монохромы, по аналогии с тестовым сайтом"
+    // Полностью заменяет старый поиск (TopBackgroundColorsByNFT/ByColors + ручной пикер 3 цветов на
+    // фото, ниже по файлу) на формат mono-cube-live.html: диаграмма цветов модели (DebugCube),
+    // монохромы отдельной плашкой, группы по кубам модели (МОНО/Средний/Сочный), полный список всех
+    // фонов каталога — всё из одного ответа /api/MonoCoof/MatchV4Dedup. Админ-кнопки ("➕моно" —
+    // SaveMonochromeCandidate, "🚩" — SaveColorFeedback) видны только тебе — тот же IP-гейт, что и у
+    // единой шапки/вкладок (shared-admin-nav.js), переиспользуем напрямую, отдельный бэкенд не нужен.
+    let bgs2IsAdminPromise = null;
+    function bgs2CheckIsAdmin() {
+        if (!bgs2IsAdminPromise) {
+            bgs2IsAdminPromise = fetch(`${SERVER_BASE_URL}/api/MonoCoof/GetGlobalColorWheelCollections`)
+                .then(resp => resp.ok)
+                .catch(() => false);
+        }
+        return bgs2IsAdminPromise;
+    }
+
+    const BGS2_RADAR_MIN_AXES = 3;
+    const BGS2_RADAR_SIGNIFICANT_WEIGHT = 5;
+    const BGS2_RADAR_HUE_TRUST_CHROMA = 8;
+    let bgs2RadarIdCounter = 0;
+
+    function bgs2Pick(obj, name) {
+        if (!obj) return undefined;
+        const lower = name.charAt(0).toLowerCase() + name.slice(1);
+        const upper = name.charAt(0).toUpperCase() + name.slice(1);
+        return obj[lower] !== undefined ? obj[lower] : obj[upper];
+    }
+
+    function bgs2EscapeHtml(s) {
+        return (s ?? '').toString().replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+
+    function bgs2HexToRgb(hex) {
+        let h = (hex || '#808080').replace('#', '');
+        if (h.length === 3) h = h.split('').map(c => c + c).join('');
+        const num = parseInt(h, 16) || 0x808080;
+        return { r: (num >> 16) & 255, g: (num >> 8) & 255, b: num & 255 };
+    }
+
+    function bgs2LightenHex(hex, amount) {
+        const { r, g, b } = bgs2HexToRgb(hex);
+        const lr = Math.round(r + (255 - r) * amount);
+        const lg = Math.round(g + (255 - g) * amount);
+        const lb = Math.round(b + (255 - b) * amount);
+        return `rgb(${lr},${lg},${lb})`;
+    }
+
+    function bgs2MixHex(hexA, hexB) {
+        const a = bgs2HexToRgb(hexA), b = bgs2HexToRgb(hexB);
+        return `rgb(${Math.round((a.r + b.r) / 2)},${Math.round((a.g + b.g) / 2)},${Math.round((a.b + b.b) / 2)})`;
+    }
+
+    function bgs2RadialGradientFor(hex) {
+        return `radial-gradient(circle at 50% 38%, ${bgs2LightenHex(hex, 0.32)} 0%, ${hex} 100%)`;
+    }
+
+    // Углы осей диаграммы — по сходству тона (не по индексу кластера), см. подробное объяснение в
+    // mono-cube-live.html (computeSimilarityAngles), логика перенесена без изменений.
+    function bgs2ComputeSimilarityAngles(clusters) {
+        const n = clusters.length;
+        if (n === 1) return [-90];
+
+        const ranked = clusters.map((c, idx) => {
+            const chroma = Math.sqrt(c.a * c.a + c.b * c.b);
+            const isNeutral = chroma <= BGS2_RADAR_HUE_TRUST_CHROMA;
+            const hue = isNeutral ? null : (Math.atan2(c.b, c.a) * 180 / Math.PI + 360) % 360;
+            const pos = isNeutral ? (-40 + (c.L / 100) * 40) : hue;
+            return { idx, pos };
+        }).sort((x, y) => x.pos - y.pos);
+
+        const gapsRaw = ranked.map((r, i) => {
+            const next = ranked[(i + 1) % n];
+            return i === n - 1 ? (next.pos + 360) - r.pos : next.pos - r.pos;
+        });
+
+        const MIN_GAP = Math.max((360 / n) * 0.5, 15);
+        let deficit = 0;
+        let gaps = gapsRaw.map(g => {
+            if (g < MIN_GAP) { deficit += (MIN_GAP - g); return MIN_GAP; }
+            return g;
+        });
+        if (deficit > 0) {
+            const maxIdx = gaps.indexOf(Math.max(...gaps));
+            gaps[maxIdx] = Math.max(MIN_GAP, gaps[maxIdx] - deficit);
+        }
+        const sum = gaps.reduce((s, g) => s + g, 0);
+        gaps = gaps.map(g => (g * 360) / sum);
+
+        const angleByIdx = new Array(n);
+        let angleDeg = -90;
+        ranked.forEach((r, i) => {
+            angleByIdx[r.idx] = angleDeg;
+            angleDeg += gaps[i];
+        });
+        return angleByIdx;
+    }
+
+    // Радар "весов и цветов" модели — оси = реальные кластеры модели по убыванию веса, длина луча =
+    // Weight%, цвет луча/точки/подписи = настоящий AvgHex кластера. Перенесено из mono-cube-live.html
+    // (buildColorRadarSVG) без изменений в логике, только с префиксом bgs2 и без интерактивного режима
+    // (клик по бейджу для исключения цвета) — тут это не нужно, диаграмма только показывает профиль.
+    function bgs2BuildColorRadarSVG(clusters) {
+        if (!clusters.length) return '<div class="bgs2-hint">Нет данных о цветовом профиле.</div>';
+
+        const n = clusters.length;
+        const size = 250, cx = size / 2, cy = size / 2, maxR = 62;
+        const badgeR = 13;
+        const maxWeight = Math.max(...clusters.map(c => c.weight), 1);
+        const scaleMax = Math.max(20, Math.ceil(maxWeight / 10) * 10);
+        const anglesDeg = bgs2ComputeSimilarityAngles(clusters);
+        const RADAR_MIN_R_FRAC = 0.35;
+
+        const pts = clusters.map((c, i) => {
+            const angleRad = (anglesDeg[i] * Math.PI) / 180;
+            const frac = Math.min(c.weight / scaleMax, 1);
+            const r = maxR * (RADAR_MIN_R_FRAC + frac * (1 - RADAR_MIN_R_FRAC));
+            const lr = maxR + 34;
+            return {
+                angleRad, r,
+                x: cx + r * Math.cos(angleRad), y: cy + r * Math.sin(angleRad),
+                lx: cx + lr * Math.cos(angleRad), ly: cy + lr * Math.sin(angleRad),
+                hex: c.hex, weight: c.weight, angleDeg: anglesDeg[i]
+            };
+        });
+
+        const centerPt = pts.reduce((a, b) => (b.weight < a.weight ? b : a));
+        centerPt.r = 0;
+        centerPt.x = cx;
+        centerPt.y = cy;
+
+        const orderedPts = pts.slice().sort((a, b) => a.angleDeg - b.angleDeg);
+
+        const ringFracs = [0.25, 0.5, 0.75, 1];
+        const rings = ringFracs.map(f =>
+            `<circle cx="${cx}" cy="${cy}" r="${(maxR * f).toFixed(1)}" fill="none" stroke="rgba(255,255,255,.12)" stroke-width="1"/>`
+        ).join('');
+        const ringLabels = ringFracs.map(f =>
+            `<text x="${cx + 3}" y="${(cy - maxR * f + 3).toFixed(1)}" font-size="8" fill="rgba(255,255,255,.35)">${Math.round(scaleMax * f)}%</text>`
+        ).join('');
+
+        const spokes = pts.map(p =>
+            `<line x1="${cx}" y1="${cy}" x2="${p.lx.toFixed(1)}" y2="${p.ly.toFixed(1)}" stroke="rgba(255,255,255,.10)" stroke-width="1"/>`
+        ).join('');
+
+        const radarUid = 'bgs2radar' + (bgs2RadarIdCounter++);
+        let defs = '', wedges = '';
+        for (let i = 0; i < n; i++) {
+            const a = orderedPts[i], b = orderedPts[(i + 1) % n];
+            const gid = `grad-${radarUid}-${i}`;
+            const mix = bgs2MixHex(a.hex, b.hex);
+            defs += `<radialGradient id="${gid}" gradientUnits="userSpaceOnUse" cx="${cx}" cy="${cy}" r="${maxR}">
+              <stop offset="0%" stop-color="${mix}" stop-opacity="0"/>
+              <stop offset="100%" stop-color="${mix}" stop-opacity="0.55"/>
+            </radialGradient>`;
+            wedges += `<polygon points="${cx},${cy} ${a.x.toFixed(1)},${a.y.toFixed(1)} ${b.x.toFixed(1)},${b.y.toFixed(1)}" fill="url(#${gid})"/>`;
+        }
+
+        const outline = n >= 2
+            ? `<polygon points="${orderedPts.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ')}" fill="none" stroke="rgba(255,255,255,.9)" stroke-width="2" stroke-linejoin="round"/>`
+            : '';
+
+        const vertexDots = pts.map(p =>
+            `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="2.5" fill="${p.hex}"/>`
+        ).join('');
+
+        const badges = pts.map(p =>
+            `<circle cx="${p.lx.toFixed(1)}" cy="${p.ly.toFixed(1)}" r="${badgeR}" fill="${p.hex}" stroke="#fff" stroke-width="1.5"/>`
+        ).join('');
+        const badgeLabels = pts.map(p => {
+            const above = p.ly <= cy;
+            const ty = above ? p.ly - badgeR - 6 : p.ly + badgeR + 12;
+            return `<text x="${p.lx.toFixed(1)}" y="${ty.toFixed(1)}" font-size="10" font-weight="700" fill="#fff" text-anchor="middle">${Math.round(p.weight)}%</text>`;
+        }).join('');
+
+        return `<svg viewBox="0 0 ${size} ${size}" class="bgs2-radar-svg">
+          <defs>${defs}</defs>
+          ${rings}${spokes}${wedges}${outline}${vertexDots}${badges}${badgeLabels}${ringLabels}
+        </svg>`;
+    }
+
+    function bgs2ClustersFromDebugCube(data) {
+        const cubes = bgs2Pick(data, 'cubes') || [];
+        const list = cubes
+            .map(c => ({
+                hex: bgs2Pick(c, 'avgHex') || '#888888',
+                weight: Number(bgs2Pick(c, 'weight')) || 0,
+                L: Number(bgs2Pick(c, 'L')) || 0,
+                a: Number(bgs2Pick(c, 'a')) || 0,
+                b: Number(bgs2Pick(c, 'b')) || 0
+            }))
+            .filter(c => c.weight > 0.05)
+            .sort((a, b) => b.weight - a.weight);
+        const significant = list.filter(c => c.weight >= BGS2_RADAR_SIGNIFICANT_WEIGHT);
+        return significant.length >= BGS2_RADAR_MIN_AXES ? significant : list.slice(0, Math.min(BGS2_RADAR_MIN_AXES, list.length));
+    }
+
+    function bgs2AnchorBadge(anchor) {
+        if (anchor === 'vivid') return `<span class="bgs2-anchor-badge bgs2-anchor-vivid" title="Совпал с самой насыщенной реально наблюдённой точкой материала (блик/акцент)">🔆 сочный</span>`;
+        if (anchor === 'avg') return `<span class="bgs2-anchor-badge bgs2-anchor-avg" title="Совпал с честным средним цветом материала">⚪ средний</span>`;
+        if (anchor === 'blend') return `<span class="bgs2-anchor-badge bgs2-anchor-vivid" title="Совпал с точкой между средним цветом и бликом материала">🌗 смешанный</span>`;
+        return '';
+    }
+
+    function bgs2MonoDots(monoBreakdown) {
+        return (monoBreakdown || []).map(m => {
+            const cubeHex = bgs2Pick(m, 'cubeHex') || '#000000';
+            const cubePct = bgs2Pick(m, 'cubePercentage') || 0;
+            const sim = bgs2Pick(m, 'similarity') || 0;
+            const title = `${cubeHex} · ${Number(cubePct).toFixed(1)}% массы · сходство ${Number(sim).toFixed(0)}%`;
+            return `<span class="bgs2-mini-dot" style="background:${cubeHex}" title="${bgs2EscapeHtml(title)}"></span>`;
+        }).join('');
+    }
+
+    // Карточка одного фона — тот же формат, что bgCard/allBgCard в mono-cube-live.html. gift/model
+    // фиксированы для всей вкладки (выбраны в дропдаунах выше), поэтому и "➕моно", и "🚩" всегда
+    // могут собрать полный payload без дополнительного запроса. Кнопки рендерятся только если
+    // isAdmin — на них завязаны SaveMonochromeCandidate/SaveColorFeedback, видеть и жать их должен
+    // только putya (см. bgs2CheckIsAdmin), для остальных посетителей карточка — просто картинка+%.
+    function bgs2Card(b, opts = {}) {
+        const { isAdmin = false } = opts;
+        const hex = bgs2Pick(b, 'hex') || '#000000';
+        const name = bgs2Pick(b, 'name') || '';
+        const isMono = !!bgs2Pick(b, 'isMonochrome');
+        const monoScore = bgs2Pick(b, 'monoScore');
+        const score = monoScore != null ? monoScore : (bgs2Pick(b, 'similarity') || 0);
+        const bestCubeHex = bgs2Pick(b, 'bestCubeHex');
+        const bestCubeWeight = bgs2Pick(b, 'bestCubeWeight');
+        const anchor = bgs2Pick(b, 'matchedAnchor');
+
+        let breakdownHtml;
+        if (isMono) {
+            breakdownHtml = bgs2MonoDots(bgs2Pick(b, 'monoBreakdown'));
+        } else if (bestCubeHex) {
+            breakdownHtml = `<span class="bgs2-mini-dot" style="background:${bestCubeHex}" title="Лучший куб: ${bgs2EscapeHtml(bestCubeHex)}"></span>${bgs2AnchorBadge(anchor)}`;
+        } else {
+            breakdownHtml = '';
+        }
+        const breakdownRow = breakdownHtml ? `<div class="bgs2-card-breakdown">${breakdownHtml}</div>` : '';
+
+        const giftName = state.findBgs.selectedGift || '';
+        const modelName = state.findBgs.selectedModel || '';
+        const modelImg = `${API_PHOTO_URL}/${encodeURIComponent(giftName)}/png/${encodeURIComponent(modelName)}.png`;
+
+        const monoAddBtnHtml = isAdmin ? `
+            <button class="bgs2-mono-add-btn" title="Добавить это сочетание как монохром (в отдельную таблицу-кандидат)"
+                    data-gift="${bgs2EscapeHtml(giftName)}" data-model="${bgs2EscapeHtml(modelName)}"
+                    data-bg-name="${bgs2EscapeHtml(name)}" data-bg-hex="${bgs2EscapeHtml(hex)}"
+                    data-score="${Number(score)}" data-cube-hex="${bgs2EscapeHtml(bestCubeHex || '')}"
+                    data-cube-weight="${bestCubeWeight != null ? Number(bestCubeWeight) : ''}"
+                    data-anchor="${bgs2EscapeHtml(anchor || '')}">➕моно</button>` : '';
+        const flagBtnHtml = isAdmin ? `
+            <button class="bgs2-flag-btn" title="Отметить: неверное совпадение"
+                    data-gift="${bgs2EscapeHtml(giftName)}" data-model="${bgs2EscapeHtml(modelName)}"
+                    data-bg-name="${bgs2EscapeHtml(name)}" data-bg-hex="${bgs2EscapeHtml(hex)}"
+                    data-score="${Number(score)}" data-mono="${isMono}">🚩</button>` : '';
+
+        return `
+          <div class="bgs2-card" data-bg-name="${bgs2EscapeHtml(name)}">
+            <div class="bgs2-card-preview" style="background:${bgs2RadialGradientFor(hex)}">
+              <img data-src="${modelImg}" alt="" loading="lazy" class="lazy-load"
+                   onload="this.classList.add('loaded')" onerror="this.style.display='none'" />
+            </div>
+            <div class="bgs2-card-info">
+              <span class="bgs2-card-name" title="${bgs2EscapeHtml(name)}">${bgs2EscapeHtml(name)}</span>
+              <span class="bgs2-card-pct">${Number(score).toFixed(0)}%</span>
+              ${monoAddBtnHtml}
+              ${flagBtnHtml}
+            </div>
+            ${breakdownRow}
+          </div>
+        `;
+    }
+
+    function bgs2RenderMonoSection(groups, isAdmin) {
+        const monoItems = [];
+        (groups || []).forEach(g => {
+            (bgs2Pick(g, 'backgrounds') || []).forEach(b => {
+                if (bgs2Pick(b, 'isMonochrome')) monoItems.push(b);
+            });
+        });
+        if (!monoItems.length) return '';
+
+        monoItems.sort((a, b) => (bgs2Pick(b, 'monoScore') ?? bgs2Pick(b, 'similarity') ?? 0) - (bgs2Pick(a, 'monoScore') ?? bgs2Pick(a, 'similarity') ?? 0));
+
+        const cards = monoItems.map(b => bgs2Card(b, { isAdmin })).join('');
+        return `
+          <div class="bgs2-mono-section">
+            <div class="bgs2-mono-section-title">★ Монохромные фоны (${monoItems.length})</div>
+            <div class="bgs2-mono-section-sub">Одновременно хорошо совпадают сразу с одной или несколькими группами модели, суммарно покрывающими большую часть её массы.</div>
+            <div class="bgs2-grid">${cards}</div>
+          </div>
+        `;
+    }
+
+    function bgs2RenderGroups(groups, isAdmin) {
+        return (groups || []).map(g => {
+            const colors = bgs2Pick(g, 'colors') || [];
+            const color = colors[0] || {};
+            const colorHex = bgs2Pick(color, 'hex') || '#000000';
+            const colorPct = bgs2Pick(color, 'percentage') || 0;
+            const backgrounds = bgs2Pick(g, 'backgrounds') || [];
+
+            const buckets = { mono: [], avg: [], vivid: [] };
+            backgrounds.forEach(b => {
+                const isMono = !!bgs2Pick(b, 'isMonochrome');
+                const anchor = bgs2Pick(b, 'matchedAnchor');
+                const bucket = isMono ? 'mono' : (anchor === 'vivid' ? 'vivid' : 'avg');
+                buckets[bucket].push(b);
+            });
+
+            const renderBucket = (items, label) => {
+                if (!items.length) return '';
+                const cards = items.map(b => bgs2Card(b, { isAdmin })).join('');
+                return `
+                  <div class="bgs2-anchor-bucket">
+                    <div class="bgs2-anchor-bucket-label">${label} (${items.length})</div>
+                    <div class="bgs2-grid">${cards}</div>
+                  </div>
+                `;
+            };
+
+            const bgHtml = renderBucket(buckets.mono, '★ МОНО') + renderBucket(buckets.avg, '⚪ Средний') + renderBucket(buckets.vivid, '🔆 Сочный');
+            if (!bgHtml) return '';
+
+            return `
+              <div class="bgs2-group-card">
+                <div class="bgs2-group-head">
+                  <span class="bgs2-swatch" style="background:${colorHex}"></span>
+                  <span class="bgs2-group-title">${colorHex}</span>
+                  <span class="bgs2-group-pct">${Number(colorPct).toFixed(1)}% массы модели</span>
+                </div>
+                ${bgHtml}
+              </div>
+            `;
+        }).join('');
+    }
+
+    // "Все фоны каталога" — источник AllBackgrounds того же ответа MatchV4Dedup, без фильтрации по
+    // порогу на бэке (см. описание putya: "формат всех фонов"). Монохромы уже показаны выше в своей
+    // плашке — здесь показываем ВСЕ фоны (включая эти же монохромы повторно, для полноты списка "от
+    // большего % к меньшему", ровно как на тестовом сайте) одним списком.
+    function bgs2RenderAllBackgrounds(allBackgrounds, isAdmin) {
+        if (!allBackgrounds || !allBackgrounds.length) return '';
+        const sorted = allBackgrounds.slice().sort((a, b) => (bgs2Pick(b, 'similarity') || 0) - (bgs2Pick(a, 'similarity') || 0));
+        const cards = sorted.map(b => bgs2Card(b, { isAdmin })).join('');
+        return `
+          <div class="bgs2-mono-section bgs2-all-section">
+            <div class="bgs2-mono-section-title bgs2-all-title">📋 Все фоны каталога (${sorted.length})</div>
+            <div class="bgs2-mono-section-sub">Лучший % каждого фона среди всех кубов модели, по убыванию (включая совпавшие на 0%).</div>
+            <div class="bgs2-grid">${cards}</div>
+          </div>
+        `;
+    }
+
+    function clearBgsV2() {
+        bgsV2Wrapper.classList.add('results-initial-hide');
+        bgsV2Diagram.innerHTML = '';
+        bgsV2Body.innerHTML = '';
+        state.findBgs.v2Data = null;
+    }
+
+    async function fetchBgsV2() {
+        const giftName = state.findBgs.selectedGift;
+        const modelName = state.findBgs.selectedModel;
+        if (!giftName || !modelName) return;
+
+        bgsV2Wrapper.classList.remove('results-initial-hide');
+        bgsV2Loading.classList.remove('hidden');
+        bgsV2Diagram.innerHTML = '';
+        bgsV2Body.innerHTML = '';
+
+        try {
+            const [debugCubeData, dedupData, isAdmin] = await Promise.all([
+                secureFetch(`${SERVER_BASE_URL}/api/MonoCoof/DebugCube?nameGift=${encodeURIComponent(giftName)}&nameModel=${encodeURIComponent(modelName)}`, null).catch(() => null),
+                secureFetch(`${SERVER_BASE_URL}/api/MonoCoof/MatchV4Dedup?nameGift=${encodeURIComponent(giftName)}&nameModel=${encodeURIComponent(modelName)}`, null),
+                bgs2CheckIsAdmin()
+            ]);
+
+            state.findBgs.v2Data = { debugCubeData, dedupData, isAdmin };
+            bgsV2Loading.classList.add('hidden');
+            renderBgsV2(state.findBgs.v2Data);
+        } catch (error) {
+            console.error('[API Error] Ошибка при загрузке данных нового алгоритма:', error);
+            bgsV2Loading.classList.add('hidden');
+            bgsV2Body.innerHTML = `<p style="text-align: center;">${window.NFTi18n ? window.NFTi18n.t('net_error') : 'Не удалось загрузить данные.'}</p>`;
+        }
+    }
+
+    function renderBgsV2(data) {
+        const { debugCubeData, dedupData, isAdmin } = data;
+
+        bgsV2Diagram.innerHTML = debugCubeData
+            ? bgs2BuildColorRadarSVG(bgs2ClustersFromDebugCube(debugCubeData))
+            : '<div class="bgs2-hint">Нет данных о цветовом профиле.</div>';
+
+        const groups = bgs2Pick(dedupData, 'groups') || [];
+        const allBackgrounds = bgs2Pick(dedupData, 'allBackgrounds') || [];
+
+        if (!groups.length && !allBackgrounds.length) {
+            bgsV2Body.innerHTML = '<p style="text-align: center;">Подходящих фонов не найдено.</p>';
+            return;
+        }
+
+        const monoHtml = bgs2RenderMonoSection(groups, isAdmin);
+        const groupsHtml = bgs2RenderGroups(groups, isAdmin);
+        const allHtml = bgs2RenderAllBackgrounds(allBackgrounds, isAdmin);
+
+        bgsV2Body.innerHTML = monoHtml + groupsHtml + allHtml;
+        setupLazyLoading(bgsV2Body, null, 'grid');
+    }
+
+    async function bgs2SubmitMonochromeCandidate({ giftName, modelName, bgName, bgHex, score, cubeHex, cubeWeight, anchor }) {
+        const resp = await fetch(`${SERVER_BASE_URL}/api/MonoCoof/SaveMonochromeCandidate`, {
+            method: 'POST',
+            headers: { 'Authorization': getApiAuthHeader(), 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                giftName, modelName,
+                backgroundName: bgName,
+                backgroundHex: bgHex,
+                similarity: score,
+                bestCubeHex: cubeHex || null,
+                bestCubeWeight: cubeWeight,
+                matchedAnchor: anchor || null
+            })
+        });
+        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    }
+
+    async function bgs2SubmitColorFeedback({ giftName, modelName, bgName, bgHex, score, isMonochrome }) {
+        const resp = await fetch(`${SERVER_BASE_URL}/api/MonoCoof/SaveColorFeedback`, {
+            method: 'POST',
+            headers: { 'Authorization': getApiAuthHeader(), 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                items: [{
+                    nameGift: giftName,
+                    nameModel: modelName,
+                    backgroundName: bgName,
+                    backgroundHex: bgHex,
+                    score,
+                    isMonochrome,
+                    reason: 'bad_match',
+                    comment: '',
+                    suggestedCubeHex: null
+                }]
+            })
+        });
+        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    }
+
+    bgsV2Body.addEventListener('click', (e) => {
+        const monoAddBtn = e.target.closest('.bgs2-mono-add-btn');
+        if (monoAddBtn) {
+            if (monoAddBtn.classList.contains('saved')) return;
+            monoAddBtn.disabled = true;
+            monoAddBtn.title = 'Сохраняю...';
+            bgs2SubmitMonochromeCandidate({
+                giftName: monoAddBtn.dataset.gift,
+                modelName: monoAddBtn.dataset.model,
+                bgName: monoAddBtn.dataset.bgName,
+                bgHex: monoAddBtn.dataset.bgHex,
+                score: parseFloat(monoAddBtn.dataset.score),
+                cubeHex: monoAddBtn.dataset.cubeHex,
+                cubeWeight: monoAddBtn.dataset.cubeWeight ? parseFloat(monoAddBtn.dataset.cubeWeight) : null,
+                anchor: monoAddBtn.dataset.anchor
+            }).then(() => {
+                monoAddBtn.classList.add('saved');
+                monoAddBtn.title = 'Добавлено как кандидат в монохромы';
+                monoAddBtn.textContent = '✓ моно';
+                monoAddBtn.disabled = false;
+            }).catch(() => {
+                monoAddBtn.disabled = false;
+                monoAddBtn.title = 'Не удалось сохранить, попробуй ещё раз';
+            });
+            return;
+        }
+
+        const flagBtn = e.target.closest('.bgs2-flag-btn');
+        if (flagBtn) {
+            if (flagBtn.classList.contains('flagged')) return;
+            flagBtn.classList.add('flagged');
+            flagBtn.title = 'Отправляю...';
+            bgs2SubmitColorFeedback({
+                giftName: flagBtn.dataset.gift,
+                modelName: flagBtn.dataset.model,
+                bgName: flagBtn.dataset.bgName,
+                bgHex: flagBtn.dataset.bgHex,
+                score: parseFloat(flagBtn.dataset.score),
+                isMonochrome: flagBtn.dataset.mono === 'true'
+            }).then(() => {
+                flagBtn.title = 'Отправлено, спасибо!';
+            }).catch(() => {
+                flagBtn.classList.remove('flagged');
+                flagBtn.title = 'Не удалось отправить, попробуй ещё раз';
+            });
+            return;
+        }
+
+        const card = e.target.closest('.bgs2-card');
+        if (!card) return;
+        if (window.themesModal) {
+            window.themesModal.openModelDetail(state.findBgs.selectedGift, state.findBgs.selectedModel, card.dataset.bgName);
+            updateUrlState({ giftName: state.findBgs.selectedGift, modelName: state.findBgs.selectedModel, bgName: card.dataset.bgName });
+        }
+    });
+    // ==========================================================================================
 
     async function fetchMatchingBackgrounds() {
         const isGridEmpty = resultsGrid.innerHTML.trim() === '';
@@ -2608,6 +3123,7 @@ if (sortSwitcher) {
         if (!option) return;
 
         state.findBgs.lastResults = [];
+        state.findBgs.v2Data = null;
         const selectedValue = option.dataset.value;
         state.findBgs.selectedGift = selectedValue;
         dropdowns.giftBgs.value.textContent = selectedValue;
@@ -2621,8 +3137,7 @@ if (sortSwitcher) {
         dropdowns.modelBgs.value.textContent = window.NFTi18n ? window.NFTi18n.t('placeholder_select_model') : 'Выберите модель';
         displayMonocolorAlert(null);
         updateModelThemes(null);
-        resetPickerAreaToPlaceholder();
-        clearResults();
+        clearBgsV2();
 
         fetchAllModelNames(selectedValue);
         toggleDropdown(null, true);
@@ -2634,6 +3149,7 @@ if (sortSwitcher) {
         if (!option) return;
 
         state.findBgs.lastResults = [];
+        state.findBgs.v2Data = null;
         const selectedValue = option.dataset.value;
         state.findBgs.selectedModel = selectedValue;
         dropdowns.modelBgs.value.textContent = selectedValue;
@@ -2645,8 +3161,7 @@ if (sortSwitcher) {
 
         displayMonocolorAlert(selectedValue);
         updateModelThemes(selectedValue);
-        clearResults();
-        setupInPageColorPicker();
+        fetchBgsV2();
         toggleDropdown(null, true);
         updateUrlState();
     });
@@ -2785,7 +3300,7 @@ if (sortSwitcher) {
             state.findBgs.selectedModel = modelName;
 
             if (giftName) {
-                setupInPageColorPicker();
+                fetchBgsV2();
                 displayMonocolorAlert(modelName);
             }
         }

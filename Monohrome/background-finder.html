@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BACKGROUND SELECTION</title>
-    <link rel="stylesheet" href="./background-finder.css">
+    <link rel="stylesheet" href="./background-finder.css?v=1">
 
     <link rel="stylesheet" href="./themes-modal.css">
     <link rel="stylesheet" href="../shared-admin-nav.css?v=8">
@@ -244,6 +244,21 @@
                     <div class="results-grid" id="results-grid">
                     </div>
                 </div>
+
+                <!-- putya: "интегрируй новый алгоритм в монохромы, по аналогии с тестовым сайтом" —
+                     mono-cube-live.html (тестовый инструмент из NFTColorsForm_help): диаграмма
+                     цветов модели (DebugCube) + монохромы отдельной плашкой + группы по кубам
+                     модели + полный список всех фонов каталога (всё из одного ответа
+                     /api/MonoCoof/MatchV4Dedup). Заменяет старый поиск фонов по имени/вручную
+                     выбранным цветам (TopBackgroundColorsByNFT/ByColors) только на вкладке
+                     "Фоны" — сама вкладка "Фоны" осталась, сменился только формат результата. -->
+                <div id="bgs-v2-wrapper" class="content-section results-initial-hide">
+                    <div id="bgs-v2-loading" class="bgs2-loading hidden">
+                        <span class="loading-spinner-mini"></span>
+                    </div>
+                    <div id="bgs-v2-diagram" class="bgs2-diagram-box"></div>
+                    <div id="bgs-v2-body"></div>
+                </div>
             </div>
 
         </div>
@@ -314,7 +329,7 @@
 
     <script type="module" src="./themes-modal.js"></script>
     <script type="module" src="./themes-modal-nfts.js"></script>
-    <script type="module" src="./background-finder.js"></script>
+    <script type="module" src="./background-finder.js?v=1"></script>
 </body>
 
 </html>

@@ -1406,3 +1406,79 @@ main {
         padding: 8px 12px;
     }
 }
+
+/* ==========================================================================================
+   "ФОНЫ" v2 — putya: "интегрируй новый алгоритм в монохромы, по аналогии с тестовым сайтом".
+   Перенесено из mono-cube-live.html (тестовый инструмент), адаптировано под токены этой страницы
+   (--surface-elevated/--border-color/--text-muted/--primary-color вместо своих --panel/--border/
+   --muted/--accent теста). См. background-finder.js (blok "ФОНЫ v2"). */
+.bgs2-loading { display: flex; justify-content: center; padding: 20px 0; }
+
+.bgs2-diagram-box { display: flex; justify-content: center; padding: 8px 0 4px; }
+.bgs2-radar-svg { width: 100%; max-width: 250px; height: auto; display: block; margin: 0 auto; }
+.bgs2-hint { font-size: 12px; color: var(--text-muted); text-align: center; padding: 12px 0; }
+
+.bgs2-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 10px; }
+.bgs2-card {
+    background: var(--bg-color); border: 2px solid var(--border-color);
+    border-radius: 10px; overflow: hidden; cursor: pointer;
+    transition: border-color .12s;
+}
+.bgs2-card:hover { border-color: var(--primary-color); }
+.bgs2-card-preview { aspect-ratio: 1 / 1; display: flex; align-items: center; justify-content: center; }
+.bgs2-card-preview img {
+    width: 76%; height: 76%; object-fit: contain;
+    filter: drop-shadow(0 2px 5px rgba(0, 0, 0, .45));
+    opacity: 0; transition: opacity .12s;
+}
+.bgs2-card-preview img.loaded { opacity: 1; }
+.bgs2-card-info {
+    display: flex; justify-content: space-between; align-items: center; gap: 6px;
+    padding: 6px 8px; font-size: 12px; background: rgba(0, 0, 0, .28);
+}
+.bgs2-card-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bgs2-card-pct { color: var(--text-muted); font-variant-numeric: tabular-nums; flex: 0 0 auto; }
+
+.bgs2-card-breakdown { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; padding: 6px 8px; background: rgba(0, 0, 0, .15); }
+.bgs2-mini-dot { width: 10px; height: 10px; border-radius: 50%; border: 1px solid rgba(255, 255, 255, .25); flex: 0 0 auto; cursor: help; }
+.bgs2-anchor-badge {
+    font-size: 9px; font-weight: 600; letter-spacing: .02em; padding: 1px 5px; border-radius: 4px;
+    flex: 0 0 auto; cursor: help; white-space: nowrap;
+}
+.bgs2-anchor-badge.bgs2-anchor-vivid { background: rgba(255, 170, 0, .22); color: #ffb347; }
+.bgs2-anchor-badge.bgs2-anchor-avg { background: rgba(255, 255, 255, .12); color: var(--text-muted); }
+
+.bgs2-flag-btn, .bgs2-mono-add-btn {
+    background: transparent; border: none; color: var(--text-muted); cursor: pointer;
+    font-size: 12px; padding: 0 2px; line-height: 1; flex: 0 0 auto; opacity: .6;
+}
+.bgs2-flag-btn:hover { opacity: 1; color: #ff8080; }
+.bgs2-flag-btn.flagged { opacity: 1; color: var(--primary-color); cursor: default; }
+.bgs2-mono-add-btn:hover { opacity: 1; color: #ffd166; }
+.bgs2-mono-add-btn.saved { opacity: 1; color: #22c55e; cursor: default; }
+
+.bgs2-mono-section {
+    background: rgba(255, 196, 0, .08); border: 1px solid rgba(255, 196, 0, .4);
+    border-radius: var(--radius); padding: 16px; margin-bottom: 20px;
+}
+.bgs2-mono-section-title { font-size: 13px; font-weight: 700; color: #ffc400; margin-bottom: 4px; }
+.bgs2-mono-section-sub { font-size: 11px; color: var(--text-muted); margin-bottom: 12px; }
+.bgs2-all-section { background: rgba(255, 255, 255, .03); border-color: var(--border-color); }
+.bgs2-all-title { color: var(--primary-color); }
+
+.bgs2-anchor-bucket { margin-top: 10px; }
+.bgs2-anchor-bucket:first-of-type { margin-top: 0; }
+.bgs2-anchor-bucket-label {
+    font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;
+    letter-spacing: .03em; margin-bottom: 6px; padding-top: 8px; border-top: 1px solid rgba(255, 255, 255, .08);
+}
+.bgs2-anchor-bucket:first-of-type .bgs2-anchor-bucket-label { border-top: none; padding-top: 0; }
+
+.bgs2-group-card {
+    background: var(--surface-elevated); border: 1px solid var(--border-color);
+    border-radius: var(--radius); padding: 16px; margin-bottom: 14px;
+}
+.bgs2-group-head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.bgs2-swatch { width: 22px; height: 22px; border-radius: 50%; border: 1px solid rgba(255, 255, 255, .25); flex: 0 0 auto; }
+.bgs2-group-title { font-size: 14px; font-weight: 600; }
+.bgs2-group-pct { color: var(--text-muted); font-size: 12px; }
