@@ -1219,7 +1219,7 @@ document.addEventListener('DOMContentLoaded', () => {
         findModelsControls.classList.add('active');
         bgsV2Wrapper.classList.add('results-initial-hide');
         if (state.findModels.lastResults.length > 0) renderModelResults(state.findModels.lastResults, state.findModels.selectedColor);
-        else if (state.findModels.selectedGifts.length && state.findModels.selectedColor) fetchMatchingModels();
+        else if (state.findModels.selectedColor) fetchMatchingModels();
         else clearResults();
     } else if (mode === 'findUniversal') {
         if (findUniversalControls) findUniversalControls.classList.add('active');
@@ -1890,11 +1890,11 @@ if (sortSwitcher) {
             };
         });
 
-        const centerPt = pts.reduce((a, b) => (b.weight < a.weight ? b : a));
-        centerPt.r = 0;
-        centerPt.x = cx;
-        centerPt.y = cy;
-
+        // putya: "сделай нормальную диаграму, а не вот эту кривую" — раньше самый лёгкий кластер
+        // насильно прижимался к центру (r=0), при этом его бейдж с % оставался на обычном месте
+        // снаружи — многоугольник получал "вмятину" в центре, никак не связанную с точкой снаружи,
+        // и выглядел сломанным. Убрано: у всех вершин радиус считается одной формулой (с тем же
+        // полом RADAR_MIN_R_FRAC=0.35, так что даже самый лёгкий кластер не схлопывается в точку).
         const orderedPts = pts.slice().sort((a, b) => a.angleDeg - b.angleDeg);
 
         const ringFracs = [0.25, 0.5, 0.75, 1];
@@ -2153,6 +2153,17 @@ if (sortSwitcher) {
         });
     }
 
+    // putya: "лимит веса цвета на блок где ищутся модели под фон" — в отличие от bgs2-min-mass выше
+    // (клиентский фильтр уже загруженных данных), этот порог отправляется на сервер
+    // (minClusterWeight), поэтому при изменении нужен полный повторный запрос.
+    const modelsMinWeightInputEl = document.getElementById('models-min-weight');
+    if (modelsMinWeightInputEl) {
+        modelsMinWeightInputEl.addEventListener('change', () => {
+            state.findModels.lastResults = [];
+            triggerModelSearchIfReady();
+        });
+    }
+
     bgsV2Body.addEventListener('click', (e) => {
         const card = e.target.closest('.result-card-bg');
         if (!card) return;
@@ -2220,50 +2231,55 @@ if (sortSwitcher) {
         }
     }
 
-    // putya: "добавь возможность несколько коллекций выбирать в обеих режимах" — TopNftByColor
-    // принимает только один NameGift за раз, поэтому гоняем его отдельно по каждой выбранной
-    // коллекции (параллельно) и просто объединяем результаты в один список, отсортированный по %.
+    // putya: "ты так и не добавил лимит веса цвета на блок где ищутся модели под фон" — перевёл
+    // вкладку "Модели" со старого TopNftByColor (точечный Coef, без разбивки по кубам) на
+    // FindModelsByBackground — тот же современный cube/HyABScaled поиск, что и на "Фоны"
+    // (ComputeDedupCore внутри), только в обратную сторону: один фон → по всему каталогу. Он уже
+    // нативно принимает minClusterWeight, поэтому порог здесь — настоящий серверный параметр, а не
+    // клиентский фильтр отображения, как "Мин. вес цвета" на "Фоны". "несколько коллекций" — эндпоинт
+    // сам не фильтрует по гифту, поэтому просеиваем ответ по state.findModels.selectedGifts на
+    // клиенте; пустой выбор (как и везде в мультиселекте) значит "все коллекции".
     async function fetchMatchingModels() {
-        const selectedGifts = state.findModels.selectedGifts;
-        if (!selectedGifts.length || !state.findModels.selectedColor) return;
+        if (!state.findModels.selectedColor) return;
 
         const isGridEmpty = resultsGrid.innerHTML.trim() === '';
         showLoading(isGridEmpty);
 
-        const url = `${SERVER_BASE_URL}/api/MonoCoof/TopNftByColor`;
+        const minWeightInput = document.getElementById('models-min-weight');
+        const minClusterWeight = minWeightInput ? (parseFloat(minWeightInput.value) || 0) : 0;
+        const backgroundName = state.findModels.selectedColor.name;
+        const url = `${SERVER_BASE_URL}/api/MonoCoof/FindModelsByBackground?backgroundName=${encodeURIComponent(backgroundName)}&minSimilarity=0&minClusterWeight=${minClusterWeight}&monoOnly=false`;
 
         try {
-            const perGiftResults = await Promise.all(selectedGifts.map(async (giftName) => {
-                const requestBody = {
-                    ...getTelegramUserData(),
-                    NameGift: giftName,
-                    NameColor: state.findModels.selectedColor.id,
-                    MonohromeModelsOnly: true
-                };
-                const [serverData, allModelsData] = await Promise.all([
-                    secureFetch(url, requestBody).catch(() => []),
-                    secureFetch(`${SERVER_BASE_URL}/api/ListGifts/${encodeURIComponent(giftName)}/AllModelNames`, null).catch(() => [])
-                ]);
+            const response = await secureFetch(url, null);
+            const allMatches = response?.Models || [];
 
-                const floorMap = new Map();
+            const selectedGifts = state.findModels.selectedGifts;
+            const filtered = selectedGifts.length
+                ? allMatches.filter(m => selectedGifts.includes(m.GiftName))
+                : allMatches;
+
+            const uniqueGifts = [...new Set(filtered.map(m => m.GiftName))];
+            const floorMap = new Map();
+            await Promise.all(uniqueGifts.map(async (giftName) => {
+                const allModelsData = await secureFetch(`${SERVER_BASE_URL}/api/ListGifts/${encodeURIComponent(giftName)}/AllModelNames`, null).catch(() => []);
                 if (Array.isArray(allModelsData)) {
                     allModelsData.forEach(m => {
                         const n = m.NameModel || m.nameModel;
-                        if (n && m.FloorPrice > 0) floorMap.set(n, m.FloorPrice);
+                        if (n && m.FloorPrice > 0) floorMap.set(`${giftName}::${n}`, m.FloorPrice);
                     });
                 }
-
-                return (serverData || []).map(item => ({
-                    modelName: item.Name,
-                    giftName: giftName,
-                    compatValue: item.Coof,
-                    isMonohrome: item.IsMonohrome,
-                    floorPrice: floorMap.get(item.Name) || 0,
-                }));
             }));
 
-            const modelsToRender = perGiftResults.flat();
-            console.log('%c[API Success] Received model data (all selected collections):', 'color: green', modelsToRender);
+            const modelsToRender = filtered.map(item => ({
+                modelName: item.ModelName,
+                giftName: item.GiftName,
+                compatValue: item.Similarity / 100,
+                cubeWeight: item.BestCubeWeight,
+                isMono: item.IsMonochrome,
+                floorPrice: floorMap.get(`${item.GiftName}::${item.ModelName}`) || 0,
+            }));
+            console.log('%c[API Success] Received model data (FindModelsByBackground):', 'color: green', modelsToRender);
 
             const resultsWithCounts = await fetchGiftCounts(modelsToRender, null, 'findModels');
 
@@ -2420,6 +2436,13 @@ if (sortSwitcher) {
                         <path d="M19.012 9.201L12.66 19.316a.857.857 0 0 1-1.453-.005L4.98 9.197a1.8 1.8 0 0 1-.266-.943a1.856 1.856 0 0 1 1.882-1.826h10.817c1.033 0 1.873.815 1.873 1.822a1.8 1.8 0 0 1-.274.951M6.51 8.863l4.633 7.144V8.143H6.994c-.48 0-.694.317-.484.72m6.347 7.144l4.633-7.144c.214-.403-.004-.72-.484-.72h-4.149z"/>
                     </svg>
                 </div>` : '';
+            // putya: "надо чтобы там на карточках писался процент веса цвета к которому этот фон
+            // найден" — BestCubeWeight из FindModelsByBackground: доля массы МОДЕЛИ, которую занимал
+            // тот кластер, через который зацепился фон (отдельно от Similarity — самого % совпадения).
+            const weightTag = (model.cubeWeight != null) ? `
+                <div class="badge-percent bgs2-weight-badge" title="Вес цвета в модели, через который найден этот фон">
+                    ⚖ ${Number(model.cubeWeight).toFixed(1)}%
+                </div>` : '';
 
             card.innerHTML = `
                 <div class="image-container">
@@ -2431,7 +2454,8 @@ if (sortSwitcher) {
                         <div class="info-model">${model.modelName}</div>
                     </div>
                     <div class="info-badges">
-                        <div class="badge-percent">${compatValue}%</div>
+                        <div class="badge-percent">${model.isMono ? '★ ' : ''}${compatValue}%</div>
+                        ${weightTag}
                         ${priceTag}
                     </div>
                 </div>`;
@@ -3010,7 +3034,9 @@ if (sortSwitcher) {
     }
 
     function triggerModelSearchIfReady() {
-        if (state.findModels.selectedGifts.length && state.findModels.selectedColor) {
+        // putya: "несколько коллекций" — пустой выбор коллекций теперь значит "все", как и везде в
+        // мультиселекте (FindModelsByBackground сам не требует гифта, см. fetchMatchingModels).
+        if (state.findModels.selectedColor) {
             fetchMatchingModels();
         }
     }

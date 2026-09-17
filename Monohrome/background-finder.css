@@ -713,6 +713,14 @@ main {
     border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
+/* putya: "процент веса цвета к которому этот фон найден" — отдельная от основного % плашка на
+   карточках "Модели", тот же акцентный синий, что и у блока лимита веса (.bgs2-filter-block). */
+.bgs2-weight-badge {
+    color: var(--primary-color);
+    background: rgba(37, 99, 235, .15);
+    border: 1px solid rgba(37, 99, 235, .35);
+}
+
 .result-card-bg .bg-name {
     font-size: 0.85rem; 
     font-weight: 500;
@@ -1424,17 +1432,25 @@ main {
 .bgs2-radar-svg { width: 100%; max-width: 250px; height: auto; display: block; margin: 0 auto; }
 .bgs2-hint { font-size: 12px; color: var(--text-muted); text-align: center; padding: 12px 0; }
 
-.bgs2-filter-row {
-    display: flex; align-items: center; gap: 8px; margin-bottom: 16px;
-    font-size: 13px; color: var(--text-muted);
+/* putya: "вес цвета... повыразительней... сейчас тяжело заметить" — заметный блок с рамкой/фоном
+   в цвет акцента (та же логика приметности, что у .bgs2-mono-section ниже, только синим), крупное
+   поле ввода вместо мелкой строчки. */
+.bgs2-filter-block {
+    background: rgba(37, 99, 235, .1); border: 1px solid rgba(37, 99, 235, .4);
+    border-radius: var(--radius); padding: 14px 16px; margin-bottom: 16px;
 }
-.bgs2-filter-row input[type="number"] {
-    width: 56px; background: var(--surface-elevated); border: 1px solid var(--border-color);
-    border-radius: 8px; color: var(--text-primary); font-size: 13px; font-family: inherit;
-    padding: 6px 8px; text-align: center;
+.bgs2-filter-block-label {
+    display: block; font-size: 13px; font-weight: 700; color: var(--primary-color); margin-bottom: 8px;
 }
-.bgs2-filter-row input[type="number"]:focus { outline: none; border-color: var(--primary-color); }
-.bgs2-filter-pct-sign { color: var(--text-muted); }
+.bgs2-filter-block-row { display: flex; align-items: center; gap: 6px; }
+.bgs2-filter-block-row input[type="number"] {
+    width: 80px; background: var(--surface-elevated); border: 1px solid var(--border-color);
+    border-radius: 8px; color: var(--text-primary); font-size: 18px; font-weight: 700; font-family: inherit;
+    padding: 8px 10px; text-align: center;
+}
+.bgs2-filter-block-row input[type="number"]:focus { outline: none; border-color: var(--primary-color); }
+.bgs2-filter-pct-sign { color: var(--text-secondary); font-size: 18px; font-weight: 700; }
+.bgs2-filter-block-hint { font-size: 11px; color: var(--text-muted); margin-top: 6px; }
 
 /* putya: "сделай карточки не такими большими" — .results-grid по умолчанию жёстко 3 колонки
    (см. правило выше по файлу), тут вместо этого столько карточек, сколько влезает по ~100px. */

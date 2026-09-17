@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BACKGROUND SELECTION</title>
-    <link rel="stylesheet" href="./background-finder.css?v=4">
+    <link rel="stylesheet" href="./background-finder.css?v=5">
 
     <link rel="stylesheet" href="./themes-modal.css">
     <link rel="stylesheet" href="../shared-admin-nav.css?v=8">
@@ -235,6 +235,18 @@
                 </div>
             </div>
         </div>
+
+        <!-- putya: "ты так и не добавил лимит веса цвета на блок где ищутся модели под фон" —
+             FindModelsByBackground принимает minClusterWeight нативно (см. background-finder.js),
+             это не клиентский фильтр, как на "Фоны" — тут порог реально отправляется в запрос. -->
+        <div class="bgs2-filter-block">
+            <label for="models-min-weight" class="bgs2-filter-block-label">Мин. вес цвета в оценке</label>
+            <div class="bgs2-filter-block-row">
+                <input type="number" id="models-min-weight" min="0" max="100" step="1" value="5">
+                <span class="bgs2-filter-pct-sign">%</span>
+            </div>
+            <div class="bgs2-filter-block-hint">Модели, у которых фон зацепил цвет легче этого % их массы, не показываются</div>
+        </div>
     </div>
 
                 <div id="results-wrapper" class="content-section results-initial-hide">
@@ -259,14 +271,18 @@
                     <div id="bgs-v2-loading" class="bgs2-loading hidden">
                         <span class="loading-spinner-mini"></span>
                     </div>
-                    <div id="bgs-v2-diagram" class="bgs2-diagram-box"></div>
-                    <!-- putya: "добавь возможность ставить лимит веса цвета который учитывается в
-                         оценке" — группы с долей массы модели ниже этого % не показываются. -->
-                    <div class="bgs2-filter-row">
-                        <label for="bgs2-min-mass">Мин. вес цвета:</label>
-                        <input type="number" id="bgs2-min-mass" min="0" max="100" step="1" value="5">
-                        <span class="bgs2-filter-pct-sign">%</span>
+                    <!-- putya: "вес цвета куда-то повыше переехал и повыразительней был, сейчас его
+                         тяжело заметить" — перенесено НАД диаграммой, из тихой строчки-подписи
+                         сделан заметный блок с крупным полем и явной подсказкой, что он делает. -->
+                    <div class="bgs2-filter-block">
+                        <label for="bgs2-min-mass" class="bgs2-filter-block-label">Мин. вес цвета в оценке</label>
+                        <div class="bgs2-filter-block-row">
+                            <input type="number" id="bgs2-min-mass" min="0" max="100" step="1" value="5">
+                            <span class="bgs2-filter-pct-sign">%</span>
+                        </div>
+                        <div class="bgs2-filter-block-hint">Группы и фоны, завязанные на цвет легче этого % массы модели, не показываются ниже</div>
                     </div>
+                    <div id="bgs-v2-diagram" class="bgs2-diagram-box"></div>
                     <div id="bgs-v2-body"></div>
                 </div>
             </div>
@@ -339,7 +355,7 @@
 
     <script type="module" src="./themes-modal.js"></script>
     <script type="module" src="./themes-modal-nfts.js"></script>
-    <script type="module" src="./background-finder.js?v=4"></script>
+    <script type="module" src="./background-finder.js?v=5"></script>
 </body>
 
 </html>
