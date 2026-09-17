@@ -97,14 +97,38 @@
     function hideTooltip() { tooltip.classList.add('hidden'); }
 
     // --- Модалка "какие подарки подходят под этот сектор" ---
-    // ВРЕМЕННО отключена: backend-эндпоинт GetGlobalColorWheelBucketModels откачен (уронил весь
-    // API прод-сайта при деплое, причина пока не найдена — см. историю) — до его возврата модалка
-    // просто честно об этом сообщает, без обращения к несуществующему сейчас эндпоинту (иначе в
-    // консоли сыпется 404 на каждый клик).
     async function openBucketModal(bucket, i) {
         modalTitle.textContent = `${HUE_NAMES[i]} (${Math.round(bucket.HueStart)}°–${Math.round(bucket.HueEnd)}°)`;
-        modalBody.innerHTML = '<div class="cw-modal-note">Список подарков по кластеру временно недоступен — эндпоинт откатили из-за сбоя на бэкенде, вернём позже.</div>';
+        modalBody.innerHTML = '<div class="cw-modal-note">Загрузка…</div>';
         modalOverlay.classList.remove('hidden');
+
+        try {
+            let url = `${API_BASE}/GetGlobalColorWheelBucketModels?hueStart=${bucket.HueStart}&hueEnd=${bucket.HueEnd}`;
+            if (selectedCollections.length > 0) url += `&collections=${encodeURIComponent(selectedCollections.join(','))}`;
+            const resp = await fetch(url);
+            if (!resp.ok) throw new Error('HTTP ' + resp.status);
+            const data = await resp.json();
+
+            if (!data.Items.length) {
+                modalBody.innerHTML = '<div class="cw-modal-note">Ничего не найдено.</div>';
+                return;
+            }
+            modalBody.innerHTML = data.Items.map(m => `
+                <div class="cw-model-row">
+                    <span class="cw-model-swatch" style="background:${m.Hex}"></span>
+                    <span class="cw-model-name"><span class="gift">${escapeHtml(m.GiftName)}</span> — ${escapeHtml(m.ModelName)}</span>
+                    <span class="cw-model-weight">${m.Weight}%</span>
+                </div>
+            `).join('') + (data.TotalCount > data.Shown
+                ? `<div class="cw-modal-note">Показано ${data.Shown} из ${data.TotalCount}, по убыванию веса цвета.</div>`
+                : '');
+        } catch (err) {
+            modalBody.innerHTML = `<div class="cw-modal-note">Не удалось загрузить: ${escapeHtml(err.message)}</div>`;
+        }
+    }
+
+    function escapeHtml(s) {
+        return (s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     }
 
     modalClose.addEventListener('click', () => modalOverlay.classList.add('hidden'));
