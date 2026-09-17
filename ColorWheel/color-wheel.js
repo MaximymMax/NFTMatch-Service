@@ -4,7 +4,6 @@
     const modelImageUrl = (giftName, modelName) => `${API_PHOTO_URL}/${encodeURIComponent(giftName)}/png/${encodeURIComponent(modelName)}.png`;
 
     const svg = document.getElementById('cw-svg');
-    const lightnessSvg = document.getElementById('cw-lightness-svg');
     const statsEl = document.getElementById('cw-stats');
     const errorEl = document.getElementById('cw-error');
     const chartsRow = document.querySelector('.cw-charts-row');
@@ -74,7 +73,7 @@
             // (Gift, Model) для этого сектора прямо на странице, под диаграммами.
             path.addEventListener('click', () => {
                 const title = `${HUE_NAMES[i]} (${Math.round(bucket.HueStart)}°–${Math.round(bucket.HueEnd)}°)`;
-                showBucketDrilldown(title, { hueStart: bucket.HueStart, hueEnd: bucket.HueEnd });
+                showBucketDrilldown(title, hueRangeQuery(bucket));
             });
             svg.appendChild(path);
         });
@@ -84,6 +83,15 @@
         baseCircle.setAttribute('fill', 'none');
         baseCircle.setAttribute('stroke', 'rgba(255,255,255,.15)');
         svg.appendChild(baseCircle);
+    }
+
+    // putya: "модели которые выводятся не учитывают яркость" — список по клику на сектор должен
+    // соответствовать тому, что сейчас реально показывает круг: если ползунок светлоты активен,
+    // список фильтруется по ТОМУ ЖЕ диапазону L, а не по всему каталогу.
+    function hueRangeQuery(bucket) {
+        const q = { hueStart: bucket.HueStart, hueEnd: bucket.HueEnd };
+        if (lightnessRangeActive) { q.lStart = lightnessRange[0]; q.lEnd = lightnessRange[1]; }
+        return q;
     }
 
     function renderLegend(hueWheel) {
@@ -99,7 +107,7 @@
                 const i = parseInt(el.dataset.bucketIndex, 10);
                 const b = hueWheel[i];
                 const title = `${HUE_NAMES[i]} (${Math.round(b.HueStart)}°–${Math.round(b.HueEnd)}°)`;
-                showBucketDrilldown(title, { hueStart: b.HueStart, hueEnd: b.HueEnd });
+                showBucketDrilldown(title, hueRangeQuery(b));
             });
         });
     }
@@ -113,87 +121,10 @@
     }
     function hideTooltip() { tooltip.classList.add('hidden'); }
 
-    // --- putya: "наверное лучше убрать 3д куб и вместо этого сделать два 2д графика, по цветам
-    // обычным и по темным-светлым" — простая столбчатая гистограмма по светлоте (L из Lab, 0..100),
-    // тот самый параметр, который круг намеренно не показывает. Столбцы — от тёмных к светлым,
-    // серая заливка соответствует самой светлоте (бэкенд уже отдаёт Hex = RGB(L,L,L)).
-    function renderLightnessHistogram(lightnessHistogram) {
-        lightnessSvg.innerHTML = '';
-        const ns = 'http://www.w3.org/2000/svg';
-        const maxShare = Math.max(1, ...lightnessHistogram.map(b => b.SharePercent));
-        const padding = 24, baseline = 260, maxBarHeight = 220;
-        const n = lightnessHistogram.length;
-        const barGap = 4;
-        const totalWidth = 300 - padding * 2;
-        const barWidth = (totalWidth - barGap * (n - 1)) / n;
-        const xAtL = (l) => padding + (l / 100) * totalWidth;
-
-        // putya: "ползунок яркости" — подсветка текущего среза прямо на гистограмме, чтобы было
-        // видно, какому участку соответствует выбранное положение ползунка.
-        if (lightnessRangeActive) {
-            const marker = document.createElementNS(ns, 'rect');
-            marker.setAttribute('x', xAtL(lightnessRange[0]).toFixed(1));
-            marker.setAttribute('y', 10);
-            marker.setAttribute('width', (xAtL(lightnessRange[1]) - xAtL(lightnessRange[0])).toFixed(1));
-            marker.setAttribute('height', baseline - 10);
-            marker.setAttribute('class', 'cw-lightness-range-marker');
-            lightnessSvg.appendChild(marker);
-        }
-
-        lightnessHistogram.forEach((bucket, i) => {
-            const h = bucket.Count > 0 ? Math.max(4, (bucket.SharePercent / maxShare) * maxBarHeight) : 4;
-            const x = padding + i * (barWidth + barGap);
-            const y = baseline - h;
-
-            const rect = document.createElementNS(ns, 'rect');
-            rect.setAttribute('x', x.toFixed(1));
-            rect.setAttribute('y', y.toFixed(1));
-            rect.setAttribute('width', barWidth.toFixed(1));
-            rect.setAttribute('height', h.toFixed(1));
-            rect.setAttribute('rx', 3);
-            rect.setAttribute('fill', bucket.Hex || '#888');
-            rect.setAttribute('class', 'cw-lightness-bar');
-            rect.addEventListener('mousemove', (e) => showLightnessTooltip(e, bucket));
-            rect.addEventListener('mouseleave', hideTooltip);
-            rect.addEventListener('click', () => {
-                const title = `Светлота ${Math.round(bucket.LStart)}–${Math.round(bucket.LEnd)}`;
-                showBucketDrilldown(title, { lStart: bucket.LStart, lEnd: bucket.LEnd });
-            });
-            lightnessSvg.appendChild(rect);
-        });
-
-        const baseLine = document.createElementNS(ns, 'line');
-        baseLine.setAttribute('x1', padding); baseLine.setAttribute('x2', 300 - padding);
-        baseLine.setAttribute('y1', baseline); baseLine.setAttribute('y2', baseline);
-        baseLine.setAttribute('stroke', 'rgba(255,255,255,.15)');
-        lightnessSvg.appendChild(baseLine);
-
-        const darkLabel = document.createElementNS(ns, 'text');
-        darkLabel.setAttribute('x', padding); darkLabel.setAttribute('y', baseline + 16);
-        darkLabel.setAttribute('font-size', 11); darkLabel.setAttribute('fill', 'var(--text-muted)');
-        darkLabel.textContent = 'тёмные';
-        lightnessSvg.appendChild(darkLabel);
-
-        const lightLabel = document.createElementNS(ns, 'text');
-        lightLabel.setAttribute('x', 300 - padding); lightLabel.setAttribute('y', baseline + 16);
-        lightLabel.setAttribute('font-size', 11); lightLabel.setAttribute('fill', 'var(--text-muted)');
-        lightLabel.setAttribute('text-anchor', 'end');
-        lightLabel.textContent = 'светлые';
-        lightnessSvg.appendChild(lightLabel);
-    }
-
-    function showLightnessTooltip(e, bucket) {
-        tooltip.innerHTML = `<b>Светлота ${Math.round(bucket.LStart)}–${Math.round(bucket.LEnd)}</b>` +
-            `${bucket.SharePercent}% каталога · ${bucket.Count} кластеров`;
-        tooltip.style.left = (e.clientX + 14) + 'px';
-        tooltip.style.top = (e.clientY + 14) + 'px';
-        tooltip.classList.remove('hidden');
-    }
-
     // --- putya: "не в окне отдельном, а блок внизу" — список подходящих подарков рендерится
     // прямо на странице, в блоке под диаграммами (см. #cw-drilldown в HTML), не всплывающим окном.
-    // range — { hueStart, hueEnd } (клик по сектору круга) ИЛИ { lStart, lEnd } (клик по столбику
-    // гистограммы светлоты), см. GetGlobalColorWheelBucketModels на бэке.
+    // range — { hueStart, hueEnd[, lStart, lEnd] } от hueRangeQuery(), см. GetGlobalColorWheelBucketModels
+    // на бэке (комбинация hue+L поддерживается родно).
     async function showBucketDrilldown(title, range) {
         drilldownTitle.textContent = title;
         drilldownBody.innerHTML = '<div class="cw-drilldown-note">Загрузка…</div>';
@@ -390,7 +321,6 @@
 
             renderWheel(data.HueWheel);
             renderLegend(data.HueWheel);
-            renderLightnessHistogram(data.LightnessHistogram);
         } catch (err) {
             showError('Не удалось загрузить: ' + err.message);
         }

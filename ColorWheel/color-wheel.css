@@ -115,18 +115,15 @@ main { display: flex; justify-content: center; padding: 24px 16px 60px; }
 }
 .cw-stats b { color: var(--text-primary); font-weight: 700; }
 
-/* --- Оба графика рядом --- */
 .cw-charts-row {
-    width: 100%; display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; align-items: flex-start;
+    width: 100%; display: flex; justify-content: center;
 }
 
-/* putya: "сделай их одинаковые по размеру" — обе диаграммы делят один и тот же квадрат. */
 .cw-view {
-    flex: 1 1 320px; max-width: 380px;
+    width: 100%; max-width: 380px;
     display: flex; flex-direction: column; align-items: center; gap: 8px;
     background: rgba(255,255,255,.02); border-radius: 12px; padding: 14px;
 }
-.cw-view-title { font-size: 14px; font-weight: 700; color: var(--text-secondary); }
 
 .cw-diagram-box {
     width: 100%; max-width: 300px; aspect-ratio: 1 / 1;
@@ -160,13 +157,6 @@ main { display: flex; justify-content: center; padding: 24px 16px 60px; }
 .cw-tooltip b { display: block; margin-bottom: 2px; }
 
 .cw-hint { font-size: 11.5px; color: var(--text-muted); text-align: center; }
-
-/* putya: "наверное лучше убрать 3д куб и вместо этого сделать два 2д графика, по цветам обычным и
-   по темным-светлым" — простая столбчатая гистограмма по светлоте вместо 3D-куба. */
-#cw-lightness-svg { width: 100%; height: 100%; overflow: visible; }
-.cw-lightness-bar { cursor: pointer; stroke: rgba(255,255,255,.1); stroke-width: 1; transition: opacity .15s; }
-.cw-lightness-bar:hover { opacity: .82; }
-.cw-lightness-range-marker { fill: rgba(255,255,255,.1); pointer-events: none; }
 
 /* putya: "лучше сделай ползунок яркости... если в 0 выкрутить, будет черный, если в максимум —
    только белый" — срез по светлоте для круга/легенды. */
