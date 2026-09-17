@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Цветовой круг каталога</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="./color-wheel.css?v=8">
+    <link rel="stylesheet" href="./color-wheel.css?v=9">
     <script src="../config.js"></script>
 </head>
 
@@ -39,6 +39,13 @@
                         <svg id="cw-svg" viewBox="-220 -220 440 440"></svg>
                         <div id="cw-tooltip" class="cw-tooltip hidden"></div>
                     </div>
+                    <div class="cw-slider-row">
+                        <span class="cw-slider-label">Светлота:</span>
+                        <input type="range" id="lightness-slider" class="cw-slider" min="0" max="100" value="50" step="1">
+                        <span id="lightness-slider-value" class="cw-slider-value">весь диапазон</span>
+                        <button id="lightness-reset" class="cw-slider-reset hidden" title="Сбросить срез">&times;</button>
+                    </div>
+                    <p class="cw-hint">0 — только тёмные (чёрный), 100 — только светлые (белый). Круг и легенда пересчитываются под срез.</p>
                 </div>
 
                 <div id="cw-lightness-view" class="cw-view">
@@ -64,7 +71,7 @@
         </div>
     </main>
 
-    <script src="./color-wheel.js?v=10"></script>
+    <script src="./color-wheel.js?v=11"></script>
 </body>
 
 </html>

@@ -24,6 +24,10 @@
     const collectionsList = document.getElementById('collections-list');
     const collectionsOptions = document.getElementById('collections-options');
 
+    const lightnessSlider = document.getElementById('lightness-slider');
+    const lightnessSliderValue = document.getElementById('lightness-slider-value');
+    const lightnessReset = document.getElementById('lightness-reset');
+
     // 12 секторов по 30° начиная с 0° (красный) — классические названия цветового круга художника,
     // тот же порядок, что и HueWheel с бэкенда.
     const HUE_NAMES = ['Красный', 'Оранжевый', 'Жёлтый', 'Салатовый', 'Зелёный', 'Изумрудный',
@@ -122,6 +126,19 @@
         const barGap = 4;
         const totalWidth = 300 - padding * 2;
         const barWidth = (totalWidth - barGap * (n - 1)) / n;
+        const xAtL = (l) => padding + (l / 100) * totalWidth;
+
+        // putya: "ползунок яркости" — подсветка текущего среза прямо на гистограмме, чтобы было
+        // видно, какому участку соответствует выбранное положение ползунка.
+        if (lightnessRangeActive) {
+            const marker = document.createElementNS(ns, 'rect');
+            marker.setAttribute('x', xAtL(lightnessRange[0]).toFixed(1));
+            marker.setAttribute('y', 10);
+            marker.setAttribute('width', (xAtL(lightnessRange[1]) - xAtL(lightnessRange[0])).toFixed(1));
+            marker.setAttribute('height', baseline - 10);
+            marker.setAttribute('class', 'cw-lightness-range-marker');
+            lightnessSvg.appendChild(marker);
+        }
 
         lightnessHistogram.forEach((bucket, i) => {
             const h = bucket.Count > 0 ? Math.max(4, (bucket.SharePercent / maxShare) * maxBarHeight) : 4;
@@ -215,6 +232,44 @@
     }
 
     drilldownClose.addEventListener('click', () => drilldown.classList.add('hidden'));
+
+    // --- putya: "лучше сделай ползунок яркости при изменении которого меняется яркость цветов на
+    // диаграмме и соответственно распределение ее / если в 0 выкрутить, будет черный, если в
+    // максимум выкрутить, только белый" — по умолчанию срез не активен (круг показывает весь
+    // каталог, как раньше); любое движение ползунка включает срез шириной ±12 вокруг выбранной
+    // точки, кнопка × сбрасывает обратно.
+    let lightnessRangeActive = false;
+    let lightnessRange = null;
+
+    function lightnessBand(v) {
+        const half = 12;
+        let lo = v - half, hi = v + half;
+        if (lo < 0) { hi -= lo; lo = 0; }
+        if (hi > 100) { lo -= (hi - 100); hi = 100; }
+        return [Math.max(0, lo), Math.min(100, hi)];
+    }
+
+    function updateLightnessSliderLabel() {
+        lightnessSliderValue.textContent = lightnessRangeActive
+            ? `${Math.round(lightnessRange[0])}–${Math.round(lightnessRange[1])}`
+            : 'весь диапазон';
+        lightnessReset.classList.toggle('hidden', !lightnessRangeActive);
+    }
+
+    lightnessSlider.addEventListener('input', () => {
+        lightnessRangeActive = true;
+        lightnessRange = lightnessBand(parseInt(lightnessSlider.value, 10));
+        updateLightnessSliderLabel();
+        scheduleRefetch();
+    });
+
+    lightnessReset.addEventListener('click', () => {
+        lightnessRangeActive = false;
+        lightnessRange = null;
+        lightnessSlider.value = 50;
+        updateLightnessSliderLabel();
+        scheduleRefetch();
+    });
 
     // --- putya: "список выбранный коллекций... в таком же стиле сделай выпадающий список как у
     // меня все остальное" — тот же multi-select (клик по "Все" сбрасывает выбор, клик по пункту
@@ -311,9 +366,13 @@
     // --- Загрузка и отрисовка диаграмм (переиспользуется при смене фильтра) ---
     async function loadCharts() {
         try {
-            const url = selectedCollections.length > 0
-                ? `${API_BASE}/GetGlobalColorWheel?collections=${encodeURIComponent(selectedCollections.join(','))}`
-                : `${API_BASE}/GetGlobalColorWheel`;
+            const params = new URLSearchParams();
+            if (selectedCollections.length > 0) params.set('collections', selectedCollections.join(','));
+            if (lightnessRangeActive) {
+                params.set('lStart', lightnessRange[0]);
+                params.set('lEnd', lightnessRange[1]);
+            }
+            const url = `${API_BASE}/GetGlobalColorWheel${params.toString() ? '?' + params : ''}`;
             const resp = await fetch(url);
             if (resp.status === 403) {
                 showError('Страница недоступна.');
