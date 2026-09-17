@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Цветовой круг каталога</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="./color-wheel.css?v=7">
+    <link rel="stylesheet" href="./color-wheel.css?v=8">
     <script src="../config.js"></script>
 </head>
 
@@ -14,7 +14,7 @@
     <main>
         <div class="cw-container">
             <h1 class="cw-title">Цветовой круг каталога</h1>
-            <p class="cw-subtitle">Агрегация по всем моделям: только кластеры с весом выше <span id="cw-threshold">10</span>%, позиция на круге — только по тону (Hue), без учёта яркости. Клик по сектору — список подарков.</p>
+            <p class="cw-subtitle">Агрегация по всем моделям: только кластеры с весом выше <span id="cw-threshold">10</span>%. Круг — по тону (Hue), без учёта светлоты; вторая диаграмма — только светлота. Клик по сектору или столбику — список подарков.</p>
 
             <div class="cw-filter-row">
                 <span class="cw-filter-label">Коллекции:</span>
@@ -41,14 +41,12 @@
                     </div>
                 </div>
 
-                <div id="cw-cube-view" class="cw-view">
-                    <h2 class="cw-view-title">3D-куб</h2>
+                <div id="cw-lightness-view" class="cw-view">
+                    <h2 class="cw-view-title">Светлота</h2>
                     <div class="cw-diagram-box">
-                        <div class="cube-scene" id="cube-scene">
-                            <div class="cube-inner" id="cube-inner"></div>
-                        </div>
+                        <svg id="cw-lightness-svg" viewBox="0 0 300 300" preserveAspectRatio="xMidYMid meet"></svg>
                     </div>
-                    <p class="cw-hint">Перетаскивай мышью, чтобы повернуть. Оси: R / G / B. Светлый угол куба — светлые оттенки, тёмный угол — тёмные.</p>
+                    <p class="cw-hint">Слева — тёмные оттенки, справа — светлые. Высота столбика — доля каталога.</p>
                 </div>
             </div>
 
@@ -66,7 +64,7 @@
         </div>
     </main>
 
-    <script src="./color-wheel.js?v=9"></script>
+    <script src="./color-wheel.js?v=10"></script>
 </body>
 
 </html>

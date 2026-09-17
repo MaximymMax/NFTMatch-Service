@@ -4,12 +4,11 @@
     const modelImageUrl = (giftName, modelName) => `${API_PHOTO_URL}/${encodeURIComponent(giftName)}/png/${encodeURIComponent(modelName)}.png`;
 
     const svg = document.getElementById('cw-svg');
+    const lightnessSvg = document.getElementById('cw-lightness-svg');
     const statsEl = document.getElementById('cw-stats');
     const errorEl = document.getElementById('cw-error');
     const chartsRow = document.querySelector('.cw-charts-row');
     const tooltip = document.getElementById('cw-tooltip');
-    const cubeInner = document.getElementById('cube-inner');
-    const cubeScene = document.getElementById('cube-scene');
     const thresholdEl = document.getElementById('cw-threshold');
     const legendEl = document.getElementById('cw-legend');
     const filterRow = document.querySelector('.cw-filter-row');
@@ -64,12 +63,15 @@
             path.setAttribute('d', wedgePath(bucket.HueStart, bucket.HueEnd, outerR));
             path.setAttribute('fill', bucket.Hex || '#555');
             path.setAttribute('class', 'cw-sector');
-            path.addEventListener('mousemove', (e) => showTooltip(e, bucket, i));
+            path.addEventListener('mousemove', (e) => showHueTooltip(e, bucket, i));
             path.addEventListener('mouseleave', hideTooltip);
             // putya: "при нажатии на цвет под блоком с диаграммами появляется блок с конкретно
             // моделями которые наиболее подходят под данный цвет" — клик подгружает список
             // (Gift, Model) для этого сектора прямо на странице, под диаграммами.
-            path.addEventListener('click', () => showBucketDrilldown(bucket, i));
+            path.addEventListener('click', () => {
+                const title = `${HUE_NAMES[i]} (${Math.round(bucket.HueStart)}°–${Math.round(bucket.HueEnd)}°)`;
+                showBucketDrilldown(title, { hueStart: bucket.HueStart, hueEnd: bucket.HueEnd });
+            });
             svg.appendChild(path);
         });
 
@@ -91,12 +93,14 @@
         legendEl.querySelectorAll('.cw-legend-item').forEach(el => {
             el.addEventListener('click', () => {
                 const i = parseInt(el.dataset.bucketIndex, 10);
-                showBucketDrilldown(hueWheel[i], i);
+                const b = hueWheel[i];
+                const title = `${HUE_NAMES[i]} (${Math.round(b.HueStart)}°–${Math.round(b.HueEnd)}°)`;
+                showBucketDrilldown(title, { hueStart: b.HueStart, hueEnd: b.HueEnd });
             });
         });
     }
 
-    function showTooltip(e, bucket, i) {
+    function showHueTooltip(e, bucket, i) {
         tooltip.innerHTML = `<b>${HUE_NAMES[i]} (${Math.round(bucket.HueStart)}°–${Math.round(bucket.HueEnd)}°)</b>` +
             `${bucket.SharePercent}% каталога · ${bucket.Count} кластеров`;
         tooltip.style.left = (e.clientX + 14) + 'px';
@@ -105,18 +109,84 @@
     }
     function hideTooltip() { tooltip.classList.add('hidden'); }
 
+    // --- putya: "наверное лучше убрать 3д куб и вместо этого сделать два 2д графика, по цветам
+    // обычным и по темным-светлым" — простая столбчатая гистограмма по светлоте (L из Lab, 0..100),
+    // тот самый параметр, который круг намеренно не показывает. Столбцы — от тёмных к светлым,
+    // серая заливка соответствует самой светлоте (бэкенд уже отдаёт Hex = RGB(L,L,L)).
+    function renderLightnessHistogram(lightnessHistogram) {
+        lightnessSvg.innerHTML = '';
+        const ns = 'http://www.w3.org/2000/svg';
+        const maxShare = Math.max(1, ...lightnessHistogram.map(b => b.SharePercent));
+        const padding = 24, baseline = 260, maxBarHeight = 220;
+        const n = lightnessHistogram.length;
+        const barGap = 4;
+        const totalWidth = 300 - padding * 2;
+        const barWidth = (totalWidth - barGap * (n - 1)) / n;
+
+        lightnessHistogram.forEach((bucket, i) => {
+            const h = bucket.Count > 0 ? Math.max(4, (bucket.SharePercent / maxShare) * maxBarHeight) : 4;
+            const x = padding + i * (barWidth + barGap);
+            const y = baseline - h;
+
+            const rect = document.createElementNS(ns, 'rect');
+            rect.setAttribute('x', x.toFixed(1));
+            rect.setAttribute('y', y.toFixed(1));
+            rect.setAttribute('width', barWidth.toFixed(1));
+            rect.setAttribute('height', h.toFixed(1));
+            rect.setAttribute('rx', 3);
+            rect.setAttribute('fill', bucket.Hex || '#888');
+            rect.setAttribute('class', 'cw-lightness-bar');
+            rect.addEventListener('mousemove', (e) => showLightnessTooltip(e, bucket));
+            rect.addEventListener('mouseleave', hideTooltip);
+            rect.addEventListener('click', () => {
+                const title = `Светлота ${Math.round(bucket.LStart)}–${Math.round(bucket.LEnd)}`;
+                showBucketDrilldown(title, { lStart: bucket.LStart, lEnd: bucket.LEnd });
+            });
+            lightnessSvg.appendChild(rect);
+        });
+
+        const baseLine = document.createElementNS(ns, 'line');
+        baseLine.setAttribute('x1', padding); baseLine.setAttribute('x2', 300 - padding);
+        baseLine.setAttribute('y1', baseline); baseLine.setAttribute('y2', baseline);
+        baseLine.setAttribute('stroke', 'rgba(255,255,255,.15)');
+        lightnessSvg.appendChild(baseLine);
+
+        const darkLabel = document.createElementNS(ns, 'text');
+        darkLabel.setAttribute('x', padding); darkLabel.setAttribute('y', baseline + 16);
+        darkLabel.setAttribute('font-size', 11); darkLabel.setAttribute('fill', 'var(--text-muted)');
+        darkLabel.textContent = 'тёмные';
+        lightnessSvg.appendChild(darkLabel);
+
+        const lightLabel = document.createElementNS(ns, 'text');
+        lightLabel.setAttribute('x', 300 - padding); lightLabel.setAttribute('y', baseline + 16);
+        lightLabel.setAttribute('font-size', 11); lightLabel.setAttribute('fill', 'var(--text-muted)');
+        lightLabel.setAttribute('text-anchor', 'end');
+        lightLabel.textContent = 'светлые';
+        lightnessSvg.appendChild(lightLabel);
+    }
+
+    function showLightnessTooltip(e, bucket) {
+        tooltip.innerHTML = `<b>Светлота ${Math.round(bucket.LStart)}–${Math.round(bucket.LEnd)}</b>` +
+            `${bucket.SharePercent}% каталога · ${bucket.Count} кластеров`;
+        tooltip.style.left = (e.clientX + 14) + 'px';
+        tooltip.style.top = (e.clientY + 14) + 'px';
+        tooltip.classList.remove('hidden');
+    }
+
     // --- putya: "не в окне отдельном, а блок внизу" — список подходящих подарков рендерится
     // прямо на странице, в блоке под диаграммами (см. #cw-drilldown в HTML), не всплывающим окном.
-    async function showBucketDrilldown(bucket, i) {
-        drilldownTitle.textContent = `${HUE_NAMES[i]} (${Math.round(bucket.HueStart)}°–${Math.round(bucket.HueEnd)}°)`;
+    // range — { hueStart, hueEnd } (клик по сектору круга) ИЛИ { lStart, lEnd } (клик по столбику
+    // гистограммы светлоты), см. GetGlobalColorWheelBucketModels на бэке.
+    async function showBucketDrilldown(title, range) {
+        drilldownTitle.textContent = title;
         drilldownBody.innerHTML = '<div class="cw-drilldown-note">Загрузка…</div>';
         drilldown.classList.remove('hidden');
         drilldown.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
         try {
-            let url = `${API_BASE}/GetGlobalColorWheelBucketModels?hueStart=${bucket.HueStart}&hueEnd=${bucket.HueEnd}`;
-            if (selectedCollections.length > 0) url += `&collections=${encodeURIComponent(selectedCollections.join(','))}`;
-            const resp = await fetch(url);
+            const params = new URLSearchParams(range);
+            if (selectedCollections.length > 0) params.set('collections', selectedCollections.join(','));
+            const resp = await fetch(`${API_BASE}/GetGlobalColorWheelBucketModels?${params}`);
             if (!resp.ok) throw new Error('HTTP ' + resp.status);
             const data = await resp.json();
 
@@ -145,124 +215,6 @@
     }
 
     drilldownClose.addEventListener('click', () => drilldown.classList.add('hidden'));
-
-    // --- 3D: putya: "3д куб переделай, чтобы был прям куб как изначально было" — настоящие
-    // координаты R/G/B (куб реально заполняется точками, не цилиндр), плюс проволочный каркас
-    // куба, чтобы форма читалась однозначно. Светлые тона (высокие R/G/B) собираются у одного угла
-    // куба, тёмные — у противоположного, это и даёт "светлые/тёмные" без отдельной оси.
-    let rotX = -20, rotY = 35;
-    function applyCubeRotation() {
-        cubeInner.style.transform = `rotateX(${rotX}deg) rotateY(${rotY}deg)`;
-    }
-
-    // putya: "кружки эти 3д сделай" — радиальный градиент (блик + затемнённый край), чтобы читалось
-    // как объёмный шарик, а не плоский кружок.
-    function shade(r, g, b, percent) {
-        const t = percent < 0 ? 0 : 255;
-        const p = Math.abs(percent) / 100;
-        return `rgb(${Math.round((t - r) * p) + r}, ${Math.round((t - g) * p) + g}, ${Math.round((t - b) * p) + b})`;
-    }
-
-    const CUBE_H = 90; // половина стороны куба, px
-
-    function buildCubeWireframe() {
-        const S = 2 * CUBE_H;
-        // X-рёбра (варьируется X, Y/Z фиксированы) — естественная "ширина" div уже вдоль X.
-        for (const sy of [-1, 1]) for (const sz of [-1, 1]) {
-            const e = document.createElement('div');
-            e.className = 'cube-edge';
-            e.style.width = S + 'px'; e.style.height = '1px';
-            e.style.left = '50%'; e.style.top = '50%';
-            e.style.marginLeft = -CUBE_H + 'px'; e.style.marginTop = '0px';
-            e.style.transform = `translate3d(0px, ${sy * CUBE_H}px, ${sz * CUBE_H}px)`;
-            cubeInner.appendChild(e);
-        }
-        // Y-рёбра (варьируется Y) — естественная "высота" div уже вдоль Y.
-        for (const sx of [-1, 1]) for (const sz of [-1, 1]) {
-            const e = document.createElement('div');
-            e.className = 'cube-edge';
-            e.style.width = '1px'; e.style.height = S + 'px';
-            e.style.left = '50%'; e.style.top = '50%';
-            e.style.marginLeft = '0px'; e.style.marginTop = -CUBE_H + 'px';
-            e.style.transform = `translate3d(${sx * CUBE_H}px, 0px, ${sz * CUBE_H}px)`;
-            cubeInner.appendChild(e);
-        }
-        // Z-рёбра (варьируется Z) — берём вертикальный div и поворачиваем его на 90° вокруг X, тогда
-        // его "высота" ложится вдоль Z.
-        for (const sx of [-1, 1]) for (const sy of [-1, 1]) {
-            const e = document.createElement('div');
-            e.className = 'cube-edge';
-            e.style.width = '1px'; e.style.height = S + 'px';
-            e.style.left = '50%'; e.style.top = '50%';
-            e.style.marginLeft = '0px'; e.style.marginTop = -CUBE_H + 'px';
-            e.style.transform = `translate3d(${sx * CUBE_H}px, ${sy * CUBE_H}px, 0px) rotateX(90deg)`;
-            cubeInner.appendChild(e);
-        }
-
-        const lightLabel = document.createElement('div');
-        lightLabel.className = 'cube-corner-label';
-        lightLabel.textContent = 'светлые';
-        lightLabel.style.transform = `translate3d(${CUBE_H}px, ${-CUBE_H - 14}px, ${CUBE_H}px)`;
-        cubeInner.appendChild(lightLabel);
-
-        const darkLabel = document.createElement('div');
-        darkLabel.className = 'cube-corner-label';
-        darkLabel.textContent = 'тёмные';
-        darkLabel.style.transform = `translate3d(${-CUBE_H}px, ${CUBE_H + 4}px, ${-CUBE_H}px)`;
-        cubeInner.appendChild(darkLabel);
-    }
-
-    function renderCube3D(cubePoints) {
-        cubeInner.innerHTML = '';
-        buildCubeWireframe();
-
-        if (!cubePoints.length) return;
-        const maxWeight = Math.max(...cubePoints.map(p => p.WeightSum));
-
-        cubePoints.forEach(p => {
-            const x = (p.R / 255) * 2 * CUBE_H - CUBE_H;
-            const y = -((p.G / 255) * 2 * CUBE_H - CUBE_H);
-            const z = (p.B / 255) * 2 * CUBE_H - CUBE_H;
-            const size = 5 + Math.sqrt(p.WeightSum / maxWeight) * 13;
-
-            const dot = document.createElement('div');
-            dot.className = 'cube-point';
-            dot.style.width = size + 'px';
-            dot.style.height = size + 'px';
-            dot.style.background = `radial-gradient(circle at 32% 28%, ${shade(p.R, p.G, p.B, 60)}, ${p.Hex} 55%, ${shade(p.R, p.G, p.B, -35)} 100%)`;
-            dot.style.marginLeft = -(size / 2) + 'px';
-            dot.style.marginTop = -(size / 2) + 'px';
-            dot.style.transform = `translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, ${z.toFixed(1)}px)`;
-            dot.title = `${p.Hex} · R${p.R} G${p.G} B${p.B} · ${p.WeightSum}% веса, ${p.Count} кластеров`;
-            cubeInner.appendChild(dot);
-        });
-    }
-
-    // Перетаскивание мышью/тачем для поворота куба.
-    let dragging = false, lastX = 0, lastY = 0, autoRotate = true;
-    function dragStart(x, y) { dragging = true; autoRotate = false; lastX = x; lastY = y; }
-    function dragMove(x, y) {
-        if (!dragging) return;
-        rotY += (x - lastX) * 0.4;
-        rotX -= (y - lastY) * 0.4;
-        rotX = Math.max(-85, Math.min(85, rotX));
-        lastX = x; lastY = y;
-        applyCubeRotation();
-    }
-    function dragEnd() { dragging = false; }
-
-    cubeScene.addEventListener('mousedown', e => dragStart(e.clientX, e.clientY));
-    window.addEventListener('mousemove', e => dragMove(e.clientX, e.clientY));
-    window.addEventListener('mouseup', dragEnd);
-    cubeScene.addEventListener('touchstart', e => { const t = e.touches[0]; dragStart(t.clientX, t.clientY); }, { passive: true });
-    cubeScene.addEventListener('touchmove', e => { const t = e.touches[0]; dragMove(t.clientX, t.clientY); }, { passive: true });
-    cubeScene.addEventListener('touchend', dragEnd);
-
-    function tick() {
-        if (autoRotate) { rotY += 0.15; applyCubeRotation(); }
-        requestAnimationFrame(tick);
-    }
-    requestAnimationFrame(tick);
 
     // --- putya: "список выбранный коллекций... в таком же стиле сделай выпадающий список как у
     // меня все остальное" — тот же multi-select (клик по "Все" сбрасывает выбор, клик по пункту
@@ -379,8 +331,7 @@
 
             renderWheel(data.HueWheel);
             renderLegend(data.HueWheel);
-            renderCube3D(data.CubePoints);
-            applyCubeRotation();
+            renderLightnessHistogram(data.LightnessHistogram);
         } catch (err) {
             showError('Не удалось загрузить: ' + err.message);
         }
