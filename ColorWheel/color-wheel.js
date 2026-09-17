@@ -1,5 +1,7 @@
 (function () {
     const API_BASE = (window.CONFIG && window.CONFIG.SERVER_BASE_URL || 'https://nftmatch.pro') + '/api/MonoCoof';
+    const API_PHOTO_URL = 'https://cdn.changes.tg/gifts/models';
+    const modelImageUrl = (giftName, modelName) => `${API_PHOTO_URL}/${encodeURIComponent(giftName)}/png/${encodeURIComponent(modelName)}.png`;
 
     const svg = document.getElementById('cw-svg');
     const statsEl = document.getElementById('cw-stats');
@@ -124,7 +126,9 @@
             }
             drilldownBody.innerHTML = data.Items.map(m => `
                 <div class="cw-model-row">
-                    <span class="cw-model-swatch" style="background:${m.Hex}"></span>
+                    <img class="cw-model-photo" src="${modelImageUrl(m.GiftName, m.ModelName)}" alt=""
+                         loading="lazy" onerror="this.style.visibility='hidden'">
+                    <span class="cw-model-swatch" style="background:${m.Hex}" title="${m.Hex}"></span>
                     <span class="cw-model-name"><span class="gift">${escapeHtml(m.GiftName)}</span> — ${escapeHtml(m.ModelName)}</span>
                     <span class="cw-model-weight">${m.Weight}%</span>
                 </div>
