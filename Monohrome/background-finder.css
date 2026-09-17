@@ -119,7 +119,9 @@ main {
 }
 
 .content-wrapper {
-    padding: 1.5rem 1.5rem 0rem; 
+    /* putya: "на монохромах можно еще и снизу сделать отступ небольшой" — тематики (themes.css)
+       уже имеют нижний отступ у своей .content-wrapper, тут он был явно занулён. */
+    padding: 1.5rem 1.5rem 1rem;
 }
 
 .page-title {

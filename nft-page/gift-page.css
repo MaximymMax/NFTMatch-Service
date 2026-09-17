@@ -146,6 +146,13 @@ header nav {
     display: none !important;
 }
 
+/* putya не жаловался на отступы вкладок конкретно тут — у .main-container уже есть свой padding:1rem
+   (в отличие от background-finder.css/themes.css, где padding:0), поэтому общий боковой padding
+   #cw-admin-tabs из shared-admin-nav.css здесь не нужен — сбрасываем, чтобы не удваивался.
+   shared-admin-nav.css подключается ПОСЛЕ этого файла, поэтому обычный #cw-admin-tabs той же
+   специфичности проиграл бы порядку подключения — добавляем body для более высокой специфичности. */
+body #cw-admin-tabs { padding: 0; }
+
 header.safe-area-gradient {
     position: absolute;
     /* Чтобы контент скроллился под ней */
