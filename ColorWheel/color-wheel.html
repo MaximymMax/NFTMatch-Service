@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Цветовой круг каталога</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="./color-wheel.css">
+    <script src="../config.js"></script>
+</head>
+
+<body>
+    <main>
+        <div class="cw-container">
+            <h1 class="cw-title">Цветовой круг каталога</h1>
+            <p class="cw-subtitle">Агрегация по всем моделям: только кластеры с весом выше <span id="cw-threshold">10</span>%, позиция — только по тону (Hue), без учёта яркости.</p>
+
+            <div class="cw-tabs">
+                <button class="cw-tab active" data-view="wheel">Круг</button>
+                <button class="cw-tab" data-view="cube">3D-куб</button>
+            </div>
+
+            <div id="cw-stats" class="cw-stats"></div>
+
+            <div id="cw-wheel-view" class="cw-view">
+                <svg id="cw-svg" viewBox="-220 -220 440 440"></svg>
+                <div id="cw-tooltip" class="cw-tooltip hidden"></div>
+            </div>
+
+            <div id="cw-cube-view" class="cw-view hidden">
+                <div class="cube-scene" id="cube-scene">
+                    <div class="cube-inner" id="cube-inner">
+                        <div class="cube-edge edge-x"></div>
+                        <div class="cube-edge edge-y"></div>
+                        <div class="cube-edge edge-z"></div>
+                    </div>
+                </div>
+                <p class="cw-hint">Перетаскивай мышью, чтобы повернуть. Оси: R / G / B.</p>
+            </div>
+
+            <div id="cw-error" class="cw-error hidden"></div>
+        </div>
+    </main>
+
+    <script src="./color-wheel.js"></script>
+</body>
+
+</html>
