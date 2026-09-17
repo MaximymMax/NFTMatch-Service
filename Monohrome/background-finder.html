@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BACKGROUND SELECTION</title>
-    <link rel="stylesheet" href="./background-finder.css?v=3">
+    <link rel="stylesheet" href="./background-finder.css?v=4">
 
     <link rel="stylesheet" href="./themes-modal.css">
     <link rel="stylesheet" href="../shared-admin-nav.css?v=8">
@@ -76,17 +76,20 @@
                 </div>
             </div>
 
+            <!-- putya: "убери режим комбо" — кнопка и панель "find-universal-controls" остались в
+                 разметке ниже, но недостижимы (нет кнопки-входа, дефолтный режим теперь findBgs) —
+                 полное удаление их внутренней логики (стейт/фетчи/дропдауны) отложено отдельной
+                 задачей, слишком много завязок в этом файле, чтобы делать это заодно с остальным. -->
             <div class="mode-switcher-container">
-    <div class="mode-switcher" id="main-mode-switcher" data-active-mode="findUniversal">
-        <button id="mode-find-universal" class="mode-tab active" data-mode="findUniversal" data-i18n="mode_combo">Комбо</button>
-        <button id="mode-find-bgs" class="mode-tab" data-mode="findBgs" data-i18n="mode_bgs">Фоны</button>
+    <div class="mode-switcher mode-switcher-2" id="main-mode-switcher" data-active-mode="findBgs">
+        <button id="mode-find-bgs" class="mode-tab active" data-mode="findBgs" data-i18n="mode_bgs">Фоны</button>
         <button id="mode-find-models" class="mode-tab" data-mode="findModels" data-i18n="mode_models">Модели</button>
     </div>
 </div>
 
 <div class="content-wrapper">
     <!-- БЛОК УНИВЕРСАЛЬНОГО ПОИСКА -->
-    <div id="find-universal-controls" class="mode-content active">
+    <div id="find-universal-controls" class="mode-content">
         <div class="selection-block">
             <div class="dropdowns-row">
                 <div class="sort-group-col">
@@ -149,15 +152,15 @@
     </div>
 
     <!-- БЛОК ПОИСКА ФОНОВ -->
-    <div id="find-bgs-controls" class="mode-content">
+    <div id="find-bgs-controls" class="mode-content active">
         <div class="selection-block">
             <div class="dropdowns-row">
                 <div class="sort-group-col">
-                    <span class="filter-label" data-i18n="filter_collection">Коллекция:</span>
-                    <div class="custom-dropdown-container" id="gift-container-bgs">
+                    <span class="filter-label" data-i18n="filter_collections">Коллекции:</span>
+                    <div class="custom-dropdown-container multi-select" id="gift-container-bgs">
                         <div class="dropdown-header with-search" id="gift-dropdown-header-bgs">
                             <input type="text" id="gift-search-bgs" placeholder="Поиск..." class="dropdown-search" autocomplete="off" data-i18n-placeholder="placeholder_search">
-                            <span id="gift-selected-value-bgs" class="selected-value-placeholder" data-i18n="placeholder_select_collection">Выберите коллекцию</span>
+                            <span id="gift-selected-value-bgs" class="selected-value-placeholder" data-i18n="placeholder_all_collections">Все коллекции</span>
                             <div class="arrow"></div>
                         </div>
                         <div class="dropdown-list hidden" id="gift-dropdown-list-bgs">
@@ -205,11 +208,11 @@
         <div class="selection-block">
             <div class="dropdowns-row">
                 <div class="sort-group-col">
-                    <span class="filter-label" data-i18n="filter_collection">Коллекция:</span>
-                    <div class="custom-dropdown-container" id="gift-container-models">
+                    <span class="filter-label" data-i18n="filter_collections">Коллекции:</span>
+                    <div class="custom-dropdown-container multi-select" id="gift-container-models">
                         <div class="dropdown-header with-search" id="gift-dropdown-header-models">
                             <input type="text" id="gift-search-models" placeholder="Поиск..." class="dropdown-search" autocomplete="off" data-i18n-placeholder="placeholder_search">
-                            <span id="gift-selected-value-models" class="selected-value-placeholder" data-i18n="placeholder_select_collection">Выберите коллекцию</span>
+                            <span id="gift-selected-value-models" class="selected-value-placeholder" data-i18n="placeholder_all_collections">Все коллекции</span>
                             <div class="arrow"></div>
                         </div>
                         <div class="dropdown-list hidden" id="gift-dropdown-list-models">
@@ -336,7 +339,7 @@
 
     <script type="module" src="./themes-modal.js"></script>
     <script type="module" src="./themes-modal-nfts.js"></script>
-    <script type="module" src="./background-finder.js?v=3"></script>
+    <script type="module" src="./background-finder.js?v=4"></script>
 </body>
 
 </html>

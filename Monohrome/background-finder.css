@@ -475,6 +475,12 @@ main {
     transform: translateX(200%);
 }
 
+/* putya: "убери режим комбо" — остались только Фоны/Модели, ползунок из тройного (0/100/200%)
+   стал двойным; .mode-switcher-2 переопределяет и ширину, и позиции (специфичнее правил выше). */
+.mode-switcher.mode-switcher-2::before { width: calc((100% - 8px) / 2); }
+.mode-switcher.mode-switcher-2[data-active-mode="findBgs"]::before { transform: translateX(0%); }
+.mode-switcher.mode-switcher-2[data-active-mode="findModels"]::before { transform: translateX(100%); }
+
 .mode-switcher.mode-models::before {
     transform: translateX(100%);
     box-shadow: none;
@@ -1429,6 +1435,12 @@ main {
 }
 .bgs2-filter-row input[type="number"]:focus { outline: none; border-color: var(--primary-color); }
 .bgs2-filter-pct-sign { color: var(--text-muted); }
+
+/* putya: "сделай карточки не такими большими" — .results-grid по умолчанию жёстко 3 колонки
+   (см. правило выше по файлу), тут вместо этого столько карточек, сколько влезает по ~100px. */
+.results-grid.bgs2-compact-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; }
+.bgs2-compact-grid .info-model { font-size: 0.85rem; }
+.bgs2-compact-grid .info-container { padding: 22px 10px 10px 10px; }
 
 .bgs2-mono-section {
     background: rgba(255, 196, 0, .08); border: 1px solid rgba(255, 196, 0, .4);

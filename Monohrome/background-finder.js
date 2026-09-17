@@ -49,7 +49,7 @@ document.addEventListener('DOMContentLoaded', () => {
             params.set('sort', state.findUniversal.sortBy);
             params.set('desc', state.findUniversal.descending); // <-- Добавляем эту строку
         } else {
-            if (state.findModels.selectedGift) params.set('gift', state.findModels.selectedGift);
+            if (state.findModels.selectedGifts.length) params.set('gifts', state.findModels.selectedGifts.join(','));
             if (state.findModels.selectedColor) params.set('color', state.findModels.selectedColor.id); // Или name, как тебе удобнее
         }
 
@@ -701,18 +701,19 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     let state = {
-        currentMode: 'findUniversal',
+        currentMode: 'findBgs', // putya: "убери режим комбо" — findUniversal (Комбо) больше не режим по умолчанию
         giftNames: [],
         modelNames: [],
         findBgs: {
-            selectedGift: null,
+            selectedGift: null, // коллекция ТЕКУЩЕЙ выбранной модели (для diagram/API-запросов)
+            selectedGifts: [], // putya: "несколько коллекций в обеих режимах" — фильтр списка моделей; [] значит "все"
             selectedModel: null,
             targetColors: [],
             lastResults: [],
             v2Data: null,
         },
         findModels: {
-            selectedGift: null,
+            selectedGifts: [], // putya: "несколько коллекций в обеих режимах" — [] значит "все коллекции"
             selectedColor: null,
             lastResults: [],
         },
@@ -933,11 +934,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     switchMode('findModels');
                     const colorObj = fixedColors.find(c => c.name === data.bgName);
                     if (colorObj) {
-                        state.findModels.selectedGift = data.giftName;
+                        state.findModels.selectedGifts = [data.giftName];
                         state.findModels.selectedColor = colorObj;
-                        dropdowns.giftModels.value.textContent = data.giftName;
+                        updateMultiSelectText(dropdowns.giftModels, state.findModels.selectedGifts, window.NFTi18n ? window.NFTi18n.t('placeholder_all_collections') : 'Все коллекции');
                         dropdowns.colorModels.value.textContent = colorObj.name;
-                        fetchAllModelNames(data.giftName, false);
                         fetchMatchingModels();
                     }
                 };
@@ -948,9 +948,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 newModelEl.onclick = async () => {
                     closeDetailsModal(false);
                     switchMode('findBgs');
+                    state.findBgs.selectedGifts = [data.giftName];
                     state.findBgs.selectedGift = data.giftName;
                     state.findBgs.selectedModel = data.modelName;
-                    dropdowns.giftBgs.value.textContent = data.giftName;
+                    updateMultiSelectText(dropdowns.giftBgs, state.findBgs.selectedGifts, window.NFTi18n ? window.NFTi18n.t('placeholder_all_collections') : 'Все коллекции');
                     dropdowns.modelBgs.value.textContent = data.modelName;
                     await fetchAllModelNames(data.giftName, true);
                     displayMonocolorAlert(data.modelName);
@@ -1218,7 +1219,7 @@ document.addEventListener('DOMContentLoaded', () => {
         findModelsControls.classList.add('active');
         bgsV2Wrapper.classList.add('results-initial-hide');
         if (state.findModels.lastResults.length > 0) renderModelResults(state.findModels.lastResults, state.findModels.selectedColor);
-        else if (state.findModels.selectedGift && state.findModels.selectedColor) fetchMatchingModels();
+        else if (state.findModels.selectedGifts.length && state.findModels.selectedColor) fetchMatchingModels();
         else clearResults();
     } else if (mode === 'findUniversal') {
         if (findUniversalControls) findUniversalControls.classList.add('active');
@@ -1654,8 +1655,8 @@ if (sortSwitcher) {
             if (cachedData) {
                 state.giftNames = JSON.parse(cachedData);
                 console.log('%c[Cache Success] Loaded gift names from sessionStorage:', 'color: purple', state.giftNames);
-                populateDropdown(dropdowns.giftBgs.options, state.giftNames, 'gift');
-                populateDropdown(dropdowns.giftModels.options, state.giftNames, 'gift');
+                populateUniversalDropdown(dropdowns.giftBgs.options, state.giftNames, 'gift');
+                populateUniversalDropdown(dropdowns.giftModels.options, state.giftNames, 'gift');
                 return;
             }
         } catch (error) {
@@ -1678,8 +1679,8 @@ if (sortSwitcher) {
                 console.error('[Cache Error] Ошибка сохранения в кэш:', error);
             }
 
-            populateDropdown(dropdowns.giftBgs.options, state.giftNames, 'gift');
-            populateDropdown(dropdowns.giftModels.options, state.giftNames, 'gift');
+            populateUniversalDropdown(dropdowns.giftBgs.options, state.giftNames, 'gift');
+            populateUniversalDropdown(dropdowns.giftModels.options, state.giftNames, 'gift');
 
         } catch (error) {
             console.error('[API Error] Ошибка при загрузке названий подарков:', error);
@@ -1715,6 +1716,35 @@ if (sortSwitcher) {
             if (updateDOM) {
                 dropdowns.modelBgs.options.innerHTML = `<div class="list-option list-placeholder">${window.NFTi18n ? window.NFTi18n.t('no_models_found') : 'Модели не найдены'}</div>`;
             }
+        }
+    }
+
+    // putya: "добавь возможность несколько коллекций выбирать в обеих режимах" — версия
+    // fetchAllModelNames для мультиселекта: тянет модели СРАЗУ по всем выбранным коллекциям
+    // параллельно и помечает каждую своим GiftName (см. createDropdownOption('model') и клик по
+    // dropdowns.modelBgs выше), чтобы при нескольких выбранных коллекциях можно было однозначно
+    // понять, какой гифт у конкретной модели в объединённом списке.
+    async function fetchModelsForGifts(giftNames) {
+        if (!giftNames || !giftNames.length) {
+            dropdowns.modelBgs.options.innerHTML = `<div class="list-option list-placeholder">${window.NFTi18n ? window.NFTi18n.t('select_collection_first') : 'Сначала выберите коллекцию'}</div>`;
+            state.modelNames = [];
+            return;
+        }
+
+        try {
+            const perGift = await Promise.all(giftNames.map(async (giftName) => {
+                const url = `${SERVER_BASE_URL}/api/ListGifts/${encodeURIComponent(giftName)}/AllModelNames`;
+                const modelsList = await secureFetch(url, null).catch(() => []);
+                return (modelsList || []).map(m => ({ ...m, GiftName: giftName }));
+            }));
+
+            state.modelNames = perGift.flat();
+            console.log('%c[API Success] Loaded models for selected collections:', 'color: green', state.modelNames);
+            populateDropdown(dropdowns.modelBgs.options, state.modelNames, 'model');
+        } catch (error) {
+            console.error('[API Error] Ошибка при загрузке моделей для выбранных коллекций:', error);
+            state.modelNames = [];
+            dropdowns.modelBgs.options.innerHTML = `<div class="list-option list-placeholder">${window.NFTi18n ? window.NFTi18n.t('no_models_found') : 'Модели не найдены'}</div>`;
         }
     }
 
@@ -1986,7 +2016,7 @@ if (sortSwitcher) {
           <div class="bgs2-mono-section">
             <div class="bgs2-mono-section-title">★ Монохромные фоны (${monoItems.length})</div>
             <div class="bgs2-mono-section-sub">Одновременно хорошо совпадают сразу с одной или несколькими группами модели, суммарно покрывающими большую часть её массы.</div>
-            <div class="results-grid">${cards}</div>
+            <div class="results-grid bgs2-compact-grid">${cards}</div>
           </div>
         `;
     }
@@ -2021,7 +2051,7 @@ if (sortSwitcher) {
                   <span class="bgs2-group-title">${colorHex}</span>
                   <span class="bgs2-group-pct">${Number(colorPct).toFixed(1)}% массы модели</span>
                 </div>
-                <div class="results-grid">${cards}</div>
+                <div class="results-grid bgs2-compact-grid">${cards}</div>
               </div>
             `;
         }).join('');
@@ -2030,16 +2060,26 @@ if (sortSwitcher) {
     // "Все фоны каталога" — источник AllBackgrounds того же ответа MatchV4Dedup, без фильтрации по
     // порогу на бэке (см. описание putya: "формат всех фонов"). Монохромы уже показаны выше в своей
     // плашке — здесь показываем ВСЕ фоны (включая эти же монохромы повторно, для полноты списка "от
-    // большего % к меньшему", ровно как на тестовом сайте) одним списком.
-    function bgs2RenderAllBackgrounds(allBackgrounds) {
+    // большего % к меньшему", ровно как на тестовом сайте) одним списком. putya: "добавь тоже
+    // ограничение по весу" — тот же порог minMassPct, что и у групп, но здесь фильтрует по весу
+    // КУБА модели, который фон зацепил (BestCubeWeight) — у групп это Percentage самой группы, тут
+    // аналог на уровне отдельного фона. Монохромы не режем порогом — у них нет одного BestCubeWeight
+    // (совпадение сразу с несколькими кубами), сама принадлежность к монохромам уже фильтр по сути.
+    function bgs2RenderAllBackgrounds(allBackgrounds, minMassPct) {
         if (!allBackgrounds || !allBackgrounds.length) return '';
-        const sorted = allBackgrounds.slice().sort((a, b) => (bgs2Pick(b, 'similarity') || 0) - (bgs2Pick(a, 'similarity') || 0));
+        const filtered = allBackgrounds.filter(b => {
+            if (bgs2Pick(b, 'isMonochrome')) return true;
+            const cubeWeight = bgs2Pick(b, 'bestCubeWeight');
+            return cubeWeight == null || cubeWeight >= minMassPct;
+        });
+        if (!filtered.length) return '';
+        const sorted = filtered.sort((a, b) => (bgs2Pick(b, 'similarity') || 0) - (bgs2Pick(a, 'similarity') || 0));
         const cards = sorted.map(b => bgs2Card(b)).join('');
         return `
           <div class="bgs2-mono-section bgs2-all-section">
             <div class="bgs2-mono-section-title bgs2-all-title">📋 Все фоны каталога (${sorted.length})</div>
             <div class="bgs2-mono-section-sub">Лучший % каждого фона среди всех кубов модели, по убыванию (включая совпавшие на 0%).</div>
-            <div class="results-grid">${cards}</div>
+            <div class="results-grid bgs2-compact-grid">${cards}</div>
           </div>
         `;
     }
@@ -2097,7 +2137,7 @@ if (sortSwitcher) {
 
         const monoHtml = bgs2RenderMonoSection(groups);
         const groupsHtml = bgs2RenderGroups(groups, minMassPct);
-        const allHtml = bgs2RenderAllBackgrounds(allBackgrounds);
+        const allHtml = bgs2RenderAllBackgrounds(allBackgrounds, minMassPct);
 
         bgsV2Body.innerHTML = monoHtml + groupsHtml + allHtml;
         setupLazyLoading(bgsV2Body, null, 'grid');
@@ -2180,48 +2220,52 @@ if (sortSwitcher) {
         }
     }
 
+    // putya: "добавь возможность несколько коллекций выбирать в обеих режимах" — TopNftByColor
+    // принимает только один NameGift за раз, поэтому гоняем его отдельно по каждой выбранной
+    // коллекции (параллельно) и просто объединяем результаты в один список, отсортированный по %.
     async function fetchMatchingModels() {
-        if (!state.findModels.selectedGift || !state.findModels.selectedColor) return;
+        const selectedGifts = state.findModels.selectedGifts;
+        if (!selectedGifts.length || !state.findModels.selectedColor) return;
 
         const isGridEmpty = resultsGrid.innerHTML.trim() === '';
         showLoading(isGridEmpty);
 
         const url = `${SERVER_BASE_URL}/api/MonoCoof/TopNftByColor`;
-        const requestBody = {
-            ...getTelegramUserData(),
-            NameGift: state.findModels.selectedGift,
-            NameColor: state.findModels.selectedColor.id,
-            MonohromeModelsOnly: true
-        };
-
-        console.log(`%c[API Request] Searching for models with POST to: ${url}`, 'color: dodgerblue');
-        console.log('Request Body:', requestBody);
 
         try {
-            const [serverData, allModelsData] = await Promise.all([
-                secureFetch(url, requestBody),
-                secureFetch(`${SERVER_BASE_URL}/api/ListGifts/${encodeURIComponent(state.findModels.selectedGift)}/AllModelNames`, null)
-                    .catch(() => [])
-            ]);
-            console.log('%c[API Success] Received model data:', 'color: green', serverData);
+            const perGiftResults = await Promise.all(selectedGifts.map(async (giftName) => {
+                const requestBody = {
+                    ...getTelegramUserData(),
+                    NameGift: giftName,
+                    NameColor: state.findModels.selectedColor.id,
+                    MonohromeModelsOnly: true
+                };
+                const [serverData, allModelsData] = await Promise.all([
+                    secureFetch(url, requestBody).catch(() => []),
+                    secureFetch(`${SERVER_BASE_URL}/api/ListGifts/${encodeURIComponent(giftName)}/AllModelNames`, null).catch(() => [])
+                ]);
 
-            const floorMap = new Map();
-            if (Array.isArray(allModelsData)) {
-                allModelsData.forEach(m => {
-                    const n = m.NameModel || m.nameModel;
-                    if (n && m.FloorPrice > 0) floorMap.set(n, m.FloorPrice);
-                });
-            }
+                const floorMap = new Map();
+                if (Array.isArray(allModelsData)) {
+                    allModelsData.forEach(m => {
+                        const n = m.NameModel || m.nameModel;
+                        if (n && m.FloorPrice > 0) floorMap.set(n, m.FloorPrice);
+                    });
+                }
 
-            const modelsToRender = serverData.map(item => ({
-                modelName: item.Name,
-                giftName: state.findModels.selectedGift,
-                compatValue: item.Coof,
-                isMonohrome: item.IsMonohrome,
-                floorPrice: floorMap.get(item.Name) || 0,
+                return (serverData || []).map(item => ({
+                    modelName: item.Name,
+                    giftName: giftName,
+                    compatValue: item.Coof,
+                    isMonohrome: item.IsMonohrome,
+                    floorPrice: floorMap.get(item.Name) || 0,
+                }));
             }));
 
-            const resultsWithCounts = await fetchGiftCounts(modelsToRender, state.findModels.selectedGift, 'findModels');
+            const modelsToRender = perGiftResults.flat();
+            console.log('%c[API Success] Received model data (all selected collections):', 'color: green', modelsToRender);
+
+            const resultsWithCounts = await fetchGiftCounts(modelsToRender, null, 'findModels');
 
             state.findModels.lastResults = resultsWithCounts;
             hideLoading();
@@ -2293,9 +2337,12 @@ if (sortSwitcher) {
                 BackgroundName: bg.name
             }));
         } else if (mode === 'findModels') {
+            // putya: "несколько коллекций" — каждый результат может быть из СВОЕЙ коллекции
+            // (см. fetchMatchingModels), поэтому NameGift берём из самого элемента, а не из
+            // общего giftName (для findBgs он один на всех, так и остаётся).
             const bgName = state.findModels.selectedColor.name;
             requestBody = results.map(model => ({
-                NameGift: giftName,
+                NameGift: model.giftName,
                 NameModel: model.modelName,
                 BackgroundName: bgName
             }));
@@ -2322,12 +2369,18 @@ if (sortSwitcher) {
                     bg.count = countMap.has(bg.name) ? countMap.get(bg.name) : null;
                 });
             } else if (mode === 'findModels') {
-                countsData.forEach(item => {
-                    if (item.NameModel) countMap.set(item.NameModel, item.Count);
+                // putya: "несколько коллекций" — ключ по одному NameModel коллизионен, если у двух
+                // РАЗНЫХ коллекций модель называется одинаково; составной ключ gift::model безопасен
+                // независимо от того, эхует ли бэк NameGift в ответе (сколько раз запросили — столько
+                // и придёт count-элементов, порядок сохраняется, см. requestBody выше).
+                countsData.forEach((item, idx) => {
+                    const gift = item.NameGift || requestBody[idx]?.NameGift;
+                    if (item.NameModel) countMap.set(`${gift}::${item.NameModel}`, item.Count);
                 });
 
                 results.forEach(model => {
-                    model.count = countMap.has(model.modelName) ? countMap.get(model.modelName) : null;
+                    const key = `${model.giftName}::${model.modelName}`;
+                    model.count = countMap.has(key) ? countMap.get(key) : null;
                 });
             }
 
@@ -2443,7 +2496,10 @@ if (sortSwitcher) {
 
         } else if (type === 'model') {
             name = item.NameModel;
-            const giftName = state.currentMode === 'findBgs' ? state.findBgs.selectedGift : state.findModels.selectedGift;
+            // putya: "несколько коллекций" — при объединённом списке моделей нескольких коллекций
+            // (см. fetchModelsForGifts) у каждого item есть свой GiftName; без него (одна коллекция,
+            // старый путь через fetchAllModelNames) берём текущую выбранную как раньше.
+            const giftName = item.GiftName || (state.currentMode === 'findBgs' ? state.findBgs.selectedGift : state.findModels.selectedGifts[0]);
 
             if (giftName) {
                 const imageUrl = `${API_PHOTO_URL}/${encodeURIComponent(giftName)}/png/${encodeURIComponent(name)}.png`;
@@ -2459,10 +2515,15 @@ if (sortSwitcher) {
                 themesHtml = `<span class="option-theme-count"> </span>`;
             }
 
+            // putya: "несколько коллекций" — если модель пришла из объединённого списка (GiftName
+            // проставлен), подписываем коллекцию рядом с именем, иначе они неотличимы друг от друга
+            // при совпадении названий моделей в разных коллекциях.
+            const giftSuffix = item.GiftName ? `<span class="option-theme-count" style="opacity:.6;">${bgs2EscapeHtml(item.GiftName)}</span>` : '';
+
             const infoWrapperHtml = `
                 <div class="option-info-wrapper">
                     <span class="option-text">${name}${item.FloorPrice > 0 ? `&nbsp;&nbsp;<span class="option-floor-price" style="opacity:0.7;font-size:0.9em;">${item.FloorPrice % 1 === 0 ? item.FloorPrice : item.FloorPrice.toFixed(1)} TON</span>` : ''}</span>
-                    ${themesHtml}
+                    ${giftSuffix}${themesHtml}
                 </div>`;
 
             if (item.IsMonochrome === false) {
@@ -2476,6 +2537,7 @@ if (sortSwitcher) {
 
             option.innerHTML = `${imageHtml}${infoWrapperHtml}${statusHtml}`;
             option.dataset.value = name;
+            if (item.GiftName) option.dataset.gift = item.GiftName;
 
         } else if (type === 'color') {
             name = item.name; // item - это { id: "...", name: "...", ... }
@@ -2498,8 +2560,10 @@ if (sortSwitcher) {
             return;
         }
 
-        // ✅ НОВАЯ ЛОГИКА: Ищем в массиве объектов по полю NameModel
-        const modelData = state.modelNames.find(m => m.NameModel === modelName);
+        // ✅ НОВАЯ ЛОГИКА: Ищем в массиве объектов по полю NameModel. putya: "несколько коллекций" —
+        // при объединённом списке уточняем ещё и по GiftName (см. fetchModelsForGifts), иначе при
+        // одинаковых названиях моделей в разных коллекциях мог найтись не тот.
+        const modelData = state.modelNames.find(m => m.NameModel === modelName && (!m.GiftName || m.GiftName === state.findBgs.selectedGift));
         if (modelData && modelData.IsMonochrome === false) {
             wrapper.innerHTML = `
                 <div class="monocolor-alert">
@@ -2946,7 +3010,7 @@ if (sortSwitcher) {
     }
 
     function triggerModelSearchIfReady() {
-        if (state.findModels.selectedGift && state.findModels.selectedColor) {
+        if (state.findModels.selectedGifts.length && state.findModels.selectedColor) {
             fetchMatchingModels();
         }
     }
@@ -2964,7 +3028,10 @@ if (sortSwitcher) {
             dd.header.classList.toggle('value-active', dd.input.value.trim() !== '');
             
             if (dd === dropdowns.giftBgs || dd === dropdowns.giftModels) {
-                filterDropdown(dd.input, dd.options, state.giftNames, 'gift');
+                // putya: "несколько коллекций" — эти два дропдауна теперь тоже мультиселект,
+                // isUniversal=true подключает populateUniversalDropdown (опция "ALL" + подсветка
+                // выбранных), тот же путь, что и у giftUniv строкой ниже.
+                filterDropdown(dd.input, dd.options, state.giftNames, 'gift', true);
             } else if (dd === dropdowns.giftUniv) {
                 filterDropdown(dd.input, dd.options, state.giftNames, 'gift', true); // true для универсального
             } else if (dd === dropdowns.modelBgs) {
@@ -2977,29 +3044,35 @@ if (sortSwitcher) {
         });
     });
 
+    // putya: "добавь возможность несколько коллекций выбирать в обеих режимах" — тот же паттерн
+    // мультиселекта, что и в бывшем режиме "Комбо" (dropdowns.giftUniv выше по файлу): клик не
+    // закрывает список, "ALL" сбрасывает выбор, updateMultiSelectText обновляет подпись/подсветку.
+    // Собираем модели СРАЗУ со всех выбранных коллекций, отмечая каждую своим GiftName — см.
+    // fetchModelsForGifts и createDropdownOption('model').
     dropdowns.giftBgs.list.addEventListener('click', (e) => {
         const option = e.target.closest('.list-option');
         if (!option) return;
 
+        const val = option.dataset.value;
+        if (val === 'ALL') {
+            state.findBgs.selectedGifts = [];
+        } else {
+            const idx = state.findBgs.selectedGifts.indexOf(val);
+            if (idx > -1) state.findBgs.selectedGifts.splice(idx, 1);
+            else state.findBgs.selectedGifts.push(val);
+        }
+        updateMultiSelectText(dropdowns.giftBgs, state.findBgs.selectedGifts, window.NFTi18n ? window.NFTi18n.t('placeholder_all_collections') : 'Все коллекции');
+
         state.findBgs.lastResults = [];
         state.findBgs.v2Data = null;
-        const selectedValue = option.dataset.value;
-        state.findBgs.selectedGift = selectedValue;
-        dropdowns.giftBgs.value.textContent = selectedValue;
-
-        dropdowns.giftBgs.input.value = '';
-        dropdowns.giftBgs.header.classList.remove('value-active');
-
-        populateDropdown(dropdowns.giftBgs.options, state.giftNames, 'gift');
-
+        state.findBgs.selectedGift = null;
         state.findBgs.selectedModel = null;
         dropdowns.modelBgs.value.textContent = window.NFTi18n ? window.NFTi18n.t('placeholder_select_model') : 'Выберите модель';
         displayMonocolorAlert(null);
         updateModelThemes(null);
         clearBgsV2();
 
-        fetchAllModelNames(selectedValue);
-        toggleDropdown(null, true);
+        fetchModelsForGifts(state.findBgs.selectedGifts);
         updateUrlState();
     });
 
@@ -3011,6 +3084,10 @@ if (sortSwitcher) {
         state.findBgs.v2Data = null;
         const selectedValue = option.dataset.value;
         state.findBgs.selectedModel = selectedValue;
+        // putya: "несколько коллекций" — при нескольких выбранных коллекциях у опции модели есть
+        // свой data-gift (см. createDropdownOption); при ровно одной выбранной коллекции его может
+        // не быть — тогда берём единственную выбранную.
+        state.findBgs.selectedGift = option.dataset.gift || state.findBgs.selectedGifts[0] || null;
         dropdowns.modelBgs.value.textContent = selectedValue;
 
         dropdowns.modelBgs.input.value = '';
@@ -3029,18 +3106,17 @@ if (sortSwitcher) {
         const option = e.target.closest('.list-option');
         if (!option) return;
 
+        const val = option.dataset.value;
+        if (val === 'ALL') {
+            state.findModels.selectedGifts = [];
+        } else {
+            const idx = state.findModels.selectedGifts.indexOf(val);
+            if (idx > -1) state.findModels.selectedGifts.splice(idx, 1);
+            else state.findModels.selectedGifts.push(val);
+        }
+        updateMultiSelectText(dropdowns.giftModels, state.findModels.selectedGifts, window.NFTi18n ? window.NFTi18n.t('placeholder_all_collections') : 'Все коллекции');
+
         state.findModels.lastResults = [];
-        const selectedValue = option.dataset.value;
-        state.findModels.selectedGift = selectedValue;
-        dropdowns.giftModels.value.textContent = selectedValue;
-
-        dropdowns.giftModels.input.value = '';
-        dropdowns.giftModels.header.classList.remove('value-active');
-
-        populateDropdown(dropdowns.giftModels.options, state.giftNames, 'gift');
-
-        fetchAllModelNames(selectedValue, false);
-        toggleDropdown(null, true);
         triggerModelSearchIfReady();
     });
 
@@ -3073,7 +3149,10 @@ if (sortSwitcher) {
     const urlParams = new URLSearchParams(window.location.search);
 
     // Считываем параметры
-    const mode = urlParams.get('mode') || 'findUniversal';
+    // putya: "убери режим комбо" — старые ссылки/закладки с ?mode=findUniversal (или без mode
+    // вообще) теперь попадают на findBgs; сама ветка ниже (if mode === 'findUniversal') оставлена
+    // как есть на случай прямого перехода по такой ссылке — код ещё жив, просто больше не дефолт.
+    const mode = urlParams.get('mode') || 'findBgs';
     const giftName = urlParams.get('gift');
     const modelName = urlParams.get('model');
     const colorParam = urlParams.get('color');
@@ -3128,10 +3207,12 @@ if (sortSwitcher) {
     } else if (mode === 'findModels') {
         switchMode('findModels', false);
 
-        if (giftName) {
-            updateDropdownSelection(dropdowns.giftModels, giftName);
-            state.findModels.selectedGift = giftName;
-            await fetchAllModelNames(giftName, true);
+        // putya: "несколько коллекций" — updateUrlState пишет их через запятую в ?gifts=; старые
+        // ссылки/закладки с ?gift= (единственное число) тоже подхватываем для обратной совместимости.
+        const giftsParam = urlParams.get('gifts') || giftName;
+        if (giftsParam) {
+            state.findModels.selectedGifts = giftsParam.split(',').filter(Boolean);
+            updateMultiSelectText(dropdowns.giftModels, state.findModels.selectedGifts, window.NFTi18n ? window.NFTi18n.t('placeholder_all_collections') : 'Все коллекции');
         }
 
         if (colorParam) {
@@ -3145,11 +3226,12 @@ if (sortSwitcher) {
         }
         triggerModelSearchIfReady();
 
-    } else if (mode === 'findBgs') { 
+    } else if (mode === 'findBgs') {
         switchMode('findBgs', false);
 
         if (giftName) {
-            updateDropdownSelection(dropdowns.giftBgs, giftName);
+            state.findBgs.selectedGifts = [giftName];
+            updateMultiSelectText(dropdowns.giftBgs, state.findBgs.selectedGifts, window.NFTi18n ? window.NFTi18n.t('placeholder_all_collections') : 'Все коллекции');
             state.findBgs.selectedGift = giftName;
             await fetchAllModelNames(giftName, true);
         }
@@ -3186,8 +3268,9 @@ if (sortSwitcher) {
 }
     // 🔥 ЗАМЕНИ ФУНКЦИЮ init НА ЭТУ:
     async function init() {
-        // Устанавливаем универсальный по умолчанию
-        switchMode('findUniversal', false); 
+        // putya: "убери режим комбо" — временное состояние до applyUrlParameters() ниже, которое
+        // и выставит реальный режим (из URL или дефолтный findBgs).
+        switchMode('findBgs', false);
         initUniversalFilters();
         resetPickerAreaToPlaceholder();
 
