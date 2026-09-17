@@ -18,7 +18,7 @@
 
             <div class="cw-tabs">
                 <button class="cw-tab active" data-view="wheel">Круг</button>
-                <button class="cw-tab" data-view="cube">3D-куб</button>
+                <button class="cw-tab" data-view="cube">3D-бары</button>
             </div>
 
             <div id="cw-stats" class="cw-stats"></div>
@@ -30,14 +30,12 @@
 
             <div id="cw-cube-view" class="cw-view hidden">
                 <div class="cube-scene" id="cube-scene">
-                    <div class="cube-inner" id="cube-inner">
-                        <div class="cube-edge edge-x"></div>
-                        <div class="cube-edge edge-y"></div>
-                        <div class="cube-edge edge-z"></div>
-                    </div>
+                    <div class="cube-inner" id="cube-inner"></div>
                 </div>
-                <p class="cw-hint">Перетаскивай мышью, чтобы повернуть. Оси: R / G / B.</p>
+                <p class="cw-hint">Перетаскивай мышью, чтобы повернуть. Высота столбика = доля каталога.</p>
             </div>
+
+            <div id="cw-legend" class="cw-legend"></div>
 
             <div id="cw-error" class="cw-error hidden"></div>
         </div>

@@ -11,6 +11,12 @@
     const cubeScene = document.getElementById('cube-scene');
     const tabs = document.querySelectorAll('.cw-tab');
     const thresholdEl = document.getElementById('cw-threshold');
+    const legendEl = document.getElementById('cw-legend');
+
+    // 12 секторов по 30° начиная с 0° (красный) — классические названия цветового круга художника,
+    // тот же порядок, что и HueWheel с бэкенда.
+    const HUE_NAMES = ['Красный', 'Оранжевый', 'Жёлтый', 'Салатовый', 'Зелёный', 'Изумрудный',
+        'Голубой', 'Синий', 'Индиго', 'Фиолетовый', 'Пурпурный', 'Розовый'];
 
     function showError(msg) {
         errorEl.textContent = msg;
@@ -49,7 +55,7 @@
         const minR = 30, maxR = 200;
         const ns = 'http://www.w3.org/2000/svg';
 
-        hueWheel.forEach(bucket => {
+        hueWheel.forEach((bucket, i) => {
             const outerR = bucket.Count > 0
                 ? minR + (bucket.SharePercent / maxShare) * (maxR - minR)
                 : minR + 6;
@@ -57,9 +63,24 @@
             path.setAttribute('d', wedgePath(bucket.HueStart, bucket.HueEnd, outerR));
             path.setAttribute('fill', bucket.Hex || '#555');
             path.setAttribute('class', 'cw-sector');
-            path.addEventListener('mousemove', (e) => showTooltip(e, bucket));
+            path.addEventListener('mousemove', (e) => showTooltip(e, bucket, i));
             path.addEventListener('mouseleave', hideTooltip);
             svg.appendChild(path);
+
+            // putya: "только еще бы какие-то обозначения добавить" — процент прямо на крупных
+            // секторах (мелкие подписаны только в легенде ниже, иначе текст не влезает).
+            if (bucket.SharePercent >= 4) {
+                const midAngle = (bucket.HueStart + bucket.HueEnd) / 2;
+                const [lx, ly] = polar(outerR * 0.62, midAngle);
+                const text = document.createElementNS(ns, 'text');
+                text.setAttribute('x', lx.toFixed(1));
+                text.setAttribute('y', ly.toFixed(1));
+                text.setAttribute('class', 'cw-sector-label');
+                text.setAttribute('text-anchor', 'middle');
+                text.setAttribute('dominant-baseline', 'middle');
+                text.textContent = bucket.SharePercent + '%';
+                svg.appendChild(text);
+            }
         });
 
         // Тонкая базовая окружность-ориентир для внутреннего радиуса.
@@ -70,8 +91,20 @@
         svg.appendChild(baseCircle);
     }
 
-    function showTooltip(e, bucket) {
-        tooltip.innerHTML = `<b>${Math.round(bucket.HueStart)}°–${Math.round(bucket.HueEnd)}°</b>` +
+    // Легенда: название цвета + доля, одним списком — общая для обоих видов (круг и 3D-бары
+    // используют одни и те же 12 hue-бакетов и цвета).
+    function renderLegend(hueWheel) {
+        legendEl.innerHTML = hueWheel.map((b, i) => `
+            <div class="cw-legend-item">
+                <span class="cw-legend-swatch" style="background:${b.Hex}"></span>
+                <span class="cw-legend-name">${HUE_NAMES[i]}</span>
+                <span class="cw-legend-pct">${b.SharePercent}%</span>
+            </div>
+        `).join('');
+    }
+
+    function showTooltip(e, bucket, i) {
+        tooltip.innerHTML = `<b>${HUE_NAMES[i]} (${Math.round(bucket.HueStart)}°–${Math.round(bucket.HueEnd)}°)</b>` +
             `${bucket.SharePercent}% каталога · ${bucket.Count} кластеров`;
         tooltip.style.left = (e.clientX + 14) + 'px';
         tooltip.style.top = (e.clientY + 14) + 'px';
@@ -79,34 +112,43 @@
     }
     function hideTooltip() { tooltip.classList.add('hidden'); }
 
-    // --- 3D-куб: точки по квантованным RGB-ячейкам ---
+    // --- 3D-бары: те же 12 hue-бакетов, что и в круге, расставлены по кольцу — putya: "куб
+    // странный, не очень понятный, другой бы формат какой-то выбрать" — вместо разброса точек в
+    // RGB-пространстве (нужно понимать оси R/G/B) те же самые, уже знакомые по кругу категории,
+    // просто вытянутые в объём по высоте.
     let rotX = -20, rotY = 35;
     function applyCubeRotation() {
         cubeInner.style.transform = `rotateX(${rotX}deg) rotateY(${rotY}deg)`;
     }
 
-    function renderCube(cubePoints) {
-        if (!cubePoints.length) return;
-        const maxWeight = Math.max(...cubePoints.map(p => p.WeightSum));
-        const half = 100; // половина стороны куба в px (cube-inner: 200x200)
+    function renderBars3D(hueWheel) {
+        cubeInner.innerHTML = '';
 
-        cubePoints.forEach(p => {
-            const x = (p.R / 255) * 200 - half;
-            const y = (p.G / 255) * 200 - half;
-            const z = (p.B / 255) * 200 - half;
-            const size = 4 + Math.sqrt(p.WeightSum / maxWeight) * 16;
+        const ground = document.createElement('div');
+        ground.className = 'bars3d-ground';
+        cubeInner.appendChild(ground);
 
-            const dot = document.createElement('div');
-            dot.className = 'cube-point';
-            dot.style.width = size + 'px';
-            dot.style.height = size + 'px';
-            dot.style.background = p.Hex;
-            dot.style.color = p.Hex;
-            dot.style.marginLeft = -(size / 2) + 'px';
-            dot.style.marginTop = -(size / 2) + 'px';
-            dot.style.transform = `translate3d(${x}px, ${y}px, ${z}px)`;
-            dot.title = `${p.Hex} · ${p.WeightSum}% суммарного веса, ${p.Count} кластеров`;
-            cubeInner.appendChild(dot);
+        const maxShare = Math.max(1, ...hueWheel.map(h => h.SharePercent));
+        const radius = 90, maxHeight = 150, barWidth = 26;
+
+        hueWheel.forEach((b, i) => {
+            const angle = (b.HueStart + b.HueEnd) / 2;
+            const h = Math.max(6, (b.SharePercent / maxShare) * maxHeight);
+
+            const anchor = document.createElement('div');
+            anchor.className = 'bar3d-anchor';
+            anchor.style.transform = `rotateY(${angle}deg) translateZ(${radius}px)`;
+
+            const bar = document.createElement('div');
+            bar.className = 'bar3d';
+            bar.style.width = barWidth + 'px';
+            bar.style.height = h + 'px';
+            bar.style.background = b.Hex;
+            bar.style.color = b.Hex;
+            bar.title = `${HUE_NAMES[i]}: ${b.SharePercent}% (${b.Count} кластеров)`;
+
+            anchor.appendChild(bar);
+            cubeInner.appendChild(anchor);
         });
     }
 
@@ -155,7 +197,8 @@
             `;
 
             renderWheel(data.HueWheel);
-            renderCube(data.CubePoints);
+            renderLegend(data.HueWheel);
+            renderBars3D(data.HueWheel);
             applyCubeRotation();
         } catch (err) {
             showError('Не удалось загрузить: ' + err.message);
