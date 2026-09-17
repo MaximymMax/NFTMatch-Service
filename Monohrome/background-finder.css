@@ -1409,47 +1409,26 @@ main {
 
 /* ==========================================================================================
    "ФОНЫ" v2 — putya: "интегрируй новый алгоритм в монохромы, по аналогии с тестовым сайтом".
-   Перенесено из mono-cube-live.html (тестовый инструмент), адаптировано под токены этой страницы
-   (--surface-elevated/--border-color/--text-muted/--primary-color вместо своих --panel/--border/
-   --muted/--accent теста). См. background-finder.js (blok "ФОНЫ v2"). */
+   Диаграмма и структура секций (монохромы/группы) — по мотивам mono-cube-live.html (тестовый
+   инструмент), но карточки — обычный .result-card-bg/.results-grid этой страницы (putya: "сделай
+   карточки такими же как были раньше"). См. background-finder.js (блок "ФОНЫ v2"). */
 .bgs2-loading { display: flex; justify-content: center; padding: 20px 0; }
 
 .bgs2-diagram-box { display: flex; justify-content: center; padding: 8px 0 4px; }
 .bgs2-radar-svg { width: 100%; max-width: 250px; height: auto; display: block; margin: 0 auto; }
 .bgs2-hint { font-size: 12px; color: var(--text-muted); text-align: center; padding: 12px 0; }
 
-.bgs2-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 10px; }
-.bgs2-card {
-    background: var(--bg-color); border: 2px solid var(--border-color);
-    border-radius: 10px; overflow: hidden; cursor: pointer;
-    transition: border-color .12s;
+.bgs2-filter-row {
+    display: flex; align-items: center; gap: 8px; margin-bottom: 16px;
+    font-size: 13px; color: var(--text-muted);
 }
-.bgs2-card:hover { border-color: var(--primary-color); }
-.bgs2-card-preview { aspect-ratio: 1 / 1; display: flex; align-items: center; justify-content: center; }
-.bgs2-card-preview img {
-    width: 76%; height: 76%; object-fit: contain;
-    filter: drop-shadow(0 2px 5px rgba(0, 0, 0, .45));
-    opacity: 0; transition: opacity .12s;
+.bgs2-filter-row input[type="number"] {
+    width: 56px; background: var(--surface-elevated); border: 1px solid var(--border-color);
+    border-radius: 8px; color: var(--text-primary); font-size: 13px; font-family: inherit;
+    padding: 6px 8px; text-align: center;
 }
-.bgs2-card-preview img.loaded { opacity: 1; }
-.bgs2-card-info {
-    display: flex; justify-content: space-between; align-items: center; gap: 6px;
-    padding: 6px 8px; font-size: 12px; background: rgba(0, 0, 0, .28);
-}
-.bgs2-card-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.bgs2-card-pct { color: var(--text-muted); font-variant-numeric: tabular-nums; flex: 0 0 auto; }
-
-.bgs2-card-breakdown { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; padding: 6px 8px; background: rgba(0, 0, 0, .15); }
-.bgs2-mini-dot { width: 10px; height: 10px; border-radius: 50%; border: 1px solid rgba(255, 255, 255, .25); flex: 0 0 auto; cursor: help; }
-
-.bgs2-flag-btn, .bgs2-mono-add-btn {
-    background: transparent; border: none; color: var(--text-muted); cursor: pointer;
-    font-size: 12px; padding: 0 2px; line-height: 1; flex: 0 0 auto; opacity: .6;
-}
-.bgs2-flag-btn:hover { opacity: 1; color: #ff8080; }
-.bgs2-flag-btn.flagged { opacity: 1; color: var(--primary-color); cursor: default; }
-.bgs2-mono-add-btn:hover { opacity: 1; color: #ffd166; }
-.bgs2-mono-add-btn.saved { opacity: 1; color: #22c55e; cursor: default; }
+.bgs2-filter-row input[type="number"]:focus { outline: none; border-color: var(--primary-color); }
+.bgs2-filter-pct-sign { color: var(--text-muted); }
 
 .bgs2-mono-section {
     background: rgba(255, 196, 0, .08); border: 1px solid rgba(255, 196, 0, .4);

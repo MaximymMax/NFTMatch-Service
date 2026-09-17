@@ -1760,20 +1760,9 @@ if (sortSwitcher) {
     // "ФОНЫ" v2 — putya: "интегрируй новый алгоритм в монохромы, по аналогии с тестовым сайтом"
     // Полностью заменяет старый поиск (TopBackgroundColorsByNFT/ByColors + ручной пикер 3 цветов на
     // фото, ниже по файлу) на формат mono-cube-live.html: диаграмма цветов модели (DebugCube),
-    // монохромы отдельной плашкой, группы по кубам модели (МОНО/Средний/Сочный), полный список всех
-    // фонов каталога — всё из одного ответа /api/MonoCoof/MatchV4Dedup. Админ-кнопки ("➕моно" —
-    // SaveMonochromeCandidate, "🚩" — SaveColorFeedback) видны только тебе — тот же IP-гейт, что и у
-    // единой шапки/вкладок (shared-admin-nav.js), переиспользуем напрямую, отдельный бэкенд не нужен.
-    let bgs2IsAdminPromise = null;
-    function bgs2CheckIsAdmin() {
-        if (!bgs2IsAdminPromise) {
-            bgs2IsAdminPromise = fetch(`${SERVER_BASE_URL}/api/MonoCoof/GetGlobalColorWheelCollections`)
-                .then(resp => resp.ok)
-                .catch(() => false);
-        }
-        return bgs2IsAdminPromise;
-    }
-
+    // монохромы отдельной плашкой, группы по кубам модели — всё из одного ответа
+    // /api/MonoCoof/MatchV4Dedup. Карточки — обычный result-card-bg формат сайта, без отдельных
+    // админских действий на них (putya: "без +моно и флажка, это админ панель").
     const BGS2_RADAR_MIN_AXES = 3;
     const BGS2_RADAR_SIGNIFICANT_WEIGHT = 5;
     const BGS2_RADAR_HUE_TRUST_CHROMA = 8;
@@ -1797,21 +1786,9 @@ if (sortSwitcher) {
         return { r: (num >> 16) & 255, g: (num >> 8) & 255, b: num & 255 };
     }
 
-    function bgs2LightenHex(hex, amount) {
-        const { r, g, b } = bgs2HexToRgb(hex);
-        const lr = Math.round(r + (255 - r) * amount);
-        const lg = Math.round(g + (255 - g) * amount);
-        const lb = Math.round(b + (255 - b) * amount);
-        return `rgb(${lr},${lg},${lb})`;
-    }
-
     function bgs2MixHex(hexA, hexB) {
         const a = bgs2HexToRgb(hexA), b = bgs2HexToRgb(hexB);
         return `rgb(${Math.round((a.r + b.r) / 2)},${Math.round((a.g + b.g) / 2)},${Math.round((a.b + b.b) / 2)})`;
-    }
-
-    function bgs2RadialGradientFor(hex) {
-        return `radial-gradient(circle at 50% 38%, ${bgs2LightenHex(hex, 0.32)} 0%, ${hex} 100%)`;
     }
 
     // Углы осей диаграммы — по сходству тона (не по индексу кластера), см. подробное объяснение в
@@ -1954,79 +1931,46 @@ if (sortSwitcher) {
         return significant.length >= BGS2_RADAR_MIN_AXES ? significant : list.slice(0, Math.min(BGS2_RADAR_MIN_AXES, list.length));
     }
 
-    function bgs2MonoDots(monoBreakdown) {
-        return (monoBreakdown || []).map(m => {
-            const cubeHex = bgs2Pick(m, 'cubeHex') || '#000000';
-            const cubePct = bgs2Pick(m, 'cubePercentage') || 0;
-            const sim = bgs2Pick(m, 'similarity') || 0;
-            const title = `${cubeHex} · ${Number(cubePct).toFixed(1)}% массы · сходство ${Number(sim).toFixed(0)}%`;
-            return `<span class="bgs2-mini-dot" style="background:${cubeHex}" title="${bgs2EscapeHtml(title)}"></span>`;
-        }).join('');
-    }
-
-    // Карточка одного фона — тот же формат, что bgCard/allBgCard в mono-cube-live.html. gift/model
-    // фиксированы для всей вкладки (выбраны в дропдаунах выше), поэтому и "➕моно", и "🚩" всегда
-    // могут собрать полный payload без дополнительного запроса. Кнопки рендерятся только если
-    // isAdmin — на них завязаны SaveMonochromeCandidate/SaveColorFeedback, видеть и жать их должен
-    // только putya (см. bgs2CheckIsAdmin), для остальных посетителей карточка — просто картинка+%.
-    function bgs2Card(b, opts = {}) {
-        const { isAdmin = false } = opts;
+    // Карточка одного фона — putya: "сделай карточки такими же как были раньше, ... без +моно и
+    // флажка" — тот же result-card-bg формат, что и на остальных вкладках, без админских действий.
+    function bgs2Card(b) {
         const hex = bgs2Pick(b, 'hex') || '#000000';
         const name = bgs2Pick(b, 'name') || '';
         const isMono = !!bgs2Pick(b, 'isMonochrome');
         const monoScore = bgs2Pick(b, 'monoScore');
         const score = monoScore != null ? monoScore : (bgs2Pick(b, 'similarity') || 0);
-        const bestCubeHex = bgs2Pick(b, 'bestCubeHex');
-        const bestCubeWeight = bgs2Pick(b, 'bestCubeWeight');
-        const anchor = bgs2Pick(b, 'matchedAnchor');
-
-        // putya: "без сочности" — не показываем бейдж средний/сочный (matchedAnchor), только сам
-        // цвет лучшего куба точкой. Разница avg/vivid — деталь для отладки алгоритма, не для сайта.
-        let breakdownHtml;
-        if (isMono) {
-            breakdownHtml = bgs2MonoDots(bgs2Pick(b, 'monoBreakdown'));
-        } else if (bestCubeHex) {
-            breakdownHtml = `<span class="bgs2-mini-dot" style="background:${bestCubeHex}" title="Лучший куб: ${bgs2EscapeHtml(bestCubeHex)}"></span>`;
-        } else {
-            breakdownHtml = '';
-        }
-        const breakdownRow = breakdownHtml ? `<div class="bgs2-card-breakdown">${breakdownHtml}</div>` : '';
 
         const giftName = state.findBgs.selectedGift || '';
         const modelName = state.findBgs.selectedModel || '';
         const modelImg = `${API_PHOTO_URL}/${encodeURIComponent(giftName)}/png/${encodeURIComponent(modelName)}.png`;
 
-        const monoAddBtnHtml = isAdmin ? `
-            <button class="bgs2-mono-add-btn" title="Добавить это сочетание как монохром (в отдельную таблицу-кандидат)"
-                    data-gift="${bgs2EscapeHtml(giftName)}" data-model="${bgs2EscapeHtml(modelName)}"
-                    data-bg-name="${bgs2EscapeHtml(name)}" data-bg-hex="${bgs2EscapeHtml(hex)}"
-                    data-score="${Number(score)}" data-cube-hex="${bgs2EscapeHtml(bestCubeHex || '')}"
-                    data-cube-weight="${bestCubeWeight != null ? Number(bestCubeWeight) : ''}"
-                    data-anchor="${bgs2EscapeHtml(anchor || '')}">➕моно</button>` : '';
-        const flagBtnHtml = isAdmin ? `
-            <button class="bgs2-flag-btn" title="Отметить: неверное совпадение"
-                    data-gift="${bgs2EscapeHtml(giftName)}" data-model="${bgs2EscapeHtml(modelName)}"
-                    data-bg-name="${bgs2EscapeHtml(name)}" data-bg-hex="${bgs2EscapeHtml(hex)}"
-                    data-score="${Number(score)}" data-mono="${isMono}">🚩</button>` : '';
+        // putya: "сделай карточки такими же как были раньше" — тот же формат result-card-bg, что и
+        // на остальных вкладках этой страницы (см. старую renderBackgroundResults ниже по файлу).
+        // Градиент берём из fixedColors по имени фона — тот же справочник, что и везде на сайте;
+        // если фон отсутствует в fixedColors (не должно случаться, каталог общий), просто заливаем
+        // самим hex без градиента.
+        const bgObj = fixedColors.find(fc => fc.name === name || fc.id === name);
+        const cardBg = bgObj ? bgObj.gradient : hex;
 
         return `
-          <div class="bgs2-card" data-bg-name="${bgs2EscapeHtml(name)}">
-            <div class="bgs2-card-preview" style="background:${bgs2RadialGradientFor(hex)}">
-              <img data-src="${modelImg}" alt="" loading="lazy" class="lazy-load"
-                   onload="this.classList.add('loaded')" onerror="this.style.display='none'" />
+          <div class="result-card-bg" style="background:${cardBg}" data-bg-name="${bgs2EscapeHtml(name)}">
+            <div class="image-container">
+              <img data-src="${modelImg}" alt="${bgs2EscapeHtml(modelName)}" class="model-image lazy-load">
             </div>
-            <div class="bgs2-card-info">
-              <span class="bgs2-card-name" title="${bgs2EscapeHtml(name)}">${bgs2EscapeHtml(name)}</span>
-              <span class="bgs2-card-pct">${Number(score).toFixed(0)}%</span>
-              ${monoAddBtnHtml}
-              ${flagBtnHtml}
+            <div class="info-container">
+              <div class="info-text">
+                <div class="info-collection">${bgs2EscapeHtml(giftName)}</div>
+                <div class="info-model">${bgs2EscapeHtml(name)}</div>
+              </div>
+              <div class="info-badges">
+                <div class="badge-percent">${isMono ? '★ ' : ''}${Number(score).toFixed(1)}%</div>
+              </div>
             </div>
-            ${breakdownRow}
           </div>
         `;
     }
 
-    function bgs2RenderMonoSection(groups, isAdmin) {
+    function bgs2RenderMonoSection(groups) {
         const monoItems = [];
         (groups || []).forEach(g => {
             (bgs2Pick(g, 'backgrounds') || []).forEach(b => {
@@ -2037,12 +1981,12 @@ if (sortSwitcher) {
 
         monoItems.sort((a, b) => (bgs2Pick(b, 'monoScore') ?? bgs2Pick(b, 'similarity') ?? 0) - (bgs2Pick(a, 'monoScore') ?? bgs2Pick(a, 'similarity') ?? 0));
 
-        const cards = monoItems.map(b => bgs2Card(b, { isAdmin })).join('');
+        const cards = monoItems.map(b => bgs2Card(b)).join('');
         return `
           <div class="bgs2-mono-section">
             <div class="bgs2-mono-section-title">★ Монохромные фоны (${monoItems.length})</div>
             <div class="bgs2-mono-section-sub">Одновременно хорошо совпадают сразу с одной или несколькими группами модели, суммарно покрывающими большую часть её массы.</div>
-            <div class="bgs2-grid">${cards}</div>
+            <div class="results-grid">${cards}</div>
           </div>
         `;
     }
@@ -2050,25 +1994,25 @@ if (sortSwitcher) {
     // putya: "не надо прям все добавлять что есть в тестовом режиме, просто ... группы (без
     // сочности, именно по самим цветам группировка)" — убрана разбивка на МОНО/Средний/Сочный
     // внутри группы: один плоский список, отсортированный по %. Монохромы сюда не дублируем — они
-    // уже показаны отдельной плашкой выше (bgs2RenderMonoSection). Мелкие группы (незначительная
-    // доля массы модели) не показываем вовсе — те же 5%, что и порог значимого кластера на
-    // диаграмме (BGS2_RADAR_SIGNIFICANT_WEIGHT), чтобы не плодить группы почти без веса.
-    const BGS2_GROUP_MIN_MASS_PCT = 5;
+    // уже показаны отдельной плашкой выше (bgs2RenderMonoSection). "добавь возможность ставить
+    // лимит веса цвета который учитывается в оценке" — minMassPct теперь берётся из поля ввода
+    // (#bgs2-min-mass, см. renderBgsV2/fetchBgsV2), группы с массой ниже него не показываются.
+    const BGS2_GROUP_MIN_MASS_DEFAULT = 5;
 
-    function bgs2RenderGroups(groups, isAdmin) {
+    function bgs2RenderGroups(groups, minMassPct) {
         return (groups || []).map(g => {
             const colors = bgs2Pick(g, 'colors') || [];
             const color = colors[0] || {};
             const colorHex = bgs2Pick(color, 'hex') || '#000000';
             const colorPct = bgs2Pick(color, 'percentage') || 0;
-            if (colorPct < BGS2_GROUP_MIN_MASS_PCT) return '';
+            if (colorPct < minMassPct) return '';
 
             const backgrounds = (bgs2Pick(g, 'backgrounds') || [])
                 .filter(b => !bgs2Pick(b, 'isMonochrome'))
                 .sort((a, b) => (bgs2Pick(b, 'similarity') || 0) - (bgs2Pick(a, 'similarity') || 0));
             if (!backgrounds.length) return '';
 
-            const cards = backgrounds.map(b => bgs2Card(b, { isAdmin })).join('');
+            const cards = backgrounds.map(b => bgs2Card(b)).join('');
 
             return `
               <div class="bgs2-group-card">
@@ -2077,7 +2021,7 @@ if (sortSwitcher) {
                   <span class="bgs2-group-title">${colorHex}</span>
                   <span class="bgs2-group-pct">${Number(colorPct).toFixed(1)}% массы модели</span>
                 </div>
-                <div class="bgs2-grid">${cards}</div>
+                <div class="results-grid">${cards}</div>
               </div>
             `;
         }).join('');
@@ -2087,15 +2031,15 @@ if (sortSwitcher) {
     // порогу на бэке (см. описание putya: "формат всех фонов"). Монохромы уже показаны выше в своей
     // плашке — здесь показываем ВСЕ фоны (включая эти же монохромы повторно, для полноты списка "от
     // большего % к меньшему", ровно как на тестовом сайте) одним списком.
-    function bgs2RenderAllBackgrounds(allBackgrounds, isAdmin) {
+    function bgs2RenderAllBackgrounds(allBackgrounds) {
         if (!allBackgrounds || !allBackgrounds.length) return '';
         const sorted = allBackgrounds.slice().sort((a, b) => (bgs2Pick(b, 'similarity') || 0) - (bgs2Pick(a, 'similarity') || 0));
-        const cards = sorted.map(b => bgs2Card(b, { isAdmin })).join('');
+        const cards = sorted.map(b => bgs2Card(b)).join('');
         return `
           <div class="bgs2-mono-section bgs2-all-section">
             <div class="bgs2-mono-section-title bgs2-all-title">📋 Все фоны каталога (${sorted.length})</div>
             <div class="bgs2-mono-section-sub">Лучший % каждого фона среди всех кубов модели, по убыванию (включая совпавшие на 0%).</div>
-            <div class="bgs2-grid">${cards}</div>
+            <div class="results-grid">${cards}</div>
           </div>
         `;
     }
@@ -2118,13 +2062,12 @@ if (sortSwitcher) {
         bgsV2Body.innerHTML = '';
 
         try {
-            const [debugCubeData, dedupData, isAdmin] = await Promise.all([
+            const [debugCubeData, dedupData] = await Promise.all([
                 secureFetch(`${SERVER_BASE_URL}/api/MonoCoof/DebugCube?nameGift=${encodeURIComponent(giftName)}&nameModel=${encodeURIComponent(modelName)}`, null).catch(() => null),
-                secureFetch(`${SERVER_BASE_URL}/api/MonoCoof/MatchV4Dedup?nameGift=${encodeURIComponent(giftName)}&nameModel=${encodeURIComponent(modelName)}`, null),
-                bgs2CheckIsAdmin()
+                secureFetch(`${SERVER_BASE_URL}/api/MonoCoof/MatchV4Dedup?nameGift=${encodeURIComponent(giftName)}&nameModel=${encodeURIComponent(modelName)}`, null)
             ]);
 
-            state.findBgs.v2Data = { debugCubeData, dedupData, isAdmin };
+            state.findBgs.v2Data = { debugCubeData, dedupData };
             bgsV2Loading.classList.add('hidden');
             renderBgsV2(state.findBgs.v2Data);
         } catch (error) {
@@ -2135,7 +2078,7 @@ if (sortSwitcher) {
     }
 
     function renderBgsV2(data) {
-        const { debugCubeData, dedupData, isAdmin } = data;
+        const { debugCubeData, dedupData } = data;
 
         bgsV2Diagram.innerHTML = debugCubeData
             ? bgs2BuildColorRadarSVG(bgs2ClustersFromDebugCube(debugCubeData))
@@ -2149,101 +2092,29 @@ if (sortSwitcher) {
             return;
         }
 
-        const monoHtml = bgs2RenderMonoSection(groups, isAdmin);
-        const groupsHtml = bgs2RenderGroups(groups, isAdmin);
-        const allHtml = bgs2RenderAllBackgrounds(allBackgrounds, isAdmin);
+        const minMassInput = document.getElementById('bgs2-min-mass');
+        const minMassPct = minMassInput ? (parseFloat(minMassInput.value) || 0) : BGS2_GROUP_MIN_MASS_DEFAULT;
+
+        const monoHtml = bgs2RenderMonoSection(groups);
+        const groupsHtml = bgs2RenderGroups(groups, minMassPct);
+        const allHtml = bgs2RenderAllBackgrounds(allBackgrounds);
 
         bgsV2Body.innerHTML = monoHtml + groupsHtml + allHtml;
         setupLazyLoading(bgsV2Body, null, 'grid');
     }
 
-    async function bgs2SubmitMonochromeCandidate({ giftName, modelName, bgName, bgHex, score, cubeHex, cubeWeight, anchor }) {
-        const resp = await fetch(`${SERVER_BASE_URL}/api/MonoCoof/SaveMonochromeCandidate`, {
-            method: 'POST',
-            headers: { 'Authorization': getApiAuthHeader(), 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                giftName, modelName,
-                backgroundName: bgName,
-                backgroundHex: bgHex,
-                similarity: score,
-                bestCubeHex: cubeHex || null,
-                bestCubeWeight: cubeWeight,
-                matchedAnchor: anchor || null
-            })
+    // putya: "добавь возможность ставить лимит веса цвета который учитывается в оценке" — минимальная
+    // доля массы модели (Colors[0].Percentage), ниже которой группа не показывается. Меняется без
+    // повторного похода на сервер — данные уже закешированы в state.findBgs.v2Data.
+    const bgs2MinMassInputEl = document.getElementById('bgs2-min-mass');
+    if (bgs2MinMassInputEl) {
+        bgs2MinMassInputEl.addEventListener('change', () => {
+            if (state.findBgs.v2Data) renderBgsV2(state.findBgs.v2Data);
         });
-        if (!resp.ok) throw new Error('HTTP ' + resp.status);
-    }
-
-    async function bgs2SubmitColorFeedback({ giftName, modelName, bgName, bgHex, score, isMonochrome }) {
-        const resp = await fetch(`${SERVER_BASE_URL}/api/MonoCoof/SaveColorFeedback`, {
-            method: 'POST',
-            headers: { 'Authorization': getApiAuthHeader(), 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                items: [{
-                    nameGift: giftName,
-                    nameModel: modelName,
-                    backgroundName: bgName,
-                    backgroundHex: bgHex,
-                    score,
-                    isMonochrome,
-                    reason: 'bad_match',
-                    comment: '',
-                    suggestedCubeHex: null
-                }]
-            })
-        });
-        if (!resp.ok) throw new Error('HTTP ' + resp.status);
     }
 
     bgsV2Body.addEventListener('click', (e) => {
-        const monoAddBtn = e.target.closest('.bgs2-mono-add-btn');
-        if (monoAddBtn) {
-            if (monoAddBtn.classList.contains('saved')) return;
-            monoAddBtn.disabled = true;
-            monoAddBtn.title = 'Сохраняю...';
-            bgs2SubmitMonochromeCandidate({
-                giftName: monoAddBtn.dataset.gift,
-                modelName: monoAddBtn.dataset.model,
-                bgName: monoAddBtn.dataset.bgName,
-                bgHex: monoAddBtn.dataset.bgHex,
-                score: parseFloat(monoAddBtn.dataset.score),
-                cubeHex: monoAddBtn.dataset.cubeHex,
-                cubeWeight: monoAddBtn.dataset.cubeWeight ? parseFloat(monoAddBtn.dataset.cubeWeight) : null,
-                anchor: monoAddBtn.dataset.anchor
-            }).then(() => {
-                monoAddBtn.classList.add('saved');
-                monoAddBtn.title = 'Добавлено как кандидат в монохромы';
-                monoAddBtn.textContent = '✓ моно';
-                monoAddBtn.disabled = false;
-            }).catch(() => {
-                monoAddBtn.disabled = false;
-                monoAddBtn.title = 'Не удалось сохранить, попробуй ещё раз';
-            });
-            return;
-        }
-
-        const flagBtn = e.target.closest('.bgs2-flag-btn');
-        if (flagBtn) {
-            if (flagBtn.classList.contains('flagged')) return;
-            flagBtn.classList.add('flagged');
-            flagBtn.title = 'Отправляю...';
-            bgs2SubmitColorFeedback({
-                giftName: flagBtn.dataset.gift,
-                modelName: flagBtn.dataset.model,
-                bgName: flagBtn.dataset.bgName,
-                bgHex: flagBtn.dataset.bgHex,
-                score: parseFloat(flagBtn.dataset.score),
-                isMonochrome: flagBtn.dataset.mono === 'true'
-            }).then(() => {
-                flagBtn.title = 'Отправлено, спасибо!';
-            }).catch(() => {
-                flagBtn.classList.remove('flagged');
-                flagBtn.title = 'Не удалось отправить, попробуй ещё раз';
-            });
-            return;
-        }
-
-        const card = e.target.closest('.bgs2-card');
+        const card = e.target.closest('.result-card-bg');
         if (!card) return;
         if (window.themesModal) {
             window.themesModal.openModelDetail(state.findBgs.selectedGift, state.findBgs.selectedModel, card.dataset.bgName);
