@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Цветовой круг каталога</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="./color-wheel.css?v=2">
+    <link rel="stylesheet" href="./color-wheel.css?v=3">
     <script src="../config.js"></script>
 </head>
 
@@ -18,7 +18,7 @@
 
             <div class="cw-tabs">
                 <button class="cw-tab active" data-view="wheel">Круг</button>
-                <button class="cw-tab" data-view="cube">3D-бары</button>
+                <button class="cw-tab" data-view="cube">3D-куб</button>
             </div>
 
             <div id="cw-stats" class="cw-stats"></div>
@@ -32,7 +32,7 @@
                 <div class="cube-scene" id="cube-scene">
                     <div class="cube-inner" id="cube-inner"></div>
                 </div>
-                <p class="cw-hint">Перетаскивай мышью, чтобы повернуть. Высота столбика = доля каталога.</p>
+                <p class="cw-hint">Перетаскивай мышью, чтобы повернуть. Вверху — светлые оттенки, внизу — тёмные; чем дальше от оси — тем насыщеннее цвет.</p>
             </div>
 
             <div id="cw-legend" class="cw-legend"></div>
@@ -41,7 +41,7 @@
         </div>
     </main>
 
-    <script src="./color-wheel.js?v=2"></script>
+    <script src="./color-wheel.js?v=3"></script>
 </body>
 
 </html>

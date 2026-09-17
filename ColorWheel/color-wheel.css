@@ -99,20 +99,18 @@ main { display: flex; justify-content: center; padding: 24px 16px 60px; }
     transform: rotateX(-20deg) rotateY(35deg);
 }
 
-.bars3d-ground {
-    position: absolute; left: 50%; top: 50%; width: 190px; height: 190px;
-    margin-left: -95px; margin-top: -95px; border-radius: 50%;
-    background: radial-gradient(circle, rgba(255,255,255,.10), transparent 72%);
-    border: 1px solid rgba(255,255,255,.08);
-    transform: rotateX(90deg);
+.cube-point {
+    position: absolute; border-radius: 50%;
+    top: 50%; left: 50%;
+    box-shadow: 0 0 6px currentColor;
 }
 
-.bar3d-anchor { position: absolute; left: 50%; top: 50%; transform-style: preserve-3d; }
-.bar3d {
-    position: absolute; bottom: 0; left: -13px;
-    border-radius: 3px 3px 1px 1px;
-    box-shadow: 0 0 8px currentColor;
-    opacity: .92;
+/* Ось "светлота" — единственный ориентир: верх светлый, низ тёмный. */
+.lab-axis {
+    position: absolute; left: 50%; top: 50%; width: 2px; height: 190px;
+    margin-left: -1px; margin-top: -95px;
+    background: linear-gradient(180deg, #fff, #888 50%, #000);
+    opacity: .35; border-radius: 2px;
 }
 
 .cw-error {

@@ -112,43 +112,68 @@
     }
     function hideTooltip() { tooltip.classList.add('hidden'); }
 
-    // --- 3D-бары: те же 12 hue-бакетов, что и в круге, расставлены по кольцу — putya: "куб
-    // странный, не очень понятный, другой бы формат какой-то выбрать" — вместо разброса точек в
-    // RGB-пространстве (нужно понимать оси R/G/B) те же самые, уже знакомые по кругу категории,
-    // просто вытянутые в объём по высоте.
+    // --- 3D: настоящее цветовое пространство (цилиндр Hue/Saturation/Lightness) — putya:
+    // "я имел ввиду что там будут учтены именно 3д кубы, чтобы и темные и светлые цвета были" —
+    // высота = светлота (вверху светлые оттенки, внизу тёмные), расстояние от центральной оси =
+    // насыщенность (серые — у оси, яркие/сочные — снаружи), угол вокруг оси = тон (тот же Hue,
+    // что и на круге). Считается на фронтенде из тех же CubePoints (усреднённые R/G/B по
+    // квантованным ячейкам, см. GetGlobalColorWheel на бэке) — не нужен отдельный запрос.
     let rotX = -20, rotY = 35;
     function applyCubeRotation() {
         cubeInner.style.transform = `rotateX(${rotX}deg) rotateY(${rotY}deg)`;
     }
 
-    function renderBars3D(hueWheel) {
+    function rgbToHsl(r, g, b) {
+        r /= 255; g /= 255; b /= 255;
+        const max = Math.max(r, g, b), min = Math.min(r, g, b);
+        let h = 0, s = 0;
+        const l = (max + min) / 2;
+        const d = max - min;
+        if (d > 1e-6) {
+            s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+            switch (max) {
+                case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+                case g: h = (b - r) / d + 2; break;
+                default: h = (r - g) / d + 4; break;
+            }
+            h *= 60;
+        }
+        return { h, s: s * 100, l: l * 100 };
+    }
+
+    function renderCube3D(cubePoints) {
         cubeInner.innerHTML = '';
 
-        const ground = document.createElement('div');
-        ground.className = 'bars3d-ground';
-        cubeInner.appendChild(ground);
+        // Центральная ось "светлота" — единственный простой ориентир, который нужен: верх = светлое,
+        // низ = тёмное.
+        const axis = document.createElement('div');
+        axis.className = 'lab-axis';
+        cubeInner.appendChild(axis);
 
-        const maxShare = Math.max(1, ...hueWheel.map(h => h.SharePercent));
-        const radius = 90, maxHeight = 150, barWidth = 26;
+        if (!cubePoints.length) return;
+        const maxWeight = Math.max(...cubePoints.map(p => p.WeightSum));
+        const maxRadius = 95, halfHeight = 95;
 
-        hueWheel.forEach((b, i) => {
-            const angle = (b.HueStart + b.HueEnd) / 2;
-            const h = Math.max(6, (b.SharePercent / maxShare) * maxHeight);
+        cubePoints.forEach(p => {
+            const { h, s, l } = rgbToHsl(p.R, p.G, p.B);
+            const rad = h * Math.PI / 180;
+            const radius = (s / 100) * maxRadius;
+            const x = radius * Math.cos(rad);
+            const z = radius * Math.sin(rad);
+            const y = ((50 - l) / 50) * halfHeight; // светлое (l=100) — вверх (y отрицательный)
+            const size = 4 + Math.sqrt(p.WeightSum / maxWeight) * 15;
 
-            const anchor = document.createElement('div');
-            anchor.className = 'bar3d-anchor';
-            anchor.style.transform = `rotateY(${angle}deg) translateZ(${radius}px)`;
-
-            const bar = document.createElement('div');
-            bar.className = 'bar3d';
-            bar.style.width = barWidth + 'px';
-            bar.style.height = h + 'px';
-            bar.style.background = b.Hex;
-            bar.style.color = b.Hex;
-            bar.title = `${HUE_NAMES[i]}: ${b.SharePercent}% (${b.Count} кластеров)`;
-
-            anchor.appendChild(bar);
-            cubeInner.appendChild(anchor);
+            const dot = document.createElement('div');
+            dot.className = 'cube-point';
+            dot.style.width = size + 'px';
+            dot.style.height = size + 'px';
+            dot.style.background = p.Hex;
+            dot.style.color = p.Hex;
+            dot.style.marginLeft = -(size / 2) + 'px';
+            dot.style.marginTop = -(size / 2) + 'px';
+            dot.style.transform = `translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, ${z.toFixed(1)}px)`;
+            dot.title = `${p.Hex} · светлота ${Math.round(l)}%, насыщенность ${Math.round(s)}% · ${p.WeightSum}% веса, ${p.Count} кластеров`;
+            cubeInner.appendChild(dot);
         });
     }
 
@@ -198,7 +223,7 @@
 
             renderWheel(data.HueWheel);
             renderLegend(data.HueWheel);
-            renderBars3D(data.HueWheel);
+            renderCube3D(data.CubePoints);
             applyCubeRotation();
         } catch (err) {
             showError('Не удалось загрузить: ' + err.message);
