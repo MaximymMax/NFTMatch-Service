@@ -13,10 +13,12 @@
     const filterRow = document.querySelector('.cw-filter-row');
 
     const drilldown = document.getElementById('cw-drilldown');
+    const drilldownHeader = document.querySelector('.cw-drilldown-header');
     const drilldownTitle = document.getElementById('cw-drilldown-title');
     const drilldownBody = document.getElementById('cw-drilldown-body');
     const drilldownBackgrounds = document.getElementById('cw-drilldown-backgrounds');
     const drilldownClose = document.getElementById('cw-drilldown-close');
+    const wheelView = document.getElementById('cw-wheel-view');
 
     const collectionsHeader = document.getElementById('collections-header');
     const collectionsSearch = document.getElementById('collections-search');
@@ -36,6 +38,29 @@
     function escapeHtml(s) {
         return (s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     }
+
+    // putya: "убери базовый скрол с cw-drilldown-body и сделай по высоте таким же как и левая
+    // часть" — на ПК (двухколоночная раскладка) высота правой панели должна визуально совпадать с
+    // диаграммой слева. Считаем высоту "шапки" правой колонки (фильтр + заголовок drilldown + фоны)
+    // и отдаём остаток под список моделей; на мобильном (одна колонка) сброс на CSS-фиксированную.
+    const DESKTOP_BREAKPOINT = 860;
+    function syncModelsPanelHeight() {
+        if (window.innerWidth < DESKTOP_BREAKPOINT || drilldown.classList.contains('hidden')) {
+            drilldownBody.style.maxHeight = '';
+            return;
+        }
+        const leftH = wheelView.getBoundingClientRect().height;
+        const chrome = filterRow.getBoundingClientRect().height
+            + drilldownHeader.getBoundingClientRect().height
+            + drilldownBackgrounds.getBoundingClientRect().height
+            + 10; // gap между .cw-filter-row и #cw-drilldown
+        drilldownBody.style.maxHeight = Math.max(160, leftH - chrome) + 'px';
+    }
+    let resizeTimer = null;
+    window.addEventListener('resize', () => {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(syncModelsPanelHeight, 150);
+    });
 
     function showError(msg) {
         errorEl.textContent = msg;
@@ -160,13 +185,13 @@
         let title, hex, range;
         if (openBucketIndex === 'EXTREME') {
             const extreme = isExtremeLightness();
-            if (!extreme) { openBucketIndex = null; applySelectionHighlight(); drilldown.classList.add('hidden'); return; }
+            if (!extreme) { openBucketIndex = null; applySelectionHighlight(); drilldown.classList.add('hidden'); syncModelsPanelHeight(); return; }
             title = extreme === 'black' ? 'Чёрный' : 'Белый';
             hex = extreme === 'black' ? '#000000' : '#ffffff';
             range = { hueStart: 0, hueEnd: 360 };
         } else {
             const bucket = currentHueWheel[openBucketIndex];
-            if (!bucket || bucket.Count === 0) { openBucketIndex = null; applySelectionHighlight(); drilldown.classList.add('hidden'); return; }
+            if (!bucket || bucket.Count === 0) { openBucketIndex = null; applySelectionHighlight(); drilldown.classList.add('hidden'); syncModelsPanelHeight(); return; }
             title = `${HUE_NAMES[openBucketIndex]} (${Math.round(bucket.HueStart)}°–${Math.round(bucket.HueEnd)}°)`;
             hex = bucket.Hex;
             range = { hueStart: bucket.HueStart, hueEnd: bucket.HueEnd };
@@ -218,6 +243,8 @@
                 : '');
         } catch (err) {
             drilldownBody.innerHTML = `<div class="cw-drilldown-note">Не удалось загрузить: ${escapeHtml(err.message)}</div>`;
+        } finally {
+            syncModelsPanelHeight();
         }
     }
 
