@@ -35,6 +35,108 @@
     const HUE_NAMES = ['Красный', 'Оранжевый', 'Жёлтый', 'Салатовый', 'Зелёный', 'Изумрудный',
         'Голубой', 'Синий', 'Индиго', 'Фиолетовый', 'Пурпурный', 'Розовый'];
 
+    // putya: "модалка... добавить фоны в palette-scroll-area по новому алгоритму" — themesModal
+    // подбирает фоны для палитры по имени (GLOBAL_COLORS), сверяя с bgScoreData из MatchV4Dedup.
+    // Раньше сюда передавался пустой массив (4-й аргумент init), из-за чего секция "Фон" в модалке
+    // на этой странице всегда была пустой ("Без фона" и всё) — тот же список фонов, что и на
+    // background-finder.js/themes.js.
+    const fixedColors = [
+        { id: 'Amber', name: 'Amber', hex: '#DAB345', gradient: 'radial-gradient(circle, rgb(218, 179, 69) 0%, rgb(177, 128, 42) 100%)' },
+        { id: 'Aquamarine', name: 'Aquamarine', hex: '#60B195', gradient: 'radial-gradient(circle, rgb(96, 177, 149) 0%, rgb(70, 171, 180) 100%)' },
+        { id: 'AzureBlue', name: 'Azure Blue', hex: '#5DB1CB', gradient: 'radial-gradient(circle, rgb(93, 177, 203) 0%, rgb(68, 139, 171) 100%)' },
+        { id: 'BattleshipGrey', name: 'Battleship Grey', hex: '#8C8C85', gradient: 'radial-gradient(circle, rgb(140, 140, 133) 0%, rgb(108, 108, 102) 100%)' },
+        { id: 'Black', name: 'Black', hex: '#363738', gradient: 'radial-gradient(circle, rgb(54, 55, 56) 0%, rgb(14, 15, 15) 100%)' },
+        { id: 'Burgundy', name: 'Burgundy', hex: '#A35E66', gradient: 'radial-gradient(circle, rgb(163, 94, 102) 0%, rgb(109, 65, 74) 100%)' },
+        { id: 'BurntSienna', name: 'Burnt Sienna', hex: '#D66F3C', gradient: 'radial-gradient(circle, rgb(214, 111, 60) 0%, rgb(181, 75, 45) 100%)' },
+        { id: 'CamoGreen', name: 'Camo Green', hex: '#75944D', gradient: 'radial-gradient(circle, rgb(117, 148, 77) 0%, rgb(84, 115, 65) 100%)' },
+        { id: 'Cappuccino', name: 'Cappuccino', hex: '#B1907E', gradient: 'radial-gradient(circle, rgb(177, 144, 126) 0%, rgb(124, 99, 86) 100%)' },
+        { id: 'Caramel', name: 'Caramel', hex: '#D09932', gradient: 'radial-gradient(circle, rgb(208, 153, 50) 0%, rgb(183, 116, 49) 100%)' },
+        { id: 'Carmine', name: 'Carmine', hex: '#E0574A', gradient: 'radial-gradient(circle, rgb(224, 87, 74) 0%, rgb(168, 56, 59) 100%)' },
+        { id: 'CarrotJuice', name: 'Carrot Juice', hex: '#DB9867', gradient: 'radial-gradient(circle, rgb(219, 152, 103) 0%, rgb(199, 111, 79) 100%)' },
+        { id: 'CelticBlue', name: 'Celtic Blue', hex: '#49B8ED', gradient: 'radial-gradient(circle, rgb(69, 184, 237) 0%, rgb(56, 134, 217) 100%)' },
+        { id: 'Chestnut', name: 'Chestnut', hex: '#BE6F54', gradient: 'radial-gradient(circle, rgb(190, 111, 84) 0%, rgb(153, 72, 56) 100%)' },
+        { id: 'Chocolate', name: 'Chocolate', hex: '#A46E58', gradient: 'radial-gradient(circle, rgb(164, 110, 88) 0%, rgb(116, 68, 59) 100%)' },
+        { id: 'CobaltBlue', name: 'Cobalt Blue', hex: '#6088CF', gradient: 'radial-gradient(circle, rgb(96, 136, 207) 0%, rgb(81, 98, 184) 100%)' },
+        { id: 'Copper', name: 'Copper', hex: '#D08656', gradient: 'radial-gradient(circle, rgb(208, 134, 86) 0%, rgb(157, 101, 49) 100%)' },
+        { id: 'CoralRed', name: 'Coral Red', hex: '#DA896B', gradient: 'radial-gradient(circle, rgb(218, 137, 107) 0%, rgb(196, 101, 79) 100%)' },
+        { id: 'Cyberpunk', name: 'Cyberpunk', hex: '#858BF3', gradient: 'radial-gradient(circle, rgb(133, 143, 243) 0%, rgb(134, 95, 211) 100%)' },
+        { id: 'DarkGreen', name: 'Dark Green', hex: '#516341', gradient: 'radial-gradient(circle, rgb(81, 99, 65) 0%, rgb(43, 69, 47) 100%)' },
+        { id: 'DarkLilac', name: 'DarkLilac', hex: '#B17DA5', gradient: 'radial-gradient(circle, rgb(177, 125, 165) 0%, rgb(140, 87, 122) 100%)' },
+        { id: 'DeepCyan', name: 'Deep Cyan', hex: '#31B5AA', gradient: 'radial-gradient(circle, rgb(49, 181, 170) 0%, rgb(24, 149, 153) 100%)' },
+        { id: 'DesertSand', name: 'Desert Sand', hex: '#B39F82', gradient: 'radial-gradient(circle, rgb(179, 159, 130) 0%, rgb(126, 115, 91) 100%)' },
+        { id: 'ElectricIndigo', name: 'Electric Indigo', hex: '#A980F3', gradient: 'radial-gradient(circle, rgb(169, 128, 243) 0%, rgb(91, 98, 216) 100%)' },
+        { id: 'ElectricPurple', name: 'Electric Purple', hex: '#CA70C6', gradient: 'radial-gradient(circle, rgb(202, 112, 198) 0%, rgb(150, 98, 212) 100%)' },
+        { id: 'Emerald', name: 'Emerald', hex: '#78C585', gradient: 'radial-gradient(circle, rgb(120, 197, 133) 0%, rgb(66, 161, 113) 100%)' },
+        { id: 'EnglishViolet', name: 'English Violet', hex: '#B186BB', gradient: 'radial-gradient(circle, rgb(177, 134, 187) 0%, rgb(135, 90, 145) 100%)' },
+        { id: 'Fandango', name: 'Fandango', hex: '#E28AB6', gradient: 'radial-gradient(circle, rgb(226, 138, 182) 0%, rgb(164, 88, 139) 100%)' },
+        { id: 'Feldgrau', name: 'Feldgrau', hex: '#899288', gradient: 'radial-gradient(circle, rgb(137, 146, 136) 0%, rgb(94, 107, 99) 100%)' },
+        { id: 'FireEngine', name: 'Fire Engine', hex: '#F05F4F', gradient: 'radial-gradient(circle, rgb(240, 95, 79) 0%, rgb(196, 57, 73) 100%)' },
+        { id: 'FrenchBlue', name: 'French Blue', hex: '#5C9BC4', gradient: 'radial-gradient(circle, rgb(92, 155, 196) 0%, rgb(55, 115, 154) 100%)' },
+        { id: 'FrenchViolet', name: 'French Violet', hex: '#C260E6', gradient: 'radial-gradient(circle, rgb(194, 96, 230) 0%, rgb(145, 78, 217) 100%)' },
+        { id: 'Grape', name: 'Grape', hex: '#9D73C1', gradient: 'radial-gradient(circle, rgb(157, 116, 193) 0%, rgb(121, 77, 160) 100%)' },
+        { id: 'Gunmetal', name: 'Gunmetal', hex: '#4C5D63', gradient: 'radial-gradient(circle, rgb(76, 93, 99) 0%, rgb(47, 59, 66) 100%)' },
+        { id: 'GunshipGreen', name: 'Gunship Green', hex: '#558A65', gradient: 'radial-gradient(circle, rgb(85, 138, 101) 0%, rgb(61, 102, 87) 100%)' },
+        { id: 'HunterGreen', name: 'Hunter Green', hex: '#8FA078', gradient: 'radial-gradient(circle, rgb(143, 174, 120) 0%, rgb(75, 130, 91) 100%)' },
+        { id: 'IndigoDye', name: 'Indigo Dye', hex: '#537991', gradient: 'radial-gradient(circle, rgb(83, 121, 145) 0%, rgb(65, 100, 121) 100%)' },
+        { id: 'IvoryWhite', name: 'Ivory White', hex: '#BABAD1', gradient: 'radial-gradient(circle, rgb(186, 182, 177) 0%, rgb(161, 157, 151) 100%)' },
+        { id: 'JadeGreen', name: 'Jade Green', hex: '#55C49C', gradient: 'radial-gradient(circle, rgb(85, 196, 156) 0%, rgb(59, 153, 119) 100%)' },
+        { id: 'KhakiGreen', name: 'Khaki Green', hex: '#ADAE70', gradient: 'radial-gradient(circle, rgb(173, 176, 112) 0%, rgb(107, 125, 84) 100%)' },
+        { id: 'Lavender', name: 'Lavender', hex: '#B789E4', gradient: 'radial-gradient(circle, rgb(183, 137, 228) 0%, rgb(138, 90, 188) 100%)' },
+        { id: 'Lemongrass', name: 'Lemongrass', hex: '#AEB85A', gradient: 'radial-gradient(circle, rgb(174, 184, 90) 0%, rgb(85, 147, 69) 100%)' },
+        { id: 'LightOlive', name: 'Light Olive', hex: '#C2AF64', gradient: 'radial-gradient(circle, rgb(194, 175, 100) 0%, rgb(136, 126, 69) 100%)' },
+        { id: 'Malachite', name: 'Malachite', hex: '#95B457', gradient: 'radial-gradient(circle, rgb(149, 180, 87) 0%, rgb(61, 151, 85) 100%)' },
+        { id: 'MarineBlue', name: 'Marine Blue', hex: '#4E689C', gradient: 'radial-gradient(circle, rgb(78, 104, 156) 0%, rgb(59, 75, 122) 100%)' },
+        { id: 'MexicanPink', name: 'Mexican Pink', hex: '#E36692', gradient: 'radial-gradient(circle, rgb(227, 102, 146) 0%, rgb(201, 73, 124) 100%)' },
+        { id: 'MidnightBlue', name: 'Midnight Blue', hex: '#5C6985', gradient: 'radial-gradient(circle, rgb(92, 105, 133) 0%, rgb(53, 64, 87) 100%)' },
+        { id: 'MintGreen', name: 'Mint Green', hex: '#7ECA82', gradient: 'radial-gradient(circle, rgb(126, 203, 130) 0%, rgb(69, 158, 90) 100%)' },
+        { id: 'Moonstone', name: 'Moonstone', hex: '#7EB1B4', gradient: 'radial-gradient(circle, rgb(126, 177, 180) 0%, rgb(88, 131, 144) 100%)' },
+        { id: 'Mustard', name: 'Mustard', hex: '#D4980D', gradient: 'radial-gradient(circle, rgb(212, 152, 13) 0%, rgb(196, 119, 18) 100%)' },
+        { id: 'MysticPearl', name: 'Mystic Pearl', hex: '#D08B6D', gradient: 'radial-gradient(circle, rgb(208, 139, 109) 0%, rgb(176, 87, 112) 100%)' },
+        { id: 'NavyBlue', name: 'Navy Blue', hex: '#6C9EDD', gradient: 'radial-gradient(circle, rgb(108, 158, 221) 0%, rgb(92, 110, 201) 100%)' },
+        { id: 'NeonBlue', name: 'Neon Blue', hex: '#7596F9', gradient: 'radial-gradient(circle, rgb(117, 150, 249) 0%, rgb(104, 98, 228) 100%)' },
+        { id: 'OldGold', name: 'Old Gold', hex: '#B58D38', gradient: 'radial-gradient(circle, rgb(181, 141, 56) 0%, rgb(148, 105, 37) 100%)' },
+        { id: 'OnyxBlack', name: 'Onyx Black', hex: '#4D5254', gradient: 'radial-gradient(circle, rgb(77, 82, 84) 0%, rgb(49, 54, 56) 100%)' },
+        { id: 'Orange', name: 'Orange', hex: '#D19A3A', gradient: 'radial-gradient(circle, rgb(209, 154, 58) 0%, rgb(192, 111, 71) 100%)' },
+        { id: 'PacificCyan', name: 'Pacific Cyan', hex: '#5ABEA6', gradient: 'radial-gradient(circle, rgb(90, 190, 166) 0%, rgb(61, 149, 186) 100%)' },
+        { id: 'PacificGreen', name: 'Pacific Green', hex: '#6FC793', gradient: 'radial-gradient(circle, rgb(111, 199, 147) 0%, rgb(59, 156, 132) 100%)' },
+        { id: 'Persimmon', name: 'Persimmon', hex: '#E7A75A', gradient: 'radial-gradient(circle, rgb(231, 167, 90) 0%, rgb(197, 103, 95) 100%)' },
+        { id: 'PineGreen', name: 'Pine Green', hex: '#6DA97C', gradient: 'radial-gradient(circle, rgb(107, 169, 124) 0%, rgb(62, 121, 112) 100%)' },
+        { id: 'Pistachio', name: 'Pistachio', hex: '#97B07C', gradient: 'radial-gradient(circle, rgb(151, 176, 124) 0%, rgb(92, 129, 76) 100%)' },
+        { id: 'Platinum', name: 'Platinum', hex: '#B2AEAD', gradient: 'radial-gradient(circle, rgb(178, 174, 167) 0%, rgb(136, 132, 126) 100%)' },
+        { id: 'PureGold', name: 'Pure Gold', hex: '#CCAB41', gradient: 'radial-gradient(circle, rgb(204, 171, 65) 0%, rgb(152, 123, 50) 100%)' },
+        { id: 'Purple', name: 'Purple', hex: '#AE6EAE', gradient: 'radial-gradient(circle, rgb(174, 108, 174) 0%, rgb(132, 71, 132) 100%)' },
+        { id: 'RangerGreen', name: 'Ranger Green', hex: '#5F7849', gradient: 'radial-gradient(circle, rgb(95, 120, 73) 0%, rgb(60, 79, 59) 100%)' },
+        { id: 'Raspberry', name: 'Raspberry', hex: '#E07B85', gradient: 'radial-gradient(circle, rgb(224, 123, 133) 0%, rgb(182, 89, 128) 100%)' },
+        { id: 'RifleGreen', name: 'Rifle Green', hex: '#64695C', gradient: 'radial-gradient(circle, rgb(100, 105, 92) 0%, rgb(75, 82, 65) 100%)' },
+        { id: 'RomanSilver', name: 'Roman Silver', hex: '#A3A8B5', gradient: 'radial-gradient(circle, rgb(163, 168, 181) 0%, rgb(124, 128, 138) 100%)' },
+        { id: 'Rosewood', name: 'Rosewood', hex: '#B77A77', gradient: 'radial-gradient(circle, rgb(183, 122, 119) 0%, rgb(129, 76, 82) 100%)' },
+        { id: 'Sapphire', name: 'Sapphire', hex: '#58A3C8', gradient: 'radial-gradient(circle, rgb(88, 163, 200) 0%, rgb(83, 121, 194) 100%)' },
+        { id: 'SatinGold', name: 'Satin Gold', hex: '#BF9B47', gradient: 'radial-gradient(circle, rgb(191, 155, 71) 0%, rgb(141, 119, 57) 100%)' },
+        { id: 'SealBrown', name: 'Seal Brown', hex: '#664D45', gradient: 'radial-gradient(circle, rgb(102, 77, 69) 0%, rgb(71, 54, 46) 100%)' },
+        { id: 'ShamrockGreen', name: 'Shamrock Green', hex: '#8AB163', gradient: 'radial-gradient(circle, rgb(138, 177, 99) 0%, rgb(85, 147, 69) 100%)' },
+        { id: 'SilverBlue', name: 'Silver Blue', hex: '#80A4B8', gradient: 'radial-gradient(circle, rgb(128, 164, 184) 0%, rgb(96, 124, 145) 100%)' },
+        { id: 'SkyBlue', name: 'Sky Blue', hex: '#58B4C8', gradient: 'radial-gradient(circle, rgb(88, 180, 200) 0%, rgb(83, 139, 194) 100%)' },
+        { id: 'SteelGrey', name: 'Steel Grey', hex: '#97A2AC', gradient: 'radial-gradient(circle, rgb(151, 162, 172) 0%, rgb(99, 114, 124) 100%)' },
+        { id: 'Strawberry', name: 'Strawberry', hex: '#DD8E6F', gradient: 'radial-gradient(circle, rgb(221, 142, 111) 0%, rgb(183, 90, 96) 100%)' },
+        { id: 'TacticalPine', name: 'Tactical Pine', hex: '#44826B', gradient: 'radial-gradient(circle, rgb(68, 130, 107) 0%, rgb(47, 99, 105) 100%)' },
+        { id: 'Tomato', name: 'Tomato', hex: '#E6793E', gradient: 'radial-gradient(circle, rgb(230, 121, 62) 0%, rgb(212, 78, 63) 100%)' },
+        { id: 'Turquoise', name: 'Turquoise', hex: '#5EC0B8', gradient: 'radial-gradient(circle, rgb(94, 192, 184) 0%, rgb(61, 146, 142) 100%)' },
+    ];
+
+    // putya: "перенести логику похожих на сайт" — FindModelsByColorRecipe/FindSimilarModels/
+    // DebugCube/GetGiftModelsWithCubes (в отличие от старых GetGlobalColorWheel*) проходят через
+    // ValidateRequestAsync и корректно учитывают тариф авторизованного пользователя только если
+    // передан Authorization — тот же хелпер, что в background-finder.js/themes-modal.js.
+    function getApiAuthHeader() {
+        if (window.NFTAuth && typeof window.NFTAuth.getApiAuthHeader === 'function') {
+            return window.NFTAuth.getApiAuthHeader();
+        }
+        if (window.getApiAuthHeader && typeof window.getApiAuthHeader === 'function') {
+            return window.getApiAuthHeader();
+        }
+        return 'Tma invalid';
+    }
+
     function escapeHtml(s) {
         return (s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     }
@@ -476,26 +578,49 @@
         }
     }
 
-    // --- putya: "добавь кнопка главная которая выбрана по умолчанию" / "вкладка с поиском
-    // моделей по выбранным цветам" → "точный подбор по HEX" — Главная/Поиск по цвету переключают
-    // локальные панели ниже; Монохромы/Тематики/Похожие остаются обычными ссылками (a), не трогаем.
+    // --- putya: "добавь кнопка главная которая выбрана по умолчанию" / "совмести поиск по цветам
+    // и поиск похожих, просто будет две разные вкладки" — Главная/Похожие/Поиск по цвету
+    // переключают локальные панели ниже; Похожие и Поиск по цвету ведут в один и тот же
+    // #cw-panel-search, различаясь только data-subtab (см. setSearchSubtab). Монохромы/Тематики
+    // остаются обычными ссылками (a), не трогаем.
     const tabButtons = document.querySelectorAll('.cw-tab[data-tab]');
     const panelHome = document.getElementById('cw-panel-home');
     const panelSearch = document.getElementById('cw-panel-search');
+    const searchTitle = document.getElementById('cw-search-title');
+    const searchColorsPanel = document.getElementById('cw-search-colors');
+    const searchSimilarPanel = document.getElementById('cw-search-similar');
     let colorSearchLoaded = false;
+    let similarPickerLoaded = false;
+    let currentSearchSubtab = 'colors';
 
-    function setActiveTab(tab) {
-        tabButtons.forEach(btn => btn.classList.toggle('active', btn.dataset.tab === tab));
+    function setSearchSubtab(subtab) {
+        currentSearchSubtab = subtab;
+        searchColorsPanel.classList.toggle('hidden', subtab !== 'colors');
+        searchSimilarPanel.classList.toggle('hidden', subtab !== 'similar');
+        searchTitle.textContent = subtab === 'similar' ? 'Похожие модели' : 'Поиск моделей по цвету';
+        tabButtons.forEach(btn => {
+            if (btn.dataset.tab === 'search') btn.classList.toggle('active', btn.dataset.subtab === subtab);
+        });
+        if (subtab === 'colors' && !colorSearchLoaded) {
+            colorSearchLoaded = true;
+            runColorSearch();
+        } else if (subtab === 'similar' && !similarPickerLoaded) {
+            similarPickerLoaded = true;
+            loadSimilarPicker();
+        }
+    }
+
+    function setActiveTab(tab, subtab) {
         panelHome.classList.toggle('hidden', tab !== 'home');
         panelSearch.classList.toggle('hidden', tab !== 'search');
         if (tab === 'home') {
+            tabButtons.forEach(btn => btn.classList.toggle('active', btn.dataset.tab === 'home'));
             syncModelsPanelHeight();
-        } else if (tab === 'search' && !colorSearchLoaded) {
-            colorSearchLoaded = true;
-            runColorSearch();
+        } else if (tab === 'search') {
+            setSearchSubtab(subtab || currentSearchSubtab);
         }
     }
-    tabButtons.forEach(btn => btn.addEventListener('click', () => setActiveTab(btn.dataset.tab)));
+    tabButtons.forEach(btn => btn.addEventListener('click', () => setActiveTab(btn.dataset.tab, btn.dataset.subtab)));
 
     // --- putya: "сделай чтобы можно было выбрать несколько цветов, а не только один" — строка №1
     // всегда есть, дальше добавляются кнопкой (тот же паттерн, что на MatchV2Demo: пикер + hex +
@@ -537,13 +662,56 @@
         row.innerHTML = `
             <input type="color" class="filter-color-picker" value="${hex}" title="Выбрать цвет">
             <input type="text" class="filter-color-hex cw-hex-input" value="${hex}" maxlength="7" spellcheck="false">
-            <input type="number" class="filter-color-pct" min="1" max="100" value="15" title="Мин. %">
+            <div class="cw-pct-field" style="${recipeMode === 'dominant' ? 'display:none;' : ''}">
+                <input type="number" class="filter-color-pct" min="0" max="100" value="30" title="Целевой %">
+                <span class="cw-pct-sign">%</span>
+            </div>
             <button type="button" class="cw-remove-filter-btn" title="Убрать">&times;</button>
         `;
         colorFiltersList.appendChild(row);
         updateExcludeToggleState();
     }
     addColorFilterBtn.addEventListener('click', addColorFilterRow);
+
+    // --- putya: "можно искать по основным" — режим "Доминирующие": без % вообще, топ-N кубов
+    // модели по весу сопоставляются с N выбранными цветами (dominantMode=true на бэкенде). Портировано
+    // из mono-cube-live.html (recipeModeExactBtn/recipeModeDominantBtn). ---
+    const recipeModeSwitch = document.getElementById('recipe-mode-switch');
+    const recipeModeBtns = recipeModeSwitch.querySelectorAll('.cw-recipe-mode-btn');
+    const recipeToleranceField = document.getElementById('recipe-tolerance-field');
+    const recipeMinSimInput = document.getElementById('recipe-min-sim');
+    const recipeToleranceInput = document.getElementById('recipe-tolerance');
+    let recipeMode = 'exact';
+
+    function setRecipeMode(mode) {
+        if (mode === recipeMode) return;
+        recipeMode = mode;
+        recipeModeSwitch.dataset.activeMode = mode;
+        recipeModeBtns.forEach(b => b.classList.toggle('active', b.dataset.recipemode === mode));
+        recipeToleranceField.style.display = mode === 'exact' ? '' : 'none';
+        colorFiltersList.querySelectorAll('.cw-pct-field').forEach(el => { el.style.display = mode === 'exact' ? '' : 'none'; });
+    }
+    recipeModeBtns.forEach(b => b.addEventListener('click', () => setRecipeMode(b.dataset.recipemode)));
+
+    // --- putya: "можно исключать цвета" — список цветов-противопоказаний, модель отсеивается
+    // целиком, если такой цвет на ней заметно (>5%) есть (excludeOffRecipeColors — общий фильтр,
+    // отдельная опция ниже; excludeHexes — конкретные цвета). ---
+    const recipeExcludeColorsList = document.getElementById('recipe-exclude-colors-list');
+    const recipeAddExcludeColorBtn = document.getElementById('recipe-add-exclude-color-btn');
+    function addRecipeExcludeColorRow(hex) {
+        const row = document.createElement('div');
+        row.className = 'cw-exclude-color-row';
+        row.innerHTML = `
+            <input type="color" class="recipe-exclude-color-picker" value="${hex || randomHex()}" title="Выбрать цвет">
+            <button type="button" class="cw-remove-filter-btn" title="Убрать">&times;</button>
+        `;
+        recipeExcludeColorsList.appendChild(row);
+    }
+    recipeExcludeColorsList.addEventListener('click', (e) => {
+        const btn = e.target.closest('.cw-remove-filter-btn');
+        if (btn) btn.closest('.cw-exclude-color-row').remove();
+    });
+    recipeAddExcludeColorBtn.addEventListener('click', () => addRecipeExcludeColorRow());
 
     colorFiltersList.addEventListener('input', (e) => {
         if (e.target.classList.contains('filter-color-picker')) {
@@ -564,17 +732,18 @@
     // putya: "сделай такие же карточки моделей как у меня везде... сделай чтобы их можно было
     // открывать" — те же классы карточки, что на background-finder.html. "модалка themes-modal-
     // content должна быть при открытии любой карточки, в том числе и той где поиск по цвету" —
-    // клик открывает настоящую themesModal.openModelDetail (не свою модалку).
-    function renderColorSearchCards(items, isMulti) {
+    // клик открывает настоящую themesModal.openModelDetail (не свою модалку). Свотчи показываем
+    // только при 2+ цветах рецепта — для обычного поиска по одному цвету карточка чище.
+    function renderColorSearchCards(items) {
         if (!items.length) {
             colorSearchResults.innerHTML = '<div class="cw-drilldown-note">Ничего не найдено.</div>';
             return;
         }
         colorSearchResults.innerHTML = items.map(m => {
-            const swatches = isMulti
-                ? `<div class="multi-swatches">${m.MatchedColors.map(mc => `<span class="multi-swatch" style="background:${mc.Hex}" title="${mc.Hex} · ${mc.Weight}%"></span>`).join('')}</div>`
+            const colors = m.Colors || [];
+            const swatches = colors.length > 1
+                ? `<div class="multi-swatches">${colors.map(c => `<span class="multi-swatch" style="background:${c.MatchedCubeHex}" title="${c.MatchedCubeHex} · ${c.MatchedWeight}%, сходство ${c.Similarity}%"></span>`).join('')}</div>`
                 : '';
-            const badge = isMulti ? `${m.Score}%` : `${m.Weight}%`;
             return `
                 <div class="result-card-bg" data-gift="${escapeHtml(m.GiftName)}" data-model="${escapeHtml(m.ModelName)}">
                     <div class="image-container">
@@ -587,7 +756,7 @@
                             <div class="info-model">${escapeHtml(m.ModelName)}</div>
                         </div>
                         ${swatches}
-                        <div class="info-badges"><div class="badge-percent">${badge}</div></div>
+                        <div class="info-badges"><div class="badge-percent">${Number(m.AvgSimilarity).toFixed(0)}%</div></div>
                     </div>
                 </div>
             `;
@@ -598,34 +767,34 @@
         if (card && window.themesModal) window.themesModal.openModelDetail(card.dataset.gift, card.dataset.model);
     });
 
+    // putya: "такая же логика как на тестовом сайте" — один POST FindModelsByColorRecipe на любое
+    // число цветов (1 и 2+ больше не разные пути, как было со старыми
+    // GetGlobalColorWheelNearestModels/MultiColorModels).
     async function runColorSearch() {
         const rows = [...colorFiltersList.querySelectorAll('.cw-color-filter-row')];
+        if (!rows.length) return;
+        const dominantMode = recipeMode === 'dominant';
+        const colors = rows.map(row => ({
+            Hex: row.querySelector('.filter-color-picker').value,
+            TargetPercent: dominantMode ? 0 : (Number(row.querySelector('.filter-color-pct').value) || 0)
+        }));
+        const minSimilarity = Number(recipeMinSimInput.value) || 0;
+        const toleranceWeight = Number(recipeToleranceInput.value) || 0;
+        const excludeHexes = [...recipeExcludeColorsList.querySelectorAll('.recipe-exclude-color-picker')].map(el => el.value);
+        const excludeParam = excludeHexes.length ? `&excludeHexes=${encodeURIComponent(excludeHexes.join(','))}` : '';
+        const offColorParam = excludeOffRecipeCheckbox.checked ? '&excludeOffRecipeColors=true' : '';
+
         colorSearchResults.innerHTML = '<div class="cw-drilldown-note">Загрузка…</div>';
         try {
-            let data, isMulti;
-            if (rows.length <= 1) {
-                isMulti = false;
-                const hex = rows[0].querySelector('.filter-color-picker').value;
-                const resp = await fetch(`${API_BASE}/GetGlobalColorWheelNearestModels?hex=${encodeURIComponent(hex)}`);
-                if (!resp.ok) throw new Error('HTTP ' + resp.status);
-                data = await resp.json();
-            } else {
-                isMulti = true;
-                const filters = rows.map(row => ({
-                    Hex: row.querySelector('.filter-color-picker').value,
-                    MinPercent: parseFloat(row.querySelector('.filter-color-pct').value) || 10
-                }));
-                const params = new URLSearchParams();
-                if (excludeOffRecipeCheckbox.checked) params.set('excludeOffRecipeColors', 'true');
-                const resp = await fetch(`${API_BASE}/GetGlobalColorWheelMultiColorModels?${params}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(filters)
-                });
-                if (!resp.ok) throw new Error('HTTP ' + resp.status);
-                data = await resp.json();
-            }
-            renderColorSearchCards(data.Items, isMulti);
+            const url = `${API_BASE}/FindModelsByColorRecipe?minSimilarity=${minSimilarity}&toleranceWeight=${toleranceWeight}&dominantMode=${dominantMode}${excludeParam}${offColorParam}`;
+            const resp = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': getApiAuthHeader() },
+                body: JSON.stringify(colors)
+            });
+            if (!resp.ok) throw new Error('HTTP ' + resp.status);
+            const data = await resp.json();
+            renderColorSearchCards(data.Models || []);
         } catch (err) {
             colorSearchResults.innerHTML = `<div class="cw-drilldown-note">Не удалось загрузить: ${escapeHtml(err.message)}</div>`;
         }
@@ -633,9 +802,328 @@
     colorSearchBtn.addEventListener('click', runColorSearch);
     updateExcludeToggleState();
 
-    // putya: "все страницы... адаптированы под главную страницу" — с других страниц "Поиск по
-    // цвету" ведёт на ../ColorWheel/color-wheel.html#search, тут просто открываем нужную вкладку.
-    if (location.hash === '#search') setActiveTab('search');
+    // === "Похожие" — портировано из mono-cube-live.html (режим modeSimilarBtn/FindSimilarModels).
+    // Задаётся целевая модель, поиск идёт по РАНГУ доминирующих кластеров (не по точному %) —
+    // catalog-wide, без предрасчёта. putya: "можно исключать цвета" — клик по цвету на диаграмме
+    // цели переключает его исключение без повторного похода на сервер. ===
+    let giftModelsData = [];
+    let similarGiftName = null;
+    let similarExcludedHexes = new Set();
+    let similarTargetClusters = [];
+    let similarRadarIdCounter = 0;
+    const SIMILAR_RADAR_HUE_TRUST_CHROMA = 8;
+    const SIMILAR_SKELETON_WEIGHT = 10; // тот же порог, что SimilarModelsMinClusterWeight на бэкенде
+
+    const similarGiftContainer = document.getElementById('similar-gift-container');
+    const similarGiftHeader = document.getElementById('similar-gift-header');
+    const similarGiftSearch = document.getElementById('similar-gift-search');
+    const similarGiftValue = document.getElementById('similar-gift-value');
+    const similarGiftList = document.getElementById('similar-gift-list');
+    const similarGiftOptions = document.getElementById('similar-gift-options');
+
+    const similarModelContainer = document.getElementById('similar-model-container');
+    const similarModelHeader = document.getElementById('similar-model-header');
+    const similarModelSearch = document.getElementById('similar-model-search');
+    const similarModelValue = document.getElementById('similar-model-value');
+    const similarModelList = document.getElementById('similar-model-list');
+    const similarModelOptions = document.getElementById('similar-model-options');
+
+    const similarRadarBox = document.getElementById('similar-target-radar-box');
+    const similarRadar = document.getElementById('similar-target-radar');
+    const similarMinSimInput = document.getElementById('similar-min-sim');
+    const similarIgnoreOrderCheckbox = document.getElementById('similar-ignore-order');
+    const similarSearchBtn = document.getElementById('similar-search-btn');
+    const similarSearchResults = document.getElementById('similar-search-results');
+
+    async function loadSimilarPicker() {
+        similarGiftOptions.innerHTML = '<div class="cw-drilldown-note">Загрузка…</div>';
+        try {
+            const resp = await fetch(`${API_BASE}/GetGiftModelsWithCubes`, { headers: { 'Authorization': getApiAuthHeader() } });
+            giftModelsData = resp.ok ? await resp.json() : [];
+        } catch (err) { giftModelsData = []; }
+        similarGiftOptions.innerHTML = giftModelsData.map(g =>
+            `<div class="list-option" data-value="${escapeHtml(g.GiftName)}">${escapeHtml(g.GiftName)}</div>`
+        ).join('') || '<div class="cw-drilldown-note">Не удалось загрузить коллекции.</div>';
+    }
+
+    function selectSimilarGift(giftName) {
+        similarGiftName = giftName;
+        similarGiftValue.textContent = giftName;
+        // putya-паттерн (см. updateDropdownSelection в background-finder.js): value-active
+        // подменяет плейсхолдер полем поиска, поэтому после выбора его снимаем, а не ставим —
+        // иначе закрытый дропдаун показывает пустое "Поиск..." вместо выбранного значения.
+        similarGiftHeader.classList.remove('value-active');
+        similarGiftOptions.querySelectorAll('.list-option').forEach(o => o.classList.toggle('selected', o.dataset.value === giftName));
+
+        similarModelValue.textContent = 'Выбери модель';
+        similarModelHeader.classList.remove('value-active');
+        const gift = giftModelsData.find(g => g.GiftName === giftName);
+        const models = gift ? gift.Models : [];
+        similarModelOptions.innerHTML = models.map(m =>
+            `<div class="list-option" data-value="${escapeHtml(m)}">${escapeHtml(m)}</div>`
+        ).join('');
+
+        similarSearchBtn.disabled = true;
+        similarRadarBox.classList.add('hidden');
+        similarExcludedHexes = new Set();
+    }
+
+    function selectSimilarModel(modelName) {
+        similarModelValue.textContent = modelName;
+        similarModelHeader.classList.remove('value-active');
+        similarModelOptions.querySelectorAll('.list-option').forEach(o => o.classList.toggle('selected', o.dataset.value === modelName));
+        similarExcludedHexes = new Set();
+        similarSearchBtn.disabled = false;
+        loadSimilarTargetRadar(similarGiftName, modelName);
+    }
+
+    function bindDropdown(header, list, search, options, onOpen) {
+        header.addEventListener('click', () => {
+            if (header.classList.contains('disabled')) return;
+            const opening = list.classList.contains('hidden');
+            list.classList.toggle('hidden', !opening);
+            header.classList.toggle('active', opening);
+            header.classList.toggle('open', opening);
+            if (opening) { search.value = ''; search.focus(); if (onOpen) onOpen(); options.querySelectorAll('.list-option').forEach(o => o.classList.remove('hidden-by-search')); }
+        });
+        search.addEventListener('input', () => {
+            const q = search.value.trim().toLowerCase();
+            options.querySelectorAll('.list-option').forEach(o => o.classList.toggle('hidden-by-search', q.length > 0 && !o.textContent.toLowerCase().includes(q)));
+        });
+    }
+    bindDropdown(similarGiftHeader, similarGiftList, similarGiftSearch, similarGiftOptions);
+    bindDropdown(similarModelHeader, similarModelList, similarModelSearch, similarModelOptions);
+
+    similarGiftOptions.addEventListener('click', (e) => {
+        const opt = e.target.closest('.list-option');
+        if (!opt) return;
+        selectSimilarGift(opt.dataset.value);
+        similarGiftList.classList.add('hidden');
+        similarGiftHeader.classList.remove('active', 'open');
+    });
+    similarModelOptions.addEventListener('click', (e) => {
+        const opt = e.target.closest('.list-option');
+        if (!opt) return;
+        selectSimilarModel(opt.dataset.value);
+        similarModelList.classList.add('hidden');
+        similarModelHeader.classList.remove('active', 'open');
+    });
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('#similar-gift-container')) {
+            similarGiftList.classList.add('hidden');
+            similarGiftHeader.classList.remove('active', 'open');
+        }
+        if (!e.target.closest('#similar-model-container')) {
+            similarModelList.classList.add('hidden');
+            similarModelHeader.classList.remove('active', 'open');
+        }
+    });
+
+    // --- Радар "весов и цветов" цели — перенесено из background-finder.js (bgs2BuildColorRadarSVG,
+    // уже без бага "самый лёгкий кластер схлопывается в центр", см. историю правок), плюс
+    // интерактивность (клик по бейджу исключает цвет), перенесённая из mono-cube-live.html. ---
+    function similarHexToRgb(hex) {
+        let h = (hex || '#808080').replace('#', '');
+        if (h.length === 3) h = h.split('').map(c => c + c).join('');
+        const num = parseInt(h, 16) || 0x808080;
+        return { r: (num >> 16) & 255, g: (num >> 8) & 255, b: num & 255 };
+    }
+    function similarMixHex(hexA, hexB) {
+        const a = similarHexToRgb(hexA), b = similarHexToRgb(hexB);
+        return `rgb(${Math.round((a.r + b.r) / 2)},${Math.round((a.g + b.g) / 2)},${Math.round((a.b + b.b) / 2)})`;
+    }
+    function similarComputeAngles(clusters) {
+        const n = clusters.length;
+        if (n === 1) return [-90];
+        const ranked = clusters.map((c, idx) => {
+            const chroma = Math.sqrt(c.a * c.a + c.b * c.b);
+            const isNeutral = chroma <= SIMILAR_RADAR_HUE_TRUST_CHROMA;
+            const hue = isNeutral ? null : (Math.atan2(c.b, c.a) * 180 / Math.PI + 360) % 360;
+            const pos = isNeutral ? (-40 + (c.L / 100) * 40) : hue;
+            return { idx, pos };
+        }).sort((x, y) => x.pos - y.pos);
+        const gapsRaw = ranked.map((r, i) => {
+            const next = ranked[(i + 1) % n];
+            return i === n - 1 ? (next.pos + 360) - r.pos : next.pos - r.pos;
+        });
+        const MIN_GAP = Math.max((360 / n) * 0.5, 15);
+        let deficit = 0;
+        let gaps = gapsRaw.map(g => { if (g < MIN_GAP) { deficit += (MIN_GAP - g); return MIN_GAP; } return g; });
+        if (deficit > 0) {
+            const maxIdx = gaps.indexOf(Math.max(...gaps));
+            gaps[maxIdx] = Math.max(MIN_GAP, gaps[maxIdx] - deficit);
+        }
+        const sum = gaps.reduce((s, g) => s + g, 0);
+        gaps = gaps.map(g => (g * 360) / sum);
+        const angleByIdx = new Array(n);
+        let angleDeg = -90;
+        ranked.forEach((r, i) => { angleByIdx[r.idx] = angleDeg; angleDeg += gaps[i]; });
+        return angleByIdx;
+    }
+    function buildSimilarRadarSVG(clusters) {
+        if (!clusters.length) return '<div class="cw-drilldown-note">Нет данных о цветовом профиле.</div>';
+        const n = clusters.length;
+        const size = 250, cx = size / 2, cy = size / 2, maxR = 62, badgeR = 13;
+        const maxWeight = Math.max(...clusters.map(c => c.weight), 1);
+        const scaleMax = Math.max(20, Math.ceil(maxWeight / 10) * 10);
+        const anglesDeg = similarComputeAngles(clusters);
+        const RADAR_MIN_R_FRAC = 0.35;
+
+        const pts = clusters.map((c, i) => {
+            const angleRad = (anglesDeg[i] * Math.PI) / 180;
+            const frac = Math.min(c.weight / scaleMax, 1);
+            const r = maxR * (RADAR_MIN_R_FRAC + frac * (1 - RADAR_MIN_R_FRAC));
+            const lr = maxR + 34;
+            return {
+                angleRad, r,
+                x: cx + r * Math.cos(angleRad), y: cy + r * Math.sin(angleRad),
+                lx: cx + lr * Math.cos(angleRad), ly: cy + lr * Math.sin(angleRad),
+                hex: c.hex, weight: c.weight, angleDeg: anglesDeg[i]
+            };
+        });
+        const orderedPts = pts.slice().sort((a, b) => a.angleDeg - b.angleDeg);
+
+        const ringFracs = [0.25, 0.5, 0.75, 1];
+        const rings = ringFracs.map(f => `<circle cx="${cx}" cy="${cy}" r="${(maxR * f).toFixed(1)}" fill="none" stroke="rgba(255,255,255,.12)" stroke-width="1"/>`).join('');
+        const ringLabels = ringFracs.map(f => `<text x="${cx + 3}" y="${(cy - maxR * f + 3).toFixed(1)}" font-size="8" fill="rgba(255,255,255,.35)">${Math.round(scaleMax * f)}%</text>`).join('');
+        const spokes = pts.map(p => `<line x1="${cx}" y1="${cy}" x2="${p.lx.toFixed(1)}" y2="${p.ly.toFixed(1)}" stroke="rgba(255,255,255,.10)" stroke-width="1"/>`).join('');
+
+        const radarUid = 'cwradar' + (similarRadarIdCounter++);
+        let defs = '', wedges = '';
+        for (let i = 0; i < n; i++) {
+            const a = orderedPts[i], b = orderedPts[(i + 1) % n];
+            const gid = `grad-${radarUid}-${i}`;
+            const mix = similarMixHex(a.hex, b.hex);
+            defs += `<radialGradient id="${gid}" gradientUnits="userSpaceOnUse" cx="${cx}" cy="${cy}" r="${maxR}">
+              <stop offset="0%" stop-color="${mix}" stop-opacity="0"/>
+              <stop offset="100%" stop-color="${mix}" stop-opacity="0.55"/>
+            </radialGradient>`;
+            wedges += `<polygon points="${cx},${cy} ${a.x.toFixed(1)},${a.y.toFixed(1)} ${b.x.toFixed(1)},${b.y.toFixed(1)}" fill="url(#${gid})"/>`;
+        }
+        const outline = n >= 2
+            ? `<polygon points="${orderedPts.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ')}" fill="none" stroke="rgba(255,255,255,.9)" stroke-width="2" stroke-linejoin="round"/>`
+            : '';
+        const vertexDots = pts.map(p => `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="2.5" fill="${p.hex}"/>`).join('');
+
+        const badges = pts.map(p => {
+            const hexKey = p.hex.replace('#', '').toUpperCase();
+            const isExcluded = similarExcludedHexes.has(hexKey);
+            const fillOpacity = isExcluded ? 0.22 : 1;
+            const strokeAttr = isExcluded ? 'stroke="rgba(255,255,255,.5)" stroke-dasharray="3,2"' : 'stroke="#fff"';
+            const mark = isExcluded
+                ? `<text x="${p.lx.toFixed(1)}" y="${p.ly.toFixed(1)}" font-size="15" font-weight="900" fill="#fff" text-anchor="middle" dominant-baseline="central" style="pointer-events:none;">✕</text>`
+                : '';
+            return `<circle cx="${p.lx.toFixed(1)}" cy="${p.ly.toFixed(1)}" r="${badgeR}" fill="${p.hex}" fill-opacity="${fillOpacity}" ${strokeAttr} stroke-width="1.5" data-hex="${hexKey}"/>${mark}`;
+        }).join('');
+        const badgeLabels = pts.map(p => {
+            const hexKey = p.hex.replace('#', '').toUpperCase();
+            const isExcluded = similarExcludedHexes.has(hexKey);
+            const above = p.ly <= cy;
+            const ty = above ? p.ly - badgeR - 6 : p.ly + badgeR + 12;
+            return `<text x="${p.lx.toFixed(1)}" y="${ty.toFixed(1)}" font-size="10" font-weight="700" fill="${isExcluded ? 'rgba(255,255,255,.4)' : '#fff'}" text-anchor="middle">${Math.round(p.weight)}%</text>`;
+        }).join('');
+
+        return `<svg viewBox="0 0 ${size} ${size}" class="cw-similar-radar-svg" style="width:100%; max-width:250px; height:auto; display:block; margin:0 auto;">
+          <defs>${defs}</defs>
+          ${rings}${spokes}${wedges}${outline}${vertexDots}${badges}${badgeLabels}${ringLabels}
+        </svg>`;
+    }
+    function renderSimilarRadarNow() {
+        similarRadar.innerHTML = buildSimilarRadarSVG(similarTargetClusters);
+        similarRadarBox.classList.remove('hidden');
+    }
+    async function loadSimilarTargetRadar(giftName, modelName) {
+        similarRadarBox.classList.remove('hidden');
+        similarRadar.innerHTML = '<div class="cw-drilldown-note">Загружаю цветовой профиль…</div>';
+        try {
+            const resp = await fetch(`${API_BASE}/DebugCube?nameGift=${encodeURIComponent(giftName)}&nameModel=${encodeURIComponent(modelName)}`, { headers: { 'Authorization': getApiAuthHeader() } });
+            const data = resp.ok ? await resp.json() : null;
+            // DebugCube (в отличие от FindSimilarModels/GetGiftModelsWithCubes, анонимных объектов
+            // с обычной PascalCase-сериализацией) сериализуется в camelCase — та же непоследовательность,
+            // из-за которой background-finder.js/themes-modal.js используют pick()-хелпер для этого
+            // конкретного эндпоинта; берём оба варианта регистра на всякий случай.
+            const pick = (obj, name) => obj ? (obj[name.charAt(0).toLowerCase() + name.slice(1)] ?? obj[name.charAt(0).toUpperCase() + name.slice(1)]) : undefined;
+            const cubes = pick(data, 'cubes') || [];
+            similarTargetClusters = cubes
+                .map(c => ({ hex: pick(c, 'avgHex') || '#888888', weight: Number(pick(c, 'weight')) || 0, L: Number(pick(c, 'L')) || 0, a: Number(pick(c, 'a')) || 0, b: Number(pick(c, 'b')) || 0 }))
+                .filter(c => c.weight >= SIMILAR_SKELETON_WEIGHT)
+                .sort((a, b) => b.weight - a.weight);
+            renderSimilarRadarNow();
+        } catch (err) {
+            similarRadar.innerHTML = '<div class="cw-drilldown-note">Нет данных о цветовом профиле.</div>';
+        }
+    }
+    similarRadar.addEventListener('click', (e) => {
+        const el = e.target.closest('circle[data-hex]');
+        if (!el) return;
+        const hex = el.getAttribute('data-hex');
+        if (similarExcludedHexes.has(hex)) similarExcludedHexes.delete(hex); else similarExcludedHexes.add(hex);
+        renderSimilarRadarNow();
+    });
+
+    // putya: "вид карточек такой же" — .result-card-bg, как везде на сайте; точки в свотчах — куда
+    // именно кандидат зацепился по каждой позиции (Positions), а не сам целевой цвет.
+    function renderSimilarCards(items) {
+        if (!items.length) {
+            similarSearchResults.innerHTML = '<div class="cw-drilldown-note">Ничего не найдено.</div>';
+            return;
+        }
+        similarSearchResults.innerHTML = items.map(m => {
+            const positions = m.Positions || [];
+            const swatches = positions.length
+                ? `<div class="multi-swatches">${positions.map(p => `<span class="multi-swatch" style="background:${p.CandidateCubeHex}" title="#${p.Rank}: ${p.CandidateCubeHex} (${p.CandidateWeight}%), сходство ${p.Similarity}%"></span>`).join('')}</div>`
+                : '';
+            return `
+                <div class="result-card-bg" data-gift="${escapeHtml(m.GiftName)}" data-model="${escapeHtml(m.ModelName)}">
+                    <div class="image-container">
+                        <img class="model-image" src="${modelImageUrl(m.GiftName, m.ModelName)}" alt=""
+                             loading="lazy" onerror="this.style.visibility='hidden'">
+                    </div>
+                    <div class="info-container">
+                        <div class="info-text">
+                            <div class="info-collection">${escapeHtml(m.GiftName)}</div>
+                            <div class="info-model">${escapeHtml(m.ModelName)}</div>
+                        </div>
+                        ${swatches}
+                        <div class="info-badges"><div class="badge-percent">${m.IsMonochrome ? '★ ' : ''}${Number(m.AvgSimilarity).toFixed(0)}%</div></div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+    similarSearchResults.addEventListener('click', (e) => {
+        const card = e.target.closest('.result-card-bg');
+        if (card && window.themesModal) window.themesModal.openModelDetail(card.dataset.gift, card.dataset.model);
+    });
+
+    async function runSimilarSearch() {
+        const modelName = similarModelValue.textContent;
+        if (!similarGiftName || !modelName || similarSearchBtn.disabled) return;
+        const minSimilarity = Number(similarMinSimInput.value) || 0;
+        const excludeParam = similarExcludedHexes.size ? `&excludeHexes=${encodeURIComponent(Array.from(similarExcludedHexes).join(','))}` : '';
+        const ignoreOrderParam = similarIgnoreOrderCheckbox.checked ? '&ignoreColorOrder=true' : '';
+
+        similarSearchBtn.disabled = true;
+        similarSearchResults.innerHTML = '<div class="cw-drilldown-note">Ищу похожие модели по всему каталогу — может занять время…</div>';
+        try {
+            const url = `${API_BASE}/FindSimilarModels?nameGift=${encodeURIComponent(similarGiftName)}&nameModel=${encodeURIComponent(modelName)}&minSimilarity=${minSimilarity}${excludeParam}${ignoreOrderParam}`;
+            const resp = await fetch(url, { headers: { 'Authorization': getApiAuthHeader() } });
+            if (!resp.ok) throw new Error('HTTP ' + resp.status);
+            const data = await resp.json();
+            renderSimilarCards(data.Models || []);
+        } catch (err) {
+            similarSearchResults.innerHTML = `<div class="cw-drilldown-note">Не удалось загрузить: ${escapeHtml(err.message)}</div>`;
+        } finally {
+            similarSearchBtn.disabled = false;
+        }
+    }
+    similarSearchBtn.addEventListener('click', runSimilarSearch);
+
+    // putya: "все страницы... адаптированы под главную страницу" — с других страниц "Похожие"/
+    // "Поиск по цвету" ведут на ../ColorWheel/color-wheel.html#search-similar / #search, тут просто
+    // открываем нужную вкладку и поддиалку.
+    if (location.hash === '#search-similar') setActiveTab('search', 'similar');
+    else if (location.hash === '#search') setActiveTab('search', 'colors');
 
     // putya: "модалка themes-modal-content должна быть при открытии любой карточки" — та же
     // themesModal, что использует background-finder.js/themes.js/gift-page.js (init создаёт
@@ -644,7 +1132,7 @@
     // существовал (наш <script> — обычный, синхронный, выполняется раньше модулей).
     document.addEventListener('DOMContentLoaded', () => {
         if (window.themesModal && window.themesModal.init) {
-            window.themesModal.init(SERVER_BASE_URL, API_PHOTO_URL, null, []);
+            window.themesModal.init(SERVER_BASE_URL, API_PHOTO_URL, null, fixedColors);
         }
     });
 

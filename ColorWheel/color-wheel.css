@@ -386,6 +386,82 @@
 .multi-swatches { display: flex; align-items: center; justify-content: center; gap: 4px; flex-wrap: wrap; }
 .multi-swatch { width: 12px; height: 12px; border-radius: 50%; box-shadow: 0 0 3px rgba(0,0,0,.4); flex: 0 0 auto; }
 
+/* putya: "совмести поиск по цветам и поиск похожих, просто будет две разные вкладки" —
+   #cw-panel-search теперь содержит два подраздела (colors/similar), переключаемых верхними
+   вкладками "Похожие"/"Поиск по цвету" (см. setSearchSubtab в color-wheel.js). */
+.cw-search-subpanel {
+    width: 100%; display: flex; flex-direction: column; align-items: center; gap: 10px;
+}
+.cw-search-subpanel.hidden { display: none; }
+
+/* --- Режим рецепта: "Точный %" / "Доминирующие" — тот же принцип переключателя, что и
+   .mode-switcher на background-finder.css, но локальный (2 кнопки, без плашки поверх страницы). --- */
+.cw-recipe-mode-switch {
+    display: flex; width: 100%; max-width: 460px; position: relative;
+    background: var(--surface-elevated); border: 1px solid var(--border-color); border-radius: 10px;
+    padding: 3px;
+}
+.cw-recipe-mode-switch::before {
+    content: ''; position: absolute; top: 3px; bottom: 3px; left: 3px;
+    width: calc(50% - 3px); background: rgba(37, 99, 235, .18); border: 1px solid rgba(37, 99, 235, .3);
+    border-radius: 8px; transition: transform .25s ease; z-index: 1;
+}
+.cw-recipe-mode-switch[data-active-mode="dominant"]::before { transform: translateX(100%); }
+.cw-recipe-mode-btn {
+    flex: 1; border: none; background: transparent; color: var(--text-muted);
+    font-size: 12.5px; font-weight: 700; font-family: inherit; padding: 8px 4px;
+    cursor: pointer; z-index: 2; transition: color .2s ease;
+}
+.cw-recipe-mode-btn.active { color: var(--text-primary); }
+
+.cw-recipe-fields-row {
+    display: flex; flex-wrap: wrap; gap: 10px; width: 100%; max-width: 460px;
+}
+.cw-num-field {
+    display: flex; flex-direction: column; gap: 4px; font-size: 11px; color: var(--text-muted);
+    flex: 1 1 140px;
+}
+.cw-num-field-input {
+    position: relative; display: flex; align-items: center;
+}
+.cw-num-field-input input {
+    width: 100%; background: var(--surface-elevated); border: 1px solid var(--border-color);
+    border-radius: 10px; color: var(--text-primary); font-size: 13px; font-family: inherit;
+    padding: 9px 22px 9px 10px; box-sizing: border-box;
+}
+.cw-num-field-input input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(37, 99, 235, .18); }
+.cw-num-field-input i {
+    position: absolute; right: 10px; font-style: normal; font-size: 12px; color: var(--text-muted); pointer-events: none;
+}
+
+/* --- Цвета-противопоказания: та же строка, что и основной рецепт, но без поля % --- */
+.cw-exclude-colors-block {
+    width: 100%; max-width: 460px; display: flex; flex-direction: column; gap: 8px;
+}
+.cw-exclude-colors-label { font-size: 11.5px; color: var(--text-muted); }
+.cw-exclude-colors-list { display: flex; flex-wrap: wrap; gap: 8px; }
+.cw-exclude-color-row { display: flex; align-items: center; gap: 6px; }
+.recipe-exclude-color-picker {
+    width: 40px; height: 36px; padding: 0; border: 1px solid var(--border-color);
+    border-radius: 9px; background: none; cursor: pointer;
+}
+.recipe-exclude-color-picker::-webkit-color-swatch-wrapper { padding: 3px; }
+.recipe-exclude-color-picker::-webkit-color-swatch { border: none; border-radius: 6px; }
+
+/* --- Похожие: пикеры коллекции/модели (тот же custom-dropdown-container, что и у коллекций) --- */
+.cw-similar-pickers-row {
+    width: 100%; max-width: 460px; display: flex; flex-direction: column; gap: 10px;
+}
+.cw-similar-pickers-row .cw-filter-row { gap: 10px; }
+#similar-model-header.disabled { opacity: .5; pointer-events: none; }
+
+.cw-similar-radar-box {
+    width: 100%; max-width: 280px; display: flex; flex-direction: column; align-items: center; gap: 4px;
+}
+.cw-similar-radar-box.hidden { display: none; }
+.cw-similar-radar-hint { font-size: 10.5px; color: var(--text-muted); text-align: center; }
+.cw-similar-radar-svg circle[data-hex] { cursor: pointer; }
+
 @media (max-width: 480px) {
     .cw-container { padding: 16px; }
 }
