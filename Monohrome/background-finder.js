@@ -2437,12 +2437,9 @@ if (sortSwitcher) {
                     </svg>
                 </div>` : '';
             // putya: "надо чтобы там на карточках писался процент веса цвета к которому этот фон
-            // найден" — BestCubeWeight из FindModelsByBackground: доля массы МОДЕЛИ, которую занимал
-            // тот кластер, через который зацепился фон (отдельно от Similarity — самого % совпадения).
-            const weightTag = (model.cubeWeight != null) ? `
-                <div class="badge-percent bgs2-weight-badge" title="Вес цвета в модели, через который найден этот фон">
-                    ⚖ ${Number(model.cubeWeight).toFixed(1)}%
-                </div>` : '';
+            // найден" — putya: "на карточках лучше не надо писать вес, и так нормально" — сам
+            // фильтр minClusterWeight (см. fetchMatchingModels) остаётся, просто больше не выводим
+            // его отдельным бейджем на карточке.
 
             card.innerHTML = `
                 <div class="image-container">
@@ -2455,7 +2452,6 @@ if (sortSwitcher) {
                     </div>
                     <div class="info-badges">
                         <div class="badge-percent">${model.isMono ? '★ ' : ''}${compatValue}%</div>
-                        ${weightTag}
                         ${priceTag}
                     </div>
                 </div>`;

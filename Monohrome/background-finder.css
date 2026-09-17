@@ -713,13 +713,6 @@ main {
     border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
-/* putya: "процент веса цвета к которому этот фон найден" — отдельная от основного % плашка на
-   карточках "Модели", тот же акцентный синий, что и у блока лимита веса (.bgs2-filter-block). */
-.bgs2-weight-badge {
-    color: var(--primary-color);
-    background: rgba(37, 99, 235, .15);
-    border: 1px solid rgba(37, 99, 235, .35);
-}
 
 .result-card-bg .bg-name {
     font-size: 0.85rem; 

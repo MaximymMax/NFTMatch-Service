@@ -69,9 +69,10 @@ const _allModelsCache = new Map(); // key: giftName  → AllModelNames array
 const _v2ThemesCache = new Map(); // key: `${gift}/${model}` → V2 themes array
 const _oldThemesCache = new Map(); // key: `${gift}/${model}` → old themes array
 const _colorsCache = new Map(); // key: `${gift}/${model}` → parsed colors array
-const _bgScoresCache = new Map(); // key: `${gift}/${model}` → bgScores array
+const _bgScoresCache = new Map(); // key: `${gift}/${model}` → bgScores array (сейчас из MatchV4Dedup.AllBackgrounds)
 const _countCache = new Map(); // key: `${gift}/${model}/${bg}` → count number
 const _similarCache = new Map(); // ❗️ ДОБАВИТЬ ЭТУ СТРОКУ
+const _cubeCache = new Map(); // putya: "указывать основные цвета и весы" — key: `${gift}/${model}` → DebugCube-кластеры [{hex, weight}, ...]
 
 let nftsState = {
     isExpanded: false,
@@ -183,6 +184,81 @@ function getApiAuthHeader() {
     return 'Tma invalid';
 }
 window.getApiAuthHeader = getApiAuthHeader;
+
+function tmPick(obj, name) {
+    if (!obj) return undefined;
+    const lower = name.charAt(0).toLowerCase() + name.slice(1);
+    const upper = name.charAt(0).toUpperCase() + name.slice(1);
+    return obj[lower] !== undefined ? obj[lower] : obj[upper];
+}
+
+// putya: "надо там указывать основные цвета и весы, добавить фоны в palette-scroll-area по новому
+// алгоритму" — единая точка входа для DebugCube (реальные цветовые кластеры модели с весами) и
+// MatchV4Dedup.AllBackgrounds (тот же современный cube/HyABScaled поиск, что и на background-finder
+// "Фоны"), заменяет старые MainColors (позиционная строка, без веса) и TopBackgroundColorsByNFT.
+// bgScores приводятся к формату {Key, Value(0..1)}, который уже ожидают существующие места рендера
+// палитры (renderModelDetailView/renderModelDetailViewBody) — сами эти места не переписаны, только
+// источник данных.
+async function tmFetchCubeAndBackgrounds(giftName, modelName) {
+    const key = `${giftName}/${modelName}`;
+    const cleanBaseUrl = BASE_URL.replace(/\/$/, '');
+
+    let cubesPromise;
+    if (_cubeCache.has(key)) {
+        cubesPromise = Promise.resolve(_cubeCache.get(key));
+    } else {
+        cubesPromise = fetch(`${cleanBaseUrl}/api/MonoCoof/DebugCube?nameGift=${encodeURIComponent(giftName)}&nameModel=${encodeURIComponent(modelName)}`, {
+            headers: { 'Authorization': getApiAuthHeader() }
+        })
+            .then(r => r.ok ? r.json() : null)
+            .then(data => {
+                const cubes = (tmPick(data, 'cubes') || [])
+                    .map(c => ({ hex: tmPick(c, 'avgHex') || '#888888', weight: Number(tmPick(c, 'weight')) || 0 }))
+                    .filter(c => c.weight > 0.5)
+                    .sort((a, b) => b.weight - a.weight);
+                _cubeCache.set(key, cubes);
+                return cubes;
+            })
+            .catch(() => []);
+    }
+
+    let bgScoresPromise;
+    if (_bgScoresCache.has(key)) {
+        bgScoresPromise = Promise.resolve(_bgScoresCache.get(key));
+    } else {
+        bgScoresPromise = fetch(`${cleanBaseUrl}/api/MonoCoof/MatchV4Dedup?nameGift=${encodeURIComponent(giftName)}&nameModel=${encodeURIComponent(modelName)}`, {
+            headers: { 'Authorization': getApiAuthHeader() }
+        })
+            .then(r => r.ok ? r.json() : null)
+            .then(data => {
+                const bgScores = (tmPick(data, 'allBackgrounds') || [])
+                    .map(b => ({ Key: tmPick(b, 'name'), Value: (Number(tmPick(b, 'similarity')) || 0) / 100 }))
+                    .filter(b => b.Key)
+                    .sort((a, b) => b.Value - a.Value);
+                _bgScoresCache.set(key, bgScores);
+                return bgScores;
+            })
+            .catch(() => []);
+    }
+
+    const [cubes, bgScores] = await Promise.all([cubesPromise, bgScoresPromise]);
+    return { cubes, bgScores };
+}
+
+// putya: "основные цвета и весы" — те же кружки, что у bg-palette-item, но без клика (это просто
+// показ, не выбор фона) и с процентом ВЕСА кластера в модели, а не % совпадения с фоном.
+function tmBuildColorPaletteHtml(cubes) {
+    if (!cubes || !cubes.length) return '';
+    // active — тут не "выбрано", а просто "всегда полная непрозрачность": у bg-palette-item
+    // непрозрачность 0.6 по умолчанию и только .active даёт 1 — у списка цветов модели нет
+    // концепции выбора, показываем все сразу и одинаково ярко.
+    return cubes.map(c => `
+        <div class="bg-palette-item active" style="cursor: default;">
+            <div class="bg-palette-color" style="background: ${c.hex};"></div>
+            <div class="bg-palette-percent" style="color: var(--text-muted); background: rgba(255,255,255,0.05);">${c.weight.toFixed(1)}%</div>
+        </div>
+    `).join('');
+}
 
 function getModelPlural(count) {
     return getLocalizedPlural(count, 'model');
@@ -648,33 +724,16 @@ async function onModelCardClick(gift, cardElement) {
                 .catch(() => '');
         }
 
-        const promises = [themesPromise, similarPromise, colorsPromise];
+        // putya: "фоны в palette-scroll-area по новому алгоритму" — вместо отдельного
+        // TopBackgroundColorsByNFT здесь и старого GetModelAggregatedInfo.TopBackgrounds в
+        // openModelDetail, оба пути теперь читают из одного tmFetchCubeAndBackgrounds
+        // (MatchV4Dedup.AllBackgrounds), который сам пишет в _bgScoresCache/_cubeCache.
+        const cubeAndBgPromise = tmFetchCubeAndBackgrounds(gift.GiftName, gift.ModelName);
+        const promises = [themesPromise, similarPromise, colorsPromise, cubeAndBgPromise];
 
-        let bgScorePromise = Promise.resolve(null);
         let countPromise = Promise.resolve(null);
 
         if (currentBgName) {
-            if (_bgScoresCache.has(key)) {
-                bgScorePromise = Promise.resolve(_bgScoresCache.get(key));
-            } else {
-                const bgScoreUrl = `${BASE_URL}/api/MonoCoof/TopBackgroundColorsByNFT`;
-                const bgScoreBody = {
-                    NameGift: gift.GiftName,
-                    NameModel: gift.ModelName
-                };
-                bgScorePromise = fetch(bgScoreUrl, {
-                    method: 'POST',
-                    headers: { 'Authorization': getApiAuthHeader(), 'Content-Type': 'application/json' },
-                    body: JSON.stringify(bgScoreBody)
-                })
-                    .then(r => r.ok ? r.json() : [])
-                    .then(data => {
-                        _bgScoresCache.set(key, data);
-                        return data;
-                    })
-                    .catch(() => []);
-            }
-
             if (_countCache.has(countKey)) {
                 countPromise = Promise.resolve(_countCache.get(countKey));
             } else {
@@ -694,10 +753,11 @@ async function onModelCardClick(gift, cardElement) {
             }
         }
 
-        promises.push(bgScorePromise);
         promises.push(countPromise);
 
-        const [themesData, similarData, colorsText, bgScoreData, countData] = await Promise.all(promises);
+        const [themesData, similarData, colorsText, cubeAndBg, countData] = await Promise.all(promises);
+        const bgScoreData = cubeAndBg.bgScores;
+        const cubes = cubeAndBg.cubes;
 
         let parsedColors = [];
         if (colorsText) {
@@ -757,6 +817,8 @@ async function onModelCardClick(gift, cardElement) {
             themes: themesData,
             similar: similarData,
             colors: parsedColors,
+            cubes: cubes,
+            bgScoreData: bgScoreData,
             bgData: bgDataForDetails
         });
 
@@ -1106,6 +1168,19 @@ async function renderModelDetailView(modelData, preloadedData = null) {
                     </a>
                 </div>
                 
+                ${(preloadedData?.cubes && preloadedData.cubes.length) ? `
+                <div class="info-row" id="tm-colors-accordion-trigger" style="cursor: pointer;">
+                    <span class="info-label">${t('modal_main_colors', 'Основные цвета')}</span>
+                    <div class="info-value link-style" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                        <span>${preloadedData.cubes.length} ${t('modal_colors_count', 'цветов')}</span>
+                        <svg id="tm-colors-arrow" class="nfts-arrow" style="width:16px;height:16px; transition: transform 0.3s;" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M19 9l-7 7-7-7" stroke-width="3"/></svg>
+                    </div>
+                </div>
+                <div id="tm-colors-accordion-content" class="bg-accordion-content hidden">
+                    <div class="palette-scroll-area" id="tm-colors-palette">${tmBuildColorPaletteHtml(preloadedData.cubes)}</div>
+                </div>
+                ` : ''}
+
                 <div class="info-row" id="tm-bg-accordion-trigger" style="cursor: pointer;">
                     <span class="info-label">${t('modal_backdrop', 'Фон')}</span>
                     <div class="info-value link-style" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
@@ -1209,6 +1284,17 @@ async function renderModelDetailView(modelData, preloadedData = null) {
             backBtn.style.visibility = 'hidden';
             backBtn.style.pointerEvents = 'none';
         }
+    }
+
+    // --- Логика Аккордеона "Основные цвета" ---
+    const colorsTrigger = document.getElementById('tm-colors-accordion-trigger');
+    if (colorsTrigger) {
+        const colorsContent = document.getElementById('tm-colors-accordion-content');
+        const colorsArrow = document.getElementById('tm-colors-arrow');
+        colorsTrigger.onclick = () => {
+            colorsContent.classList.toggle('hidden');
+            colorsArrow.style.transform = colorsContent.classList.contains('hidden') ? 'rotate(0deg)' : 'rotate(180deg)';
+        };
     }
 
     // --- Логика Аккордеона Фонов ---
@@ -1755,9 +1841,14 @@ async function openModelDetail(giftName, modelName, bgName = null, onBack = null
         let aggUrl = `${cleanBaseUrl}/api/BaseInfo/GetModelAggregatedInfo/${encodeURIComponent(giftName)}/${encodeURIComponent(modelName)}`;
         if (bgName) aggUrl += `?bgName=${encodeURIComponent(bgName)}`;
 
-        const [aggResponse, similarData] = await Promise.all([
+        // putya: "надо там указывать основные цвета и весы, добавить фоны в palette-scroll-area по
+        // новому алгоритму" — параллельно с GetModelAggregatedInfo (Count/FloorPrice/V2Themes —
+        // это всё ещё оттуда) тянем DebugCube+MatchV4Dedup через общий tmFetchCubeAndBackgrounds;
+        // его bgScores заменяют aggResponse.TopBackgrounds ниже, а cubes — старую позиционную
+        // MainColors-строку (там не было весов вообще).
+        const [aggResponse, similarData, cubeAndBg] = await Promise.all([
             fetch(aggUrl, { headers: { 'Authorization': getApiAuthHeader() } }).then(r => r.ok ? r.json() : null),
-            
+
             // Фоновый запрос на похожие оставляем отдельно, так как он тяжелый
             _similarCache.has(modelKey)
                 ? Promise.resolve(_similarCache.get(modelKey))
@@ -1765,29 +1856,24 @@ async function openModelDetail(giftName, modelName, bgName = null, onBack = null
                     method: 'POST',
                     headers: { 'Authorization': getApiAuthHeader(), 'Content-Type': 'application/json' },
                     body: JSON.stringify({ NameTargetGift: giftName, NameTargetModel: modelName, MonohromeModelsOnly: true })
-                }).then(r => r.ok ? r.json() : null).catch(() => null)
+                }).then(r => r.ok ? r.json() : null).catch(() => null),
+
+            tmFetchCubeAndBackgrounds(giftName, modelName)
         ]);
 
         if (!aggResponse) throw new Error("Aggregated API returned null");
 
         if (!_similarCache.has(modelKey)) _similarCache.set(modelKey, similarData);
 
-        // Парсим цвета для UI
-        let parsedColors = [];
-        if (aggResponse.MainColors) {
-            const cleaned = aggResponse.MainColors.trim().replace(/^['"]|['"]$/g, '');
-            parsedColors = cleaned.split(';').map(item => {
-                const parts = item.trim().split(':');
-                return parts.length === 2 ? { hex: '#' + parts[1] } : null;
-            }).filter(Boolean);
-        }
+        const bgScoreData = cubeAndBg.bgScores;
+        const cubes = cubeAndBg.cubes;
 
         let bgDataForDetails = null;
         if (bgName && GLOBAL_COLORS) {
             const colorObj = GLOBAL_COLORS.find(c => c.name === bgName || c.id === bgName);
             let matchPercent = 0;
-            if (aggResponse.TopBackgrounds) {
-                const exactMatch = aggResponse.TopBackgrounds.find(x => x.Key === bgName || (colorObj && x.Key === colorObj.id));
+            if (bgScoreData) {
+                const exactMatch = bgScoreData.find(x => x.Key === bgName || (colorObj && x.Key === colorObj.id));
                 if (exactMatch) matchPercent = (exactMatch.Value * 100).toFixed(1);
             }
             if (colorObj) bgDataForDetails = { name: colorObj.name, gradient: colorObj.gradient, matchPercent };
@@ -1802,10 +1888,10 @@ async function openModelDetail(giftName, modelName, bgName = null, onBack = null
 
         const phase1Data = {
             bgData: bgDataForDetails,
-            bgScoreData: aggResponse.TopBackgrounds || [],
+            bgScoreData: bgScoreData,
+            cubes: cubes,
             v2Themes: aggResponse.V2Themes || [],
-            similar: similarData,
-            colors: parsedColors
+            similar: similarData
         };
 
         renderModelDetailViewBody(modelData, phase1Data);
@@ -1848,6 +1934,19 @@ function renderModelDetailViewBody(modelData, preloadedData) {
                 </a>
             </div>
             
+            ${(preloadedData?.cubes && preloadedData.cubes.length) ? `
+            <div class="info-row" id="tm-colors-accordion-trigger" style="cursor: pointer;">
+                <span class="info-label">${t('modal_main_colors', 'Основные цвета')}</span>
+                <div class="info-value link-style" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                    <span>${preloadedData.cubes.length} ${t('modal_colors_count', 'цветов')}</span>
+                    <svg id="tm-colors-arrow" class="nfts-arrow" style="width:16px;height:16px; transition: transform 0.3s;" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M19 9l-7 7-7-7" stroke-width="3"/></svg>
+                </div>
+            </div>
+            <div id="tm-colors-accordion-content" class="bg-accordion-content hidden">
+                <div class="palette-scroll-area" id="tm-colors-palette">${tmBuildColorPaletteHtml(preloadedData.cubes)}</div>
+            </div>
+            ` : ''}
+
             <div class="info-row" id="tm-bg-accordion-trigger" style="cursor: pointer;">
                 <span class="info-label">${t('modal_backdrop', 'Фон')}</span>
                 <div class="info-value link-style" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
@@ -1913,6 +2012,16 @@ function renderModelDetailViewBody(modelData, preloadedData) {
             </div>
         </div>
     `;
+
+    const colorsTrigger = document.getElementById('tm-colors-accordion-trigger');
+    if (colorsTrigger) {
+        const colorsContent = document.getElementById('tm-colors-accordion-content');
+        const colorsArrow = document.getElementById('tm-colors-arrow');
+        colorsTrigger.onclick = () => {
+            colorsContent.classList.toggle('hidden');
+            colorsArrow.style.transform = colorsContent.classList.contains('hidden') ? 'rotate(0deg)' : 'rotate(180deg)';
+        };
+    }
 
     const bgTrigger = document.getElementById('tm-bg-accordion-trigger');
     const bgContent = document.getElementById('tm-bg-accordion-content');
@@ -2022,7 +2131,10 @@ function renderModelDetailViewBody(modelData, preloadedData) {
 
     const btnContainer = document.getElementById('tm-similar-btn-container');
     if (preloadedData.similar) {
-        renderSimilarButtonWithData(btnContainer, modelData.GiftName, modelData.ModelName, preloadedData.similar, preloadedData.colors || []);
+        // putya: "основные цвета и весы" — colors (позиционная MainColors-строка) больше не
+        // запрашиваем, cubes из DebugCube даёт то же самое (.hex), только отсортированное по
+        // весу, а не по случайной позиции на фото — берём топ-3 те же, что и раньше.
+        renderSimilarButtonWithData(btnContainer, modelData.GiftName, modelData.ModelName, preloadedData.similar, preloadedData.cubes || []);
     }
 
     // ПРОЯВЛЕНИЕ ИНТЕРФЕЙСА (после того как DOM построен)
