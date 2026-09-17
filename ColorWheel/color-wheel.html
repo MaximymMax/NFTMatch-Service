@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Цветовой круг каталога</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="./color-wheel.css?v=4">
+    <link rel="stylesheet" href="./color-wheel.css?v=5">
     <script src="../config.js"></script>
 </head>
 
@@ -14,7 +14,7 @@
     <main>
         <div class="cw-container">
             <h1 class="cw-title">Цветовой круг каталога</h1>
-            <p class="cw-subtitle">Агрегация по всем моделям: только кластеры с весом выше <span id="cw-threshold">10</span>%, позиция на круге — только по тону (Hue), без учёта яркости.</p>
+            <p class="cw-subtitle">Агрегация по всем моделям: только кластеры с весом выше <span id="cw-threshold">10</span>%, позиция на круге — только по тону (Hue), без учёта яркости. Клик по сектору — список подарков.</p>
 
             <div class="cw-filter-row">
                 <span class="cw-filter-label">Коллекции:</span>
@@ -35,16 +35,20 @@
             <div class="cw-charts-row">
                 <div id="cw-wheel-view" class="cw-view">
                     <h2 class="cw-view-title">Круг</h2>
-                    <svg id="cw-svg" viewBox="-220 -220 440 440"></svg>
-                    <div id="cw-tooltip" class="cw-tooltip hidden"></div>
+                    <div class="cw-diagram-box">
+                        <svg id="cw-svg" viewBox="-220 -220 440 440"></svg>
+                        <div id="cw-tooltip" class="cw-tooltip hidden"></div>
+                    </div>
                 </div>
 
                 <div id="cw-cube-view" class="cw-view">
                     <h2 class="cw-view-title">3D-куб</h2>
-                    <div class="cube-scene" id="cube-scene">
-                        <div class="cube-inner" id="cube-inner"></div>
+                    <div class="cw-diagram-box">
+                        <div class="cube-scene" id="cube-scene">
+                            <div class="cube-inner" id="cube-inner"></div>
+                        </div>
                     </div>
-                    <p class="cw-hint">Перетаскивай мышью, чтобы повернуть. Вверху — светлые оттенки, внизу — тёмные; чем дальше от оси — тем насыщеннее цвет.</p>
+                    <p class="cw-hint">Перетаскивай мышью, чтобы повернуть. Оси: R / G / B. Светлый угол куба — светлые оттенки, тёмный угол — тёмные.</p>
                 </div>
             </div>
 
@@ -54,7 +58,17 @@
         </div>
     </main>
 
-    <script src="./color-wheel.js?v=4"></script>
+    <div id="cw-modal-overlay" class="cw-modal-overlay hidden">
+        <div class="cw-modal">
+            <div class="cw-modal-header">
+                <span id="cw-modal-title">—</span>
+                <button id="cw-modal-close" class="cw-modal-close">&times;</button>
+            </div>
+            <div id="cw-modal-body" class="cw-modal-body"></div>
+        </div>
+    </div>
+
+    <script src="./color-wheel.js?v=5"></script>
 </body>
 
 </html>
