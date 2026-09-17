@@ -1,6 +1,7 @@
 (function () {
     const API_BASE = (window.CONFIG && window.CONFIG.SERVER_BASE_URL || 'https://nftmatch.pro') + '/api/MonoCoof';
     const API_PHOTO_URL = 'https://cdn.changes.tg/gifts/models';
+    const API_GIFT_ORIGINALS_URL = 'https://cdn.changes.tg/gifts/originals';
     const modelImageUrl = (giftName, modelName) => `${API_PHOTO_URL}/${encodeURIComponent(giftName)}/png/${encodeURIComponent(modelName)}.png`;
 
     const svg = document.getElementById('cw-svg');
@@ -9,12 +10,12 @@
     const chartsRow = document.querySelector('.cw-charts-row');
     const tooltip = document.getElementById('cw-tooltip');
     const thresholdEl = document.getElementById('cw-threshold');
-    const legendEl = document.getElementById('cw-legend');
     const filterRow = document.querySelector('.cw-filter-row');
 
     const drilldown = document.getElementById('cw-drilldown');
     const drilldownTitle = document.getElementById('cw-drilldown-title');
     const drilldownBody = document.getElementById('cw-drilldown-body');
+    const drilldownBackgrounds = document.getElementById('cw-drilldown-backgrounds');
     const drilldownClose = document.getElementById('cw-drilldown-close');
 
     const collectionsHeader = document.getElementById('collections-header');
@@ -31,6 +32,10 @@
     // тот же порядок, что и HueWheel с бэкенда.
     const HUE_NAMES = ['Красный', 'Оранжевый', 'Жёлтый', 'Салатовый', 'Зелёный', 'Изумрудный',
         'Голубой', 'Синий', 'Индиго', 'Фиолетовый', 'Пурпурный', 'Розовый'];
+
+    function escapeHtml(s) {
+        return (s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
 
     function showError(msg) {
         errorEl.textContent = msg;
@@ -52,7 +57,11 @@
         return `M 0 0 L ${x1.toFixed(2)} ${y1.toFixed(2)} A ${outerR.toFixed(2)} ${outerR.toFixed(2)} 0 ${largeArc} 1 ${x2.toFixed(2)} ${y2.toFixed(2)} Z`;
     }
 
+    let currentHueWheel = [];
+    let openBucketIndex = null;
+
     function renderWheel(hueWheel) {
+        currentHueWheel = hueWheel;
         svg.innerHTML = '';
         const maxShare = Math.max(1, ...hueWheel.map(h => h.SharePercent));
         const minR = 30, maxR = 200;
@@ -70,10 +79,10 @@
             path.addEventListener('mouseleave', hideTooltip);
             // putya: "при нажатии на цвет под блоком с диаграммами появляется блок с конкретно
             // моделями которые наиболее подходят под данный цвет" — клик подгружает список
-            // (Gift, Model) для этого сектора прямо на странице, под диаграммами.
+            // (Gift, Model) + подходящие фоны для этого сектора прямо на странице.
             path.addEventListener('click', () => {
-                const title = `${HUE_NAMES[i]} (${Math.round(bucket.HueStart)}°–${Math.round(bucket.HueEnd)}°)`;
-                showBucketDrilldown(title, hueRangeQuery(bucket));
+                openBucketIndex = i;
+                refreshDrilldown();
             });
             svg.appendChild(path);
         });
@@ -85,33 +94,6 @@
         svg.appendChild(baseCircle);
     }
 
-    // putya: "модели которые выводятся не учитывают яркость" — список по клику на сектор должен
-    // соответствовать тому, что сейчас реально показывает круг: если ползунок светлоты активен,
-    // список фильтруется по ТОМУ ЖЕ диапазону L, а не по всему каталогу.
-    function hueRangeQuery(bucket) {
-        const q = { hueStart: bucket.HueStart, hueEnd: bucket.HueEnd };
-        if (lightnessRangeActive) { q.lStart = lightnessRange[0]; q.lEnd = lightnessRange[1]; }
-        return q;
-    }
-
-    function renderLegend(hueWheel) {
-        legendEl.innerHTML = hueWheel.map((b, i) => `
-            <div class="cw-legend-item" data-bucket-index="${i}" title="Показать подходящие подарки">
-                <span class="cw-legend-swatch" style="background:${b.Hex}"></span>
-                <span class="cw-legend-name">${HUE_NAMES[i]}</span>
-                <span class="cw-legend-pct">${b.SharePercent}%</span>
-            </div>
-        `).join('');
-        legendEl.querySelectorAll('.cw-legend-item').forEach(el => {
-            el.addEventListener('click', () => {
-                const i = parseInt(el.dataset.bucketIndex, 10);
-                const b = hueWheel[i];
-                const title = `${HUE_NAMES[i]} (${Math.round(b.HueStart)}°–${Math.round(b.HueEnd)}°)`;
-                showBucketDrilldown(title, hueRangeQuery(b));
-            });
-        });
-    }
-
     function showHueTooltip(e, bucket, i) {
         tooltip.innerHTML = `<b>${HUE_NAMES[i]} (${Math.round(bucket.HueStart)}°–${Math.round(bucket.HueEnd)}°)</b>` +
             `${bucket.SharePercent}% каталога · ${bucket.Count} кластеров`;
@@ -121,22 +103,47 @@
     }
     function hideTooltip() { tooltip.classList.add('hidden'); }
 
-    // --- putya: "не в окне отдельном, а блок внизу" — список подходящих подарков рендерится
-    // прямо на странице, в блоке под диаграммами (см. #cw-drilldown в HTML), не всплывающим окном.
-    // range — { hueStart, hueEnd[, lStart, lEnd] } от hueRangeQuery(), см. GetGlobalColorWheelBucketModels
-    // на бэке (комбинация hue+L поддерживается родно).
-    async function showBucketDrilldown(title, range) {
+    // --- putya: "не в окне отдельном, а блок внизу" — список подходящих подарков + фонов рендерится
+    // прямо на странице, в блоке под диаграммой. putya: "при изменении светлости, менялись бы сразу
+    // же и модели на этот блок, но уже под эту светлость этого же блока" — refreshDrilldown() не
+    // принимает параметров, всегда читает openBucketIndex/currentHueWheel заново, поэтому и клик по
+    // сектору, и движение ползунка (через loadCharts) дают один и тот же путь обновления.
+    async function refreshDrilldown() {
+        if (openBucketIndex === null) return;
+        const bucket = currentHueWheel[openBucketIndex];
+        if (!bucket) return;
+        const i = openBucketIndex;
+
+        const title = `${HUE_NAMES[i]} (${Math.round(bucket.HueStart)}°–${Math.round(bucket.HueEnd)}°)`;
         drilldownTitle.textContent = title;
         drilldownBody.innerHTML = '<div class="cw-drilldown-note">Загрузка…</div>';
         drilldown.classList.remove('hidden');
         drilldown.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
+        const range = { hueStart: bucket.HueStart, hueEnd: bucket.HueEnd };
+        if (lightnessRangeActive) { range.lStart = lightnessRange[0]; range.lEnd = lightnessRange[1]; }
+
         try {
             const params = new URLSearchParams(range);
             if (selectedCollections.length > 0) params.set('collections', selectedCollections.join(','));
-            const resp = await fetch(`${API_BASE}/GetGlobalColorWheelBucketModels?${params}`);
-            if (!resp.ok) throw new Error('HTTP ' + resp.status);
-            const data = await resp.json();
+
+            const [modelsResp, bgResp] = await Promise.all([
+                fetch(`${API_BASE}/GetGlobalColorWheelBucketModels?${params}`),
+                fetch(`${API_BASE}/GetGlobalColorWheelMatchingBackgrounds?hex=${encodeURIComponent(bucket.Hex)}`)
+            ]);
+
+            // putya: "в этом блоке который выбран так же укажи подходящие фоны под этот цвет" —
+            // не критично для основного списка, поэтому падение этого запроса не должно ломать
+            // остальное.
+            if (bgResp.ok) {
+                const bgData = await bgResp.json();
+                renderMatchingBackgrounds(bgData.Backgrounds);
+            } else {
+                drilldownBackgrounds.innerHTML = '';
+            }
+
+            if (!modelsResp.ok) throw new Error('HTTP ' + modelsResp.status);
+            const data = await modelsResp.json();
 
             if (!data.Items.length) {
                 drilldownBody.innerHTML = '<div class="cw-drilldown-note">Ничего не найдено.</div>';
@@ -158,26 +165,30 @@
         }
     }
 
-    function escapeHtml(s) {
-        return (s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    function renderMatchingBackgrounds(backgrounds) {
+        if (!backgrounds || !backgrounds.length) { drilldownBackgrounds.innerHTML = ''; return; }
+        drilldownBackgrounds.innerHTML = '<span class="cw-bg-label">Подходящие фоны:</span>' +
+            backgrounds.map(bg => `
+                <span class="cw-bg-chip" title="${escapeHtml(bg.Hex)}">
+                    <span class="cw-bg-chip-swatch" style="background:${bg.Hex}"></span>${escapeHtml(bg.Name)}
+                </span>
+            `).join('');
     }
 
-    drilldownClose.addEventListener('click', () => drilldown.classList.add('hidden'));
+    drilldownClose.addEventListener('click', () => {
+        openBucketIndex = null;
+        drilldown.classList.add('hidden');
+    });
 
-    // --- putya: "лучше сделай ползунок яркости при изменении которого меняется яркость цветов на
-    // диаграмме и соответственно распределение ее / если в 0 выкрутить, будет черный, если в
-    // максимум выкрутить, только белый" — по умолчанию срез не активен (круг показывает весь
-    // каталог, как раньше); любое движение ползунка включает срез шириной ±12 вокруг выбранной
-    // точки, кнопка × сбрасывает обратно.
+    // --- putya: "0 это просто черный, а 100 просто белый... даже если выкрутить на максимум" —
+    // ширина среза сужается к нулю у самых краёв (у 0 и 100 практически одна точка = почти чисто
+    // чёрный/белый), а к середине расширяется до ±12, чтобы там было что исследовать.
     let lightnessRangeActive = false;
     let lightnessRange = null;
 
     function lightnessBand(v) {
-        const half = 12;
-        let lo = v - half, hi = v + half;
-        if (lo < 0) { hi -= lo; lo = 0; }
-        if (hi > 100) { lo -= (hi - 100); hi = 100; }
-        return [Math.max(0, lo), Math.min(100, hi)];
+        const half = Math.max(1, Math.min(v, 100 - v, 12));
+        return [Math.max(0, v - half), Math.min(100, v + half)];
     }
 
     function updateLightnessSliderLabel() {
@@ -204,8 +215,22 @@
 
     // --- putya: "список выбранный коллекций... в таком же стиле сделай выпадающий список как у
     // меня все остальное" — тот же multi-select (клик по "Все" сбрасывает выбор, клик по пункту
-    // тогглит его в массиве), что и на background-finder.html, только текстовый (без картинок).
+    // тогглит его в массиве), что и на background-finder.html. putya: "рисуй маленькое превью
+    // коллекции, базовое" — иконка подарка с того же CDN, что и everywhere на сайте, по
+    // id-to-name.json (имя → id), без отдельного бэкенд-запроса.
     let selectedCollections = [];
+    let giftNameToId = {};
+
+    async function loadGiftIdMap() {
+        try {
+            const resp = await fetch('https://cdn.changes.tg/gifts/id-to-name.json');
+            if (!resp.ok) return;
+            const idToName = await resp.json();
+            Object.entries(idToName).forEach(([id, name]) => {
+                if (name) giftNameToId[name.toLowerCase().trim()] = id;
+            });
+        } catch (err) { /* превью — декоративная деталь, без него тоже нормально работает */ }
+    }
 
     function updateCollectionsHeaderText() {
         if (selectedCollections.length === 0) {
@@ -236,7 +261,11 @@
             const opt = document.createElement('div');
             opt.className = 'list-option';
             opt.dataset.value = name;
-            opt.textContent = name;
+            const giftId = giftNameToId[name.toLowerCase().trim()];
+            const imgHtml = giftId
+                ? `<img class="list-option-preview" src="${API_GIFT_ORIGINALS_URL}/${giftId}/Original.png" alt="" loading="lazy" onerror="this.style.visibility='hidden'">`
+                : '';
+            opt.innerHTML = `${imgHtml}<span>${escapeHtml(name)}</span>`;
             collectionsOptions.appendChild(opt);
         });
     }
@@ -285,16 +314,15 @@
         }
     });
 
-    async function loadCollectionsList() {
+    async function loadCollectionNames() {
         try {
             const resp = await fetch(`${API_BASE}/GetGlobalColorWheelCollections`);
-            if (!resp.ok) return;
-            const names = await resp.json();
-            populateCollections(names);
-        } catch (err) { /* фильтр — необязательная надстройка, тихо пропускаем при ошибке */ }
+            if (!resp.ok) return [];
+            return await resp.json();
+        } catch (err) { return []; }
     }
 
-    // --- Загрузка и отрисовка диаграмм (переиспользуется при смене фильтра) ---
+    // --- Загрузка и отрисовка диаграммы (переиспользуется при смене фильтра/ползунка) ---
     async function loadCharts() {
         try {
             const params = new URLSearchParams();
@@ -320,12 +348,12 @@
             `;
 
             renderWheel(data.HueWheel);
-            renderLegend(data.HueWheel);
+            if (openBucketIndex !== null) refreshDrilldown();
         } catch (err) {
             showError('Не удалось загрузить: ' + err.message);
         }
     }
 
-    loadCollectionsList();
+    Promise.all([loadGiftIdMap(), loadCollectionNames()]).then(([, names]) => populateCollections(names));
     loadCharts();
 })();

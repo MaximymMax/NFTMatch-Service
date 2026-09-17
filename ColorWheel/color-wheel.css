@@ -22,24 +22,25 @@ body {
 
 main { display: flex; justify-content: center; padding: 24px 16px 60px; }
 
+/* putya: "сделай короче покрасивее" — теперь одна диаграмма, контейнер уже, ритм плотнее. */
 .cw-container {
     width: 100%;
-    max-width: 980px;
+    max-width: 420px;
     background: var(--surface-color);
     border-radius: var(--radius);
     box-shadow: var(--card-shadow);
-    padding: 24px;
+    padding: 22px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 14px;
+    gap: 12px;
 }
 
-.cw-title { font-size: 22px; font-weight: 800; text-align: center; }
-.cw-subtitle { font-size: 13px; color: var(--text-muted); text-align: center; max-width: 620px; line-height: 1.5; }
+.cw-title { font-size: 20px; font-weight: 800; text-align: center; }
+.cw-subtitle { font-size: 12.5px; color: var(--text-muted); text-align: center; line-height: 1.5; }
 
 /* --- Фильтр коллекций: тот же multi-select dropdown, что и на background-finder.html --- */
-.cw-filter-row { display: flex; align-items: center; gap: 10px; width: 100%; max-width: 360px; }
+.cw-filter-row { display: flex; align-items: center; gap: 10px; width: 100%; }
 .cw-filter-label { font-size: 13px; color: var(--text-muted); flex: 0 0 auto; }
 
 .custom-dropdown-container { position: relative; flex: 1 1 auto; }
@@ -98,8 +99,9 @@ main { display: flex; justify-content: center; padding: 24px 16px 60px; }
 .dropdown-list::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
 
 .list-option {
-    padding: 8px 12px; cursor: pointer; border-radius: 7px;
+    padding: 6px 10px; cursor: pointer; border-radius: 7px;
     font-size: 13px; color: var(--text-secondary); transition: background-color .15s;
+    display: flex; align-items: center; gap: 8px;
 }
 .list-option:hover { background-color: var(--surface-elevated); }
 .list-option.selected {
@@ -108,21 +110,23 @@ main { display: flex; justify-content: center; padding: 24px 16px 60px; }
     color: var(--text-primary); font-weight: 600;
 }
 .list-option.hidden-by-search { display: none; }
+/* putya: "в выпадающем списке рисуй маленькое превью коллекции, базовое" */
+.list-option-preview {
+    width: 22px; height: 22px; border-radius: 5px; object-fit: contain;
+    background: rgba(255,255,255,.06); flex: 0 0 auto;
+}
 
 .cw-stats {
-    display: flex; flex-wrap: wrap; justify-content: center; gap: 10px 22px;
-    font-size: 12px; color: var(--text-muted);
+    display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 16px;
+    font-size: 11.5px; color: var(--text-muted);
 }
 .cw-stats b { color: var(--text-primary); font-weight: 700; }
 
-.cw-charts-row {
-    width: 100%; display: flex; justify-content: center;
-}
+.cw-charts-row { width: 100%; display: flex; justify-content: center; }
 
 .cw-view {
-    width: 100%; max-width: 380px;
+    width: 100%;
     display: flex; flex-direction: column; align-items: center; gap: 8px;
-    background: rgba(255,255,255,.02); border-radius: 12px; padding: 14px;
 }
 
 .cw-diagram-box {
@@ -135,19 +139,6 @@ main { display: flex; justify-content: center; padding: 24px 16px 60px; }
 .cw-sector { cursor: pointer; stroke: rgba(255,255,255,.08); stroke-width: 1; transition: opacity .15s; }
 .cw-sector:hover { opacity: .82; }
 
-.cw-legend {
-    width: 100%; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 6px 14px; padding-top: 6px; border-top: 1px solid rgba(255,255,255,.08);
-}
-.cw-legend-item {
-    display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--text-secondary);
-    cursor: pointer; border-radius: 6px; padding: 3px 4px; margin: -3px -4px; transition: background-color .15s;
-}
-.cw-legend-item:hover { background-color: var(--surface-elevated); }
-.cw-legend-swatch { width: 12px; height: 12px; border-radius: 3px; flex: 0 0 auto; box-shadow: 0 0 4px rgba(0,0,0,.3); }
-.cw-legend-name { flex: 1 1 auto; }
-.cw-legend-pct { color: var(--text-primary); font-weight: 700; }
-
 .cw-tooltip {
     position: fixed; pointer-events: none; background: rgba(10, 16, 32, .95);
     border: 1px solid rgba(255,255,255,.12); border-radius: 8px; padding: 8px 12px;
@@ -156,12 +147,9 @@ main { display: flex; justify-content: center; padding: 24px 16px 60px; }
 .cw-tooltip.hidden { display: none; }
 .cw-tooltip b { display: block; margin-bottom: 2px; }
 
-.cw-hint { font-size: 11.5px; color: var(--text-muted); text-align: center; }
-
-/* putya: "лучше сделай ползунок яркости... если в 0 выкрутить, будет черный, если в максимум —
-   только белый" — срез по светлоте для круга/легенды. */
+/* putya: "0 это просто черный, а 100 просто белый" — ползунок среза по светлоте. */
 .cw-slider-row {
-    width: 100%; max-width: 300px; display: flex; align-items: center; gap: 8px; margin-top: 4px;
+    width: 100%; max-width: 300px; display: flex; align-items: center; gap: 8px;
 }
 .cw-slider-label { font-size: 11.5px; color: var(--text-muted); flex: 0 0 auto; }
 .cw-slider {
@@ -208,9 +196,22 @@ main { display: flex; justify-content: center; padding: 24px 16px 60px; }
     line-height: 1; cursor: pointer; padding: 0 4px;
 }
 .cw-drilldown-close:hover { color: var(--text-primary); }
+
+/* putya: "в этом блоке который выбран так же укажи подходящие фоны под этот цвет" */
+.cw-drilldown-backgrounds {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
+    padding: 10px 14px; border-bottom: 1px solid rgba(255,255,255,.08);
+}
+.cw-drilldown-backgrounds:empty { display: none; }
+.cw-bg-label { font-size: 11px; color: var(--text-muted); margin-right: 2px; }
+.cw-bg-chip {
+    display: flex; align-items: center; gap: 5px; padding: 3px 8px 3px 4px;
+    background: var(--surface-elevated); border-radius: 20px; font-size: 11.5px; color: var(--text-secondary);
+}
+.cw-bg-chip-swatch { width: 14px; height: 14px; border-radius: 50%; flex: 0 0 auto; box-shadow: 0 0 3px rgba(0,0,0,.4); }
+
 .cw-drilldown-body {
-    max-height: 460px; overflow-y: auto; padding: 8px;
-    display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 2px;
+    max-height: 420px; overflow-y: auto; padding: 8px;
 }
 
 .cw-model-row {
@@ -219,16 +220,15 @@ main { display: flex; justify-content: center; padding: 24px 16px 60px; }
 }
 .cw-model-row:hover { background: var(--surface-elevated); }
 .cw-model-photo {
-    width: 40px; height: 40px; flex: 0 0 auto; border-radius: 8px; object-fit: contain;
+    width: 36px; height: 36px; flex: 0 0 auto; border-radius: 8px; object-fit: contain;
     background: rgba(255,255,255,.06);
 }
 .cw-model-swatch { width: 12px; height: 12px; border-radius: 4px; flex: 0 0 auto; box-shadow: 0 0 4px rgba(0,0,0,.3); }
 .cw-model-name { flex: 1 1 auto; color: var(--text-primary); min-width: 0; }
 .cw-model-name .gift { color: var(--text-muted); font-weight: 400; }
 .cw-model-weight { color: var(--text-muted); font-weight: 600; font-size: 12px; flex: 0 0 auto; }
-.cw-drilldown-note { grid-column: 1 / -1; font-size: 12px; color: var(--text-muted); padding: 8px 10px; }
+.cw-drilldown-note { font-size: 12px; color: var(--text-muted); padding: 8px 10px; }
 
 @media (max-width: 480px) {
     .cw-container { padding: 16px; }
-    .cw-filter-row { max-width: 100%; }
 }

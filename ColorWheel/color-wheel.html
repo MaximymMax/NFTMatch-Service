@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Цветовой круг каталога</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="./color-wheel.css?v=10">
+    <link rel="stylesheet" href="./color-wheel.css?v=11">
     <script src="../config.js"></script>
 </head>
 
@@ -14,21 +14,7 @@
     <main>
         <div class="cw-container">
             <h1 class="cw-title">Цветовой круг каталога</h1>
-            <p class="cw-subtitle">Агрегация по всем моделям: только кластеры с весом выше <span id="cw-threshold">10</span>%. Круг — по тону (Hue); ползунок ниже — срез по светлоте (0 — чёрный, 100 — белый). Клик по сектору — список подарков.</p>
-
-            <div class="cw-filter-row">
-                <span class="cw-filter-label">Коллекции:</span>
-                <div class="custom-dropdown-container multi-select" id="collections-container">
-                    <div class="dropdown-header with-search" id="collections-header">
-                        <input type="text" id="collections-search" class="dropdown-search" placeholder="Поиск..." autocomplete="off">
-                        <span id="collections-value" class="selected-value-placeholder">Все коллекции</span>
-                        <div class="arrow"></div>
-                    </div>
-                    <div class="dropdown-list hidden" id="collections-list">
-                        <div id="collections-options"></div>
-                    </div>
-                </div>
-            </div>
+            <p class="cw-subtitle">Только кластеры с весом выше <span id="cw-threshold">10</span>%. Клик по сектору — список подарков и подходящих фонов.</p>
 
             <div id="cw-stats" class="cw-stats"></div>
 
@@ -44,7 +30,20 @@
                         <span id="lightness-slider-value" class="cw-slider-value">весь диапазон</span>
                         <button id="lightness-reset" class="cw-slider-reset hidden" title="Сбросить срез">&times;</button>
                     </div>
-                    <p class="cw-hint">0 — только тёмные (чёрный), 100 — только светлые (белый). Круг, легенда и список подарков пересчитываются под срез.</p>
+                </div>
+            </div>
+
+            <div class="cw-filter-row">
+                <span class="cw-filter-label">Коллекции:</span>
+                <div class="custom-dropdown-container multi-select" id="collections-container">
+                    <div class="dropdown-header with-search" id="collections-header">
+                        <input type="text" id="collections-search" class="dropdown-search" placeholder="Поиск..." autocomplete="off">
+                        <span id="collections-value" class="selected-value-placeholder">Все коллекции</span>
+                        <div class="arrow"></div>
+                    </div>
+                    <div class="dropdown-list hidden" id="collections-list">
+                        <div id="collections-options"></div>
+                    </div>
                 </div>
             </div>
 
@@ -53,16 +52,15 @@
                     <span id="cw-drilldown-title">—</span>
                     <button id="cw-drilldown-close" class="cw-drilldown-close">&times;</button>
                 </div>
+                <div id="cw-drilldown-backgrounds" class="cw-drilldown-backgrounds"></div>
                 <div id="cw-drilldown-body" class="cw-drilldown-body"></div>
             </div>
-
-            <div id="cw-legend" class="cw-legend"></div>
 
             <div id="cw-error" class="cw-error hidden"></div>
         </div>
     </main>
 
-    <script src="./color-wheel.js?v=12"></script>
+    <script src="./color-wheel.js?v=13"></script>
 </body>
 
 </html>
