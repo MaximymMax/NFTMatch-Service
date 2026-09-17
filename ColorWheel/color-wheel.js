@@ -1,4 +1,5 @@
 (function () {
+    // retry-коммит: предыдущий пуш (3ac0c34) не доехал до прод-деплоя, перезапускаем пайплайн
     const API_BASE = (window.CONFIG && window.CONFIG.SERVER_BASE_URL || 'https://nftmatch.pro') + '/api/MonoCoof';
     const API_PHOTO_URL = 'https://cdn.changes.tg/gifts/models';
     const API_GIFT_ORIGINALS_URL = 'https://cdn.changes.tg/gifts/originals';
