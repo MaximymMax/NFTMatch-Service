@@ -1,35 +1,20 @@
-* { margin: 0; padding: 0; box-sizing: border-box; }
-
+/* putya: "добавь все что есть на основной странице" — общая шапка/раскладка/переменные (:root,
+   body, main, .main-container, карточки функций, info-cards, footer) теперь берутся из
+   ../styles.css, подключённого в color-wheel.html. Здесь остаются только переопределения, которых
+   там нет, и стили, специфичные для самого круга. */
 :root {
-    --bg-color: #0a1020;
-    --surface-color: #16213a;
-    --surface-elevated: #1e2944;
-    --text-primary: #f1f5fa;
-    --text-secondary: #d8d8d8;
-    --text-muted: #6b7fa7;
+    --border-color: rgba(255, 255, 255, .14); /* в styles.css --border-color: #fff — слишком ярко для рамок дропдауна */
     --accent: #2563eb;
-    --border-color: rgba(255, 255, 255, .14);
-    --card-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.18);
-    --radius: 0.8rem;
 }
 
-body {
-    font-family: 'Inter', sans-serif;
-    background: linear-gradient(180deg, #1a237e 0%, #0a1020 100%);
-    color: var(--text-primary);
-    min-height: 100vh;
-}
-
-main { display: flex; justify-content: center; padding: 24px 16px 60px; }
-
-/* putya: "сделай короче покрасивее" — теперь одна диаграмма, контейнер уже, ритм плотнее. */
+/* putya: "Основным будет вот эта диаграма... сделай красиво" — карточка круга чуть светлее
+   основного фона main-container (surface-elevated, как у info-card), чтобы выделяться как главный
+   блок страницы, а не сливаться с фоном. */
 .cw-container {
     width: 100%;
-    max-width: 420px;
-    background: var(--surface-color);
-    border-radius: var(--radius);
-    box-shadow: var(--card-shadow);
-    padding: 22px;
+    background: var(--surface-elevated);
+    border-radius: 16px;
+    padding: 20px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -37,7 +22,7 @@ main { display: flex; justify-content: center; padding: 24px 16px 60px; }
 }
 
 .cw-title { font-size: 20px; font-weight: 800; text-align: center; }
-.cw-subtitle { font-size: 12.5px; color: var(--text-muted); text-align: center; line-height: 1.5; }
+.cw-subtitle { font-size: 12.5px; color: var(--text-muted); text-align: center; line-height: 1.5; max-width: 560px; }
 
 /* --- Фильтр коллекций: тот же multi-select dropdown, что и на background-finder.html --- */
 .cw-filter-row { display: flex; align-items: center; gap: 10px; width: 100%; }
@@ -130,7 +115,7 @@ main { display: flex; justify-content: center; padding: 24px 16px 60px; }
 }
 
 .cw-diagram-box {
-    width: 100%; max-width: 300px; aspect-ratio: 1 / 1;
+    width: 100%; max-width: 380px; aspect-ratio: 1 / 1;
     display: flex; align-items: center; justify-content: center; position: relative;
 }
 
@@ -155,7 +140,7 @@ main { display: flex; justify-content: center; padding: 24px 16px 60px; }
 
 /* putya: "0 это просто черный, а 100 просто белый" — ползунок среза по светлоте. */
 .cw-slider-row {
-    width: 100%; max-width: 300px; display: flex; align-items: center; gap: 8px;
+    width: 100%; max-width: 380px; display: flex; align-items: center; gap: 8px;
 }
 .cw-slider-label { font-size: 11.5px; color: var(--text-muted); flex: 0 0 auto; }
 .cw-slider {
