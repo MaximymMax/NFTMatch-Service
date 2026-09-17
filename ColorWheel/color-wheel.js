@@ -1,5 +1,4 @@
 (function () {
-    // retry-коммит: предыдущий пуш (3ac0c34) не доехал до прод-деплоя, перезапускаем пайплайн
     const API_BASE = (window.CONFIG && window.CONFIG.SERVER_BASE_URL || 'https://nftmatch.pro') + '/api/MonoCoof';
     const API_PHOTO_URL = 'https://cdn.changes.tg/gifts/models';
     const API_GIFT_ORIGINALS_URL = 'https://cdn.changes.tg/gifts/originals';
@@ -498,6 +497,18 @@
     const addColorFilterBtn = document.getElementById('add-color-filter-btn');
     const colorSearchBtn = document.getElementById('color-search-btn');
     const colorSearchResults = document.getElementById('color-search-results');
+    const excludeOffRecipeCheckbox = document.getElementById('exclude-off-recipe');
+    const excludeOffRecipeLabel = document.getElementById('exclude-off-recipe-label');
+
+    // putya: "должна быть возможность как и на тестовом сайте исключить далекие от заданных
+    // цветов" — чекбокс имеет смысл только при 2+ цветах (при одном модель и так ищется просто по
+    // близости, без понятия "посторонний цвет").
+    function updateExcludeToggleState() {
+        const rowCount = colorFiltersList.querySelectorAll('.cw-color-filter-row').length;
+        const enabled = rowCount > 1;
+        excludeOffRecipeLabel.classList.toggle('disabled', !enabled);
+        excludeOffRecipeCheckbox.disabled = !enabled;
+    }
 
     function randomHex() {
         const h = Math.floor(Math.random() * 360), s = 70, l = 55;
@@ -522,6 +533,7 @@
             <button type="button" class="cw-remove-filter-btn" title="Убрать">&times;</button>
         `;
         colorFiltersList.appendChild(row);
+        updateExcludeToggleState();
     }
     addColorFilterBtn.addEventListener('click', addColorFilterRow);
 
@@ -538,25 +550,27 @@
     });
     colorFiltersList.addEventListener('click', (e) => {
         const btn = e.target.closest('.cw-remove-filter-btn');
-        if (btn) btn.closest('.cw-color-filter-row').remove();
+        if (btn) { btn.closest('.cw-color-filter-row').remove(); updateExcludeToggleState(); }
     });
 
     // putya: "сделай такие же карточки моделей как у меня везде... сделай чтобы их можно было
-    // открывать" — те же классы карточки, что на background-finder.html; клик ведёт на "Похожие"
-    // с уже подставленными gift/model (там уже есть весь функционал сравнения и деталей).
+    // открывать, ... надо чтобы модалка открывалась, а не перекидывалось" — те же классы карточки,
+    // что на background-finder.html, но клик открывает лёгкую модалку тут же (см. openModelModal),
+    // а не уводит со страницы; переход на "Похожие" остался внутри модалки как доп. ссылка.
+    let lastSearchResults = [];
     function renderColorSearchCards(items, isMulti) {
+        lastSearchResults = items;
         if (!items.length) {
             colorSearchResults.innerHTML = '<div class="cw-drilldown-note">Ничего не найдено.</div>';
             return;
         }
-        colorSearchResults.innerHTML = items.map(m => {
+        colorSearchResults.innerHTML = items.map((m, i) => {
             const swatches = isMulti
                 ? `<div class="multi-swatches">${m.MatchedColors.map(mc => `<span class="multi-swatch" style="background:${mc.Hex}" title="${mc.Hex} · ${mc.Weight}%"></span>`).join('')}</div>`
                 : '';
             const badge = isMulti ? `${m.Score}%` : `${m.Weight}%`;
             return `
-                <a class="result-card-bg" target="_blank"
-                   href="../nft-page/index.html?giftName=${encodeURIComponent(m.GiftName)}&modelName=${encodeURIComponent(m.ModelName)}">
+                <div class="result-card-bg" data-idx="${i}">
                     <div class="image-container">
                         <img class="model-image" src="${modelImageUrl(m.GiftName, m.ModelName)}" alt=""
                              loading="lazy" onerror="this.style.visibility='hidden'">
@@ -569,10 +583,14 @@
                         ${swatches}
                         <div class="info-badges"><div class="badge-percent">${badge}</div></div>
                     </div>
-                </a>
+                </div>
             `;
         }).join('');
     }
+    colorSearchResults.addEventListener('click', (e) => {
+        const card = e.target.closest('.result-card-bg');
+        if (card) openModelModal(lastSearchResults[Number(card.dataset.idx)]);
+    });
 
     async function runColorSearch() {
         const rows = [...colorFiltersList.querySelectorAll('.cw-color-filter-row')];
@@ -591,7 +609,9 @@
                     Hex: row.querySelector('.filter-color-picker').value,
                     MinPercent: parseFloat(row.querySelector('.filter-color-pct').value) || 10
                 }));
-                const resp = await fetch(`${API_BASE}/GetGlobalColorWheelMultiColorModels`, {
+                const params = new URLSearchParams();
+                if (excludeOffRecipeCheckbox.checked) params.set('excludeOffRecipeColors', 'true');
+                const resp = await fetch(`${API_BASE}/GetGlobalColorWheelMultiColorModels?${params}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(filters)
@@ -605,6 +625,47 @@
         }
     }
     colorSearchBtn.addEventListener('click', runColorSearch);
+    updateExcludeToggleState();
+
+    // --- putya: "надо чтобы модалка открывалась" — лёгкая модалка с фото/свотчами/подходящими
+    // фонами (переиспользует GetGlobalColorWheelMatchingBackgrounds), плюс ссылка на полную
+    // страницу "Похожие" для тех, кому нужно сравнение/детали.
+    const modelModal = document.getElementById('cw-model-modal');
+    const modalTitle = document.getElementById('cw-modal-title');
+    const modalPhoto = document.getElementById('cw-modal-photo');
+    const modalSwatches = document.getElementById('cw-modal-swatches');
+    const modalBackgrounds = document.getElementById('cw-modal-backgrounds');
+    const modalOpenFull = document.getElementById('cw-modal-open-full');
+    const modalClose = document.getElementById('cw-modal-close');
+
+    async function openModelModal(item) {
+        if (!item) return;
+        modalTitle.textContent = `${item.GiftName} — ${item.ModelName}`;
+        modalPhoto.src = modelImageUrl(item.GiftName, item.ModelName);
+        const hexes = item.MatchedColors ? item.MatchedColors.map(mc => mc.Hex) : [item.Hex];
+        modalSwatches.innerHTML = hexes.map(h => `<span class="multi-swatch" style="background:${h}" title="${h}"></span>`).join('');
+        modalOpenFull.href = `../nft-page/index.html?giftName=${encodeURIComponent(item.GiftName)}&modelName=${encodeURIComponent(item.ModelName)}`;
+        modalBackgrounds.innerHTML = '';
+        modelModal.classList.remove('hidden');
+
+        try {
+            const resp = await fetch(`${API_BASE}/GetGlobalColorWheelMatchingBackgrounds?hex=${encodeURIComponent(hexes[0])}`);
+            if (resp.ok) {
+                const bg = await resp.json();
+                if (bg.Backgrounds && bg.Backgrounds.length) {
+                    modalBackgrounds.innerHTML = '<span class="cw-bg-label">Подходящие фоны:</span>' +
+                        bg.Backgrounds.map(b => `
+                            <span class="cw-bg-chip" title="${escapeHtml(b.Hex)}">
+                                <span class="cw-bg-chip-swatch" style="background:${b.Hex}"></span>${escapeHtml(b.Name)}
+                            </span>
+                        `).join('');
+                }
+            }
+        } catch (err) { /* фоны необязательны, тихо пропускаем */ }
+    }
+    function closeModelModal() { modelModal.classList.add('hidden'); }
+    modalClose.addEventListener('click', closeModelModal);
+    modelModal.addEventListener('click', (e) => { if (e.target === modelModal) closeModelModal(); });
 
     // putya: "все страницы... адаптированы под главную страницу" — с других страниц "Поиск по
     // цвету" ведёт на ../ColorWheel/color-wheel.html#search, тут просто открываем нужную вкладку.

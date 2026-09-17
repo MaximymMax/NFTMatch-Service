@@ -22,62 +22,62 @@
 
     <header class="safe-area-gradient"></header>
 
-    <!-- putya: "все страницы (пока только для меня) были адаптированы под главную страницу, где
-         сверху переключатели эти, кнопка с главным экраном должна быть по центру" — та же
-         шапка+вкладки, что на ColorWheel/color-wheel.html; скрыта по умолчанию, раскрывается
-         только админу (см. shared-admin-nav.js). Главная теперь ведёт на цветовой круг — общий хаб. -->
-    <div id="cw-admin-nav" class="cw-admin-nav cw-admin-nav-hidden">
-        <div class="cw-page-header">
-            <div class="cw-header-group">
-                <a href="https://t.me/NFTStyler" target="_blank" class="cw-header-link cw-header-link-tg" title="Наш Telegram-канал">
-                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M21.94 4.11a1.5 1.5 0 00-1.6-.2L3.4 10.8a1.4 1.4 0 00.06 2.6l4.42 1.54 1.7 5.36a1.4 1.4 0 002.31.6l2.47-2.31 4.3 3.16a1.4 1.4 0 002.2-.86l3.06-14.6a1.5 1.5 0 00-.98-1.68zM9.7 14.5l-.3 3.4-1.4-4.4 9.9-6.2-8.2 7.2z"/></svg>
-                </a>
-            </div>
-            <div class="cw-header-group">
-                <a href="../NonUnique/nonunique.html" class="cw-header-link cw-header-link-nonunique" title="Неуникальные подарки">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12v8a2 2 0 01-2 2H6a2 2 0 01-2-2v-8M2 7h20v5H2V7zm10 0V3.5a2.5 2.5 0 10-2.5 2.5H12zm0 0V3.5A2.5 2.5 0 1114.5 6H12z" />
-                    </svg>
-                </a>
-                <a href="../API_info/api.html" class="cw-header-link cw-header-link-api" title="API">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
-                    </svg>
-                </a>
-                <a href="../Support/support.html" class="cw-header-link cw-header-link-support" title="Поддержка">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                </a>
-            </div>
-        </div>
-        <div class="cw-tabs">
-            <a href="../Monohrome/background-finder.html" class="cw-tab">
-                <img src="https://cdn.changes.tg/gifts/models/Spring%20Basket/png/Knitty%20Kitty.png" alt="">
-                <span>Монохромы</span>
-            </a>
-            <a href="../Thematic/themes.html" class="cw-tab active">
-                <img src="https://cdn.changes.tg/gifts/models/Restless%20Jar/png/Kittens.png" alt="">
-                <span>Тематики</span>
-            </a>
-            <a href="../ColorWheel/color-wheel.html" class="cw-tab">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 11.5 12 4l9 7.5M5 10v9a1 1 0 001 1h4v-6h4v6h4a1 1 0 001-1v-9"/></svg>
-                <span>Главная</span>
-            </a>
-            <a href="../nft-page/index.html" class="cw-tab">
-                <img src="https://cdn.changes.tg/gifts/models/Snake%20Box/png/Seashore.png" alt="">
-                <span>Похожие</span>
-            </a>
-            <a href="../ColorWheel/color-wheel.html#search" class="cw-tab">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7" stroke-linecap="round"/><path stroke-linecap="round" d="M21 21l-4.3-4.3"/></svg>
-                <span>Поиск по цвету</span>
-            </a>
-        </div>
-    </div>
-    <script src="../shared-admin-nav.js"></script>
-
     <main>
         <div class="main-container">
+
+            <!-- putya: "на главной нормально, ... а вот на остальных вкладках все ломается, надо
+                 чтобы везде был один формат" — шапка+вкладки должны жить ВНУТРИ main-container
+                 (та же карточка-фон, что и на ColorWheel/color-wheel.html), а не floating над ним.
+                 Скрыта по умолчанию, раскрывается только админу (см. shared-admin-nav.js). -->
+            <div id="cw-admin-nav" class="cw-admin-nav cw-admin-nav-hidden">
+                <div class="cw-page-header">
+                    <div class="cw-header-group">
+                        <a href="https://t.me/NFTStyler" target="_blank" class="cw-header-link cw-header-link-tg" title="Наш Telegram-канал">
+                            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M21.94 4.11a1.5 1.5 0 00-1.6-.2L3.4 10.8a1.4 1.4 0 00.06 2.6l4.42 1.54 1.7 5.36a1.4 1.4 0 002.31.6l2.47-2.31 4.3 3.16a1.4 1.4 0 002.2-.86l3.06-14.6a1.5 1.5 0 00-.98-1.68zM9.7 14.5l-.3 3.4-1.4-4.4 9.9-6.2-8.2 7.2z"/></svg>
+                        </a>
+                    </div>
+                    <div class="cw-header-group">
+                        <a href="../NonUnique/nonunique.html" class="cw-header-link cw-header-link-nonunique" title="Неуникальные подарки">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12v8a2 2 0 01-2 2H6a2 2 0 01-2-2v-8M2 7h20v5H2V7zm10 0V3.5a2.5 2.5 0 10-2.5 2.5H12zm0 0V3.5A2.5 2.5 0 1114.5 6H12z" />
+                            </svg>
+                        </a>
+                        <a href="../API_info/api.html" class="cw-header-link cw-header-link-api" title="API">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                            </svg>
+                        </a>
+                        <a href="../Support/support.html" class="cw-header-link cw-header-link-support" title="Поддержка">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+                <div class="cw-tabs">
+                    <a href="../Monohrome/background-finder.html" class="cw-tab">
+                        <img src="https://cdn.changes.tg/gifts/models/Spring%20Basket/png/Knitty%20Kitty.png" alt="">
+                        <span>Монохромы</span>
+                    </a>
+                    <a href="../Thematic/themes.html" class="cw-tab active">
+                        <img src="https://cdn.changes.tg/gifts/models/Restless%20Jar/png/Kittens.png" alt="">
+                        <span>Тематики</span>
+                    </a>
+                    <a href="../ColorWheel/color-wheel.html" class="cw-tab">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 11.5 12 4l9 7.5M5 10v9a1 1 0 001 1h4v-6h4v6h4a1 1 0 001-1v-9"/></svg>
+                        <span>Главная</span>
+                    </a>
+                    <a href="../nft-page/index.html" class="cw-tab">
+                        <img src="https://cdn.changes.tg/gifts/models/Snake%20Box/png/Seashore.png" alt="">
+                        <span>Похожие</span>
+                    </a>
+                    <a href="../ColorWheel/color-wheel.html#search" class="cw-tab">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7" stroke-linecap="round"/><path stroke-linecap="round" d="M21 21l-4.3-4.3"/></svg>
+                        <span>Поиск по цвету</span>
+                    </a>
+                </div>
+            </div>
+            <script src="../shared-admin-nav.js"></script>
 
             <div class="title-section">
                 <h1 class="page-main-title" data-i18n="themes_title">ТЕМАТИКИ</h1>

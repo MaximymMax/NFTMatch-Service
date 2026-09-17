@@ -308,16 +308,25 @@
     padding: 9px 14px; cursor: pointer; transition: border-color .15s ease, color .15s ease;
 }
 .cw-add-color-btn:hover { border-color: var(--accent); color: var(--text-primary); }
+/* putya: "должна быть возможность как и на тестовом сайте исключить далекие от заданных цветов" —
+   чекбокс активен только при 2+ цветах (см. JS), выключен и приглушён при одном. */
+.cw-exclude-toggle {
+    display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-muted);
+    cursor: pointer; user-select: none;
+}
+.cw-exclude-toggle input[type="checkbox"] { accent-color: var(--accent); cursor: pointer; }
+.cw-exclude-toggle.disabled { opacity: .45; pointer-events: none; }
 .cw-color-search-btn {
     flex: 0 0 auto; background: var(--accent); color: #fff; border: none; border-radius: 10px;
     padding: 10px 18px; font-size: 13px; font-weight: 700; font-family: inherit; cursor: pointer;
     transition: background-color .15s ease;
 }
 .cw-color-search-btn:hover { background: #1d4ed8; }
+/* putya: "должно быть указано что справа указан процент..." — поясняем, что означает % на карточках. */
+.cw-results-hint { font-size: 11px; color: var(--text-muted); text-align: center; width: 100%; }
 
 /* putya: "сделай такие же карточки моделей как у меня везде... сделай чтобы их можно было
-   открывать" — те же классы карточки, что на background-finder.html (.result-card-bg), клик ведёт
-   на страницу "Похожие" с уже готовыми gift/model — там весь функционал сравнения и деталей. */
+   открывать" — те же классы карточки, что на background-finder.html (.result-card-bg). */
 .cw-color-search-results {
     display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 12px;
     width: 100%;
@@ -360,6 +369,26 @@
 }
 .multi-swatches { display: flex; align-items: center; justify-content: center; gap: 4px; flex-wrap: wrap; }
 .multi-swatch { width: 12px; height: 12px; border-radius: 50%; box-shadow: 0 0 3px rgba(0,0,0,.4); flex: 0 0 auto; }
+
+/* putya: "надо чтобы модалка открывалась, а не перекидывалось на монохромы" — своя лёгкая модалка
+   (не тянем чужой themes-modal.js/nft-details-modal.js с их состоянием под конкретные страницы). */
+.cw-modal-overlay {
+    position: fixed; inset: 0; background: rgba(10, 16, 32, .7);
+    display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 16px;
+}
+.cw-modal-overlay.hidden { display: none; }
+.cw-modal {
+    width: 100%; max-width: 380px; max-height: 85vh; overflow-y: auto;
+    background: var(--surface-color); border: 1px solid var(--border-color); border-radius: 16px;
+    box-shadow: 0 20px 60px rgba(0,0,0,.5);
+}
+.cw-modal-body { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 16px; }
+.cw-modal-photo {
+    width: 160px; height: 160px; object-fit: contain; border-radius: 12px;
+    background: rgba(255,255,255,.06);
+}
+#cw-modal-backgrounds { border: none; padding: 0; width: 100%; justify-content: center; }
+#cw-modal-open-full { width: 100%; text-align: center; text-decoration: none; }
 
 @media (max-width: 480px) {
     .cw-container { padding: 16px; }

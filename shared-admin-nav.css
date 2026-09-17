@@ -46,8 +46,12 @@
     box-shadow: 0 4px 14px rgba(37, 99, 235, .25);
 }
 
-/* putya: "пока только для меня" — на страницах, куда эта панель ДОБАВЛЯЕТСЯ поверх уже готового
-   публичного дизайна (не color-wheel.html, у неё она и так всегда видна), по умолчанию скрыта и
-   раскрывается только админу — см. shared-admin-nav.js. */
-.cw-admin-nav { display: flex; flex-direction: column; gap: 10px; padding: 14px 16px 0; }
+/* putya: "на главной нормально, ... а вот на остальных вкладках все ломается, надо чтобы везде
+   был один формат" — .cw-admin-nav теперь живёт ВНУТРИ .main-container этой страницы (та же
+   карточка-фон, что оборачивает всё на color-wheel.html), а не отдельным блоком над ним, поэтому
+   свой padding не нужен — его уже даёт main-container. .cw-page-header, наоборот, при обычном
+   использовании (color-wheel.html, отдельный <header> вне main-container) padding нужен, здесь —
+   нет, поэтому переопределяем только вложенный случай. */
+.cw-admin-nav { display: flex; flex-direction: column; gap: 10px; }
+.cw-admin-nav .cw-page-header { padding: 0; }
 .cw-admin-nav.cw-admin-nav-hidden { display: none; }
