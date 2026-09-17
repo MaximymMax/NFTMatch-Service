@@ -9,7 +9,6 @@
     const errorEl = document.getElementById('cw-error');
     const chartsRow = document.querySelector('.cw-charts-row');
     const tooltip = document.getElementById('cw-tooltip');
-    const thresholdEl = document.getElementById('cw-threshold');
     const filterRow = document.querySelector('.cw-filter-row');
 
     const drilldown = document.getElementById('cw-drilldown');
@@ -450,10 +449,9 @@
             if (!resp.ok) throw new Error('HTTP ' + resp.status);
             const data = await resp.json();
 
-            thresholdEl.textContent = data.MinClusterWeightPercent;
             statsEl.innerHTML = `
-                <span>Моделей просканировано: <b>${data.ModelsScanned}</b></span>
-                <span>Кластеров учтено: <b>${data.ClustersUsed}</b></span>
+                <div class="cw-stat-chip"><div class="cw-stat-value">${data.ModelsScanned}</div><div class="cw-stat-label">Моделей просканировано</div></div>
+                <div class="cw-stat-chip"><div class="cw-stat-value">${data.ClustersUsed}</div><div class="cw-stat-label">Кластеров учтено</div></div>
             `;
 
             renderWheel(data.HueWheel);
@@ -469,6 +467,71 @@
             showError('Не удалось загрузить: ' + err.message);
         }
     }
+
+    // --- putya: "добавь кнопка главная которая выбрана по умолчанию" / "вкладка с поиском
+    // моделей по выбранным цветам" → "точный подбор по HEX" — Главная/Поиск по цвету переключают
+    // локальные панели ниже; Монохромы/Тематики/Похожие остаются обычными ссылками (a), не трогаем.
+    const tabButtons = document.querySelectorAll('.cw-tab[data-tab]');
+    const panelHome = document.getElementById('cw-panel-home');
+    const panelSearch = document.getElementById('cw-panel-search');
+    let colorSearchLoaded = false;
+
+    function setActiveTab(tab) {
+        tabButtons.forEach(btn => btn.classList.toggle('active', btn.dataset.tab === tab));
+        panelHome.classList.toggle('hidden', tab !== 'home');
+        panelSearch.classList.toggle('hidden', tab !== 'search');
+        if (tab === 'home') {
+            syncModelsPanelHeight();
+        } else if (tab === 'search' && !colorSearchLoaded) {
+            colorSearchLoaded = true;
+            runColorSearch();
+        }
+    }
+    tabButtons.forEach(btn => btn.addEventListener('click', () => setActiveTab(btn.dataset.tab)));
+
+    // --- Поиск моделей по точному цвету (пикер + hex), сортировка по Lab-дистанции ---
+    const colorPicker = document.getElementById('color-search-picker');
+    const colorHexInput = document.getElementById('color-search-hex');
+    const colorSearchBtn = document.getElementById('color-search-btn');
+    const colorSearchResults = document.getElementById('color-search-results');
+
+    colorPicker.addEventListener('input', () => {
+        colorHexInput.value = colorPicker.value.toUpperCase();
+    });
+    colorHexInput.addEventListener('change', () => {
+        const v = colorHexInput.value.trim();
+        if (/^#[0-9a-fA-F]{6}$/.test(v)) colorPicker.value = v;
+    });
+
+    async function runColorSearch() {
+        const hex = colorPicker.value;
+        colorSearchResults.innerHTML = '<div class="cw-drilldown-note">Загрузка…</div>';
+        try {
+            const resp = await fetch(`${API_BASE}/GetGlobalColorWheelNearestModels?hex=${encodeURIComponent(hex)}`);
+            if (!resp.ok) throw new Error('HTTP ' + resp.status);
+            const data = await resp.json();
+
+            if (!data.Items.length) {
+                colorSearchResults.innerHTML = '<div class="cw-drilldown-note">Ничего не найдено.</div>';
+                return;
+            }
+            colorSearchResults.innerHTML = data.Items.map(m => `
+                <div class="cw-model-row">
+                    <img class="cw-model-photo" src="${modelImageUrl(m.GiftName, m.ModelName)}" alt=""
+                         loading="lazy" onerror="this.style.visibility='hidden'">
+                    <span class="cw-model-swatch" style="background:${m.Hex}" title="${m.Hex}"></span>
+                    <span class="cw-model-name"><span class="gift">${escapeHtml(m.GiftName)}</span> — ${escapeHtml(m.ModelName)}</span>
+                    <span class="cw-model-weight">${m.Weight}%</span>
+                </div>
+            `).join('') + (data.TotalCount > data.Shown
+                ? `<div class="cw-drilldown-note">Показано ${data.Shown} из ${data.TotalCount}, по близости к выбранному цвету.</div>`
+                : '');
+        } catch (err) {
+            colorSearchResults.innerHTML = `<div class="cw-drilldown-note">Не удалось загрузить: ${escapeHtml(err.message)}</div>`;
+        }
+    }
+    colorSearchBtn.addEventListener('click', runColorSearch);
+    colorPicker.addEventListener('change', runColorSearch);
 
     Promise.all([loadGiftIdMap(), loadCollectionNames()]).then(([, names]) => populateCollections(names));
     loadCharts();

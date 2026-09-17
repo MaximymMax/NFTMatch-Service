@@ -51,20 +51,38 @@
 .cw-header-link-api { background: rgba(16, 185, 129, .16); color: #34d399; }
 .cw-header-link-support { background: rgba(245, 158, 11, .16); color: #fbbf24; }
 
-/* putya: "переделай кнопки монохромов, коллекций, похожих, сделай их более компактными" — узкие
-   пилюли вместо больших feature-card-new с картинкой на всю карточку. */
-.cw-quicklinks {
-    display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; width: 100%;
+/* putya: "кнопки монохромы, похожие и тд оформи на всю ширину чтобы они были более стилизованые,
+   добавь вкладку с поиском моделей по выбранным цветам, добавь кнопка главная которая выбрана по
+   умолчанию" — один ряд вкладок на всю ширину; Главная/Поиск по цвету — кнопки (переключают
+   .cw-panel ниже), остальные — обычные ссылки, оформлены тем же классом для однородного вида. */
+.cw-tabs {
+    display: flex; flex-wrap: wrap; gap: 8px; width: 100%;
 }
-.cw-quicklink {
-    display: flex; align-items: center; gap: 8px;
-    background: var(--surface-elevated); border-radius: 12px;
-    padding: 6px 14px 6px 6px; text-decoration: none;
-    color: var(--text-primary); font-size: 13px; font-weight: 600;
-    transition: transform .15s ease, background-color .15s ease;
+.cw-tab {
+    flex: 1 1 140px; min-width: 110px;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    background: var(--surface-elevated); border: 1px solid transparent; border-radius: 14px;
+    padding: 12px 10px; text-decoration: none; text-align: center;
+    color: var(--text-secondary); font-size: 13px; font-weight: 700; font-family: inherit;
+    cursor: pointer; transition: transform .15s ease, background-color .15s ease, border-color .15s ease, color .15s ease;
 }
-.cw-quicklink:hover { transform: translateY(-2px); background: #263355; }
-.cw-quicklink img { width: 30px; height: 30px; object-fit: contain; border-radius: 8px; flex: 0 0 auto; }
+.cw-tab img { width: 26px; height: 26px; object-fit: contain; border-radius: 7px; flex: 0 0 auto; }
+.cw-tab svg { width: 20px; height: 20px; flex: 0 0 auto; }
+.cw-tab:hover { transform: translateY(-2px); background: #263355; color: var(--text-primary); }
+.cw-tab.active {
+    background: linear-gradient(135deg, rgba(37, 99, 235, .35), rgba(37, 99, 235, .12));
+    border-color: rgba(37, 99, 235, .5); color: #fff;
+    box-shadow: 0 4px 14px rgba(37, 99, 235, .25);
+}
+
+/* putya: "напиши что такое нфт матч, что в нем используется такой-то алгоритм" */
+.cw-about {
+    width: 100%; max-width: 720px; margin: 0 auto;
+    font-size: 12.5px; line-height: 1.6; color: var(--text-secondary); text-align: center;
+}
+.cw-about b { color: var(--text-primary); }
+
+.cw-panel.hidden { display: none; }
 
 /* --- Фильтр коллекций: тот же multi-select dropdown, что и на background-finder.html --- */
 .cw-filter-row { display: flex; align-items: center; gap: 10px; width: 100%; }
@@ -143,11 +161,16 @@
     background: rgba(255,255,255,.06); flex: 0 0 auto;
 }
 
+/* putya: "вот это вот как-то красивее оформи" — вместо строки текста две карточки-статы. */
 .cw-stats {
-    display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 16px;
-    font-size: 11.5px; color: var(--text-muted);
+    display: flex; flex-wrap: wrap; justify-content: center; gap: 10px;
 }
-.cw-stats b { color: var(--text-primary); font-weight: 700; }
+.cw-stat-chip {
+    display: flex; flex-direction: column; align-items: center; gap: 2px;
+    background: var(--surface-color); border-radius: 12px; padding: 10px 20px; min-width: 130px;
+}
+.cw-stat-value { font-size: 20px; font-weight: 800; color: var(--text-primary); line-height: 1.2; }
+.cw-stat-label { font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .04em; }
 
 /* putya: "на пк... слева была диаграмма, справа блок с моделями" — на мобильном остаётся
    одна колонка (диаграмма, потом фильтр+модели), на ПК становится двумя. */
@@ -286,6 +309,34 @@
 .cw-model-name .gift { color: var(--text-muted); font-weight: 400; }
 .cw-model-weight { color: var(--text-muted); font-weight: 600; font-size: 12px; flex: 0 0 auto; }
 .cw-drilldown-note { font-size: 12px; color: var(--text-muted); padding: 8px 10px; }
+
+/* putya: "точный подбор по HEX/цвету" — пикер + hex-поле + кнопка поиска. */
+.cw-color-search-row {
+    display: flex; align-items: center; gap: 8px; width: 100%; max-width: 360px;
+}
+#color-search-picker {
+    width: 44px; height: 40px; padding: 0; border: 1px solid var(--border-color);
+    border-radius: 10px; background: none; cursor: pointer; flex: 0 0 auto;
+}
+#color-search-picker::-webkit-color-swatch-wrapper { padding: 3px; }
+#color-search-picker::-webkit-color-swatch { border: none; border-radius: 7px; }
+.cw-hex-input {
+    flex: 1 1 auto; min-width: 0; background: var(--surface-elevated);
+    border: 1px solid var(--border-color); border-radius: 10px;
+    color: var(--text-primary); font-size: 13px; font-family: inherit;
+    padding: 10px 12px; text-transform: uppercase;
+}
+.cw-hex-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(37, 99, 235, .18); }
+.cw-color-search-btn {
+    flex: 0 0 auto; background: var(--accent); color: #fff; border: none; border-radius: 10px;
+    padding: 10px 16px; font-size: 13px; font-weight: 700; font-family: inherit; cursor: pointer;
+    transition: background-color .15s ease;
+}
+.cw-color-search-btn:hover { background: #1d4ed8; }
+
+.cw-color-search-results {
+    width: 100%; max-height: 480px; border: 1px solid var(--border-color); border-radius: 12px;
+}
 
 @media (max-width: 480px) {
     .cw-container { padding: 16px; }

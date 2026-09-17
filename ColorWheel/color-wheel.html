@@ -7,7 +7,7 @@
     <title>Цветовой круг каталога</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../styles.css">
-    <link rel="stylesheet" href="./color-wheel.css?v=15">
+    <link rel="stylesheet" href="./color-wheel.css?v=16">
     <script src="../config.js"></script>
 </head>
 
@@ -45,26 +45,44 @@
             <div class="glow-effect glow-left"></div>
             <div class="glow-effect glow-right"></div>
 
-            <!-- putya: "переделай кнопки монохромов, коллекций, похожих, сделай их более
-                 компактными" — вместо больших feature-card-new теперь узкая строка ссылок. -->
-            <div class="cw-quicklinks">
-                <a href="../Monohrome/background-finder.html" class="cw-quicklink">
+            <!-- putya: "кнопки монохромы, похожие и тд оформи на всю ширину... добавь вкладку с
+                 поиском моделей по выбранным цветам, добавь кнопка главная которая выбрана по
+                 умолчанию" — Главная и Поиск по цвету переключают локальные панели ниже (кнопки),
+                 Монохромы/Тематики/Похожие — обычные ссылки на другие страницы (a), все в одном
+                 визуальном ряду вкладок. -->
+            <div class="cw-tabs">
+                <button type="button" class="cw-tab active" data-tab="home">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 11.5 12 4l9 7.5M5 10v9a1 1 0 001 1h4v-6h4v6h4a1 1 0 001-1v-9"/></svg>
+                    <span>Главная</span>
+                </button>
+                <a href="../Monohrome/background-finder.html" class="cw-tab">
                     <img src="https://cdn.changes.tg/gifts/models/Spring%20Basket/png/Knitty%20Kitty.png" alt="">
                     <span>Монохромы</span>
                 </a>
-                <a href="../Thematic/themes.html" class="cw-quicklink">
+                <a href="../Thematic/themes.html" class="cw-tab">
                     <img src="https://cdn.changes.tg/gifts/models/Restless%20Jar/png/Kittens.png" alt="">
                     <span>Тематики</span>
                 </a>
-                <a href="../nft-page/index.html" class="cw-quicklink">
+                <a href="../nft-page/index.html" class="cw-tab">
                     <img src="https://cdn.changes.tg/gifts/models/Snake%20Box/png/Seashore.png" alt="">
                     <span>Похожие</span>
                 </a>
+                <button type="button" class="cw-tab" data-tab="search">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7" stroke-linecap="round"/><path stroke-linecap="round" d="M21 21l-4.3-4.3"/></svg>
+                    <span>Поиск по цвету</span>
+                </button>
             </div>
 
-            <div class="cw-container">
-                <h1 class="cw-title">Цветовой круг каталога</h1>
-                <p class="cw-subtitle">Только кластеры с весом выше <span id="cw-threshold">10</span>%. Клик по сектору — список подарков и подходящих фонов.</p>
+            <!-- putya: "напиши что такое нфт матч, что в нем используется такой-то алгоритм" -->
+            <p class="cw-about">
+                <b>NFT MATCH</b> — сервис для подбора подарков, фонов и коллекций по цвету в Telegram.
+                Мы анализируем изображение каждой модели, выделяем доминирующие цветовые кластеры в
+                перцептивном пространстве Lab и сравниваем их по цветовой дистанции, чтобы находить
+                похожие модели, подходящие фоны и монохромные сочетания.
+            </p>
+
+            <div id="cw-panel-home" class="cw-container cw-panel">
+                <h1 class="cw-title">Диаграмма цветов моделей</h1>
 
                 <div id="cw-stats" class="cw-stats"></div>
 
@@ -113,6 +131,22 @@
                 <div id="cw-error" class="cw-error hidden"></div>
             </div>
 
+            <!-- putya: "вкладка с поиском моделей по выбранным цветам" → "точный подбор по
+                 HEX/цвету" — пикер, дальше подбор ближайших моделей по Lab-дистанции
+                 (GetGlobalColorWheelNearestModels), тот же принцип, что уже работает для фонов. -->
+            <div id="cw-panel-search" class="cw-container cw-panel hidden">
+                <h1 class="cw-title">Поиск моделей по цвету</h1>
+                <p class="cw-subtitle">Выберите цвет — покажем модели, у которых он доминирующий, ближайшие первыми.</p>
+
+                <div class="cw-color-search-row">
+                    <input type="color" id="color-search-picker" value="#2563eb" title="Выбрать цвет">
+                    <input type="text" id="color-search-hex" class="cw-hex-input" value="#2563EB" maxlength="7" spellcheck="false">
+                    <button type="button" id="color-search-btn" class="cw-color-search-btn">Найти</button>
+                </div>
+
+                <div id="color-search-results" class="cw-drilldown-body cw-color-search-results"></div>
+            </div>
+
             <div class="footer-credits">
                 Thanks to <a href="https://t.me/GiftChanges" target="_blank">@GiftChanges</a> and <a
                     href="https://t.me/seetg" target="_blank">@seetg</a>
@@ -120,7 +154,7 @@
         </div>
     </main>
 
-    <script src="./color-wheel.js?v=17"></script>
+    <script src="./color-wheel.js?v=18"></script>
 </body>
 
 </html>
