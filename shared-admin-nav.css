@@ -57,13 +57,11 @@ header.cw-page-header ~ main,
     padding-top: 20px !important;
     background: #0a1020;
 }
-/* putya: "нет синего на фоне" — синяя рамка карточки читается уверенно, только когда вокруг неё
-   есть равный отступ со всех сторон (см. padding-top выше); работает одинаково на мобильном и
-   широком экране, независимо от того, сколько места у main-container с краю. */
-header.cw-page-header ~ main .main-container,
-#cw-admin-nav ~ main .main-container {
-    border: 1px solid rgba(37, 99, 235, .35);
-}
+/* putya: "убери нахуй обводку на main-container и добавь эффект на фоне что идет синее свечение
+   от него, как и было раньше" — синяя рамка (предыдущая правка) убрана; синее свечение — это уже
+   существующие .glow-effect (styles.css), которые лежат ВНУТРИ .main-container и обрезаются его
+   overflow:hidden. Правка их видимости — в color-wheel.css (main-container.overflow:visible),
+   единственная страница, где эти div'ы вообще есть в разметке. */
 .cw-header-group { display: flex; align-items: center; gap: 8px; }
 .cw-header-link {
     display: flex; align-items: center; justify-content: center;
