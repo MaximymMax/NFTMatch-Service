@@ -12,7 +12,7 @@
     <!-- putya: "модалка themes-modal-content должна быть при открытии любой карточки" — реальный
          themesModal (тот же, что на Монохромах/Тематиках/Похожих), а не своя. -->
     <link rel="stylesheet" href="./Monohrome/themes-modal.css">
-    <link rel="stylesheet" href="./ColorWheel/color-wheel.css?v=39">
+    <link rel="stylesheet" href="./ColorWheel/color-wheel.css?v=40">
     <script src="./config.js"></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
@@ -102,10 +102,16 @@
             <!-- putya: "текст про matchV2 надо чуть сократить и чтобы он был только на главном
                  экране, сейчас он и на Похожих отображается" — id для скрытия/показа в
                  setActiveTab (color-wheel.js), текст короче прежнего. -->
+            <!-- putya: "должно объясниться что такое NFT Match, сказано что алгоритм занимается
+                 подарками тг, используется алгоритм MatchV2 который работает с цветами моделей,
+                 находит монохромы и все дела, не очень длинный текст... побольше текст и оформление,
+                 без доп. секции" -->
             <p class="cw-about" id="cw-about">
-                <b>MatchV2</b> — алгоритм NFT Match для подбора подарков, фонов и коллекций по цвету
-                в Telegram. Анализируем цвета моделей, чтобы находить похожие модели, подходящие
-                фоны и монохромные сочетания.
+                <span class="cw-about-lead"><b>NFT Match</b> — сервис для коллекционеров
+                Telegram-подарков.</span>
+                В его основе алгоритм <b>MatchV2</b>: он разбирает каждую модель на цвета
+                и по ним подбирает подходящие фоны, находит визуально похожие модели
+                и собирает <b>монохромы</b> — сочетания, где модель и фон выдержаны в одном цвете.
             </p>
 
             <div id="cw-panel-home" class="cw-container cw-panel">
@@ -119,7 +125,6 @@
                     <div id="cw-wheel-view" class="cw-view">
                         <div class="cw-diagram-box">
                             <svg id="cw-svg" viewBox="-220 -220 440 440"></svg>
-                            <div id="cw-tooltip" class="cw-tooltip hidden"></div>
                         </div>
                         <div class="cw-slider-row">
                             <span class="cw-slider-label">Светлота:</span>
@@ -315,7 +320,7 @@
          был undefined, поэтому клики по кнопкам вообще ничего не делали (тихий no-op за if-guard'ом
          в themes-modal.js). -->
     <script type="module" src="./Monohrome/themes-modal-nfts.js"></script>
-    <script src="./ColorWheel/color-wheel.js?v=33"></script>
+    <script src="./ColorWheel/color-wheel.js?v=34"></script>
     <script src="./main-page.js"></script>
 </body>
 

@@ -45,11 +45,22 @@
 /* putya: "добавь легкое описание про MatchV2, про сам проект и тд перед cw-panel-home" — тот же
    .cw-about, что раньше убирали ("пока убери текст по нфт матч"), теперь снаружи cw-panel-home
    (над карточкой с диаграммой, не внутри неё), с текстом про MatchV2 вместо прежнего "NFT MATCH". */
+/* putya: "сделай побольше текст и оформление, без доп. секции, просто оформление хорошее, и чтобы
+   лучше читалось" — без рамки/фона: крупнее кегль, свободный интерлиньяж, первая фраза (что такое
+   NFT Match) отдельной строкой и крупнее, ключевые слова акцентным синим. */
 .cw-about {
-    width: 100%; max-width: 720px; margin: 4px auto 0;
-    font-size: 12.5px; line-height: 1.6; color: var(--text-secondary); text-align: center;
+    width: 100%; max-width: 760px; margin: 6px auto 4px; padding: 0 8px;
+    font-size: 15px; line-height: 1.7; color: var(--text-secondary); text-align: center;
+    letter-spacing: .01em;
 }
-.cw-about b { color: var(--text-primary); }
+.cw-about-lead { display: block; font-size: 17px; margin-bottom: 4px; color: var(--text-primary); }
+.cw-about b { color: #7cb4ff; font-weight: 700; }
+.cw-about-lead b { font-size: 18px; color: #fff; }
+@media (max-width: 600px) {
+    .cw-about { font-size: 14px; line-height: 1.6; }
+    .cw-about-lead { font-size: 15.5px; }
+    .cw-about-lead b { font-size: 16.5px; }
+}
 /* putya: "чтобы он был только на главном экране, сейчас он и на Похожих отображается" — .hidden
    в этом коде всегда парный класс (.cw-panel.hidden, .cw-tooltip.hidden и т.д.), голого
    ".hidden{display:none}" нигде нет — без этого правила classList.toggle('hidden') на .cw-about
@@ -191,13 +202,7 @@
 }
 .cw-sector-extreme { stroke: rgba(255,255,255,.2); stroke-width: 1; }
 
-.cw-tooltip {
-    position: fixed; pointer-events: none; background: rgba(10, 16, 32, .95);
-    border: 1px solid rgba(255,255,255,.12); border-radius: 8px; padding: 8px 12px;
-    font-size: 12px; color: var(--text-primary); z-index: 100; box-shadow: var(--card-shadow);
-}
-.cw-tooltip.hidden { display: none; }
-.cw-tooltip b { display: block; margin-bottom: 2px; }
+/* hover-тултип диаграммы (#cw-tooltip) убран по просьбе putya. */
 
 /* putya: "0 это просто черный, а 100 просто белый" — ползунок среза по светлоте. */
 .cw-slider-row {

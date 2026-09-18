@@ -9,7 +9,6 @@
     const statsEl = document.getElementById('cw-stats');
     const errorEl = document.getElementById('cw-error');
     const chartsRow = document.querySelector('.cw-charts-row');
-    const tooltip = document.getElementById('cw-tooltip');
 
     const drilldown = document.getElementById('cw-drilldown');
     const drilldownHeader = document.querySelector('.cw-drilldown-header');
@@ -119,6 +118,25 @@
     // DebugCube/GetGiftModelsWithCubes (в отличие от старых GetGlobalColorWheel*) проходят через
     // ValidateRequestAsync и корректно учитывают тариф авторизованного пользователя только если
     // передан Authorization — тот же хелпер, что в background-finder.js/themes-modal.js.
+    // putya: "проработай систему когда нет авторизации через тг: по умолчанию подгружаются модели
+    // на выбранную секцию на диаграмме, но при попытке выбрать другое без авторизации вылазит
+    // модалка... на других вкладках ничего не отдает без авторизации, выдает модалку" — всё, что
+    // меняет выборку или уводит с главной, проходит через requireAuth(): без входа показываем
+    // #tg-gate-overlay (та же модалка, что у бейджа "Войти"), действие не выполняем. Первичная
+    // загрузка диаграммы + автовыбранного сектора остаётся открытой для всех.
+    function isAuthed() {
+        return !!(window.NFTAuth && typeof window.NFTAuth.isAuthenticated === 'function' && window.NFTAuth.isAuthenticated());
+    }
+    function requireAuth() {
+        if (isAuthed()) return true;
+        const overlay = document.getElementById('tg-gate-overlay');
+        if (overlay) {
+            overlay.classList.remove('hidden');
+            document.body.classList.add('body-gated');
+        }
+        return false;
+    }
+
     function getApiAuthHeader() {
         if (window.NFTAuth && typeof window.NFTAuth.getApiAuthHeader === 'function') {
             return window.NFTAuth.getApiAuthHeader();
@@ -201,10 +219,10 @@
             circle.setAttribute('class', 'cw-sector cw-sector-extreme');
             circle.dataset.bucketIndex = 'EXTREME';
             circle.addEventListener('click', () => {
+                if (!requireAuth()) return;
                 openBucketIndex = 'EXTREME';
                 applySelectionHighlight();
                 refreshDrilldown();
-                hideTooltip();
             });
             svg.appendChild(circle);
             applySelectionHighlight();
@@ -234,8 +252,6 @@
             path.setAttribute('fill', bucket.Hex || '#555');
             path.setAttribute('class', 'cw-sector');
             path.dataset.bucketIndex = String(i);
-            path.addEventListener('mousemove', (e) => showHueTooltip(e, bucket, i));
-            path.addEventListener('mouseleave', hideTooltip);
             // putya: "при нажатии на цвет под блоком с диаграммами появляется блок с конкретно
             // моделями которые наиболее подходят под данный цвет" — клик подгружает список
             // (Gift, Model) + подходящие фоны для этого сектора прямо на странице.
@@ -243,10 +259,10 @@
             // просто нажатие и все" — hover-тултип (mousemove) на тач-устройствах остаётся висеть
             // после тапа, там же нет mouseleave — прячем его явно при клике/тапе.
             path.addEventListener('click', () => {
+                if (!requireAuth()) return;
                 openBucketIndex = i;
                 applySelectionHighlight();
                 refreshDrilldown();
-                hideTooltip();
             });
             svg.appendChild(path);
         });
@@ -260,14 +276,8 @@
         applySelectionHighlight();
     }
 
-    function showHueTooltip(e, bucket, i) {
-        tooltip.innerHTML = `<b>${HUE_NAMES[i]} (${Math.round(bucket.HueStart)}°–${Math.round(bucket.HueEnd)}°)</b>` +
-            `${bucket.SharePercent}% каталога · ${bucket.Count} кластеров`;
-        tooltip.style.left = (e.clientX + 14) + 'px';
-        tooltip.style.top = (e.clientY + 14) + 'px';
-        tooltip.classList.remove('hidden');
-    }
-    function hideTooltip() { tooltip.classList.add('hidden'); }
+    // putya: "убери подсказку... и на телефоне и на пк ее быть не должно" — hover-тултип с названием
+    // сектора/долей каталога убран совсем (вместе с #cw-tooltip в разметке).
 
     // --- putya: "не в окне отдельном, а блок внизу" — список подходящих подарков рендерится прямо
     // на странице, в блоке под диаграммой. putya: "при изменении светлости, менялись бы сразу же и
@@ -340,7 +350,9 @@
     // themesModal, что на Монохромах/Тематиках/Похожих (см. init() ниже), не своя.
     drilldownBody.addEventListener('click', (e) => {
         const row = e.target.closest('.cw-model-row');
-        if (row && window.themesModal) window.themesModal.openModelDetail(row.dataset.gift, row.dataset.model);
+        if (!row) return;
+        if (!requireAuth()) return;
+        if (window.themesModal) window.themesModal.openModelDetail(row.dataset.gift, row.dataset.model);
     });
 
     // --- putya: "0 это просто черный, а 100 просто белый... даже если выкрутить на максимум" —
@@ -388,6 +400,7 @@
     }
 
     lightnessSlider.addEventListener('input', () => {
+        if (!requireAuth()) { lightnessSlider.value = lightnessRangeActive ? lightnessSlider.value : 50; return; }
         lightnessRangeActive = true;
         lightnessRange = lightnessBand(parseInt(lightnessSlider.value, 10));
         updateLightnessSliderLabel();
@@ -395,6 +408,7 @@
     });
 
     lightnessReset.addEventListener('click', () => {
+        if (!requireAuth()) return;
         lightnessRangeActive = false;
         lightnessRange = null;
         lightnessSlider.value = 50;
@@ -503,9 +517,10 @@
             loadSimilarPicker();
         }
     }
-    searchModeTabs.forEach(btn => btn.addEventListener('click', () => setSearchSubtab(btn.dataset.subtab)));
+    searchModeTabs.forEach(btn => btn.addEventListener('click', () => { if (requireAuth()) setSearchSubtab(btn.dataset.subtab); }));
 
     function setActiveTab(tab, subtab) {
+        if (tab === 'search' && !requireAuth()) return;
         panelHome.classList.toggle('hidden', tab !== 'home');
         panelSearch.classList.toggle('hidden', tab !== 'search');
         // putya: "текст про matchV2... чтобы он был только на главном экране, сейчас он и на
@@ -530,6 +545,11 @@
         }
     }
     tabButtons.forEach(btn => btn.addEventListener('click', () => setActiveTab(btn.dataset.tab, btn.dataset.subtab)));
+    // Монохромы/Тематики — обычные ссылки на другие страницы; те страницы без входа сами
+    // редиректят обратно (auth-badge.js), но лучше сразу показать модалку, чем гонять туда-сюда.
+    document.querySelectorAll('.cw-tab:not([data-tab])').forEach(a => a.addEventListener('click', (e) => {
+        if (!requireAuth()) e.preventDefault();
+    }));
 
     // --- putya: "сделай чтобы можно было выбрать несколько цветов, а не только один" — строка №1
     // всегда есть, дальше добавляются кнопкой (тот же паттерн, что на MatchV2Demo: пикер + hex +
