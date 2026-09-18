@@ -487,6 +487,24 @@
     font-size: 0.95rem; line-height: 1.2; padding: 0.75rem 2.5rem 0.75rem 1rem;
 }
 
+/* putya: "выпадающий список должен быть в таком же стиле как... на монохромах" — сам
+   РАСКРЫТЫЙ список (не только закрытый header выше) тоже был мельче: .list-option 6px/10px
+   вместо 0.75rem/1rem, картинка 22px (.list-option-preview, как у "Коллекции" на Главной) вместо
+   35px (.option-image на background-finder.css) — то же самое разночтение, что и в прошлый раз,
+   только теперь для списка опций, а не для закрытого дропдауна. */
+#cw-search-similar .dropdown-list { padding: 0.5rem; border-radius: var(--radius); }
+#cw-search-similar .list-option { padding: 0.75rem 1rem; border-radius: 0.5rem; gap: 15px; }
+#cw-search-similar .list-option .option-image {
+    width: 35px; height: 35px; object-fit: contain; border-radius: 4px; flex-shrink: 0; align-self: center;
+}
+#cw-search-similar .list-option .option-text {
+    font-size: 1.05rem; line-height: 1.4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-grow: 1;
+}
+#cw-search-similar .list-option.selected {
+    background-color: rgba(56, 189, 248, 0.15); border-left: 3px solid var(--primary-color); border-radius: 8px;
+}
+#cw-search-similar .list-option.selected .option-text { color: var(--text-primary); font-weight: 700; }
+
 #similar-model-header.disabled { opacity: .5; pointer-events: none; }
 
 .cw-similar-radar-box { display: flex; flex-direction: column; align-items: center; gap: 4px; }
