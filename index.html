@@ -3,96 +3,255 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport"
-        content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NFT MATCH</title>
-
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="./styles.css">
+    <link rel="stylesheet" href="./shared-admin-nav.css?v=9">
+    <!-- putya: "модалка themes-modal-content должна быть при открытии любой карточки" — реальный
+         themesModal (тот же, что на Монохромах/Тематиках/Похожих), а не своя. -->
+    <link rel="stylesheet" href="./Monohrome/themes-modal.css">
+    <link rel="stylesheet" href="./ColorWheel/color-wheel.css?v=33">
     <script src="./config.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
     <script src="./i18n.js"></script>
     <script src="./auth.js"></script>
     <script src="./auth-badge.js"></script>
 </head>
 
 <body>
-
+    <!-- putya: "перенеси новый главный экран, сделай доступным всем весь функционал" — корневая
+         index.html теперь = ColorWheel/color-wheel.html (шапка/вкладки/диаграмма); сам файл
+         color-wheel.html остался в ColorWheel/ и редиректит сюда (см. color-wheel.js), чтобы не
+         поддерживать две расходящиеся копии одной страницы. tg-gate-overlay/main-page.js остались
+         от старой главной без изменений — тут живёт OAuth-логин через Telegram, форс-фуллскрин и
+         роутер deep-link'ов (?action=...); клик-перехватчик на .feature-card-new внутри просто не
+         находит своих элементов на новой разметке и тихо ничего не делает. GitHub-иконку пока не
+         добавляю — putya ещё не прислал ссылку. RU/EN и TG-логин добавляются сюда же скриптом
+         (shared-admin-nav.js). -->
     <div id="tg-gate-overlay" class="tg-gate-overlay hidden">
         <div class="tg-gate-modal" style="position: relative;">
             <button id="tg-gate-close" style="position: absolute; top: 15px; right: 15px; background: none; border: none; color: rgba(255,255,255,0.5); font-size: 24px; cursor: pointer; line-height: 1; padding: 0;">&times;</button>
             <h2 data-i18n="tg_gate_title">NFT MATCH</h2>
             <p data-i18n="tg_gate_desc">Для использования функций приложения необходимо авторизоваться через Telegram.</p>
-            
+
             <div id="tg-login-container" style="margin: 20px 0; display: flex; justify-content: center; min-height: 40px; width: 100%;"></div>
-            
+
             <div style="display: flex; flex-direction: column; gap: 10px; width: 100%;">
                 <a href="https://t.me/NFTMatchBot" target="_blank" class="tg-gate-link" style="text-align: center;" data-i18n="tg_gate_link">Открыть в Telegram-боте</a>
             </div>
         </div>
     </div>
 
-    <header class="safe-area-gradient"></header>
+    <header class="cw-page-header">
+        <div class="cw-header-group">
+            <a href="https://t.me/NFTStyler" target="_blank" class="cw-header-link cw-header-link-tg" title="Наш Telegram-канал">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M21.94 4.11a1.5 1.5 0 00-1.6-.2L3.4 10.8a1.4 1.4 0 00.06 2.6l4.42 1.54 1.7 5.36a1.4 1.4 0 002.31.6l2.47-2.31 4.3 3.16a1.4 1.4 0 002.2-.86l3.06-14.6a1.5 1.5 0 00-.98-1.68zM9.7 14.5l-.3 3.4-1.4-4.4 9.9-6.2-8.2 7.2z"/></svg>
+            </a>
+        </div>
+        <div class="cw-header-group">
+            <a href="./API_info/api.html" class="cw-header-link cw-header-link-api" title="API">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                </svg>
+            </a>
+        </div>
+    </header>
+    <script src="./shared-admin-nav.js?v=8"></script>
 
     <main>
-        <div class="top-carousel-container">
-            <div class="carousel-ribbon" data-i18n="ribbon_on_sale">в продаже</div>
-            <div id="hero-carousel-wrapper" class="hero-carousel-wrapper hidden">
-                <div class="hero-carousel-track" id="hero-carousel-track">
-                </div>
-            </div>
-        </div>
-
         <div class="main-container">
-
             <div class="glow-effect glow-left"></div>
             <div class="glow-effect glow-right"></div>
-            
-            <img src="./NFTMATCH_site_mainpage.png" alt="NFT Match" class="hero-main-image">
 
-            <section class="tools-wrapper-styled">
-                <div class="tools-header-label" data-i18n="tools_header">
-                    Доступные функции
+            <!-- putya: "кнопка с главным экраном должна быть по центру" — Главная третья из пяти;
+                 Главная и Поиск по цвету переключают локальные панели ниже (кнопки),
+                 Монохромы/Тематики/Похожие — обычные ссылки на другие страницы (a), все в одном
+                 визуальном ряду вкладок (см. shared-admin-nav.css). -->
+            <div class="cw-tabs">
+                <a href="./Monohrome/background-finder.html" class="cw-tab">
+                    <img src="https://cdn.changes.tg/gifts/models/Spring%20Basket/png/Knitty%20Kitty.png" alt="">
+                    <span>Монохромы</span>
+                </a>
+                <a href="./Thematic/themes.html" class="cw-tab">
+                    <img src="https://cdn.changes.tg/gifts/models/Restless%20Jar/png/Kittens.png" alt="">
+                    <span>Тематики</span>
+                </a>
+                <button type="button" class="cw-tab active" data-tab="home">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 11.5 12 4l9 7.5M5 10v9a1 1 0 001 1h4v-6h4v6h4a1 1 0 001-1v-9"/></svg>
+                    <span>Главная</span>
+                </button>
+                <!-- putya: "совмести поиск по цветам и поиск похожих, просто будет две разные
+                     вкладки" — обе кнопки теперь ведут в один и тот же #cw-panel-search, отличаясь
+                     только data-subtab (см. setSearchSubtab в color-wheel.js). -->
+                <button type="button" class="cw-tab" data-tab="search" data-subtab="similar">
+                    <img src="https://cdn.changes.tg/gifts/models/Snake%20Box/png/Seashore.png" alt="">
+                    <span>Похожие</span>
+                </button>
+                <button type="button" class="cw-tab" data-tab="search" data-subtab="colors">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7" stroke-linecap="round"/><path stroke-linecap="round" d="M21 21l-4.3-4.3"/></svg>
+                    <span>Поиск по цвету</span>
+                </button>
+            </div>
+
+            <div id="cw-panel-home" class="cw-container cw-panel">
+                <h1 class="cw-title">Диаграмма цветов моделей</h1>
+
+                <div id="cw-stats" class="cw-stats"></div>
+
+                <!-- putya: "слева была диаграмма, справа блок с моделями" (на ПК) —
+                     #cw-wheel-view слева, .cw-models-panel (drilldown) справа. -->
+                <div class="cw-charts-row">
+                    <div id="cw-wheel-view" class="cw-view">
+                        <div class="cw-diagram-box">
+                            <svg id="cw-svg" viewBox="-220 -220 440 440"></svg>
+                            <div id="cw-tooltip" class="cw-tooltip hidden"></div>
+                        </div>
+                        <div class="cw-slider-row">
+                            <span class="cw-slider-label">Светлота:</span>
+                            <input type="range" id="lightness-slider" class="cw-slider" min="0" max="100" value="50" step="1">
+                            <span id="lightness-slider-value" class="cw-slider-value">весь диапазон</span>
+                            <button id="lightness-reset" class="cw-slider-reset hidden" title="Сбросить срез">&times;</button>
+                        </div>
+                    </div>
+
+                    <div class="cw-models-panel">
+                        <!-- putya: "убери подходящие фоны, выбор коллекций... теперь будет поиск
+                             только по всем моделям в этой диаграме" — фильтр коллекций и блок
+                             подходящих фонов убраны, drilldown всегда ищет по всем коллекциям
+                             (см. refreshDrilldown/loadCharts в color-wheel.js). Заголовок теперь
+                             цветовой превью кластера вместо текста "Оранжевый (30°–60°)". -->
+                        <div id="cw-drilldown" class="cw-drilldown hidden">
+                            <div class="cw-drilldown-header">
+                                <span id="cw-drilldown-swatch" class="cw-drilldown-swatch"></span>
+                                <button id="cw-drilldown-close" class="cw-drilldown-close">&times;</button>
+                            </div>
+                            <div id="cw-drilldown-body" class="cw-drilldown-body"></div>
+                        </div>
+                    </div>
                 </div>
 
-                <div class="features-container">
-                    <a href="./Monohrome/background-finder.html" class="feature-card-new">
-                        <div class="card-header-title" data-i18n="card_monochrome">Монохромы</div>
-                        <div class="card-body-gradient">
-                            <div class="inner-blue-card">
-                                <img src="https://cdn.changes.tg/gifts/models/Spring%20Basket/png/Knitty%20Kitty.png"
-                                    alt="Mono">
+                <div id="cw-error" class="cw-error hidden"></div>
+            </div>
+
+            <!-- putya: "перенести логику похожих на сайт, совмести поиск по цветам и поиск похожих,
+                 просто будет две разные вкладки. Такая же логика как на тестовом сайте, можно
+                 исключать цвета, можно искать по основным" — портировано из mono-cube-live.html
+                 (режимы "Рецепт" и "Похожие модели"): FindModelsByColorRecipe/FindSimilarModels
+                 вместо старых GetGlobalColorWheelNearestModels/MultiColorModels и SimilarNFTs. -->
+            <div id="cw-panel-search" class="cw-panel hidden">
+                <!-- putya: "надо чтобы оформление было таким же как в монохромах, сейчас слишком
+                     отличается" — переключатель, дропдауны и порог теперь буквально те же классы
+                     (.mode-switcher-container/.dropdowns-row/.sort-group-col/.bgs2-filter-block),
+                     что и на background-finder.html: плоско, без рамок-карточек вокруг групп полей,
+                     подпись НАД полем, дропдауны в 2 колонки. -->
+                <div class="mode-switcher-container">
+                    <div class="mode-switcher mode-switcher-2" id="search-mode-switcher" data-active-mode="colors">
+                        <button type="button" class="mode-tab active" data-subtab="colors">По цветам</button>
+                        <button type="button" class="mode-tab" data-subtab="similar">Похожие</button>
+                    </div>
+                </div>
+
+                <div class="content-wrapper cw-search-content-wrapper">
+                    <div id="cw-search-colors" class="cw-search-subpanel">
+                        <div class="selection-block">
+                            <div id="color-filters-list" class="cw-color-filters-list">
+                                <div class="cw-color-filter-row">
+                                    <input type="color" class="filter-color-picker" value="#2563eb" title="Выбрать цвет">
+                                    <input type="text" class="filter-color-hex cw-hex-input" value="#2563EB" maxlength="7" spellcheck="false">
+                                </div>
+                            </div>
+
+                            <div class="cw-color-search-actions">
+                                <button type="button" id="add-color-filter-btn" class="cw-add-color-btn">+ Добавить цвет</button>
                             </div>
                         </div>
-                        <div class="card-footer-btn" data-i18n="btn_open">Открыть</div>
-                    </a>
 
-                    <a href="./ColorWheel/color-wheel.html#search-similar" class="feature-card-new">
-                        <div class="card-header-title" data-i18n="card_similar">Похожие</div>
-                        <div class="card-body-gradient">
-                            <img src="https://cdn.changes.tg/gifts/models/Snake%20Box/png/Seashore.png" alt="Similar"
-                                class="img-shadow">
-                        </div>
-                        <div class="card-footer-btn" data-i18n="btn_open">Открыть</div>
-                    </a>
+                        <!-- putya: "я тебе сказал убрать вариант точный, будет только
+                             доминирующий... просил убрать раздел который позволяет минимальное
+                             сходство выбрать, просто по умолчанию 50" — режим "Доминирующие" и
+                             minSimilarity=50 теперь захардкожены в runColorSearch(), без полей. -->
 
-                    <a href="./Thematic/themes.html" class="feature-card-new">
-                        <div class="card-header-title" data-i18n="card_themes">Тематики</div>
-                        <div class="card-body-gradient">
-                            <img src="https://cdn.changes.tg/gifts/models/Restless%20Jar/png/Kittens.png" alt="Themes"
-                                class="img-shadow">
+                        <!-- putya: "исключить модели должна быть под cw-color-search-actions" —
+                             "cw-exclude-toggle disabled был лучше виден" — вместо еле заметного
+                             opacity явная серая плашка-пояснение (не только title на hover).
+                             "сделай по умолчанию выбранным исключить посторонние модели" — checked. -->
+                        <label class="cw-exclude-toggle" id="exclude-off-recipe-label" title="Только при 2+ цветах">
+                            <input type="checkbox" id="exclude-off-recipe" checked>
+                            Исключить модели с посторонними цветами
+                            <span class="cw-exclude-toggle-hint">нужно 2+ цвета</span>
+                        </label>
+
+                        <button type="button" id="color-search-btn" class="cw-color-search-btn cw-search-btn-wide">Найти</button>
+
+                        <div id="color-search-results" class="cw-color-search-results"></div>
+                    </div>
+
+                    <div id="cw-search-similar" class="cw-search-subpanel hidden">
+                        <div class="selection-block">
+                            <div class="dropdowns-row">
+                                <div class="sort-group-col">
+                                    <span class="filter-label">Коллекция:</span>
+                                    <div class="custom-dropdown-container" id="similar-gift-container">
+                                        <div class="dropdown-header with-search" id="similar-gift-header">
+                                            <input type="text" id="similar-gift-search" class="dropdown-search" placeholder="Поиск..." autocomplete="off">
+                                            <span id="similar-gift-value" class="selected-value-placeholder">Выбери коллекцию</span>
+                                            <div class="arrow"></div>
+                                        </div>
+                                        <div class="dropdown-list hidden" id="similar-gift-list">
+                                            <div id="similar-gift-options"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="sort-group-col">
+                                    <span class="filter-label">Модель:</span>
+                                    <div class="custom-dropdown-container" id="similar-model-container">
+                                        <div class="dropdown-header with-search" id="similar-model-header">
+                                            <input type="text" id="similar-model-search" class="dropdown-search" placeholder="Поиск..." autocomplete="off">
+                                            <span id="similar-model-value" class="selected-value-placeholder">Сначала выбери коллекцию</span>
+                                            <div class="arrow"></div>
+                                        </div>
+                                        <div class="dropdown-list hidden" id="similar-model-list">
+                                            <div id="similar-model-options"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="card-footer-btn" data-i18n="btn_open">Открыть</div>
-                    </a>
+
+                        <!-- putya: "надо выводить просмотр модели рядом с диаграмой чтобы увидеть" —
+                             #similar-target-preview показывает саму модель, а не только абстрактный
+                             радар цветов. "можно исключать цвета" — клик по цвету на диаграмме
+                             исключает его из поиска (similarExcludedHexes), без похода на сервер. -->
+                        <div id="similar-target-radar-box" class="cw-similar-radar-box hidden">
+                            <div class="cw-similar-radar-row">
+                                <div class="cw-similar-preview">
+                                    <img id="similar-target-preview" src="" alt="" onerror="this.style.visibility='hidden'" onload="this.style.visibility='visible'">
+                                </div>
+                                <div id="similar-target-radar"></div>
+                            </div>
+                            <!-- putya: "пару слов что вообще это за график" — короткое пояснение
+                                 самой диаграммы, отдельно от подсказки про клик-исключение. -->
+                            <div class="cw-similar-radar-caption">Цветовой профиль модели — размер круга и % показывают долю каждого цвета</div>
+                            <div class="cw-similar-radar-hint">Клик по цвету исключает его из поиска</div>
+                        </div>
+
+                        <!-- minSimilarity=50 и ignoreColorOrder=true захардкожены в
+                             runSimilarSearch(), без отдельных полей ввода. -->
+                        <button type="button" id="similar-search-btn" class="cw-color-search-btn cw-search-btn-wide" disabled>Найти похожие</button>
+
+                        <div id="similar-search-results" class="cw-color-search-results"></div>
+                    </div>
                 </div>
-            </section>
+            </div>
 
+            <!-- putya: "сделай доступным всем весь функционал" — при переносе главной на дизайн
+                 ColorWheel у "Неуникальных подарков" и "Поддержки" не осталось ссылки в навигации
+                 (ColorWheel её никогда не показывал), хотя сами страницы работают — переносим блок
+                 без изменений, чтобы не терять доступ к ним. Наш канал/API теперь дублируются с
+                 иконками в шапке — не мешает, зато ссылки остаются на прежнем, привычном месте. -->
             <div class="info-cards-wrapper section-separator">
-
                 <a href="./NonUnique/nonunique.html" class="info-card card-nonunique">
                     <div class="info-card-icon">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -143,17 +302,17 @@
                         <p data-i18n="card_support_desc">Поддержать развитие проекта.</p>
                     </div>
                 </a>
-
             </div>
 
             <div class="footer-credits">
                 Thanks to <a href="https://t.me/GiftChanges" target="_blank">@GiftChanges</a> and <a
                     href="https://t.me/seetg" target="_blank">@seetg</a>
             </div>
-
         </div>
     </main>
 
+    <script type="module" src="./Monohrome/themes-modal.js"></script>
+    <script src="./ColorWheel/color-wheel.js?v=30"></script>
     <script src="./main-page.js"></script>
 </body>
 

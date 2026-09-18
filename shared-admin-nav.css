@@ -8,12 +8,24 @@
    color-wheel.css, чтобы не дублировать на каждой странице; подключается вторым тегом <link>
    после основного styles.css/global.css той страницы. */
 
+/* putya: "исправь шапку, она должна быть с таким же темносиним фоном на всю ширину экрана,
+   адаптирована под вебапп, то есть отступ на ней сверху около 90 пикселей" — раньше фона не было
+   (background:none), шапка сливалась с контентом под ней и упиралась в самый верх экрана, из-за
+   чего в Telegram WebApp иконки заезжали под системную область (кнопка закрытия/свайп). Сплошной
+   #1a237e — цвет самого верха фонового градиента body (см. styles.css), поэтому переход в основной
+   фон ниже незаметен. Ширина full-bleed (без max-width) — раньше ряд иконок был по центру в
+   900px-колонке, теперь сама шапка-плашка тянется на весь экран. */
 .cw-page-header {
     display: flex; align-items: center; justify-content: space-between;
-    max-width: 900px; width: 100%; margin: 0 auto;
-    padding: 14px 16px 0; gap: 10px; position: relative; z-index: 20;
-    background: none; box-shadow: none; border-radius: 0;
+    width: 100%; box-sizing: border-box;
+    padding: 90px 16px 14px; gap: 10px; position: relative; z-index: 20;
+    background: #1a237e; box-shadow: none; border-radius: 0;
 }
+/* На главной (../index.html) .cw-page-header — это сам тег <header>, а не div, поэтому старое
+   правило "body.tg-fullscreen header { padding-top: 25px; }" (styles.css, специфичность
+   класс+тег) перебивает наш padding-top:90px (специфичность только класс). Явный оверрайд с двумя
+   классами специфичнее в любом порядке подключения файлов. */
+body.tg-fullscreen .cw-page-header { padding-top: 90px; }
 .cw-header-group { display: flex; align-items: center; gap: 8px; }
 .cw-header-link {
     display: flex; align-items: center; justify-content: center;

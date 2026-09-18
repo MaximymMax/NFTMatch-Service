@@ -39,13 +39,6 @@
    стили переиспользовать на Монохромах/Тематиках/Похожих. Здесь остаётся только то, что специфично
    для этой страницы. */
 
-/* putya: "напиши что такое нфт матч, что в нем используется такой-то алгоритм" */
-.cw-about {
-    width: 100%; max-width: 720px; margin: 0 auto;
-    font-size: 12.5px; line-height: 1.6; color: var(--text-secondary); text-align: center;
-}
-.cw-about b { color: var(--text-primary); }
-
 .cw-panel.hidden { display: none; }
 
 /* putya: "убери впринципе cw-panel-search" — в отличие от #cw-panel-home эта панель больше не
@@ -54,10 +47,6 @@
    ровно баг с "вылезает за пределы при добавлении цвета"), а плоский блок прямо на фоне
    .main-container, как #cw-admin-tabs/.mode-switcher-container/.content-wrapper на Монохромах. */
 #cw-panel-search { width: 100%; }
-
-/* --- Фильтр коллекций: тот же multi-select dropdown, что и на background-finder.html --- */
-.cw-filter-row { display: flex; align-items: center; gap: 10px; width: 100%; }
-.cw-filter-label { font-size: 13px; color: var(--text-muted); flex: 0 0 auto; }
 
 .custom-dropdown-container { position: relative; flex: 1 1 auto; }
 
@@ -126,11 +115,6 @@
     color: var(--text-primary); font-weight: 600;
 }
 .list-option.hidden-by-search { display: none; }
-/* putya: "в выпадающем списке рисуй маленькое превью коллекции, базовое" */
-.list-option-preview {
-    width: 22px; height: 22px; border-radius: 5px; object-fit: contain;
-    background: rgba(255,255,255,.06); flex: 0 0 auto;
-}
 
 /* putya: "вот это вот как-то красивее оформи" — вместо строки текста две карточки-статы. */
 .cw-stats {
@@ -233,24 +217,17 @@
     padding: 12px 14px; border-bottom: 1px solid rgba(255,255,255,.08);
     font-size: 14px; font-weight: 700;
 }
+/* putya: "вместо Оранжевый (30°–60°) выводи просто превью с цветами данного кластера" —
+   цветовой кружок вместо текстового названия/диапазона градусов. */
+.cw-drilldown-swatch {
+    width: 26px; height: 26px; border-radius: 50%; flex: 0 0 auto;
+    box-shadow: 0 0 0 2px rgba(255,255,255,.2), 0 2px 6px rgba(0,0,0,.4);
+}
 .cw-drilldown-close {
     background: none; border: none; color: var(--text-muted); font-size: 20px;
     line-height: 1; cursor: pointer; padding: 0 4px;
 }
 .cw-drilldown-close:hover { color: var(--text-primary); }
-
-/* putya: "в этом блоке который выбран так же укажи подходящие фоны под этот цвет" */
-.cw-drilldown-backgrounds {
-    display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
-    padding: 10px 14px; border-bottom: 1px solid rgba(255,255,255,.08);
-}
-.cw-drilldown-backgrounds:empty { display: none; }
-.cw-bg-label { font-size: 11px; color: var(--text-muted); margin-right: 2px; }
-.cw-bg-chip {
-    display: flex; align-items: center; gap: 5px; padding: 3px 8px 3px 4px;
-    background: var(--surface-elevated); border-radius: 20px; font-size: 11.5px; color: var(--text-secondary);
-}
-.cw-bg-chip-swatch { width: 14px; height: 14px; border-radius: 50%; flex: 0 0 auto; box-shadow: 0 0 3px rgba(0,0,0,.4); }
 
 /* putya: "убери базовый скрол... сделай по высоте таким же как и левая часть" — max-height на
    мобильном фиксированная (420px), на ПК её вычисляет и проставляет inline JS (syncModelsPanelHeight

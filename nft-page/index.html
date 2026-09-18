@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="gift-page.css">
     <link rel="stylesheet" href="../Monohrome/themes-modal.css">
     <link rel="stylesheet" href="../modals/subscription-modal.css">
-    <link rel="stylesheet" href="../shared-admin-nav.css?v=8">
+    <link rel="stylesheet" href="../shared-admin-nav.css?v=9">
 
     <script src="../i18n.js"></script>
     <script src="../config.js"></script>
@@ -28,8 +28,7 @@
          был вынесен наружу целиком — из-за этого вкладки зависли на голом фоне отдельно от карточки
          вместо того, чтобы быть на ней. Разносим по разным контейнерам, как на колесе: шапка — сюда,
          к safe-area-gradient; вкладки — внутрь main-container (см. ниже). Видимость обоих
-         синхронизирует shared-admin-nav.js (один и тот же IP-гейт снимает cw-admin-nav-hidden сразу
-         с обоих). -->
+         синхронизирует shared-admin-nav.js (снимает cw-admin-nav-hidden сразу с обоих для всех посетителей). -->
     <div id="cw-admin-nav" class="cw-admin-nav-hidden">
         <div class="cw-page-header">
             <div class="cw-header-group">
@@ -46,7 +45,7 @@
             </div>
         </div>
     </div>
-    <script src="../shared-admin-nav.js?v=7"></script>
+    <script src="../shared-admin-nav.js?v=8"></script>
 
     <main>
         <div class="main-container">
@@ -61,7 +60,7 @@
                         <img src="https://cdn.changes.tg/gifts/models/Restless%20Jar/png/Kittens.png" alt="">
                         <span>Тематики</span>
                     </a>
-                    <a href="../ColorWheel/color-wheel.html" class="cw-tab">
+                    <a href="../index.html" class="cw-tab">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 11.5 12 4l9 7.5M5 10v9a1 1 0 001 1h4v-6h4v6h4a1 1 0 001-1v-9"/></svg>
                         <span>Главная</span>
                     </a>
@@ -69,7 +68,7 @@
                         <img src="https://cdn.changes.tg/gifts/models/Snake%20Box/png/Seashore.png" alt="">
                         <span>Похожие</span>
                     </a>
-                    <a href="../ColorWheel/color-wheel.html#search" class="cw-tab">
+                    <a href="../index.html#search" class="cw-tab">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7" stroke-linecap="round"/><path stroke-linecap="round" d="M21 21l-4.3-4.3"/></svg>
                         <span>Поиск по цвету</span>
                     </a>
