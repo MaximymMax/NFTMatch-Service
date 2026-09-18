@@ -11,7 +11,7 @@
     <!-- putya: "модалка themes-modal-content должна быть при открытии любой карточки" — реальный
          themesModal (тот же, что на Монохромах/Тематиках/Похожих), а не своя. -->
     <link rel="stylesheet" href="../Monohrome/themes-modal.css">
-    <link rel="stylesheet" href="./color-wheel.css?v=26">
+    <link rel="stylesheet" href="./color-wheel.css?v=27">
     <script src="../config.js"></script>
     <!-- putya: "единая шапка для всех страниц... кнопки переключения языка, регистрации через тг" —
          те же скрипты, что и на остальных страницах; RU/EN и TG-бейдж переносятся в .cw-page-header
@@ -144,7 +144,7 @@
                  исключать цвета, можно искать по основным" — портировано из mono-cube-live.html
                  (режимы "Рецепт" и "Похожие модели"): FindModelsByColorRecipe/FindSimilarModels
                  вместо старых GetGlobalColorWheelNearestModels/MultiColorModels и SimilarNFTs. -->
-            <div id="cw-panel-search" class="cw-container cw-panel hidden">
+            <div id="cw-panel-search" class="cw-panel hidden">
                 <!-- putya: "надо чтобы оформление было таким же как в монохромах, сейчас слишком
                      отличается" — переключатель, дропдауны и порог теперь буквально те же классы
                      (.mode-switcher-container/.dropdowns-row/.sort-group-col/.bgs2-filter-block),
@@ -175,11 +175,12 @@
                                 <button type="button" id="add-color-filter-btn" class="cw-add-color-btn">+ Добавить цвет</button>
                             </div>
 
-                            <!-- putya: "можно искать по основным" — режим "Доминирующие": без процентов,
-                                 просто топ-N кубов модели по весу сопоставляются с N выбранными цветами. -->
-                            <div class="cw-recipe-mode-switch" id="recipe-mode-switch" data-active-mode="exact">
-                                <button type="button" class="cw-recipe-mode-btn active" data-recipemode="exact">Точный %</button>
-                                <button type="button" class="cw-recipe-mode-btn" data-recipemode="dominant">Доминирующие</button>
+                            <!-- putya: "вот прям такой же переключатель как mode-switcher mode-switcher-2
+                                 сделай" — буквально те же классы, что и переключатель По цветам/Похожие
+                                 выше, не отдельная урезанная копия. -->
+                            <div class="mode-switcher mode-switcher-2" id="recipe-mode-switch" data-active-mode="exact">
+                                <button type="button" class="mode-tab active" data-recipemode="exact">Точный %</button>
+                                <button type="button" class="mode-tab" data-recipemode="dominant">Доминирующие</button>
                             </div>
                         </div>
 
@@ -284,7 +285,7 @@
     </main>
 
     <script type="module" src="../Monohrome/themes-modal.js"></script>
-    <script src="./color-wheel.js?v=23"></script>
+    <script src="./color-wheel.js?v=24"></script>
 </body>
 
 </html>

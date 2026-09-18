@@ -684,7 +684,7 @@
     // модели по весу сопоставляются с N выбранными цветами (dominantMode=true на бэкенде). Портировано
     // из mono-cube-live.html (recipeModeExactBtn/recipeModeDominantBtn). ---
     const recipeModeSwitch = document.getElementById('recipe-mode-switch');
-    const recipeModeBtns = recipeModeSwitch.querySelectorAll('.cw-recipe-mode-btn');
+    const recipeModeBtns = recipeModeSwitch.querySelectorAll('.mode-tab');
     const recipeToleranceField = document.getElementById('recipe-tolerance-field');
     const recipeMinSimInput = document.getElementById('recipe-min-sim');
     const recipeToleranceInput = document.getElementById('recipe-tolerance');

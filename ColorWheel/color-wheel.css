@@ -48,6 +48,13 @@
 
 .cw-panel.hidden { display: none; }
 
+/* putya: "убери впринципе cw-panel-search" — в отличие от #cw-panel-home эта панель больше не
+   отдельная приподнятая карточка (.cw-container даёт align-items:center, из-за чего дочерний
+   .content-wrapper не сжимается до ширины родителя и вылезает за края по бокам симметрично —
+   ровно баг с "вылезает за пределы при добавлении цвета"), а плоский блок прямо на фоне
+   .main-container, как #cw-admin-tabs/.mode-switcher-container/.content-wrapper на Монохромах. */
+#cw-panel-search { width: 100%; }
+
 /* --- Фильтр коллекций: тот же multi-select dropdown, что и на background-finder.html --- */
 .cw-filter-row { display: flex; align-items: center; gap: 10px; width: 100%; }
 .cw-filter-label { font-size: 13px; color: var(--text-muted); flex: 0 0 auto; }
@@ -411,8 +418,10 @@
     border-radius: 8px; z-index: 1; transition: transform .35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 .mode-switcher.mode-switcher-2::before { width: calc((100% - 8px) / 2); }
-.mode-switcher.mode-switcher-2[data-active-mode="colors"]::before { transform: translateX(0%); }
-.mode-switcher.mode-switcher-2[data-active-mode="similar"]::before { transform: translateX(100%); }
+.mode-switcher.mode-switcher-2[data-active-mode="colors"]::before,
+.mode-switcher.mode-switcher-2[data-active-mode="exact"]::before { transform: translateX(0%); }
+.mode-switcher.mode-switcher-2[data-active-mode="similar"]::before,
+.mode-switcher.mode-switcher-2[data-active-mode="dominant"]::before { transform: translateX(100%); }
 .mode-tab {
     flex: 1; border: none; background: transparent; color: var(--text-muted);
     font-size: 0.92rem; line-height: 1.2; font-weight: 700; padding: 12px 2px; z-index: 2; cursor: pointer;
@@ -432,25 +441,9 @@
     .dropdowns-row { grid-template-columns: 1fr; }
 }
 
-/* --- Режим рецепта: "Точный %" / "Доминирующие" — тот же принцип переключателя, что и
-   .mode-switcher, но локальный (2 кнопки, без плашки поверх страницы). --- */
-.cw-recipe-mode-switch {
-    display: flex; width: 100%; position: relative;
-    background: var(--surface-elevated); border: 1px solid var(--border-color); border-radius: 10px;
-    padding: 3px;
-}
-.cw-recipe-mode-switch::before {
-    content: ''; position: absolute; top: 3px; bottom: 3px; left: 3px;
-    width: calc(50% - 3px); background: rgba(37, 99, 235, .18); border: 1px solid rgba(37, 99, 235, .3);
-    border-radius: 8px; transition: transform .25s ease; z-index: 1;
-}
-.cw-recipe-mode-switch[data-active-mode="dominant"]::before { transform: translateX(100%); }
-.cw-recipe-mode-btn {
-    flex: 1; border: none; background: transparent; color: var(--text-muted);
-    font-size: 12.5px; font-weight: 700; font-family: inherit; padding: 8px 4px;
-    cursor: pointer; z-index: 2; transition: color .2s ease;
-}
-.cw-recipe-mode-btn.active { color: var(--text-primary); }
+/* putya: "вот прям такой же переключатель как mode-switcher mode-switcher-2 сделай" — режим
+   рецепта (Точный %/Доминирующие) переиспользует ТЕ ЖЕ классы .mode-switcher.mode-switcher-2/
+   .mode-tab, что и переключатель По цветам/Похожие выше (см. разметку), своих стилей не заводим. */
 
 /* --- Пороги (Мин. сходство / Допуск веса) — тот же приметный синий блок, что и "Мин. вес цвета в
    оценке" на background-finder.css (.bgs2-filter-block), с двумя блоками рядом на ПК. --- */
@@ -481,6 +474,18 @@
 }
 .recipe-exclude-color-picker::-webkit-color-swatch-wrapper { padding: 3px; }
 .recipe-exclude-color-picker::-webkit-color-swatch { border: none; border-radius: 6px; }
+
+/* putya: "оформи similar-gift-value и similar-model-value так же как dropdown-header with-search"
+   [на Монохромах] — .dropdown-header тут (color-wheel.css) компактнее, чем на
+   background-finder.css (10px/13px vs 0.75rem/0.95rem) — эту пару дропдаунов подгоняем под тот же
+   размер, не трогая остальные (Коллекции на Главной) — те уже устоялись в своём виде. */
+#cw-search-similar .dropdown-header { border-radius: var(--radius); }
+#cw-search-similar .dropdown-header .arrow { width: 12px; height: 12px; right: 1rem; }
+#cw-search-similar .dropdown-header.active .arrow { transform: translateY(-50%) rotate(225deg); }
+#cw-search-similar .dropdown-header .selected-value-placeholder,
+#cw-search-similar .dropdown-header .dropdown-search {
+    font-size: 0.95rem; line-height: 1.2; padding: 0.75rem 2.5rem 0.75rem 1rem;
+}
 
 #similar-model-header.disabled { opacity: .5; pointer-events: none; }
 
