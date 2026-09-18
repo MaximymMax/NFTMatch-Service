@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BACKGROUND SELECTION</title>
-    <link rel="stylesheet" href="./background-finder.css?v=5">
+    <link rel="stylesheet" href="./background-finder.css?v=6">
 
     <link rel="stylesheet" href="./themes-modal.css">
     <link rel="stylesheet" href="../shared-admin-nav.css?v=8">
@@ -282,7 +282,14 @@
                         </div>
                         <div class="bgs2-filter-block-hint">Группы и фоны, завязанные на цвет легче этого % массы модели, не показываются ниже</div>
                     </div>
-                    <div id="bgs-v2-diagram" class="bgs2-diagram-box"></div>
+                    <!-- putya: "надо выводить просмотр модели рядом с диаграмой чтобы увидеть, и на
+                         похожих и на монохромах" — сама модель рядом с абстрактным радаром цветов. -->
+                    <div class="bgs2-diagram-row">
+                        <div class="bgs2-diagram-preview">
+                            <img id="bgs2-diagram-preview" src="" alt="" onerror="this.style.visibility='hidden'" onload="this.style.visibility='visible'">
+                        </div>
+                        <div id="bgs-v2-diagram" class="bgs2-diagram-box"></div>
+                    </div>
                     <div id="bgs-v2-body"></div>
                 </div>
             </div>
@@ -355,7 +362,7 @@
 
     <script type="module" src="./themes-modal.js"></script>
     <script type="module" src="./themes-modal-nfts.js"></script>
-    <script type="module" src="./background-finder.js?v=5"></script>
+    <script type="module" src="./background-finder.js?v=6"></script>
 </body>
 
 </html>

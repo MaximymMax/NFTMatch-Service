@@ -848,6 +848,20 @@
     const similarSearchBtn = document.getElementById('similar-search-btn');
     const similarSearchResults = document.getElementById('similar-search-results');
 
+    // putya: "выпадающий список должен быть в таком же стиле как custom-dropdown-container
+    // multi-select, но один выбор" — та же .list-option-preview иконка (22x22, тот же
+    // giftNameToId/API_GIFT_ORIGINALS_URL), что и у "Коллекции" на Главной панели, просто список
+    // остаётся одиночным выбором (selectSimilarGift/selectSimilarModel закрывают дропдаун сами).
+    function similarGiftPreviewHtml(giftName) {
+        const giftId = giftNameToId[giftName.toLowerCase().trim()];
+        return giftId
+            ? `<img class="list-option-preview" src="${API_GIFT_ORIGINALS_URL}/${giftId}/Original.png" alt="" loading="lazy" onerror="this.style.visibility='hidden'">`
+            : '';
+    }
+    function similarModelPreviewHtml(giftName, modelName) {
+        return `<img class="list-option-preview" src="${modelImageUrl(giftName, modelName)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">`;
+    }
+
     async function loadSimilarPicker() {
         similarGiftOptions.innerHTML = '<div class="cw-drilldown-note">Загрузка…</div>';
         try {
@@ -855,7 +869,7 @@
             giftModelsData = resp.ok ? await resp.json() : [];
         } catch (err) { giftModelsData = []; }
         similarGiftOptions.innerHTML = giftModelsData.map(g =>
-            `<div class="list-option" data-value="${escapeHtml(g.GiftName)}">${escapeHtml(g.GiftName)}</div>`
+            `<div class="list-option" data-value="${escapeHtml(g.GiftName)}">${similarGiftPreviewHtml(g.GiftName)}<span>${escapeHtml(g.GiftName)}</span></div>`
         ).join('') || '<div class="cw-drilldown-note">Не удалось загрузить коллекции.</div>';
     }
 
@@ -873,7 +887,7 @@
         const gift = giftModelsData.find(g => g.GiftName === giftName);
         const models = gift ? gift.Models : [];
         similarModelOptions.innerHTML = models.map(m =>
-            `<div class="list-option" data-value="${escapeHtml(m)}">${escapeHtml(m)}</div>`
+            `<div class="list-option" data-value="${escapeHtml(m)}">${similarModelPreviewHtml(giftName, m)}<span>${escapeHtml(m)}</span></div>`
         ).join('');
 
         similarSearchBtn.disabled = true;
@@ -1048,6 +1062,8 @@
     async function loadSimilarTargetRadar(giftName, modelName) {
         similarRadarBox.classList.remove('hidden');
         similarRadar.innerHTML = '<div class="cw-drilldown-note">Загружаю цветовой профиль…</div>';
+        const previewImg = document.getElementById('similar-target-preview');
+        if (previewImg) { previewImg.src = modelImageUrl(giftName, modelName); previewImg.alt = modelName; }
         try {
             const resp = await fetch(`${API_BASE}/DebugCube?nameGift=${encodeURIComponent(giftName)}&nameModel=${encodeURIComponent(modelName)}`, { headers: { 'Authorization': getApiAuthHeader() } });
             const data = resp.ok ? await resp.json() : null;

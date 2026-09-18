@@ -1421,9 +1421,19 @@ main {
    карточки такими же как были раньше"). См. background-finder.js (блок "ФОНЫ v2"). */
 .bgs2-loading { display: flex; justify-content: center; padding: 20px 0; }
 
-.bgs2-diagram-box { display: flex; justify-content: center; padding: 8px 0 4px; }
+.bgs2-diagram-box { display: flex; justify-content: center; padding: 8px 0 4px; flex: 1 1 auto; min-width: 0; }
 .bgs2-radar-svg { width: 100%; max-width: 250px; height: auto; display: block; margin: 0 auto; }
 .bgs2-hint { font-size: 12px; color: var(--text-muted); text-align: center; padding: 12px 0; }
+
+/* putya: "надо выводить просмотр модели рядом с диаграмой чтобы увидеть, и на похожих и на
+   монохромах" — сама модель рядом с абстрактным радаром цветов. */
+.bgs2-diagram-row { display: flex; align-items: center; justify-content: center; gap: 16px; flex-wrap: wrap; }
+.bgs2-diagram-preview {
+    width: 110px; height: 110px; flex: 0 0 auto; box-sizing: border-box;
+    background: var(--surface-elevated); border-radius: var(--radius); padding: 12px;
+    display: flex; align-items: center; justify-content: center;
+}
+.bgs2-diagram-preview img { max-width: 100%; max-height: 100%; object-fit: contain; filter: drop-shadow(0 8px 12px rgba(0,0,0,.4)); }
 
 /* putya: "вес цвета... повыразительней... сейчас тяжело заметить" — заметный блок с рамкой/фоном
    в цвет акцента (та же логика приметности, что у .bgs2-mono-section ниже, только синим), крупное
