@@ -620,8 +620,14 @@
     function setActiveTab(tab, subtab) {
         panelHome.classList.toggle('hidden', tab !== 'home');
         panelSearch.classList.toggle('hidden', tab !== 'search');
+        // putya: "все еще разные стили" — на Похожих/Поиске по цвету "Главная" оставалась active
+        // (класс захардкожен в HTML для начального состояния), setSearchSubtab трогает только
+        // кнопки data-tab="search", поэтому "Главная" не гасла при прямом заходе по #search-хэшу
+        // с других страниц — два таба подсвечивались одновременно.
+        tabButtons.forEach(btn => {
+            if (btn.dataset.tab === 'home') btn.classList.toggle('active', tab === 'home');
+        });
         if (tab === 'home') {
-            tabButtons.forEach(btn => btn.classList.toggle('active', btn.dataset.tab === 'home'));
             syncModelsPanelHeight();
         } else if (tab === 'search') {
             setSearchSubtab(subtab || currentSearchSubtab);
