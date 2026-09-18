@@ -686,26 +686,6 @@
     }
     addColorFilterBtn.addEventListener('click', addColorFilterRow);
 
-    // --- putya: "можно исключать цвета" — список цветов-противопоказаний, модель отсеивается
-    // целиком, если такой цвет на ней заметно (>5%) есть (excludeOffRecipeColors — общий фильтр,
-    // отдельная опция ниже; excludeHexes — конкретные цвета). ---
-    const recipeExcludeColorsList = document.getElementById('recipe-exclude-colors-list');
-    const recipeAddExcludeColorBtn = document.getElementById('recipe-add-exclude-color-btn');
-    function addRecipeExcludeColorRow(hex) {
-        const row = document.createElement('div');
-        row.className = 'cw-exclude-color-row';
-        row.innerHTML = `
-            <input type="color" class="recipe-exclude-color-picker" value="${hex || randomHex()}" title="Выбрать цвет">
-            <button type="button" class="cw-remove-filter-btn" title="Убрать">&times;</button>
-        `;
-        recipeExcludeColorsList.appendChild(row);
-    }
-    recipeExcludeColorsList.addEventListener('click', (e) => {
-        const btn = e.target.closest('.cw-remove-filter-btn');
-        if (btn) btn.closest('.cw-exclude-color-row').remove();
-    });
-    recipeAddExcludeColorBtn.addEventListener('click', () => addRecipeExcludeColorRow());
-
     colorFiltersList.addEventListener('input', (e) => {
         if (e.target.classList.contains('filter-color-picker')) {
             e.target.closest('.cw-color-filter-row').querySelector('.filter-color-hex').value = e.target.value.toUpperCase();
@@ -770,13 +750,11 @@
             Hex: row.querySelector('.filter-color-picker').value,
             TargetPercent: 0
         }));
-        const excludeHexes = [...recipeExcludeColorsList.querySelectorAll('.recipe-exclude-color-picker')].map(el => el.value);
-        const excludeParam = excludeHexes.length ? `&excludeHexes=${encodeURIComponent(excludeHexes.join(','))}` : '';
         const offColorParam = excludeOffRecipeCheckbox.checked ? '&excludeOffRecipeColors=true' : '';
 
         colorSearchResults.innerHTML = '<div class="cw-drilldown-note">Загрузка…</div>';
         try {
-            const url = `${API_BASE}/FindModelsByColorRecipe?minSimilarity=${RECIPE_MIN_SIMILARITY}&toleranceWeight=0&dominantMode=true${excludeParam}${offColorParam}`;
+            const url = `${API_BASE}/FindModelsByColorRecipe?minSimilarity=${RECIPE_MIN_SIMILARITY}&toleranceWeight=0&dominantMode=true${offColorParam}`;
             const resp = await fetch(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': getApiAuthHeader() },

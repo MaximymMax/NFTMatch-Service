@@ -11,7 +11,7 @@
     <!-- putya: "модалка themes-modal-content должна быть при открытии любой карточки" — реальный
          themesModal (тот же, что на Монохромах/Тематиках/Похожих), а не своя. -->
     <link rel="stylesheet" href="../Monohrome/themes-modal.css">
-    <link rel="stylesheet" href="./color-wheel.css?v=31">
+    <link rel="stylesheet" href="./color-wheel.css?v=32">
     <script src="../config.js"></script>
     <!-- putya: "единая шапка для всех страниц... кнопки переключения языка, регистрации через тг" —
          те же скрипты, что и на остальных страницах; RU/EN и TG-бейдж переносятся в .cw-page-header
@@ -179,20 +179,13 @@
 
                         <!-- putya: "исключить модели должна быть под cw-color-search-actions" —
                              "cw-exclude-toggle disabled был лучше виден" — вместо еле заметного
-                             opacity явная серая плашка-пояснение (не только title на hover). -->
+                             opacity явная серая плашка-пояснение (не только title на hover).
+                             "сделай по умолчанию выбранным исключить посторонние модели" — checked. -->
                         <label class="cw-exclude-toggle" id="exclude-off-recipe-label" title="Только при 2+ цветах">
-                            <input type="checkbox" id="exclude-off-recipe">
+                            <input type="checkbox" id="exclude-off-recipe" checked>
                             Исключить модели с посторонними цветами
                             <span class="cw-exclude-toggle-hint">нужно 2+ цвета</span>
                         </label>
-
-                        <!-- putya: "можно исключать цвета" — отдельный список цветов-противопоказаний,
-                             модель отсеивается целиком, если такой цвет на ней заметно (>5%) есть. -->
-                        <div class="cw-exclude-colors-block">
-                            <span class="cw-exclude-colors-label">Цвета-противопоказания</span>
-                            <div id="recipe-exclude-colors-list" class="cw-exclude-colors-list"></div>
-                            <button type="button" id="recipe-add-exclude-color-btn" class="cw-add-color-btn">+ Добавить цвет-противопоказание</button>
-                        </div>
 
                         <button type="button" id="color-search-btn" class="cw-color-search-btn cw-search-btn-wide">Найти</button>
 
@@ -265,7 +258,7 @@
     </main>
 
     <script type="module" src="../Monohrome/themes-modal.js"></script>
-    <script src="./color-wheel.js?v=28"></script>
+    <script src="./color-wheel.js?v=29"></script>
 </body>
 
 </html>
