@@ -8,24 +8,37 @@
    color-wheel.css, чтобы не дублировать на каждой странице; подключается вторым тегом <link>
    после основного styles.css/global.css той страницы. */
 
-/* putya: "исправь шапку, она должна быть с таким же темносиним фоном на всю ширину экрана,
-   адаптирована под вебапп, то есть отступ на ней сверху около 90 пикселей" — раньше фона не было
-   (background:none), шапка сливалась с контентом под ней и упиралась в самый верх экрана, из-за
-   чего в Telegram WebApp иконки заезжали под системную область (кнопка закрытия/свайп). Сплошной
-   #1a237e — цвет самого верха фонового градиента body (см. styles.css), поэтому переход в основной
-   фон ниже незаметен. Ширина full-bleed (без max-width) — раньше ряд иконок был по центру в
-   900px-колонке, теперь сама шапка-плашка тянется на весь экран. */
+/* putya: "шапка должна быть темносиняя как и основная секция" — #16213a это var(--surface-color)
+   из styles.css, тот же фон, что у .main-container, а не верх градиента body (#1a237e, был
+   слишком синим/другим оттенком). Full-bleed (без max-width) — раньше ряд иконок был по центру в
+   900px-колонке, теперь сама шапка-плашка тянется на весь экран. Отступ сверху ~90px — под
+   системную область Telegram WebApp (кнопка закрытия/свайп). */
 .cw-page-header {
     display: flex; align-items: center; justify-content: space-between;
     width: 100%; box-sizing: border-box;
     padding: 90px 16px 14px; gap: 10px; position: relative; z-index: 20;
-    background: #1a237e; box-shadow: none; border-radius: 0;
+    background: #16213a; box-shadow: none; border-radius: 0;
 }
 /* На главной (../index.html) .cw-page-header — это сам тег <header>, а не div, поэтому старое
    правило "body.tg-fullscreen header { padding-top: 25px; }" (styles.css, специфичность
    класс+тег) перебивает наш padding-top:90px (специфичность только класс). Явный оверрайд с двумя
    классами специфичнее в любом порядке подключения файлов. */
 body.tg-fullscreen .cw-page-header { padding-top: 90px; }
+
+/* putya: "меньше отступ от этой шапки у секции" — main{padding-top:100px} в styles.css рассчитан
+   на старую схему (header.safe-area-gradient абсолютно позиционирован НАД main, поэтому main сам
+   резервировал место). Теперь .cw-page-header — обычный блок в потоке, который уже занимает своё
+   место (90px+иконки+14px), и старые 100px у main добавлялись СВЕРХУ ЭТОГО. padding-top:0 (не
+   1rem) — иначе в этом промежутке проглядывал фон body (градиент #1a237e→#0a1020), другого
+   оттенка, чем шапка/main-container (#16213a) — заметный шов. !important — у themes.css и
+   gift-page.css тот же main{padding-top:100px} уже объявлен с !important, обычная специфичность
+   (даже с ID) его не перебивает. Оверрайд только для страниц с этой шапкой — на
+   NonUnique/nonunique.html (единственная страница на styles.css без неё) старая схема остаётся
+   как была. */
+header.cw-page-header ~ main,
+#cw-admin-nav ~ main {
+    padding-top: 0 !important;
+}
 .cw-header-group { display: flex; align-items: center; gap: 8px; }
 .cw-header-link {
     display: flex; align-items: center; justify-content: center;
@@ -34,9 +47,15 @@ body.tg-fullscreen .cw-page-header { padding-top: 90px; }
 }
 .cw-header-link svg { width: 20px; height: 20px; }
 .cw-header-link:hover { transform: translateY(-2px); filter: brightness(1.2); }
-.cw-header-link-tg { background: rgba(37, 99, 235, .16); color: #60a5fa; }
 .cw-header-link-gh { background: rgba(255, 255, 255, .1); color: #e5e7eb; }
 .cw-header-link-api { background: rgba(16, 185, 129, .16); color: #34d399; }
+/* putya: "на шапка оставь только апи (подпиши что это апи)" — TG-канал убран из статичных ссылок,
+   у API теперь виден текст рядом с иконкой (раньше только title на hover), ширина auto вместо
+   фиксированных 46px под квадратную иконку. */
+.cw-header-link-labeled {
+    width: auto; padding: 0 14px 0 12px; gap: 6px; font-size: 13px; font-weight: 700;
+    text-decoration: none;
+}
 
 /* putya: "кнопка с главным экраном должна быть по центру" — Главная стоит третьей из пяти в
    разметке каждой страницы (см. HTML), тут только визуальное оформление ряда. "нет отступа у

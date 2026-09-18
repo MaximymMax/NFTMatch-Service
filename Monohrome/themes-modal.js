@@ -1043,7 +1043,14 @@ async function renderSimilarGiftsButtonForDetailView(container, giftName, modelN
         }
 
         // --- РЕНДЕРИНГ ---
-        const href = `../nft-page/index.html?giftName=${encodeURIComponent(giftName)}&modelName=${encodeURIComponent(modelName)}&randomGiftsCount=100`;
+        // putya: "кнопка которая перекидывает на похожие модели... сейчас перекидывает на старый
+        // формат страницы похожих, адаптируй под новую" — nft-page/index.html был старой отдельной
+        // страницей, теперь "Похожие" живёт на /index.html#search-similar (см. color-wheel.js,
+        // applySimilarDeepLink подставляет giftName/modelName в дропдауны). Абсолютный путь от
+        // корня — эта модалка открывается со страниц на разной глубине (Тематики/Монохромы/сама
+        // главная), относительный "../" резолвился бы по-разному в зависимости от того, откуда её
+        // открыли.
+        const href = `/index.html?giftName=${encodeURIComponent(giftName)}&modelName=${encodeURIComponent(modelName)}#search-similar`;
         const btn = document.createElement('a');
         btn.className = 'similar-color-btn';
         btn.href = href;
@@ -2281,7 +2288,10 @@ function renderSimilarButtonWithData(container, giftName, modelName, responseDat
     }
 
     // --- РЕНДЕРИНГ ---
-    const href = `../nft-page/index.html?giftName=${encodeURIComponent(giftName)}&modelName=${encodeURIComponent(modelName)}&randomGiftsCount=100`;
+    // putya: "кнопка которая перекидывает на похожие модели... сейчас перекидывает на старый
+    // формат страницы похожих, адаптируй под новую" — см. аналогичный комментарий в
+    // renderSimilarGiftsButtonForDetailView выше по файлу.
+    const href = `/index.html?giftName=${encodeURIComponent(giftName)}&modelName=${encodeURIComponent(modelName)}#search-similar`;
     const btn = document.createElement('a');
     btn.className = 'similar-color-btn';
     btn.href = href;
@@ -3571,11 +3581,15 @@ window.updateTelegramBackButton = function (mode) {
 
     // Независимо от режима (mode), кнопка всегда ведет назад по истории браузера.
     // Мы НЕ закрываем модалку этой кнопкой.
+    // putya: "почини стрелочки который на прошлую страницу в вебапп телеграм перекидывать
+    // должны" — '../index.html' был правильным только со страниц уровня Thematic/Monohrome; этот
+    // же themes-modal.js теперь подключён и на самой /index.html (см. новая главная), где '../'
+    // уводит на уровень выше домена. Абсолютный путь работает одинаково с любой глубины.
     tg.BackButton.onClick(() => {
         if (window.history.length > 1) {
             window.history.back();
         } else {
-            window.location.href = '../index.html' + (window.location.hash || '');
+            window.location.href = '/index.html' + (window.location.hash || '');
         }
     });
 };

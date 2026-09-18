@@ -712,6 +712,7 @@ document.addEventListener('DOMContentLoaded', () => {
             lastResults: [],
             v2Data: null,
             v2ViewMode: 'groups', // putya: "две кнопки... слева по группам, справа все" — переключатель под ★ Монохромные фоны
+            minMassCustomized: false, // putya: "если нет цвета больше 30%, отображай 10" — пока true, авто-подбор дефолта не трогает ручной выбор
         },
         findModels: {
             selectedGifts: [], // putya: "несколько коллекций в обеих режимах" — [] значит "все коллекции"
@@ -2029,6 +2030,7 @@ if (sortSwitcher) {
     // лимит веса цвета который учитывается в оценке" — minMassPct теперь берётся из поля ввода
     // (#bgs2-min-mass, см. renderBgsV2/fetchBgsV2), группы с массой ниже него не показываются.
     const BGS2_GROUP_MIN_MASS_DEFAULT = 30;
+    const BGS2_GROUP_MIN_MASS_FALLBACK = 10;
 
     function bgs2RenderGroups(groups, minMassPct) {
         return (groups || []).map(g => {
@@ -2126,8 +2128,9 @@ if (sortSwitcher) {
     function renderBgsV2(data) {
         const { debugCubeData, dedupData } = data;
 
-        bgsV2Diagram.innerHTML = debugCubeData
-            ? bgs2BuildColorRadarSVG(bgs2ClustersFromDebugCube(debugCubeData))
+        const clusters = debugCubeData ? bgs2ClustersFromDebugCube(debugCubeData) : [];
+        bgsV2Diagram.innerHTML = clusters.length
+            ? bgs2BuildColorRadarSVG(clusters)
             : '<div class="bgs2-hint">Нет данных о цветовом профиле.</div>';
 
         const groups = bgs2Pick(dedupData, 'groups') || [];
@@ -2139,6 +2142,14 @@ if (sortSwitcher) {
         }
 
         const minMassInput = document.getElementById('bgs2-min-mass');
+        // putya: "если вдруг на модели нет цвета который больше 30 процентов занимает, отображай
+        // 10 минимальный процент веса" — при дефолте 30% модель без доминирующего цвета осталась
+        // бы без единой группы/фона. Трогаем поле только пока пользователь сам его не менял
+        // (minMassCustomized), иначе каждая новая модель затирала бы его собственный выбор.
+        if (minMassInput && !state.findBgs.minMassCustomized) {
+            const maxWeight = clusters.length ? clusters[0].weight : 0;
+            minMassInput.value = maxWeight < BGS2_GROUP_MIN_MASS_DEFAULT ? BGS2_GROUP_MIN_MASS_FALLBACK : BGS2_GROUP_MIN_MASS_DEFAULT;
+        }
         const minMassPct = minMassInput ? (parseFloat(minMassInput.value) || 0) : BGS2_GROUP_MIN_MASS_DEFAULT;
 
         const monoHtml = bgs2RenderMonoSection(groups);
@@ -2167,6 +2178,7 @@ if (sortSwitcher) {
     const bgs2MinMassInputEl = document.getElementById('bgs2-min-mass');
     if (bgs2MinMassInputEl) {
         bgs2MinMassInputEl.addEventListener('change', () => {
+            state.findBgs.minMassCustomized = true;
             if (state.findBgs.v2Data) renderBgsV2(state.findBgs.v2Data);
         });
     }

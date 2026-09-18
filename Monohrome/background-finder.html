@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="./background-finder.css?v=9">
 
     <link rel="stylesheet" href="./themes-modal.css">
-    <link rel="stylesheet" href="../shared-admin-nav.css?v=9">
+    <link rel="stylesheet" href="../shared-admin-nav.css?v=12">
 
     <script src="../config.js"></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
@@ -31,16 +31,13 @@
          синхронизирует shared-admin-nav.js (снимает cw-admin-nav-hidden сразу с обоих для всех посетителей). -->
     <div id="cw-admin-nav" class="cw-admin-nav-hidden">
         <div class="cw-page-header">
+            <div class="cw-header-group"></div>
             <div class="cw-header-group">
-                <a href="https://t.me/NFTStyler" target="_blank" class="cw-header-link cw-header-link-tg" title="Наш Telegram-канал">
-                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M21.94 4.11a1.5 1.5 0 00-1.6-.2L3.4 10.8a1.4 1.4 0 00.06 2.6l4.42 1.54 1.7 5.36a1.4 1.4 0 002.31.6l2.47-2.31 4.3 3.16a1.4 1.4 0 002.2-.86l3.06-14.6a1.5 1.5 0 00-.98-1.68zM9.7 14.5l-.3 3.4-1.4-4.4 9.9-6.2-8.2 7.2z"/></svg>
-                </a>
-            </div>
-            <div class="cw-header-group">
-                <a href="../API_info/api.html" class="cw-header-link cw-header-link-api" title="API">
+                <a href="../API_info/api.html" class="cw-header-link cw-header-link-api cw-header-link-labeled" title="API">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
                     </svg>
+                    <span>API</span>
                 </a>
             </div>
         </div>
@@ -64,13 +61,12 @@
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 11.5 12 4l9 7.5M5 10v9a1 1 0 001 1h4v-6h4v6h4a1 1 0 001-1v-9"/></svg>
                         <span>Главная</span>
                     </a>
+                    <!-- putya: "убери нахуй уже эту отдельную вкладку для поиска по цветов, это
+                         есть в похожих" — "По цветам" остался как под-режим внутри самой Похожих
+                         (см. search-mode-switcher на ../index.html), отдельная вкладка не нужна. -->
                     <a href="../index.html#search-similar" class="cw-tab">
                         <img src="https://cdn.changes.tg/gifts/models/Snake%20Box/png/Seashore.png" alt="">
                         <span>Похожие</span>
-                    </a>
-                    <a href="../index.html#search" class="cw-tab">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7" stroke-linecap="round"/><path stroke-linecap="round" d="M21 21l-4.3-4.3"/></svg>
-                        <span>Поиск по цвету</span>
                     </a>
                 </div>
             </div>
@@ -359,9 +355,9 @@
         </div>
     </main>
 
-    <script type="module" src="./themes-modal.js"></script>
+    <script type="module" src="./themes-modal.js?v=1"></script>
     <script type="module" src="./themes-modal-nfts.js"></script>
-    <script type="module" src="./background-finder.js?v=8"></script>
+    <script type="module" src="./background-finder.js?v=9"></script>
 </body>
 
 </html>

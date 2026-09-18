@@ -703,6 +703,21 @@
         similarGiftOptions.innerHTML = giftModelsData.map(g =>
             `<div class="list-option" data-value="${escapeHtml(g.GiftName)}">${similarGiftPreviewHtml(g.GiftName)}<span class="option-text">${escapeHtml(g.GiftName)}</span></div>`
         ).join('') || '<div class="cw-drilldown-note">Не удалось загрузить коллекции.</div>';
+        applySimilarDeepLink();
+    }
+
+    // putya: "кнопка которая перекидывает на похожие модели, в модалке... адаптируй под новую" —
+    // themes-modal.js теперь ведёт на /index.html?giftName=...&modelName=...#search-similar,
+    // подставляем выбор в дропдауны сами, как если бы пользователь их кликнул.
+    function applySimilarDeepLink() {
+        const params = new URLSearchParams(location.search);
+        const giftName = params.get('giftName');
+        const modelName = params.get('modelName');
+        if (!giftName || !modelName) return;
+        const gift = giftModelsData.find(g => g.GiftName === giftName);
+        if (!gift || !gift.Models.includes(modelName)) return;
+        selectSimilarGift(giftName);
+        selectSimilarModel(modelName);
     }
 
     function selectSimilarGift(giftName) {
