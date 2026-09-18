@@ -110,13 +110,16 @@ main {
     max-width: 900px;
     background: rgba(22, 33, 58, 0.92);
     border-radius: var(--radius);
-    box-shadow: var(--card-shadow);
     padding: 0;
     margin-top: 0;
     margin-bottom: 3rem;
     min-height: 110vh;
     overflow: hidden;
 }
+/* putya: "нет свечения которое на главном и на похожих" — то же синее свечение box-shadow, что на
+   .main-container в ColorWheel/color-wheel.css, тут его не было, т.к. страница со своим отдельным
+   CSS. overflow:hidden выше не режет собственный box-shadow элемента, только детей внутри. */
+.main-container { box-shadow: 0 0 120px 30px rgba(59, 130, 246, .6); }
 
 .content-wrapper {
     /* putya: "на монохромах можно еще и снизу сделать отступ небольшой" — тематики (themes.css)

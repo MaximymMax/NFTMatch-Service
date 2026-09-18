@@ -57,14 +57,16 @@
                         <img src="https://cdn.changes.tg/gifts/models/Restless%20Jar/png/Kittens.png" alt="">
                         <span>Тематики</span>
                     </a>
-                    <a href="../index.html" class="cw-tab">
+                    <a href="../index.html" class="cw-tab" data-tab="home">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 11.5 12 4l9 7.5M5 10v9a1 1 0 001 1h4v-6h4v6h4a1 1 0 001-1v-9"/></svg>
                         <span>Главная</span>
                     </a>
                     <!-- putya: "убери отдельную вкладку поиск по цвету, теперь это в похожих" —
                          Поиск по цвету стал подвкладкой внутри Похожих на ColorWheel (см.
-                         setSearchSubtab в color-wheel.js), отдельная ссылка здесь больше не нужна. -->
-                    <a href="../index.html#search-similar" class="cw-tab">
+                         setSearchSubtab в color-wheel.js), отдельная ссылка здесь больше не нужна.
+                         data-tab="home"/"search" тут только для того же mobile-переупорядочивания,
+                         что и в shared-admin-nav.css (@media max-width:600px). -->
+                    <a href="../index.html#search-similar" class="cw-tab" data-tab="search">
                         <img src="https://cdn.changes.tg/gifts/models/Snake%20Box/png/Seashore.png" alt="">
                         <span>Похожие</span>
                     </a>
