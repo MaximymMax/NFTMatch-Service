@@ -76,6 +76,19 @@
                 </div>
             </div>
 
+            <!-- putya: "займись тематиками, добавь возможность ставить те же флажки, что по
+                 визуалу, логике, названию" — тот же ModelThemeEvidence (Visual/Logical/Name),
+                 что и в приватном инструменте разметки (mono-cube-live.html), но встроен в саму
+                 продакшен-страницу отдельным режимом. Видим только админу (тот же IP-гейт, что и
+                 у #cw-admin-tabs выше — shared-admin-nav.js снимает cw-admin-nav-hidden с обоих). -->
+            <div class="mode-switcher-container cw-admin-nav-hidden" id="tf-mode-switcher-container">
+                <div class="mode-switcher mode-switcher-2" id="tf-mode-switcher" data-active-mode="browse">
+                    <button type="button" class="mode-tab active" data-tfmode="browse">Темы</button>
+                    <button type="button" class="mode-tab" data-tfmode="flags">Разметка</button>
+                </div>
+            </div>
+
+            <div id="tf-browse-mode">
             <div class="title-section">
                 <h1 class="page-main-title" data-i18n="themes_title">ТЕМАТИКИ</h1>
             </div>
@@ -189,12 +202,31 @@
                     <div id="themes-grid" class="themes-page-grid-container"></div>
                 </div>
             </div>
+            </div>
+
+            <!-- putya: "если выбрана логика, название выбирать нельзя и наоборот" — 🧠/🔤 взаимно
+                 исключают друг друга при клике (см. theme-flags.js), 🎨 независим от обоих. -->
+            <div id="tf-flags-panel" class="tf-flags-panel hidden">
+                <div class="tf-flags-toolbar">
+                    <input type="text" id="tf-search" class="tf-search-input" placeholder="Поиск тематики...">
+                    <div class="tf-status-filters" id="tf-status-filters">
+                        <button type="button" class="tf-status-btn active" data-status="">Все</button>
+                        <button type="button" class="tf-status-btn" data-status="visual">🎨 Визуал</button>
+                        <button type="button" class="tf-status-btn" data-status="logical">🧠 Логика</button>
+                        <button type="button" class="tf-status-btn" data-status="visual+name">🎨🔤 Визуал+имя</button>
+                        <button type="button" class="tf-status-btn" data-status="name">🔤 Имя</button>
+                    </div>
+                    <button type="button" id="tf-reload-btn" class="tf-reload-btn" title="Обновить список тем">⟳ Обновить</button>
+                </div>
+                <div id="tf-theme-list" class="tf-theme-list"></div>
+            </div>
         </div>
     </main>
 
     <script type="module" src="../Monohrome/themes-modal.js"></script>
     <script type="module" src="../Monohrome/themes-modal-nfts.js"></script>
     <script type="module" src="./themes.js"></script>
+    <script src="./theme-flags.js?v=1"></script>
 </body>
 
 </html>

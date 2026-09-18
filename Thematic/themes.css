@@ -1659,3 +1659,102 @@ label.control-label {
     background: rgba(255, 255, 255, 0.03);
     border-radius: 4px;
 }
+
+/* ============================================= */
+/* РАЗМЕТКА ТЕМ (Visual/Logical/Name evidence)    */
+/* putya: "займись тематиками, добавь возможность ставить те же флажки, что по визуалу, логике,
+   названию" — переключатель Темы/Разметка скопирован буквально (тот же .mode-switcher.mode-
+   switcher-2/.mode-tab, что на background-finder.html/color-wheel.html), своих стилей под него
+   не заводим за исключением подложки под цвет этой страницы (--primary-color тут #38bdf8, а не
+   стандартный #2563eb с других страниц). */
+/* ============================================= */
+.mode-switcher-container {
+    width: 100%; background-color: transparent; padding: 0; margin: 0 0 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+.mode-switcher {
+    display: flex; background: transparent; border-radius: 0; padding: 4px; position: relative;
+    box-shadow: none; height: auto; border: none;
+}
+.mode-switcher::before {
+    content: ''; position: absolute; top: 4px; bottom: 4px; left: 4px;
+    background: rgba(56, 189, 248, .15); border: 1px solid rgba(56, 189, 248, .3);
+    border-radius: 8px; z-index: 1; transition: transform .35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+.mode-switcher.mode-switcher-2::before { width: calc((100% - 8px) / 2); }
+.mode-switcher.mode-switcher-2[data-active-mode="browse"]::before { transform: translateX(0%); }
+.mode-switcher.mode-switcher-2[data-active-mode="flags"]::before { transform: translateX(100%); }
+.mode-tab {
+    flex: 1; border: none; background: transparent; color: var(--text-muted);
+    font-size: 0.92rem; line-height: 1.2; font-weight: 700; padding: 12px 2px; z-index: 2; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; text-align: center;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: .3px;
+    transition: color .3s ease; font-family: inherit;
+}
+.mode-tab.active { color: var(--text-primary); }
+
+.tf-flags-panel { padding: 0 1.5rem 1.5rem 1.5rem; }
+
+.tf-flags-toolbar {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 14px;
+}
+.tf-search-input {
+    flex: 1 1 200px; min-width: 0; background: var(--surface-elevated); border: 1px solid var(--border-color);
+    border-radius: 10px; color: var(--text-primary); font-size: 13px; font-family: inherit; padding: 10px 12px;
+}
+.tf-search-input:focus { outline: none; border-color: var(--primary-color); }
+.tf-status-filters { display: flex; flex-wrap: wrap; gap: 6px; }
+.tf-status-btn {
+    border: 1px solid var(--border-color); background: var(--surface-elevated); color: var(--text-muted);
+    border-radius: 8px; padding: 7px 11px; font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit;
+    transition: all .15s ease;
+}
+.tf-status-btn:hover { color: var(--text-primary); }
+.tf-status-btn.active { background: rgba(56, 189, 248, .18); border-color: var(--primary-color); color: var(--text-primary); }
+.tf-reload-btn {
+    border: 1px solid var(--border-color); background: var(--surface-elevated); color: var(--text-secondary);
+    border-radius: 8px; padding: 8px 12px; font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit;
+}
+.tf-reload-btn:hover { color: var(--text-primary); border-color: var(--primary-color); }
+
+.tf-theme-row {
+    display: flex; align-items: center; gap: 10px; padding: 10px 12px;
+    border: 1px solid var(--border-color); border-radius: 10px; background: var(--surface-color);
+    margin-bottom: 6px; cursor: pointer; transition: border-color .15s ease;
+}
+.tf-theme-row:hover { border-color: var(--primary-color); }
+.tf-theme-row-status { font-weight: 700; flex: 0 0 auto; min-width: 110px; font-size: 12.5px; }
+.tf-theme-row-name { flex: 1 1 auto; min-width: 0; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tf-theme-row-meta { font-size: 11px; color: var(--text-muted); flex: 0 0 auto; }
+.tf-show-more-btn {
+    width: 100%; padding: 10px; border: 1px dashed var(--border-color); background: transparent;
+    color: var(--text-secondary); border-radius: 10px; cursor: pointer; font-family: inherit; font-size: 13px;
+}
+
+.tf-back-btn {
+    border: 1px solid var(--border-color); background: var(--surface-elevated); color: var(--text-secondary);
+    border-radius: 8px; padding: 8px 14px; font-size: 13px; font-weight: 600; cursor: pointer;
+    font-family: inherit; margin-bottom: 12px;
+}
+.tf-back-btn:hover { color: var(--text-primary); }
+.tf-theme-title { font-size: 13px; color: var(--text-muted); margin-bottom: 10px; }
+
+.tf-model-row {
+    display: flex; align-items: center; gap: 12px; padding: 8px; margin-bottom: 6px;
+    background: var(--surface-color); border-radius: 10px; border: 1px solid var(--border-color);
+}
+.tf-model-row img { width: 56px; height: 56px; object-fit: contain; border-radius: 8px; background: rgba(255,255,255,.04); flex: 0 0 auto; }
+.tf-model-info { flex: 1 1 auto; min-width: 0; }
+.tf-model-name { font-weight: 600; font-size: 13.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tf-model-gift { font-size: 11px; color: var(--text-muted); }
+.tf-reviewed-marker { color: #22c55e; }
+
+/* putya: "если выбрана логика, название выбирать нельзя и наоборот" — 🧠 и 🔤 переключаются как
+   пара radio (клик по одному гасит другой, если он был включён), 🎨 независим от обоих. */
+.tf-flag-buttons { display: flex; gap: 4px; flex: 0 0 auto; }
+.tfflag-btn {
+    border: none; border-radius: 6px; padding: 5px 8px; font-size: 12px; cursor: pointer;
+    font-weight: 700; font-family: inherit; transition: background-color .15s ease;
+}
+.tfflag-btn.on { background: #166534; color: #fff; }
+.tfflag-btn.off { background: #3f1d1d; color: #ccc; opacity: .65; }
