@@ -386,21 +386,20 @@
 .multi-swatches { display: flex; align-items: center; justify-content: center; gap: 4px; flex-wrap: wrap; }
 .multi-swatch { width: 12px; height: 12px; border-radius: 50%; box-shadow: 0 0 3px rgba(0,0,0,.4); flex: 0 0 auto; }
 
-/* putya: "совмести поиск по цветам и поиск похожих, просто будет две разные вкладки" —
-   #cw-panel-search теперь содержит два подраздела (colors/similar), переключаемых верхними
-   вкладками "Похожие"/"Поиск по цвету" (см. setSearchSubtab в color-wheel.js). */
+/* putya: "надо чтобы оформление было таким же как в монохромах, сейчас слишком отличается" —
+   ниже .mode-switcher-container/.mode-switcher/.mode-tab/.content-wrapper/.selection-block/
+   .dropdowns-row/.sort-group-col/.filter-label/.bgs2-filter-block* СКОПИРОВАНЫ БУКВАЛЬНО из
+   background-finder.css (он не подключён на этой странице) — плоско, без рамок-карточек вокруг
+   групп полей, подпись НАД полем, дропдауны в 2 колонки на ПК/1 на мобиле, как на Монохромах. */
 .cw-search-subpanel {
-    width: 100%; display: flex; flex-direction: column; align-items: center; gap: 14px;
+    width: 100%; display: flex; flex-direction: column; align-items: stretch; gap: 14px;
 }
 .cw-search-subpanel.hidden { display: none; }
+.cw-search-content-wrapper { padding: 1.25rem 0 0; }
 
-/* putya: "переключатель между режимами сделать по аналогии с переключателем между поиском по
-   фонам и моделям в монохромах" — тот же .mode-switcher.mode-switcher-2, что и #main-mode-switcher
-   на background-finder.css (пилюля со скользящей подложкой), скопирован сюда (background-finder.css
-   на этой странице не подключён) и сужен под ширину остального контента этой колонки. */
-.cw-search-mode-switcher-container {
-    width: 100%; max-width: 460px;
-    background: var(--surface-elevated); border-radius: 12px; border: 1px solid var(--border-color);
+.mode-switcher-container {
+    width: 100%; background-color: transparent; padding: 0; margin: 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 .mode-switcher {
     display: flex; background: transparent; border-radius: 0; padding: 4px; position: relative;
@@ -408,7 +407,7 @@
 }
 .mode-switcher::before {
     content: ''; position: absolute; top: 4px; bottom: 4px; left: 4px;
-    background: rgba(37, 99, 235, .18); border: 1px solid rgba(37, 99, 235, .3);
+    background: rgba(37, 99, 235, .15); border: 1px solid rgba(37, 99, 235, .25);
     border-radius: 8px; z-index: 1; transition: transform .35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 .mode-switcher.mode-switcher-2::before { width: calc((100% - 8px) / 2); }
@@ -416,30 +415,27 @@
 .mode-switcher.mode-switcher-2[data-active-mode="similar"]::before { transform: translateX(100%); }
 .mode-tab {
     flex: 1; border: none; background: transparent; color: var(--text-muted);
-    font-size: 13px; font-weight: 700; padding: 11px 4px; z-index: 2; cursor: pointer;
+    font-size: 0.92rem; line-height: 1.2; font-weight: 700; padding: 12px 2px; z-index: 2; cursor: pointer;
     display: flex; align-items: center; justify-content: center; text-align: center;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: .3px;
     transition: color .3s ease; font-family: inherit;
 }
 .mode-tab.active { color: var(--text-primary); }
 
-/* --- Общая карточка-группа для полей поиска — визуально отделяет каждый смысловой блок
-   (цвета/режим, пороги, пикеры, диаграмма) друг от друга вместо одного длинного списка подряд. --- */
-.cw-search-card {
-    width: 100%; max-width: 460px; box-sizing: border-box;
-    background: var(--surface-elevated); border: 1px solid var(--border-color);
-    border-radius: var(--radius); padding: 16px;
-    display: flex; flex-direction: column; gap: 12px;
-}
-
-.cw-search-btn-wide {
-    width: 100%; max-width: 460px; padding: 12px 18px; font-size: 14px;
+/* --- Коллекция/Модель (Похожие) — те же .dropdowns-row/.sort-group-col/.filter-label, что и на
+   background-finder.html (Фоны/Модели): подпись сверху, 2 колонки на ПК. --- */
+.selection-block { display: flex; flex-direction: column; gap: 1rem; }
+.dropdowns-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; position: relative; z-index: 100; }
+.sort-group-col { display: flex; flex-direction: column; gap: 8px; width: 100%; }
+.filter-label { font-size: 0.85rem; color: var(--text-muted); font-weight: 600; padding-left: 4px; }
+@media (max-width: 600px) {
+    .dropdowns-row { grid-template-columns: 1fr; }
 }
 
 /* --- Режим рецепта: "Точный %" / "Доминирующие" — тот же принцип переключателя, что и
-   .mode-switcher на background-finder.css, но локальный (2 кнопки, без плашки поверх страницы). --- */
+   .mode-switcher, но локальный (2 кнопки, без плашки поверх страницы). --- */
 .cw-recipe-mode-switch {
-    display: flex; width: 100%; max-width: 460px; position: relative;
+    display: flex; width: 100%; position: relative;
     background: var(--surface-elevated); border: 1px solid var(--border-color); border-radius: 10px;
     padding: 3px;
 }
@@ -456,30 +452,26 @@
 }
 .cw-recipe-mode-btn.active { color: var(--text-primary); }
 
-.cw-recipe-fields-row {
-    display: flex; flex-wrap: wrap; gap: 10px; width: 100%; max-width: 460px;
+/* --- Пороги (Мин. сходство / Допуск веса) — тот же приметный синий блок, что и "Мин. вес цвета в
+   оценке" на background-finder.css (.bgs2-filter-block), с двумя блоками рядом на ПК. --- */
+.bgs2-filter-block {
+    background: rgba(37, 99, 235, .1); border: 1px solid rgba(37, 99, 235, .4);
+    border-radius: var(--radius); padding: 14px 16px;
 }
-.cw-num-field {
-    display: flex; flex-direction: column; gap: 4px; font-size: 11px; color: var(--text-muted);
-    flex: 1 1 140px;
+.bgs2-filter-block-label { display: block; font-size: 13px; font-weight: 700; color: var(--accent); margin-bottom: 8px; }
+.bgs2-filter-block-row { display: flex; align-items: center; gap: 6px; }
+.bgs2-filter-block-row input[type="number"] {
+    width: 80px; background: var(--surface-elevated); border: 1px solid var(--border-color);
+    border-radius: 8px; color: var(--text-primary); font-size: 18px; font-weight: 700; font-family: inherit;
+    padding: 8px 10px; text-align: center;
 }
-.cw-num-field-input {
-    position: relative; display: flex; align-items: center;
-}
-.cw-num-field-input input {
-    width: 100%; background: var(--surface-elevated); border: 1px solid var(--border-color);
-    border-radius: 10px; color: var(--text-primary); font-size: 13px; font-family: inherit;
-    padding: 9px 22px 9px 10px; box-sizing: border-box;
-}
-.cw-num-field-input input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(37, 99, 235, .18); }
-.cw-num-field-input i {
-    position: absolute; right: 10px; font-style: normal; font-size: 12px; color: var(--text-muted); pointer-events: none;
-}
+.bgs2-filter-block-row input[type="number"]:focus { outline: none; border-color: var(--accent); }
+.bgs2-filter-pct-sign { color: var(--text-secondary); font-size: 18px; font-weight: 700; }
+
+.cw-search-btn-wide { width: 100%; padding: 12px 18px; font-size: 14px; }
 
 /* --- Цвета-противопоказания: та же строка, что и основной рецепт, но без поля % --- */
-.cw-exclude-colors-block {
-    width: 100%; max-width: 460px; display: flex; flex-direction: column; gap: 8px;
-}
+.cw-exclude-colors-block { width: 100%; display: flex; flex-direction: column; gap: 8px; }
 .cw-exclude-colors-label { font-size: 11.5px; color: var(--text-muted); }
 .cw-exclude-colors-list { display: flex; flex-wrap: wrap; gap: 8px; }
 .cw-exclude-color-row { display: flex; align-items: center; gap: 6px; }
@@ -490,14 +482,9 @@
 .recipe-exclude-color-picker::-webkit-color-swatch-wrapper { padding: 3px; }
 .recipe-exclude-color-picker::-webkit-color-swatch { border: none; border-radius: 6px; }
 
-/* --- Похожие: пикеры коллекции/модели (тот же custom-dropdown-container, что и у коллекций) --- */
-.cw-similar-pickers-row {
-    width: 100%; max-width: 460px; display: flex; flex-direction: column; gap: 10px;
-}
-.cw-similar-pickers-row .cw-filter-row { gap: 10px; }
 #similar-model-header.disabled { opacity: .5; pointer-events: none; }
 
-.cw-similar-radar-box { align-items: center; }
+.cw-similar-radar-box { display: flex; flex-direction: column; align-items: center; gap: 4px; }
 .cw-similar-radar-box.hidden { display: none; }
 .cw-similar-radar-hint { font-size: 10.5px; color: var(--text-muted); text-align: center; }
 .cw-similar-radar-svg circle[data-hex] { cursor: pointer; }
