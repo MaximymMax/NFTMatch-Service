@@ -105,6 +105,10 @@ document.addEventListener('DOMContentLoaded', () => {
         openedCollection: null,
         openedCollectionBg: null,
         colorResults: [],
+        // putya: "в фильтрах тематики флажки добавь... по умолчанию скрыты те темы которые по
+        // названию относятся" — фильтр по ModelThemeEvidence (тот же Visual/Logical/Name, что и в
+        // приватном инструменте разметки), "name" (только название) выключен по умолчанию.
+        evidenceFilters: { visual: true, logical: true, name: false },
     };
 
     // --- ДОБАВЛЕННЫЙ БЛОК: МОДАЛКА ПОДПИСКИ ---
@@ -253,6 +257,64 @@ document.addEventListener('DOMContentLoaded', () => {
         const res = await fetch(url, options);
         if (!res.ok) throw new Error(`API Error: ${res.status}`);
         return await res.json();
+    }
+
+    // --- putya: "в фильтрах тематики флажки добавь, по умолчанию скрыты те темы и модели которые
+    // по названию относятся" — тот же ModelThemeEvidence/GetThemeStatusList (MonoCoof), что и в
+    // приватном инструменте разметки, тут используется только на ЧТЕНИЕ, для фильтрации сетки. ---
+    const MONOCOOF_API_BASE = SERVER_BASE_URL + '/api/MonoCoof';
+    let tfStatusById = null; // Map<themeId, status> — заполняется один раз, кэш на весь сеанс
+    let tfStatusPromise = null;
+
+    function tfPick(obj, name) {
+        if (!obj) return undefined;
+        const lower = name.charAt(0).toLowerCase() + name.slice(1);
+        const upper = name.charAt(0).toUpperCase() + name.slice(1);
+        return obj[lower] !== undefined ? obj[lower] : obj[upper];
+    }
+
+    async function tfLoadStatusMap() {
+        if (tfStatusPromise) return tfStatusPromise;
+        tfStatusPromise = (async () => {
+            try {
+                const resp = await fetch(`${MONOCOOF_API_BASE}/GetThemeStatusList`, { headers: { 'Authorization': getApiAuthHeader() } });
+                if (!resp.ok) throw new Error('HTTP ' + resp.status);
+                const data = await resp.json();
+                const themes = tfPick(data, 'themes') || [];
+                const map = new Map();
+                themes.forEach(t => map.set(Number(tfPick(t, 'themeId')), tfPick(t, 'status') || ''));
+                tfStatusById = map;
+            } catch (err) {
+                tfStatusById = new Map(); // тихо — фильтр просто ничего не скроет при ошибке чтения
+            }
+            return tfStatusById;
+        })();
+        return tfStatusPromise;
+    }
+
+    // Тема видна, если у неё ещё нет статуса (не размечена) ИЛИ её статус пересекается хотя бы с
+    // одним включённым фильтром; "visual+name" считается и визуалом, и названием одновременно.
+    function tfIsThemeVisible(themeId) {
+        if (!tfStatusById) return true; // карта ещё не загрузилась — ничего не прячем
+        const status = tfStatusById.get(Number(themeId));
+        if (!status) return true;
+        const f = state.evidenceFilters;
+        if (status === 'visual') return f.visual;
+        if (status === 'logical') return f.logical;
+        if (status === 'name') return f.name;
+        if (status === 'visual+name') return f.visual || f.name;
+        return true;
+    }
+
+    // Группы (папки) не размечаются сами по себе — фильтр применяется только к листьям-темам.
+    function tfFilterItems(items) {
+        if (!items || !items.length) return items;
+        return items.filter(item => {
+            const type = (tfPick(item, 'type') || tfPick(item, '_v2Type') || '').toLowerCase();
+            if (type !== 'theme') return true;
+            const id = tfPick(item, 'id') !== undefined ? tfPick(item, 'id') : tfPick(item, '_v2Id');
+            return tfIsThemeVisible(id);
+        });
     }
 
     // --- УПРАВЛЕНИЕ URL И ИСТОРИЕЙ ---
@@ -1033,7 +1095,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await response.json();
 
             if (data && data.Items) {
-                renderV2FlatItems(data.Items); // Вызываем правильную функцию отрисовки
+                await tfLoadStatusMap();
+                renderV2FlatItems(tfFilterItems(data.Items)); // Вызываем правильную функцию отрисовки
                 state.hasMore = data.Page < data.TotalPages;
                 state.page++;
                 
@@ -1239,7 +1302,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const url = `${SERVER_BASE_URL}/api/Thematic/V2/Layer?page=${state.page}&pageSize=${state.pageSize}`;
         try {
             const data = await secureFetch(url);
-            const items = data.Items || data.items || [];
+            await tfLoadStatusMap();
+            const items = tfFilterItems(data.Items || data.items || []);
 
             if (items.length === 0 && isReset) {
                 gridWrapper.innerHTML = '<p style="text-align:center; color:var(--text-muted); margin-top: 2rem;">Дерево пусто</p>';
@@ -1359,7 +1423,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         
                         try {
                             const response = await secureFetch(`${SERVER_BASE_URL}/api/Thematic/V2/Layer/${nodeId}?page=1&pageSize=100`);
-                            const childrenData = response.Items || response.items || [];
+                            await tfLoadStatusMap();
+                            const childrenData = tfFilterItems(response.Items || response.items || []);
                             
                             childrenWrap.innerHTML = ''; 
                             
@@ -1663,6 +1728,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const fpPriceRow = document.getElementById('fp-price-row');
     const fpBgRow = document.getElementById('fp-bg-row');
     const fpColorSection = document.getElementById('fp-color-section');
+    const fpEvidenceVisual = document.getElementById('fp-evidence-visual');
+    const fpEvidenceLogical = document.getElementById('fp-evidence-logical');
+    const fpEvidenceName = document.getElementById('fp-evidence-name');
 
     // Функция для отрисовки красивого кружка с градиентом
     window.updateColorDropdownUI = function() {
@@ -1765,6 +1833,23 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+
+    // putya: "в фильтрах тематики флажки добавь" — применяются сразу по клику (не ждут кнопку
+    // "Применить" внизу попапа, это просто чекбоксы show/hide, а не параметры запроса).
+    function reloadCurrentThemeView() {
+        if (state.sortCriteria === 'v2tree') {
+            loadV2Tree(true);
+        } else {
+            loadV2NamesSorted(true);
+        }
+    }
+    [[fpEvidenceVisual, 'visual'], [fpEvidenceLogical, 'logical'], [fpEvidenceName, 'name']].forEach(([el, key]) => {
+        if (!el) return;
+        el.addEventListener('change', () => {
+            state.evidenceFilters[key] = el.checked;
+            reloadCurrentThemeView();
+        });
+    });
 
     // Логика для кастомного выпадающего списка процентов
     if (percentDropdownHeader) {
