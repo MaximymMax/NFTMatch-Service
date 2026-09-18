@@ -51,6 +51,16 @@ header.cw-page-header ~ main,
     padding-top: 0 !important;
     background: #0a1020;
 }
+/* putya: "нет отступа и нет синего на фоне" — на мобильном main-container занимает почти всю
+   ширину main (у main только 16px боковой padding), поэтому тёмных полей #0a1020 по бокам
+   почти не видно — карточка снова выглядит слитой с шапкой в одно пятно, как до правки выше.
+   Явная синяя рамка (--primary-color) вместо расчёта на контраст фона — работает одинаково
+   и на мобильном, и на широком экране, независимо от того, сколько места у main-container
+   с краю. */
+header.cw-page-header ~ main .main-container,
+#cw-admin-nav ~ main .main-container {
+    border: 1px solid rgba(37, 99, 235, .35);
+}
 .cw-header-group { display: flex; align-items: center; gap: 8px; }
 .cw-header-link {
     display: flex; align-items: center; justify-content: center;
