@@ -18,19 +18,13 @@
    со всеми остальными тремя, вместо того чтобы менять публичную ширину других страниц. */
 .main-container { max-width: 900px; overflow: visible; }
 
-/* putya: "добавь эффект на фоне что идет синее свечение от него, как и было раньше" —
-   .glow-effect (styles.css) — (1) лежал внутри main-container, чья overflow:hidden обрезала
-   почти весь блюр (исправлено выше, overflow:visible), (2) сам по себе очень слабый — 30px×250px,
-   opacity:0.6, blur всего 45px — на тёмно-синем фоне почти неразличим даже без обрезки, (3) скрыт
-   вообще на экранах шире 600px (styles.css, "display:none" в @media min-width:601px) — а именно на
-   широком десктопе putya его и проверял. Здесь — заметно ярче/крупнее версия и включена на любой
-   ширине, только на этой странице (единственная, где эти div'ы есть в разметке). */
-.main-container .glow-effect {
-    width: 220px; height: 420px; opacity: 0.55; filter: blur(70px);
-    background: #3b82f6; display: block !important;
-}
-.main-container .glow-left { left: -110px; }
-.main-container .glow-right { right: -110px; }
+/* putya: "убери свечение поверх всего слева и справа экрана... сделай эффект на фоне за основным
+   фреймом main-container что от него идет свечение синее и всё" — прошлые попытки двигали/растили
+   те же два div'а (.glow-effect), которые тянулись через весь экран по краям, а не светились от
+   самой карточки. box-shadow на самом main-container — свечение растёт прямо от его собственных
+   границ со всех 4 сторон, без отдельных элементов, которые можно неправильно спозиционировать. */
+.main-container { box-shadow: 0 0 120px 30px rgba(59, 130, 246, .6); }
+.main-container .glow-effect { display: none !important; }
 
 /* putya: "Основным будет вот эта диаграма... сделай красиво" — карточка круга чуть светлее
    основного фона main-container (surface-elevated, как у info-card), чтобы выделяться как главный
