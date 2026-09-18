@@ -54,15 +54,15 @@
     fetch(`${base}/GetGlobalColorWheelCollections`)
         .then(resp => {
             if (resp.ok) {
-                root.classList.remove('cw-admin-nav-hidden');
-                // putya: "теперь кнопки вверх уехали, а не на блоке" — .cw-page-header (#cw-admin-nav)
-                // и .cw-tabs (#cw-admin-tabs) лежат в РАЗНЫХ местах разметки (шапка — в body сразу
-                // после <head>, вкладки — внутри main-container, на самой карточке, которая идёт
-                // ПОСЛЕ этого <script>-тега в документе). Ищем #cw-admin-tabs только тут, а не в
-                // начале файла — до этого момента main-container с ним ещё не распарсен, и
-                // querySelector вернул бы null.
-                const tabsRoot = document.getElementById('cw-admin-tabs');
-                if (tabsRoot) tabsRoot.classList.remove('cw-admin-nav-hidden');
+                // putya: "ну и где тут флажки?" — раскрытие было жёстко завязано на два ID
+                // (#cw-admin-nav/#cw-admin-tabs), поэтому любой НОВЫЙ админ-блок с классом
+                // cw-admin-nav-hidden (например #tf-mode-switcher-container на Тематиках) никогда
+                // не открывался, даже админу. "теперь кнопки вверх уехали, а не на блоке" — .cw-tabs
+                // (#cw-admin-tabs) лежит ВНУТРИ main-container, на самой карточке, которая идёт
+                // ПОСЛЕ этого <script>-тега в документе — до этого момента она ещё не распарсена, и
+                // querySelectorAll в начале файла ничего бы не нашёл; к моменту ответа fetch вся
+                // страница уже гарантированно распарсена (сеть медленнее синхронного парсинга HTML).
+                document.querySelectorAll('.cw-admin-nav-hidden').forEach(el => el.classList.remove('cw-admin-nav-hidden'));
                 runMergeWhenReady();
             }
         })
