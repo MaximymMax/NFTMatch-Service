@@ -119,14 +119,16 @@ window.loadMarketData = async function(scenario) {
             };
         } else if (scenario === 3) {
             url = `${BASE_URL}/api/GiftsInfo/MarketOffers`;
-            body = { 
-                CollectionName: window.nftsState.currentGift, 
-                ModelName: window.nftsState.currentModel, 
-                // ❗️ ИСПРАВЛЕНИЕ: Бэкенд ждет BackgroundName, а не BackdropName
-                BackgroundName: window.nftsState.currentBg, 
+            body = {
+                CollectionName: window.nftsState.currentGift,
+                ModelName: window.nftsState.currentModel,
+                // ❗️ ИСПРАВЛЕНИЕ: бэкенд (MarketOffersRequest) ждёт поле "Backdrop", ни
+                // BackgroundName, ни BackdropName ему не соответствуют — фон никогда не фильтровался.
+                Backdrop: window.nftsState.currentBg,
+                BackgroundName: window.nftsState.currentBg,
                 BackdropName: window.nftsState.currentBg, // Оставляем на всякий случай для совместимости
-                Page: state.page, 
-                PageSize: 20 
+                Page: state.page,
+                PageSize: 20
             };
         } else if (scenario === 4) {
             url = `${BASE_URL}/api/ListGifts/SearchGifts/${state.page}/42`;
