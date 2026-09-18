@@ -118,7 +118,9 @@ header.safe-area-gradient {
 }
 /* putya: "нет свечения которое на главном и на похожих" — то же синее свечение box-shadow, что на
    .main-container в ColorWheel/color-wheel.css. */
-.main-container { box-shadow: 0 0 120px 30px rgba(59, 130, 246, .6); }
+/* putya: "свечение... больше, на всю ширину экрана равномерно" — широкая ровная полоса
+   теперь в общем glow.css (main::before на 100vw); у самой карточки оставлен мягкий ореол. */
+.main-container { box-shadow: 0 0 60px 8px rgba(59, 130, 246, .35); }
 
 .content-wrapper { padding: 0 1.5rem 1.5rem 1.5rem; }
 
