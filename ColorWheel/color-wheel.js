@@ -668,6 +668,10 @@
         return `#${toHex(rgb[0])}${toHex(rgb[1])}${toHex(rgb[2])}`.toUpperCase();
     }
 
+    // putya: "я тебе сказал убрать вариант точный, будет только доминирующий" — рецепт всегда
+    // ищет по доминирующим цветам (dominantMode=true на бэкенде), без целевого % на цвет.
+    const RECIPE_MIN_SIMILARITY = 50;
+
     function addColorFilterRow() {
         const hex = randomHex();
         const row = document.createElement('div');
@@ -675,36 +679,12 @@
         row.innerHTML = `
             <input type="color" class="filter-color-picker" value="${hex}" title="Выбрать цвет">
             <input type="text" class="filter-color-hex cw-hex-input" value="${hex}" maxlength="7" spellcheck="false">
-            <div class="cw-pct-field" style="${recipeMode === 'dominant' ? 'display:none;' : ''}">
-                <input type="number" class="filter-color-pct" min="0" max="100" value="30" title="Целевой %">
-                <span class="cw-pct-sign">%</span>
-            </div>
             <button type="button" class="cw-remove-filter-btn" title="Убрать">&times;</button>
         `;
         colorFiltersList.appendChild(row);
         updateExcludeToggleState();
     }
     addColorFilterBtn.addEventListener('click', addColorFilterRow);
-
-    // --- putya: "можно искать по основным" — режим "Доминирующие": без % вообще, топ-N кубов
-    // модели по весу сопоставляются с N выбранными цветами (dominantMode=true на бэкенде). Портировано
-    // из mono-cube-live.html (recipeModeExactBtn/recipeModeDominantBtn). ---
-    const recipeModeSwitch = document.getElementById('recipe-mode-switch');
-    const recipeModeBtns = recipeModeSwitch.querySelectorAll('.mode-tab');
-    const recipeToleranceField = document.getElementById('recipe-tolerance-field');
-    const recipeMinSimInput = document.getElementById('recipe-min-sim');
-    const recipeToleranceInput = document.getElementById('recipe-tolerance');
-    let recipeMode = 'exact';
-
-    function setRecipeMode(mode) {
-        if (mode === recipeMode) return;
-        recipeMode = mode;
-        recipeModeSwitch.dataset.activeMode = mode;
-        recipeModeBtns.forEach(b => b.classList.toggle('active', b.dataset.recipemode === mode));
-        recipeToleranceField.style.display = mode === 'exact' ? '' : 'none';
-        colorFiltersList.querySelectorAll('.cw-pct-field').forEach(el => { el.style.display = mode === 'exact' ? '' : 'none'; });
-    }
-    recipeModeBtns.forEach(b => b.addEventListener('click', () => setRecipeMode(b.dataset.recipemode)));
 
     // --- putya: "можно исключать цвета" — список цветов-противопоказаний, модель отсеивается
     // целиком, если такой цвет на ней заметно (>5%) есть (excludeOffRecipeColors — общий фильтр,
@@ -786,20 +766,17 @@
     async function runColorSearch() {
         const rows = [...colorFiltersList.querySelectorAll('.cw-color-filter-row')];
         if (!rows.length) return;
-        const dominantMode = recipeMode === 'dominant';
         const colors = rows.map(row => ({
             Hex: row.querySelector('.filter-color-picker').value,
-            TargetPercent: dominantMode ? 0 : (Number(row.querySelector('.filter-color-pct').value) || 0)
+            TargetPercent: 0
         }));
-        const minSimilarity = Number(recipeMinSimInput.value) || 0;
-        const toleranceWeight = Number(recipeToleranceInput.value) || 0;
         const excludeHexes = [...recipeExcludeColorsList.querySelectorAll('.recipe-exclude-color-picker')].map(el => el.value);
         const excludeParam = excludeHexes.length ? `&excludeHexes=${encodeURIComponent(excludeHexes.join(','))}` : '';
         const offColorParam = excludeOffRecipeCheckbox.checked ? '&excludeOffRecipeColors=true' : '';
 
         colorSearchResults.innerHTML = '<div class="cw-drilldown-note">Загрузка…</div>';
         try {
-            const url = `${API_BASE}/FindModelsByColorRecipe?minSimilarity=${minSimilarity}&toleranceWeight=${toleranceWeight}&dominantMode=${dominantMode}${excludeParam}${offColorParam}`;
+            const url = `${API_BASE}/FindModelsByColorRecipe?minSimilarity=${RECIPE_MIN_SIMILARITY}&toleranceWeight=0&dominantMode=true${excludeParam}${offColorParam}`;
             const resp = await fetch(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': getApiAuthHeader() },

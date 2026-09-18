@@ -11,7 +11,7 @@
     <!-- putya: "модалка themes-modal-content должна быть при открытии любой карточки" — реальный
          themesModal (тот же, что на Монохромах/Тематиках/Похожих), а не своя. -->
     <link rel="stylesheet" href="../Monohrome/themes-modal.css">
-    <link rel="stylesheet" href="./color-wheel.css?v=30">
+    <link rel="stylesheet" href="./color-wheel.css?v=31">
     <script src="../config.js"></script>
     <!-- putya: "единая шапка для всех страниц... кнопки переключения языка, регистрации через тг" —
          те же скрипты, что и на остальных страницах; RU/EN и TG-бейдж переносятся в .cw-page-header
@@ -164,45 +164,26 @@
                                 <div class="cw-color-filter-row">
                                     <input type="color" class="filter-color-picker" value="#2563eb" title="Выбрать цвет">
                                     <input type="text" class="filter-color-hex cw-hex-input" value="#2563EB" maxlength="7" spellcheck="false">
-                                    <div class="cw-pct-field">
-                                        <input type="number" class="filter-color-pct" min="0" max="100" value="30" title="Целевой %">
-                                        <span class="cw-pct-sign">%</span>
-                                    </div>
                                 </div>
                             </div>
 
                             <div class="cw-color-search-actions">
                                 <button type="button" id="add-color-filter-btn" class="cw-add-color-btn">+ Добавить цвет</button>
                             </div>
-
-                            <!-- putya: "вот прям такой же переключатель как mode-switcher mode-switcher-2
-                                 сделай" — буквально те же классы, что и переключатель По цветам/Похожие
-                                 выше, не отдельная урезанная копия. -->
-                            <div class="mode-switcher mode-switcher-2" id="recipe-mode-switch" data-active-mode="exact">
-                                <button type="button" class="mode-tab active" data-recipemode="exact">Точный %</button>
-                                <button type="button" class="mode-tab" data-recipemode="dominant">Доминирующие</button>
-                            </div>
                         </div>
 
-                        <div class="bgs2-filter-block">
-                            <label for="recipe-min-sim" class="bgs2-filter-block-label">Мин. сходство</label>
-                            <div class="bgs2-filter-block-row">
-                                <input type="number" id="recipe-min-sim" min="0" max="100" value="60">
-                                <span class="bgs2-filter-pct-sign">%</span>
-                            </div>
-                        </div>
-                        <div class="bgs2-filter-block" id="recipe-tolerance-field">
-                            <label for="recipe-tolerance" class="bgs2-filter-block-label">Допуск веса</label>
-                            <div class="bgs2-filter-block-row">
-                                <input type="number" id="recipe-tolerance" min="0" max="100" value="15">
-                                <span class="bgs2-filter-pct-sign">%</span>
-                            </div>
-                        </div>
+                        <!-- putya: "я тебе сказал убрать вариант точный, будет только
+                             доминирующий... просил убрать раздел который позволяет минимальное
+                             сходство выбрать, просто по умолчанию 50" — режим "Доминирующие" и
+                             minSimilarity=50 теперь захардкожены в runColorSearch(), без полей. -->
 
-                        <!-- putya: "исключить модели должна быть под cw-color-search-actions" -->
+                        <!-- putya: "исключить модели должна быть под cw-color-search-actions" —
+                             "cw-exclude-toggle disabled был лучше виден" — вместо еле заметного
+                             opacity явная серая плашка-пояснение (не только title на hover). -->
                         <label class="cw-exclude-toggle" id="exclude-off-recipe-label" title="Только при 2+ цветах">
                             <input type="checkbox" id="exclude-off-recipe">
                             Исключить модели с посторонними цветами
+                            <span class="cw-exclude-toggle-hint">нужно 2+ цвета</span>
                         </label>
 
                         <!-- putya: "можно исключать цвета" — отдельный список цветов-противопоказаний,
@@ -261,13 +242,14 @@
                                 </div>
                                 <div id="similar-target-radar"></div>
                             </div>
+                            <!-- putya: "пару слов что вообще это за график" — короткое пояснение
+                                 самой диаграммы, отдельно от подсказки про клик-исключение. -->
+                            <div class="cw-similar-radar-caption">Цветовой профиль модели — размер круга и % показывают долю каждого цвета</div>
                             <div class="cw-similar-radar-hint">Клик по цвету исключает его из поиска</div>
                         </div>
 
-                        <!-- putya: "убери варианты точный или доминирующий, будет только
-                             доминирующий... убери выбор мин сходства, всегда будет до 50ти
-                             процентов" — minSimilarity=50 и ignoreColorOrder=true теперь
-                             захардкожены в runSimilarSearch(), без полей ввода. -->
+                        <!-- minSimilarity=50 и ignoreColorOrder=true захардкожены в
+                             runSimilarSearch(), без отдельных полей ввода. -->
                         <button type="button" id="similar-search-btn" class="cw-color-search-btn cw-search-btn-wide" disabled>Найти похожие</button>
 
                         <div id="similar-search-results" class="cw-color-search-results"></div>
@@ -283,7 +265,7 @@
     </main>
 
     <script type="module" src="../Monohrome/themes-modal.js"></script>
-    <script src="./color-wheel.js?v=27"></script>
+    <script src="./color-wheel.js?v=28"></script>
 </body>
 
 </html>
