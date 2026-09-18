@@ -34,6 +34,15 @@
 
 .cw-title { font-size: 20px; font-weight: 800; text-align: center; }
 
+/* putya: "добавь легкое описание про MatchV2, про сам проект и тд перед cw-panel-home" — тот же
+   .cw-about, что раньше убирали ("пока убери текст по нфт матч"), теперь снаружи cw-panel-home
+   (над карточкой с диаграммой, не внутри неё), с текстом про MatchV2 вместо прежнего "NFT MATCH". */
+.cw-about {
+    width: 100%; max-width: 720px; margin: 4px auto 0;
+    font-size: 12.5px; line-height: 1.6; color: var(--text-secondary); text-align: center;
+}
+.cw-about b { color: var(--text-primary); }
+
 /* putya: "все страницы... были адаптированы под главную страницу" — header-бар (иконки) и ряд
    вкладок вынесены в общий ../shared-admin-nav.css (подключён в color-wheel.html), чтобы те же
    стили переиспользовать на Монохромах/Тематиках/Похожих. Здесь остаётся только то, что специфично

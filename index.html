@@ -7,11 +7,11 @@
     <title>NFT MATCH</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="./styles.css">
-    <link rel="stylesheet" href="./shared-admin-nav.css?v=12">
+    <link rel="stylesheet" href="./shared-admin-nav.css?v=13">
     <!-- putya: "модалка themes-modal-content должна быть при открытии любой карточки" — реальный
          themesModal (тот же, что на Монохромах/Тематиках/Похожих), а не своя. -->
     <link rel="stylesheet" href="./Monohrome/themes-modal.css">
-    <link rel="stylesheet" href="./ColorWheel/color-wheel.css?v=33">
+    <link rel="stylesheet" href="./ColorWheel/color-wheel.css?v=34">
     <script src="./config.js"></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
@@ -88,6 +88,15 @@
                     <span>Похожие</span>
                 </button>
             </div>
+
+            <!-- putya: "добавь легкое описание про MatchV2, про сам проект и тд перед
+                 cw-panel-home" -->
+            <p class="cw-about">
+                <b>MatchV2</b> — алгоритм NFT Match для подбора подарков, фонов и коллекций по цвету
+                в Telegram. Мы анализируем изображение каждой модели, выделяем доминирующие цветовые
+                кластеры в перцептивном пространстве Lab и сравниваем их по цветовой дистанции, чтобы
+                находить похожие модели, подходящие фоны и монохромные сочетания.
+            </p>
 
             <div id="cw-panel-home" class="cw-container cw-panel">
                 <h1 class="cw-title">Диаграмма цветов моделей</h1>

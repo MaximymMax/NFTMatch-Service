@@ -34,10 +34,16 @@ body.tg-fullscreen .cw-page-header { padding-top: 90px; }
    gift-page.css тот же main{padding-top:100px} уже объявлен с !important, обычная специфичность
    (даже с ID) его не перебивает. Оверрайд только для страниц с этой шапкой — на
    NonUnique/nonunique.html (единственная страница на styles.css без неё) старая схема остаётся
-   как была. */
+   как была.
+   putya: "отступа нет от основной секции" (скрин с широким экраном) — .main-container сам по
+   себе max-width:900-950px и центрируется, а <main> вокруг него прозрачный, поэтому по бокам (и
+   визуально "над" узкой колонкой сразу под шапкой на всю ширину) просвечивал фон body — снова тот
+   же несовпадающий оттенок. Даём main тот же цвет, что у шапки/main-container — колонка
+   визуально сливается с полями по бокам, шва не остаётся. */
 header.cw-page-header ~ main,
 #cw-admin-nav ~ main {
     padding-top: 0 !important;
+    background: #16213a;
 }
 .cw-header-group { display: flex; align-items: center; gap: 8px; }
 .cw-header-link {
