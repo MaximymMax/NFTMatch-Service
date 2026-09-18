@@ -7,12 +7,12 @@
     <title>NFT MATCH</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="./styles.css">
-    <link rel="stylesheet" href="glow.css?v=4">
+    <link rel="stylesheet" href="glow.css?v=5">
     <link rel="stylesheet" href="./shared-admin-nav.css?v=18">
     <!-- putya: "модалка themes-modal-content должна быть при открытии любой карточки" — реальный
          themesModal (тот же, что на Монохромах/Тематиках/Похожих), а не своя. -->
     <link rel="stylesheet" href="./Monohrome/themes-modal.css">
-    <link rel="stylesheet" href="./ColorWheel/color-wheel.css?v=38">
+    <link rel="stylesheet" href="./ColorWheel/color-wheel.css?v=39">
     <script src="./config.js"></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
@@ -233,15 +233,12 @@
                             </div>
                         </div>
 
-                        <!-- putya: "надо выводить просмотр модели рядом с диаграмой чтобы увидеть" —
-                             #similar-target-preview показывает саму модель, а не только абстрактный
-                             радар цветов. "можно исключать цвета" — клик по цвету на диаграмме
-                             исключает его из поиска (similarExcludedHexes), без похода на сервер. -->
+                        <!-- putya: "убери предпросмотр модели, там где она рядом с диаграмой, просто
+                             будет сама диаграма" — превью модели убрано, только радар цветов.
+                             "можно исключать цвета" — клик по цвету на диаграмме исключает его из
+                             поиска (similarExcludedHexes), без похода на сервер. -->
                         <div id="similar-target-radar-box" class="cw-similar-radar-box hidden">
                             <div class="cw-similar-radar-row">
-                                <div class="cw-similar-preview">
-                                    <img id="similar-target-preview" src="" alt="" onerror="this.style.visibility='hidden'" onload="this.style.visibility='visible'">
-                                </div>
                                 <div id="similar-target-radar"></div>
                             </div>
                             <!-- putya: "пару слов что вообще это за график" — короткое пояснение
@@ -263,7 +260,7 @@
                  как он есть сверху, добавить гитхаб" — Неуникальные подарки убраны совсем (ссылка
                  больше нигде не остаётся, но страница на месте, если понадобится вернуть); API
                  убран отсюда — дублировал иконку в шапке. Наш канал/Поддержка остаются. -->
-            <div class="info-cards-wrapper section-separator">
+            <div class="info-cards-wrapper section-separator" id="home-info-cards">
                 <a href="https://t.me/NFTStyler" target="_blank" class="info-card card-channel">
                     <div class="info-card-icon">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -304,7 +301,7 @@
                 </a>
             </div>
 
-            <div class="footer-credits">
+            <div class="footer-credits" id="home-footer-credits">
                 Thanks to <a href="https://t.me/GiftChanges" target="_blank">@GiftChanges</a> and <a
                     href="https://t.me/seetg" target="_blank">@seetg</a>
             </div>
@@ -318,7 +315,7 @@
          был undefined, поэтому клики по кнопкам вообще ничего не делали (тихий no-op за if-guard'ом
          в themes-modal.js). -->
     <script type="module" src="./Monohrome/themes-modal-nfts.js"></script>
-    <script src="./ColorWheel/color-wheel.js?v=32"></script>
+    <script src="./ColorWheel/color-wheel.js?v=33"></script>
     <script src="./main-page.js"></script>
 </body>
 

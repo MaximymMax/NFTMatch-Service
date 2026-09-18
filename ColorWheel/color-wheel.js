@@ -512,6 +512,12 @@
         // Похожих отображается" — .cw-about лежит вне обеих панелей (сам по себе), скрываем его
         // тем же условием, что и panelHome.
         aboutText?.classList.toggle('hidden', tab !== 'home');
+        // putya: "нижние блоки info-cards-wrapper section-separator были только на главной
+        // странице... на похожих есть кнопки которые только на главной быть должны" — карточки
+        // Наш канал/Поддержка/GitHub и футер живут в index.html, общем для Главной и панели
+        // поиска (Похожие/По цветам), поэтому прячем их вместе с panelHome.
+        document.getElementById('home-info-cards')?.classList.toggle('hidden', tab !== 'home');
+        document.getElementById('home-footer-credits')?.classList.toggle('hidden', tab !== 'home');
         // putya: "зависает выбранная вкладка" — тот же единственный источник истины, что теперь и
         // в setSearchSubtab: гасим active на ВСЕХ верхних вкладках разом, а не только на
         // "Главная" — если tab==='search', setSearchSubtab ниже сама включит нужную search-кнопку.
@@ -919,7 +925,7 @@
             return `<text x="${p.lx.toFixed(1)}" y="${ty.toFixed(1)}" font-size="10" font-weight="700" fill="${isExcluded ? '#ef4444' : '#fff'}" text-anchor="middle" style="${style}">${Math.round(p.weight)}%</text>`;
         }).join('');
 
-        return `<svg viewBox="0 0 ${size} ${size}" class="cw-similar-radar-svg" style="width:100%; max-width:250px; height:auto; display:block; margin:0 auto;">
+        return `<svg viewBox="0 0 ${size} ${size}" class="cw-similar-radar-svg" style="width:100%; height:auto; display:block; margin:0 auto;">
           <defs>${defs}</defs>
           ${rings}${spokes}${wedges}${outline}${vertexDots}${badges}${badgeLabels}${ringLabels}
         </svg>`;
@@ -931,8 +937,6 @@
     async function loadSimilarTargetRadar(giftName, modelName) {
         similarRadarBox.classList.remove('hidden');
         similarRadar.innerHTML = '<div class="cw-drilldown-note">Загружаю цветовой профиль…</div>';
-        const previewImg = document.getElementById('similar-target-preview');
-        if (previewImg) { previewImg.src = modelImageUrl(giftName, modelName); previewImg.alt = modelName; }
         try {
             const resp = await fetch(`${API_BASE}/DebugCube?nameGift=${encodeURIComponent(giftName)}&nameModel=${encodeURIComponent(modelName)}`, { headers: { 'Authorization': getApiAuthHeader() } });
             const data = resp.ok ? await resp.json() : null;

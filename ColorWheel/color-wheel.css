@@ -55,6 +55,10 @@
    ".hidden{display:none}" нигде нет — без этого правила classList.toggle('hidden') на .cw-about
    в setActiveTab ничего не скрывал. */
 .cw-about.hidden { display: none; }
+/* putya: "нижние блоки... только на главной странице" — те же парные правила для карточек внизу
+   и футера index.html (переключаются в setActiveTab вместе с .cw-about). */
+#home-info-cards.hidden { display: none; }
+#home-footer-credits.hidden { display: none; }
 
 /* putya: "все страницы... были адаптированы под главную страницу" — header-бар (иконки) и ряд
    вкладок вынесены в общий ../shared-admin-nav.css (подключён в color-wheel.html), чтобы те же
@@ -489,28 +493,15 @@
 .cw-similar-radar-caption { font-size: 11px; color: var(--text-secondary); text-align: center; max-width: 420px; }
 .cw-similar-radar-hint { font-size: 10.5px; color: var(--text-muted); text-align: center; }
 
-/* putya: "надо выводить просмотр модели рядом с диаграмой чтобы увидеть" — сама модель рядом с
-   абстрактным радаром цветов, чтобы было понятно, что именно сравнивается.
-   putya: "сделать чтобы блок с просмотром модели и диаграма были одного размера" — раньше превью
-   было 110x110 рядом с диаграммой ~250px, теперь оба квадрата одной стороны.
-   putya: "сделай в cw-similar-preview невидимый фон" — без background-elevated коробки.
-   putya: "на телефоне тоже было слева модель, справа график" — на узких экранах оба квадрата
-   уменьшаются (130px), чтобы гарантированно помещались в ряд, а не переносились друг под друга. */
-.cw-similar-radar-row {
-    display: flex; align-items: center; justify-content: center; gap: 16px; flex-wrap: nowrap; width: 100%;
-}
-.cw-similar-preview {
-    width: 250px; height: 250px; max-width: 100%; flex: 0 0 auto; box-sizing: border-box;
-    background: transparent; padding: 20px;
-    display: flex; align-items: center; justify-content: center;
-}
-.cw-similar-preview img { max-width: 100%; max-height: 100%; object-fit: contain; filter: drop-shadow(0 8px 12px rgba(0,0,0,.4)); }
+/* putya: "убери предпросмотр модели, там где она рядом с диаграмой... на телефонах её побольше
+   сделай" — .cw-similar-preview убран, в ряду только радар; на ПК 250px, на телефоне почти во всю
+   ширину карточки вместо прежних 130px. */
+.cw-similar-radar-row { display: flex; align-items: center; justify-content: center; width: 100%; }
 #similar-target-radar { width: 250px; max-width: 100%; }
 .cw-similar-radar-svg circle[data-hex] { cursor: pointer; }
 
 @media (max-width: 600px) {
-    .cw-similar-preview, #similar-target-radar { width: 130px; height: 130px; }
-    .cw-similar-preview { padding: 10px; }
+    #similar-target-radar { width: min(320px, 92vw); }
 }
 
 @media (max-width: 480px) {
