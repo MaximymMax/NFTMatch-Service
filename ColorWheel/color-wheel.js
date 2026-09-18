@@ -843,8 +843,9 @@
 
     const similarRadarBox = document.getElementById('similar-target-radar-box');
     const similarRadar = document.getElementById('similar-target-radar');
-    const similarMinSimInput = document.getElementById('similar-min-sim');
-    const similarIgnoreOrderCheckbox = document.getElementById('similar-ignore-order');
+    // putya: "убери выбор мин сходства, всегда будет до 50ти процентов" / "будет только
+    // доминирующий" — раньше были отдельные поля, теперь оба значения зашиты в runSimilarSearch().
+    const SIMILAR_MIN_SIMILARITY = 50;
     const similarSearchBtn = document.getElementById('similar-search-btn');
     const similarSearchResults = document.getElementById('similar-search-results');
 
@@ -1027,26 +1028,35 @@
             wedges += `<polygon points="${cx},${cy} ${a.x.toFixed(1)},${a.y.toFixed(1)} ${b.x.toFixed(1)},${b.y.toFixed(1)}" fill="url(#${gid})"/>`;
         }
         const outline = n >= 2
-            ? `<polygon points="${orderedPts.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ')}" fill="none" stroke="rgba(255,255,255,.9)" stroke-width="2" stroke-linejoin="round"/>`
+            ? `<polygon points="${orderedPts.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ')}" fill="none" stroke="rgba(255,255,255,.9)" stroke-width="2.5" stroke-linejoin="round"/>`
             : '';
-        const vertexDots = pts.map(p => `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="2.5" fill="${p.hex}"/>`).join('');
+        // putya: "исключение выбивающих цветов более выразительным сделать" — раньше исключённый
+        // цвет просто чуть гас (opacity .22, белый пунктир) и почти терялся на фоне остальных;
+        // теперь красная пунктирная обводка потолще, крупный красный крест с белой окантовкой (paint-
+        // order), серая (не цветная) точка-вершина на самом радаре и зачёркнутый % под бейджем.
+        const vertexDots = pts.map(p => {
+            const hexKey = p.hex.replace('#', '').toUpperCase();
+            const isExcluded = similarExcludedHexes.has(hexKey);
+            return `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="2.5" fill="${isExcluded ? '#6b7280' : p.hex}"/>`;
+        }).join('');
 
         const badges = pts.map(p => {
             const hexKey = p.hex.replace('#', '').toUpperCase();
             const isExcluded = similarExcludedHexes.has(hexKey);
-            const fillOpacity = isExcluded ? 0.22 : 1;
-            const strokeAttr = isExcluded ? 'stroke="rgba(255,255,255,.5)" stroke-dasharray="3,2"' : 'stroke="#fff"';
+            const fillOpacity = isExcluded ? 0.16 : 1;
+            const strokeAttr = isExcluded ? 'stroke="#ef4444" stroke-width="2.5" stroke-dasharray="4,3"' : 'stroke="#fff" stroke-width="1.5"';
             const mark = isExcluded
-                ? `<text x="${p.lx.toFixed(1)}" y="${p.ly.toFixed(1)}" font-size="15" font-weight="900" fill="#fff" text-anchor="middle" dominant-baseline="central" style="pointer-events:none;">✕</text>`
+                ? `<text x="${p.lx.toFixed(1)}" y="${p.ly.toFixed(1)}" font-size="19" font-weight="900" fill="#ef4444" text-anchor="middle" dominant-baseline="central" paint-order="stroke" stroke="#fff" stroke-width="2.5" style="pointer-events:none;">✕</text>`
                 : '';
-            return `<circle cx="${p.lx.toFixed(1)}" cy="${p.ly.toFixed(1)}" r="${badgeR}" fill="${p.hex}" fill-opacity="${fillOpacity}" ${strokeAttr} stroke-width="1.5" data-hex="${hexKey}"/>${mark}`;
+            return `<circle cx="${p.lx.toFixed(1)}" cy="${p.ly.toFixed(1)}" r="${badgeR}" fill="${p.hex}" fill-opacity="${fillOpacity}" ${strokeAttr} data-hex="${hexKey}"/>${mark}`;
         }).join('');
         const badgeLabels = pts.map(p => {
             const hexKey = p.hex.replace('#', '').toUpperCase();
             const isExcluded = similarExcludedHexes.has(hexKey);
             const above = p.ly <= cy;
             const ty = above ? p.ly - badgeR - 6 : p.ly + badgeR + 12;
-            return `<text x="${p.lx.toFixed(1)}" y="${ty.toFixed(1)}" font-size="10" font-weight="700" fill="${isExcluded ? 'rgba(255,255,255,.4)' : '#fff'}" text-anchor="middle">${Math.round(p.weight)}%</text>`;
+            const style = isExcluded ? 'text-decoration:line-through;' : '';
+            return `<text x="${p.lx.toFixed(1)}" y="${ty.toFixed(1)}" font-size="10" font-weight="700" fill="${isExcluded ? '#ef4444' : '#fff'}" text-anchor="middle" style="${style}">${Math.round(p.weight)}%</text>`;
         }).join('');
 
         return `<svg viewBox="0 0 ${size} ${size}" class="cw-similar-radar-svg" style="width:100%; max-width:250px; height:auto; display:block; margin:0 auto;">
@@ -1127,14 +1137,12 @@
     async function runSimilarSearch() {
         const modelName = similarModelValue.textContent;
         if (!similarGiftName || !modelName || similarSearchBtn.disabled) return;
-        const minSimilarity = Number(similarMinSimInput.value) || 0;
         const excludeParam = similarExcludedHexes.size ? `&excludeHexes=${encodeURIComponent(Array.from(similarExcludedHexes).join(','))}` : '';
-        const ignoreOrderParam = similarIgnoreOrderCheckbox.checked ? '&ignoreColorOrder=true' : '';
 
         similarSearchBtn.disabled = true;
         similarSearchResults.innerHTML = '<div class="cw-drilldown-note">Ищу похожие модели по всему каталогу — может занять время…</div>';
         try {
-            const url = `${API_BASE}/FindSimilarModels?nameGift=${encodeURIComponent(similarGiftName)}&nameModel=${encodeURIComponent(modelName)}&minSimilarity=${minSimilarity}${excludeParam}${ignoreOrderParam}`;
+            const url = `${API_BASE}/FindSimilarModels?nameGift=${encodeURIComponent(similarGiftName)}&nameModel=${encodeURIComponent(modelName)}&minSimilarity=${SIMILAR_MIN_SIMILARITY}${excludeParam}&ignoreColorOrder=true`;
             const resp = await fetch(url, { headers: { 'Authorization': getApiAuthHeader() } });
             if (!resp.ok) throw new Error('HTTP ' + resp.status);
             const data = await resp.json();

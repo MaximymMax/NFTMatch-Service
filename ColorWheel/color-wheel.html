@@ -11,7 +11,7 @@
     <!-- putya: "модалка themes-modal-content должна быть при открытии любой карточки" — реальный
          themesModal (тот же, что на Монохромах/Тематиках/Похожих), а не своя. -->
     <link rel="stylesheet" href="../Monohrome/themes-modal.css">
-    <link rel="stylesheet" href="./color-wheel.css?v=29">
+    <link rel="stylesheet" href="./color-wheel.css?v=30">
     <script src="../config.js"></script>
     <!-- putya: "единая шапка для всех страниц... кнопки переключения языка, регистрации через тг" —
          те же скрипты, что и на остальных страницах; RU/EN и TG-бейдж переносятся в .cw-page-header
@@ -264,19 +264,10 @@
                             <div class="cw-similar-radar-hint">Клик по цвету исключает его из поиска</div>
                         </div>
 
-                        <div class="bgs2-filter-block">
-                            <label for="similar-min-sim" class="bgs2-filter-block-label">Мин. сходство</label>
-                            <div class="bgs2-filter-block-row">
-                                <input type="number" id="similar-min-sim" min="0" max="100" value="75">
-                                <span class="bgs2-filter-pct-sign">%</span>
-                            </div>
-                        </div>
-
-                        <label class="cw-exclude-toggle" id="similar-ignore-order-label">
-                            <input type="checkbox" id="similar-ignore-order">
-                            Не учитывать порядок цветов между собой
-                        </label>
-
+                        <!-- putya: "убери варианты точный или доминирующий, будет только
+                             доминирующий... убери выбор мин сходства, всегда будет до 50ти
+                             процентов" — minSimilarity=50 и ignoreColorOrder=true теперь
+                             захардкожены в runSimilarSearch(), без полей ввода. -->
                         <button type="button" id="similar-search-btn" class="cw-color-search-btn cw-search-btn-wide" disabled>Найти похожие</button>
 
                         <div id="similar-search-results" class="cw-color-search-results"></div>
@@ -292,7 +283,7 @@
     </main>
 
     <script type="module" src="../Monohrome/themes-modal.js"></script>
-    <script src="./color-wheel.js?v=26"></script>
+    <script src="./color-wheel.js?v=27"></script>
 </body>
 
 </html>
