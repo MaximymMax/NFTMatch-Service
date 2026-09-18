@@ -1728,9 +1728,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const fpPriceRow = document.getElementById('fp-price-row');
     const fpBgRow = document.getElementById('fp-bg-row');
     const fpColorSection = document.getElementById('fp-color-section');
-    const fpEvidenceVisual = document.getElementById('fp-evidence-visual');
-    const fpEvidenceLogical = document.getElementById('fp-evidence-logical');
-    const fpEvidenceName = document.getElementById('fp-evidence-name');
+    const fpEvidenceChips = document.getElementById('fp-evidence-chips');
 
     // Функция для отрисовки красивого кружка с градиентом
     window.updateColorDropdownUI = function() {
@@ -1820,9 +1818,9 @@ document.addEventListener('DOMContentLoaded', () => {
         fpApplyBtn.addEventListener('click', () => {
             // Сохраняем цену (если пусто - то пусто, иначе берем число)
             if(fpMaxPrice) state.maxPrice = fpMaxPrice.value ? Number(fpMaxPrice.value) : '';
-            
+
             // state.minBgPercent теперь сохраняется сам при клике на выпадающий список
-            
+
             mainFilterPopup.classList.add('hidden');
             mainFilterBtn.classList.remove('active');
 
@@ -1834,8 +1832,8 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // putya: "в фильтрах тематики флажки добавь" — применяются сразу по клику (не ждут кнопку
-    // "Применить" внизу попапа, это просто чекбоксы show/hide, а не параметры запроса).
+    // putya: "флажки добавь" — применяются сразу по клику (не ждут кнопку "Применить" внизу
+    // попапа, это просто show/hide, а не параметры запроса).
     function reloadCurrentThemeView() {
         if (state.sortCriteria === 'v2tree') {
             loadV2Tree(true);
@@ -1843,13 +1841,31 @@ document.addEventListener('DOMContentLoaded', () => {
             loadV2NamesSorted(true);
         }
     }
-    [[fpEvidenceVisual, 'visual'], [fpEvidenceLogical, 'logical'], [fpEvidenceName, 'name']].forEach(([el, key]) => {
-        if (!el) return;
-        el.addEventListener('change', () => {
-            state.evidenceFilters[key] = el.checked;
+    // putya: "запрети выбирать все 3 флажка сразу, пока выбран название нельзя логику выбирать и
+    // наоборот" — Визуал переключается сам по себе, Логика/Название работают как пара radio:
+    // включение одного гасит другой, если он был включён (не строгий radio — оба разом тоже
+    // можно выключить, просто нельзя, чтобы оба были включены одновременно).
+    if (fpEvidenceChips) {
+        fpEvidenceChips.addEventListener('click', (e) => {
+            const chip = e.target.closest('.fp-chip');
+            if (!chip) return;
+            const key = chip.dataset.evidence;
+            const newValue = !chip.classList.contains('active');
+            state.evidenceFilters[key] = newValue;
+            chip.classList.toggle('active', newValue);
+
+            if (newValue && (key === 'logical' || key === 'name')) {
+                const otherKey = key === 'logical' ? 'name' : 'logical';
+                if (state.evidenceFilters[otherKey]) {
+                    state.evidenceFilters[otherKey] = false;
+                    const otherChip = fpEvidenceChips.querySelector(`.fp-chip[data-evidence="${otherKey}"]`);
+                    if (otherChip) otherChip.classList.remove('active');
+                }
+            }
+
             reloadCurrentThemeView();
         });
-    });
+    }
 
     // Логика для кастомного выпадающего списка процентов
     if (percentDropdownHeader) {

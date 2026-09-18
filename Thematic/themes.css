@@ -1518,14 +1518,20 @@ label.control-label {
     box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2);
 }
 
-/* putya: "в фильтрах тематики флажки добавь" — чекбоксы фильтра по типу подтверждённого сходства,
-   тот же визуальный язык, что у остальных .fp-*. */
-.fp-evidence-checks { display: flex; flex-direction: column; gap: 8px; }
-.fp-check {
-    display: flex; align-items: center; gap: 8px; font-size: 0.85rem; color: var(--text-secondary);
-    cursor: pointer; user-select: none;
+/* putya: "переработай вообще фильтры, чтобы красивее выглядело, убери эмодзи" — те же чипы, что
+   .v2-seg-btn (РЕЖИМ ОТОБРАЖЕНИЯ выше), просто не сегмент-контрол с одной активной, а независимые
+   переключаемые чипы (Визуал сам по себе, Логика/Название — пара, см. themes.js). */
+.fp-evidence-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.fp-chip {
+    padding: 8px 14px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(0, 0, 0, 0.4); color: var(--text-muted); font-size: 0.75rem; font-weight: 700;
+    cursor: pointer; transition: all 0.2s; font-family: inherit;
 }
-.fp-check input[type="checkbox"] { accent-color: var(--primary-color); cursor: pointer; width: 16px; height: 16px; flex: 0 0 auto; }
+.fp-chip:hover { color: var(--text-secondary); }
+.fp-chip.active {
+    color: #fff; background: rgba(56, 189, 248, 0.2); border-color: rgba(56, 189, 248, 0.4);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
 
 .fp-apply-btn {
     width: 100%;

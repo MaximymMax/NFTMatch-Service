@@ -117,17 +117,17 @@
                                 </div>
                             </div>
 
-                            <!-- putya: "не надо отдельный режим разметки, в фильтрах тематики флажки
-                                 добавь... по умолчанию скрыты те темы и модели которые по названию
-                                 относятся" — фильтр по типу подтверждённого сходства (ModelThemeEvidence
-                                 с приватного инструмента разметки), "Название" по умолчанию снят —
-                                 тематики, совпавшие только по имени (без визуала/логики), скрыты. -->
+                            <!-- putya: "переработай вообще фильтры, чтобы красивее выглядело, убери
+                                 эмодзи, запрети выбирать все 3 флажка сразу, пока выбран название
+                                 нельзя логику выбирать и наоборот" — те же чипы, что "РЕЖИМ
+                                 ОТОБРАЖЕНИЯ" выше (.v2-seg-btn), без эмодзи; Визуал независим,
+                                 Логика/Название переключаются как пара radio (см. themes.js). -->
                             <div class="fp-section" id="fp-evidence-section">
                                 <label class="fp-label">Показывать тематики:</label>
-                                <div class="fp-evidence-checks">
-                                    <label class="fp-check"><input type="checkbox" id="fp-evidence-visual" checked> 🎨 Визуал</label>
-                                    <label class="fp-check"><input type="checkbox" id="fp-evidence-logical" checked> 🧠 Логика</label>
-                                    <label class="fp-check"><input type="checkbox" id="fp-evidence-name"> 🔤 Только название</label>
+                                <div class="fp-evidence-chips" id="fp-evidence-chips">
+                                    <button type="button" class="fp-chip active" data-evidence="visual">Визуал</button>
+                                    <button type="button" class="fp-chip active" data-evidence="logical">Логика</button>
+                                    <button type="button" class="fp-chip" data-evidence="name">Только название</button>
                                 </div>
                             </div>
 
@@ -204,7 +204,7 @@
 
     <script type="module" src="../Monohrome/themes-modal.js"></script>
     <script type="module" src="../Monohrome/themes-modal-nfts.js"></script>
-    <script type="module" src="./themes.js"></script>
+    <script type="module" src="./themes.js?v=1"></script>
 </body>
 
 </html>
