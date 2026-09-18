@@ -12,13 +12,14 @@
    из styles.css, тот же фон, что у .main-container, а не верх градиента body (#1a237e, был
    слишком синим/другим оттенком). Full-bleed (без max-width) — раньше ряд иконок был по центру в
    900px-колонке, теперь сама шапка-плашка тянется на весь экран. Отступ сверху ~90px — под
-   системную область Telegram WebApp (кнопка закрытия/свайп). */
+   системную область Telegram WebApp (кнопка закрытия/свайп). Без border-bottom (была временная
+   попытка вернуть границу) — шапка того же цвета, что верх main-container, и должна стыковаться
+   с ним без видимого шва (см. main{background:#0a1020} ниже), а не отделяться линией. */
 .cw-page-header {
     display: flex; align-items: center; justify-content: space-between;
     width: 100%; box-sizing: border-box;
     padding: 90px 16px 14px; gap: 10px; position: relative; z-index: 20;
     background: #16213a; box-shadow: none; border-radius: 0;
-    border-bottom: 1px solid rgba(255, 255, 255, .06);
 }
 /* На главной (../index.html) .cw-page-header — это сам тег <header>, а не div, поэтому старое
    правило "body.tg-fullscreen header { padding-top: 25px; }" (styles.css, специфичность
@@ -37,14 +38,18 @@ body.tg-fullscreen .cw-page-header { padding-top: 90px; }
    NonUnique/nonunique.html (единственная страница на styles.css без неё) старая схема остаётся
    как была.
    putya: "отступа нет от основной секции" (скрин с широким экраном) — .main-container сам по
-   себе max-width:900-950px и центрируется, а <main> вокруг него прозрачный, поэтому по бокам (и
-   визуально "над" узкой колонкой сразу под шапкой на всю ширину) просвечивал фон body — снова тот
-   же несовпадающий оттенок. Даём main тот же цвет, что у шапки/main-container — колонка
-   визуально сливается с полями по бокам, шва не остаётся. */
+   себе max-width:900-950px и центрируется, а <main> вокруг него прозрачный, поэтому по бокам
+   просвечивал фон body — несовпадающий оттенок. Первая попытка (main тем же #16213a, что у
+   шапки/main-container) убрала шов, но заодно и саму карточку — "нет синей подложки которая
+   раньше была"/"будто секции нет вообще", потому что шапка (на всю ширину) и main-container
+   (узкая колонка) сливались в одно плоское пятно без единой границы. #0a1020 — var(--bg-color),
+   низ градиента body, темнее шапки/main-container: по бокам карточки остаётся видимая тёмная
+   рамка (карточка читается как отдельная секция), а сама шапка (той же ширины и цвета, что верх
+   main-container) стыкуется с ней без шва — эффект "шапка перетекает в карточку". */
 header.cw-page-header ~ main,
 #cw-admin-nav ~ main {
     padding-top: 0 !important;
-    background: #16213a;
+    background: #0a1020;
 }
 .cw-header-group { display: flex; align-items: center; gap: 8px; }
 .cw-header-link {
