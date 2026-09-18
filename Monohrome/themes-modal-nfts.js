@@ -92,7 +92,7 @@ window.loadMarketData = async function(scenario) {
     const oldSentinel = gridContainer.querySelector('.nfts-sentinel');
     if (oldSentinel) oldSentinel.remove();
 
-    const BASE_URL = window.BASE_URL || 'https://nftmatchbot20250730152328.azurewebsites.net';
+    const BASE_URL = window.BASE_URL || window.CONFIG?.SERVER_BASE_URL || 'https://nftmatch.pro';
     const authHeader = window.getApiAuthHeader ? window.getApiAuthHeader() : 'Tma invalid';
 
     try {

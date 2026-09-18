@@ -311,6 +311,12 @@
     </main>
 
     <script type="module" src="./Monohrome/themes-modal.js?v=1"></script>
+    <!-- putya: "почини поиск на маркетах в модалке" — на других страницах (Монохромы/Тематики/
+         nft-page) themes-modal-nfts.js (реальные хендлеры кнопок "Найти" в ПОИСК НА МАРКЕТАХ)
+         подключён рядом с themes-modal.js, а тут этого тега не было вообще — window.initNFTsSection
+         был undefined, поэтому клики по кнопкам вообще ничего не делали (тихий no-op за if-guard'ом
+         в themes-modal.js). -->
+    <script type="module" src="./Monohrome/themes-modal-nfts.js"></script>
     <script src="./ColorWheel/color-wheel.js?v=32"></script>
     <script src="./main-page.js"></script>
 </body>
