@@ -50,6 +50,11 @@
     font-size: 12.5px; line-height: 1.6; color: var(--text-secondary); text-align: center;
 }
 .cw-about b { color: var(--text-primary); }
+/* putya: "чтобы он был только на главном экране, сейчас он и на Похожих отображается" — .hidden
+   в этом коде всегда парный класс (.cw-panel.hidden, .cw-tooltip.hidden и т.д.), голого
+   ".hidden{display:none}" нигде нет — без этого правила classList.toggle('hidden') на .cw-about
+   в setActiveTab ничего не скрывал. */
+.cw-about.hidden { display: none; }
 
 /* putya: "все страницы... были адаптированы под главную страницу" — header-бар (иконки) и ряд
    вкладок вынесены в общий ../shared-admin-nav.css (подключён в color-wheel.html), чтобы те же

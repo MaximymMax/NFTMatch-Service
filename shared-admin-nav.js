@@ -24,6 +24,35 @@
         if (authBadge && rightGroup) rightGroup.appendChild(authBadge);
     }
 
+    // putya: "если по ширине в шапке вмещается блок гитхаба, надо его туда поставить, если нет, то
+    // снизу к другим блокам" — только на главной (единственная страница с обоими узлами:
+    // .cw-header-gh-slot в шапке и #gh-info-card среди info-cards). Меряем РЕАЛЬНУЮ доступную
+    // ширину, а не гадаем брейкпоинт — состав правой группы (API + бейдж входа, где бейдж может
+    // быть именем пользователя произвольной длины) меняется от пользователя к пользователю.
+    function updateGithubPlacement() {
+        const headerGh = document.querySelector('.cw-header-gh-slot');
+        const cardGh = document.getElementById('gh-info-card');
+        const header = document.querySelector('.cw-page-header');
+        if (!headerGh || !cardGh || !header) return;
+
+        headerGh.style.display = ''; // временно показываем, чтобы измерить её реальную ширину
+        const leftGroup = header.children[0];
+        const rightGroup = header.children[1];
+        const gap = parseFloat(getComputedStyle(header).gap) || 0;
+        const padding = parseFloat(getComputedStyle(header).paddingLeft) + parseFloat(getComputedStyle(header).paddingRight);
+        const needed = leftGroup.scrollWidth + rightGroup.scrollWidth + gap + padding;
+        const fits = needed <= header.clientWidth;
+
+        headerGh.style.display = fits ? '' : 'none';
+        cardGh.style.display = fits ? 'none' : '';
+    }
+
+    let ghResizeTimer = null;
+    window.addEventListener('resize', () => {
+        clearTimeout(ghResizeTimer);
+        ghResizeTimer = setTimeout(updateGithubPlacement, 150);
+    });
+
     // putya: "ну и где тут флажки?" (из прежнего гейта) — раскрытие было жёстко завязано на два ID
     // (#cw-admin-nav/#cw-admin-tabs), поэтому любой НОВЫЙ блок с классом cw-admin-nav-hidden
     // (например #tf-mode-switcher-container на Тематиках) никогда не открывался. Общий селектор
@@ -33,6 +62,7 @@
     function revealAndMerge() {
         document.querySelectorAll('.cw-admin-nav-hidden').forEach(el => el.classList.remove('cw-admin-nav-hidden'));
         mergeTopBarIntoHeader();
+        updateGithubPlacement();
     }
 
     if (document.readyState === 'loading') {

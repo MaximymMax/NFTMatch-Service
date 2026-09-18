@@ -562,6 +562,27 @@ main {
     box-shadow: 0 6px 20px rgba(245, 158, 11, 0.25);
 }
 
+/* --- СТИЛИ ДЛЯ GITHUB (Серое) ---
+   putya: "если по ширине в шапке вмещается блок гитхаба, надо его туда поставить, если нет, то
+   снизу к другим блокам" — по умолчанию скрыта (JS в shared-admin-nav.js решает, показывать её
+   или .cw-header-gh-slot в шапке, замеряя реальную ширину); display:none тут — фолбэк на случай,
+   если JS не успел/не смог отработать. */
+#gh-info-card { display: none; }
+.card-github {
+    background-image: linear-gradient(90deg, rgba(255, 255, 255, 0.08) 0%, transparent 40%);
+    border-left: 2px solid #9ca3af;
+    box-shadow: 0 4px 15px rgba(255, 255, 255, 0.05);
+}
+
+.card-github .info-card-icon {
+    color: #e5e7eb;
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.card-github:hover {
+    box-shadow: 0 6px 20px rgba(255, 255, 255, 0.15);
+}
+
 /* ========================================= */
 /* ========= FOOTER (Thanks API) =========== */
 /* ========================================= */

@@ -204,6 +204,7 @@
                 openBucketIndex = 'EXTREME';
                 applySelectionHighlight();
                 refreshDrilldown();
+                hideTooltip();
             });
             svg.appendChild(circle);
             applySelectionHighlight();
@@ -238,10 +239,14 @@
             // putya: "при нажатии на цвет под блоком с диаграммами появляется блок с конкретно
             // моделями которые наиболее подходят под данный цвет" — клик подгружает список
             // (Gift, Model) + подходящие фоны для этого сектора прямо на странице.
+            // putya: "убрать подписи рядом с секцией цветов когда на диаграмме на нее нажимаешь,
+            // просто нажатие и все" — hover-тултип (mousemove) на тач-устройствах остаётся висеть
+            // после тапа, там же нет mouseleave — прячем его явно при клике/тапе.
             path.addEventListener('click', () => {
                 openBucketIndex = i;
                 applySelectionHighlight();
                 refreshDrilldown();
+                hideTooltip();
             });
             svg.appendChild(path);
         });
@@ -463,6 +468,7 @@
     const tabButtons = document.querySelectorAll('.cw-tab[data-tab]');
     const panelHome = document.getElementById('cw-panel-home');
     const panelSearch = document.getElementById('cw-panel-search');
+    const aboutText = document.getElementById('cw-about');
     const searchColorsPanel = document.getElementById('cw-search-colors');
     const searchSimilarPanel = document.getElementById('cw-search-similar');
     // putya: "переключатель между режимами сделать по аналогии с переключателем между поиском по
@@ -481,8 +487,13 @@
         searchSimilarPanel.classList.toggle('hidden', subtab !== 'similar');
         searchModeSwitcher.dataset.activeMode = subtab;
         searchModeTabs.forEach(btn => btn.classList.toggle('active', btn.dataset.subtab === subtab));
+        // putya: "зависает выбранная вкладка, надо чтобы подсвечивалась только та, что сейчас
+        // выбрана" — раньше трогали active только у кнопок data-tab="search", остальные (в первую
+        // очередь "Главная") не гасли, если оказывались active по любой другой причине. Явно
+        // выставляем active для ВСЕХ верхних вкладок разом — единственный источник истины, вместо
+        // того чтобы держать его synced в двух функциях (setActiveTab и тут).
         tabButtons.forEach(btn => {
-            if (btn.dataset.tab === 'search') btn.classList.toggle('active', btn.dataset.subtab === subtab);
+            btn.classList.toggle('active', btn.dataset.tab === 'search' && btn.dataset.subtab === subtab);
         });
         if (subtab === 'colors' && !colorSearchLoaded) {
             colorSearchLoaded = true;
@@ -497,13 +508,15 @@
     function setActiveTab(tab, subtab) {
         panelHome.classList.toggle('hidden', tab !== 'home');
         panelSearch.classList.toggle('hidden', tab !== 'search');
-        // putya: "все еще разные стили" — на Похожих/Поиске по цвету "Главная" оставалась active
-        // (класс захардкожен в HTML для начального состояния), setSearchSubtab трогает только
-        // кнопки data-tab="search", поэтому "Главная" не гасла при прямом заходе по #search-хэшу
-        // с других страниц — два таба подсвечивались одновременно.
-        tabButtons.forEach(btn => {
-            if (btn.dataset.tab === 'home') btn.classList.toggle('active', tab === 'home');
-        });
+        // putya: "текст про matchV2... чтобы он был только на главном экране, сейчас он и на
+        // Похожих отображается" — .cw-about лежит вне обеих панелей (сам по себе), скрываем его
+        // тем же условием, что и panelHome.
+        aboutText?.classList.toggle('hidden', tab !== 'home');
+        // putya: "зависает выбранная вкладка" — тот же единственный источник истины, что теперь и
+        // в setSearchSubtab: гасим active на ВСЕХ верхних вкладках разом, а не только на
+        // "Главная" — если tab==='search', setSearchSubtab ниже сама включит нужную search-кнопку.
+        tabButtons.forEach(btn => btn.classList.remove('active'));
+        if (tab === 'home') document.querySelector('.cw-tab[data-tab="home"]')?.classList.add('active');
         if (tab === 'home') {
             syncModelsPanelHeight();
         } else if (tab === 'search') {
