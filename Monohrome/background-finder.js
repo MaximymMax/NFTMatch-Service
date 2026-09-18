@@ -711,6 +711,7 @@ document.addEventListener('DOMContentLoaded', () => {
             targetColors: [],
             lastResults: [],
             v2Data: null,
+            v2ViewMode: 'groups', // putya: "две кнопки... слева по группам, справа все" — переключатель под ★ Монохромные фоны
         },
         findModels: {
             selectedGifts: [], // putya: "несколько коллекций в обеих режимах" — [] значит "все коллекции"
@@ -2144,7 +2145,19 @@ if (sortSwitcher) {
         const groupsHtml = bgs2RenderGroups(groups, minMassPct);
         const allHtml = bgs2RenderAllBackgrounds(allBackgrounds, minMassPct);
 
-        bgsV2Body.innerHTML = monoHtml + groupsHtml + allHtml;
+        // putya: "две кнопки ниже отображения результатов монохромов, слева кнопка по группам,
+        // справа все" — ★ Монохромные фоны остаются всегда сверху, а группы/полный список
+        // переключаются кнопками (тот же .mini-switcher/.mini-tab, что и сортировка выше на
+        // странице), без повторного похода на сервер (см. клик-обработчик ниже).
+        const viewMode = state.findBgs.v2ViewMode;
+        const switcherHtml = `
+          <div class="mini-switcher bgs2-view-switcher">
+            <button type="button" class="mini-tab${viewMode === 'groups' ? ' active' : ''}" data-view="groups">По группам</button>
+            <button type="button" class="mini-tab${viewMode === 'all' ? ' active' : ''}" data-view="all">Все</button>
+          </div>
+        `;
+
+        bgsV2Body.innerHTML = monoHtml + switcherHtml + (viewMode === 'all' ? allHtml : groupsHtml);
         setupLazyLoading(bgsV2Body, null, 'grid');
     }
 
@@ -2170,6 +2183,15 @@ if (sortSwitcher) {
     }
 
     bgsV2Body.addEventListener('click', (e) => {
+        const viewBtn = e.target.closest('.bgs2-view-switcher .mini-tab');
+        if (viewBtn) {
+            const view = viewBtn.dataset.view;
+            if (view !== state.findBgs.v2ViewMode) {
+                state.findBgs.v2ViewMode = view;
+                if (state.findBgs.v2Data) renderBgsV2(state.findBgs.v2Data);
+            }
+            return;
+        }
         const card = e.target.closest('.result-card-bg');
         if (!card) return;
         if (window.themesModal) {
