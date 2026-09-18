@@ -18,6 +18,7 @@
     width: 100%; box-sizing: border-box;
     padding: 90px 16px 14px; gap: 10px; position: relative; z-index: 20;
     background: #16213a; box-shadow: none; border-radius: 0;
+    border-bottom: 1px solid rgba(255, 255, 255, .06);
 }
 /* На главной (../index.html) .cw-page-header — это сам тег <header>, а не div, поэтому старое
    правило "body.tg-fullscreen header { padding-top: 25px; }" (styles.css, специфичность
