@@ -1443,26 +1443,14 @@ main {
 .bgs2-radar-svg { width: 100%; max-width: 250px; height: auto; display: block; margin: 0 auto; }
 .bgs2-hint { font-size: 12px; color: var(--text-muted); text-align: center; padding: 12px 0; }
 
-/* putya: "надо выводить просмотр модели рядом с диаграмой чтобы увидеть, и на похожих и на
-   монохромах" — сама модель рядом с абстрактным радаром цветов. */
-/* putya: "сделать чтобы блок с просмотром модели и диаграма были одного размера" — было 110x110
-   рядом с диаграммой ~250px, теперь оба квадрата одной стороны (250px), как на Похожих.
-   putya: "на телефоне меньше иконку модели... невидимый фон... слева модель справа диаграма" —
-   тот же приём, что уже сделан на Похожих (cw-similar-radar-row): прозрачный фон вместо
-   surface-elevated и уменьшение до 130px на узких экранах, чтобы оба квадрата гарантированно
-   помещались в ряд, а не переносились друг под друга. */
-.bgs2-diagram-row { display: flex; align-items: center; justify-content: center; gap: 16px; flex-wrap: nowrap; width: 100%; }
-.bgs2-diagram-preview {
-    width: 250px; height: 250px; max-width: 100%; flex: 0 0 auto; box-sizing: border-box;
-    background: transparent; padding: 20px;
-    display: flex; align-items: center; justify-content: center;
-}
-.bgs2-diagram-preview img { max-width: 100%; max-height: 100%; object-fit: contain; filter: drop-shadow(0 8px 12px rgba(0,0,0,.4)); }
+/* putya: "убери предпросмотр модели, там где она рядом с диаграмой... на телефонах её побольше
+   сделай" — превью модели (.bgs2-diagram-preview) убрано, ряд содержит только радар; на узких
+   экранах радар растягивается почти на всю ширину карточки вместо прежних 130px. */
+.bgs2-diagram-row { display: flex; align-items: center; justify-content: center; width: 100%; }
 
 @media (max-width: 600px) {
-    .bgs2-diagram-preview { width: 130px; height: 130px; padding: 10px; }
-    .bgs2-diagram-box { flex: 0 0 auto; width: 130px; padding: 0; }
-    .bgs2-radar-svg { max-width: 130px; }
+    .bgs2-diagram-box { padding: 4px 0; }
+    .bgs2-radar-svg { max-width: min(320px, 92vw); }
 }
 
 /* putya: "две кнопки ниже отображения результатов монохромов, слева по группам, справа все" —

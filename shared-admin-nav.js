@@ -33,7 +33,10 @@
         const headerGh = document.querySelector('.cw-header-gh-slot');
         const cardGh = document.getElementById('gh-info-card');
         const header = document.querySelector('.cw-page-header');
-        if (!headerGh || !cardGh || !header) return;
+        // putya: "на всех страницах одинаковые кнопки на шапке" — GitHub теперь есть в шапке и на
+        // Монохромах/Тематиках/Похожих, где нижней карточки #gh-info-card нет: там просто прячем
+        // кнопку, если не влезает, без противофазы.
+        if (!headerGh || !header) return;
 
         headerGh.style.display = ''; // временно показываем, чтобы измерить её реальную ширину
         const leftGroup = header.children[0];
@@ -44,7 +47,10 @@
         const fits = needed <= header.clientWidth;
 
         headerGh.style.display = fits ? '' : 'none';
-        cardGh.style.display = fits ? 'none' : '';
+        // #gh-info-card в styles.css скрыт по умолчанию (display:none как фолбэк без JS), поэтому
+        // "показать" здесь должно быть явным 'flex' (как у .info-card), а не сбросом в '' —
+        // иначе на узких экранах карточка GitHub не появлялась вообще.
+        if (cardGh) cardGh.style.display = fits ? 'none' : 'flex';
     }
 
     let ghResizeTimer = null;

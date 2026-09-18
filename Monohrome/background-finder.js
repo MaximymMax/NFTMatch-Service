@@ -2103,11 +2103,6 @@ if (sortSwitcher) {
         bgsV2Loading.classList.remove('hidden');
         bgsV2Diagram.innerHTML = '';
         bgsV2Body.innerHTML = '';
-        const bgs2PreviewImg = document.getElementById('bgs2-diagram-preview');
-        if (bgs2PreviewImg) {
-            bgs2PreviewImg.src = `${API_PHOTO_URL}/${encodeURIComponent(giftName)}/png/${encodeURIComponent(modelName)}.png`;
-            bgs2PreviewImg.alt = modelName;
-        }
 
         try {
             const [debugCubeData, dedupData] = await Promise.all([
