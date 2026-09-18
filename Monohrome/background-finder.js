@@ -2013,10 +2013,10 @@ if (sortSwitcher) {
         monoItems.sort((a, b) => (bgs2Pick(b, 'monoScore') ?? bgs2Pick(b, 'similarity') ?? 0) - (bgs2Pick(a, 'monoScore') ?? bgs2Pick(a, 'similarity') ?? 0));
 
         const cards = monoItems.map(b => bgs2Card(b)).join('');
+        // putya: "напиши просто Монохромы, без описания" — убран поясняющий текст под заголовком.
         return `
           <div class="bgs2-mono-section">
-            <div class="bgs2-mono-section-title">★ Монохромные фоны (${monoItems.length})</div>
-            <div class="bgs2-mono-section-sub">Одновременно хорошо совпадают сразу с одной или несколькими группами модели, суммарно покрывающими большую часть её массы.</div>
+            <div class="bgs2-mono-section-title">Монохромы (${monoItems.length})</div>
             <div class="results-grid bgs2-compact-grid">${cards}</div>
           </div>
         `;
@@ -2028,7 +2028,7 @@ if (sortSwitcher) {
     // уже показаны отдельной плашкой выше (bgs2RenderMonoSection). "добавь возможность ставить
     // лимит веса цвета который учитывается в оценке" — minMassPct теперь берётся из поля ввода
     // (#bgs2-min-mass, см. renderBgsV2/fetchBgsV2), группы с массой ниже него не показываются.
-    const BGS2_GROUP_MIN_MASS_DEFAULT = 5;
+    const BGS2_GROUP_MIN_MASS_DEFAULT = 30;
 
     function bgs2RenderGroups(groups, minMassPct) {
         return (groups || []).map(g => {
@@ -2076,10 +2076,10 @@ if (sortSwitcher) {
         if (!filtered.length) return '';
         const sorted = filtered.sort((a, b) => (bgs2Pick(b, 'similarity') || 0) - (bgs2Pick(a, 'similarity') || 0));
         const cards = sorted.map(b => bgs2Card(b)).join('');
+        // putya: "там где все фоны, ничего писать не надо" — кнопка "Все" в переключателе уже
+        // достаточно объясняет, что это за список, отдельный заголовок/описание не нужны.
         return `
           <div class="bgs2-mono-section bgs2-all-section">
-            <div class="bgs2-mono-section-title bgs2-all-title">📋 Все фоны каталога (${sorted.length})</div>
-            <div class="bgs2-mono-section-sub">Лучший % каждого фона среди всех кубов модели, по убыванию (включая совпавшие на 0%).</div>
             <div class="results-grid bgs2-compact-grid">${cards}</div>
           </div>
         `;

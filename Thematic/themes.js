@@ -96,7 +96,6 @@ document.addEventListener('DOMContentLoaded', () => {
         sortCriteria: 'v2themes',
         v2SubSort: 'count',     
         maxPrice: 5,                     // <-- ПО УМОЛЧАНИЮ 5 TON
-        minBgPercent: 80,                // <-- ПО УМОЛЧАНИЮ 80%
         isAscending: false,              // <-- ЗАМЕНИТЬ НА false (От большего к меньшему)
         selectedColor: fixedColors[0], 
         filterText: '',
@@ -1080,12 +1079,8 @@ document.addEventListener('DOMContentLoaded', () => {
             // Текстовый поиск (в V2 используем state.filterText)
             if (state.filterText) url += `&search=${encodeURIComponent(state.filterText)}`;
 
-            // Логика сортировки (bg, price, count, name)
-            if (state.v2SubSort === 'bg' && state.selectedColor) {
-                url += `&sort=bg&bgName=${encodeURIComponent(state.selectedColor.name)}&minBgPercent=${state.minBgPercent}`;
-            } else {
-                url += `&sort=${state.v2SubSort || 'name'}`;
-            }
+            // Логика сортировки (price, count, name)
+            url += `&sort=${state.v2SubSort || 'name'}`;
 
             if (state.maxPrice) url += `&maxPrice=${state.maxPrice}`;
 
@@ -1128,7 +1123,7 @@ document.addEventListener('DOMContentLoaded', () => {
         items.forEach(item => {
             let letter;
             // Собираем в общий список для всех сортировок, кроме алфавитной
-            if (state.v2SubSort === 'count' || state.v2SubSort === 'median' || state.v2SubSort === 'price' || state.v2SubSort === 'bg') {
+            if (state.v2SubSort === 'count' || state.v2SubSort === 'median' || state.v2SubSort === 'price') {
                 letter = 'СПИСОК ТЕМАТИК';
             } else {
                 const itemName = item.Name || item.CollectionName || 'Unknown';
@@ -1210,7 +1205,6 @@ document.addEventListener('DOMContentLoaded', () => {
             
         let medianTagHtml = '';
         // Показываем цену ТОЛЬКО если выбрана сортировка по цене ('price')
-        // Если выбрана сортировка по фону ('bg'), тег будет скрыт.
         if (state.v2SubSort === 'price') {
             if (affordableCount !== undefined && affordableCount !== null) {
                 medianTagHtml = `<span class="v2-type-tag" title="До ${state.maxPrice} TON">≤ ${state.maxPrice} T | ${affordableCount} ${window.NFTi18n ? window.NFTi18n.t('pcs', 'шт.') : 'шт.'}</span>`;
@@ -1264,18 +1258,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (v2Id !== undefined && window.themesModal && window.themesModal.openV2Node) {
                 sessionStorage.setItem(SCROLL_STORAGE_KEY, window.scrollY);
-                
-                // ИСПРАВЛЕНИЕ: Передаем цвет фона, ТОЛЬКО если активна вкладка сортировки по фону
-                let selectedBg = (state.v2SubSort === 'bg' && state.selectedColor) ? state.selectedColor.name : null;
-                
-                // Передаем itemName и selectedBg 5-м аргументом
-                window.themesModal.openV2Node(v2Id, v2Type, true, itemName, selectedBg);
+                window.themesModal.openV2Node(v2Id, v2Type, true, itemName, null);
             } else if (window.themesModal && window.themesModal.openCollection) {
                 sessionStorage.setItem(SCROLL_STORAGE_KEY, window.scrollY);
-                
-                // ИСПРАВЛЕНИЕ: аналогично для обычных коллекций
-                let selectedBg = (state.v2SubSort === 'bg' && state.selectedColor) ? state.selectedColor.name : null;
-                window.themesModal.openCollection(itemName, selectedBg);
+                window.themesModal.openCollection(itemName, null);
             }
         };
         card.addEventListener('click', clickFn);
@@ -1718,16 +1704,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const mainFilterBtn = document.getElementById('main-filter-btn');
     const mainFilterPopup = document.getElementById('main-filter-popup');
     const fpMaxPrice = document.getElementById('fp-max-price');
-    const fpBgPercent = document.getElementById('fp-bg-percent');
     const fpApplyBtn = document.getElementById('fp-apply-btn');
     const fpSegBtns = document.querySelectorAll('.v2-seg-btn');
-    const percentDropdownContainer = document.getElementById('percent-dropdown-container');
-    const percentDropdownHeader = document.getElementById('percent-dropdown-header');
-    const percentDropdownList = document.getElementById('percent-dropdown-list');
-    const percentSelectedValue = document.getElementById('percent-selected-value');
     const fpPriceRow = document.getElementById('fp-price-row');
-    const fpBgRow = document.getElementById('fp-bg-row');
-    const fpColorSection = document.getElementById('fp-color-section');
     const fpEvidenceChips = document.getElementById('fp-evidence-chips');
 
     // Функция для отрисовки красивого кружка с градиентом
@@ -1750,10 +1729,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // Заполнение параметров перед открытием
     function syncPopupWithState() {
         if (fpMaxPrice) fpMaxPrice.value = state.maxPrice || '';
-        // Синхронизируем наш новый кастомный дропдаун процентов
-        if (percentSelectedValue) percentSelectedValue.textContent = `От ${state.minBgPercent}%`;
-        
-        updateColorDropdownUI();
 
         if (fpSegBtns) {
             fpSegBtns.forEach(btn => {
@@ -1765,16 +1740,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Жесткое управление видимостью полей (решает проблему "слетевших стилей")
     function updatePopupFieldsVisibility() {
         if(fpPriceRow) fpPriceRow.classList.add('fp-hidden');
-        if(fpBgRow) fpBgRow.classList.add('fp-hidden');
-        if(fpColorSection) fpColorSection.classList.add('fp-hidden');
 
-        if (state.sortCriteria === 'v2themes') {
-            if (state.v2SubSort === 'price') {
-                if(fpPriceRow) fpPriceRow.classList.remove('fp-hidden');
-            } else if (state.v2SubSort === 'bg') {
-                if(fpBgRow) fpBgRow.classList.remove('fp-hidden');
-                if(fpColorSection) fpColorSection.classList.remove('fp-hidden');
-            }
+        if (state.sortCriteria === 'v2themes' && state.v2SubSort === 'price') {
+            if(fpPriceRow) fpPriceRow.classList.remove('fp-hidden');
         }
     }
 
@@ -1818,8 +1786,6 @@ document.addEventListener('DOMContentLoaded', () => {
         fpApplyBtn.addEventListener('click', () => {
             // Сохраняем цену (если пусто - то пусто, иначе берем число)
             if(fpMaxPrice) state.maxPrice = fpMaxPrice.value ? Number(fpMaxPrice.value) : '';
-
-            // state.minBgPercent теперь сохраняется сам при клике на выпадающий список
 
             mainFilterPopup.classList.add('hidden');
             mainFilterBtn.classList.remove('active');
@@ -1866,48 +1832,6 @@ document.addEventListener('DOMContentLoaded', () => {
             reloadCurrentThemeView();
         });
     }
-
-    // Логика для кастомного выпадающего списка процентов
-    if (percentDropdownHeader) {
-        percentDropdownHeader.addEventListener('click', (e) => {
-            e.stopPropagation(); // чтобы не закрылся сам попап
-            const isHidden = percentDropdownList.classList.contains('hidden');
-            if (isHidden) {
-                percentDropdownList.classList.remove('hidden');
-                percentDropdownHeader.classList.add('open', 'active');
-            } else {
-                percentDropdownList.classList.add('hidden');
-                percentDropdownHeader.classList.remove('open', 'active');
-            }
-        });
-    }
-
-    if (percentDropdownList) {
-        percentDropdownList.addEventListener('click', (e) => {
-            const option = e.target.closest('.list-option');
-            if (!option) return;
-
-            const value = parseInt(option.dataset.value);
-            const text = option.textContent;
-
-            // Сразу сохраняем в state
-            state.minBgPercent = value;
-            percentSelectedValue.textContent = text;
-
-            percentDropdownList.classList.add('hidden');
-            percentDropdownHeader.classList.remove('open', 'active');
-        });
-    }
-
-    // Закрытие списка процентов при клике куда-угодно
-    document.addEventListener('click', (e) => {
-        if (percentDropdownContainer && !percentDropdownContainer.contains(e.target)) {
-            if (percentDropdownList && !percentDropdownList.classList.contains('hidden')) {
-                percentDropdownList.classList.add('hidden');
-                if (percentDropdownHeader) percentDropdownHeader.classList.remove('open', 'active');
-            }
-        }
-    });
 
     function init() {
         initTelegramData();

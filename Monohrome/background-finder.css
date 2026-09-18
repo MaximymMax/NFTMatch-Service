@@ -785,6 +785,21 @@ main {
     .results-grid {
         grid-template-columns: repeat(2, 1fr);
     }
+
+    /* putya: "на телефоне немного подлагивает когда много карточек" — box-shadow с блюром и
+       filter:drop-shadow на каждой карточке дорого стоят при композиции/скролле, когда карточек
+       десятки (Все фоны каталога, группы). На мобиле убираем оба, оставляя лёгкую обводку. */
+    .result-card-bg {
+        box-shadow: none;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .result-card-bg:hover {
+        transform: none;
+        box-shadow: none;
+    }
+    .result-card-bg .model-image {
+        filter: none;
+    }
 }
 
 .option-image, .model-image {
@@ -1481,10 +1496,8 @@ main {
     background: rgba(255, 196, 0, .08); border: 1px solid rgba(255, 196, 0, .4);
     border-radius: var(--radius); padding: 16px; margin-bottom: 20px;
 }
-.bgs2-mono-section-title { font-size: 13px; font-weight: 700; color: #ffc400; margin-bottom: 4px; }
-.bgs2-mono-section-sub { font-size: 11px; color: var(--text-muted); margin-bottom: 12px; }
+.bgs2-mono-section-title { font-size: 13px; font-weight: 700; color: #ffc400; margin-bottom: 12px; }
 .bgs2-all-section { background: rgba(255, 255, 255, .03); border-color: var(--border-color); }
-.bgs2-all-title { color: var(--primary-color); }
 
 .bgs2-group-card {
     background: var(--surface-elevated); border: 1px solid var(--border-color);

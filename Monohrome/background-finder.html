@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BACKGROUND SELECTION</title>
-    <link rel="stylesheet" href="./background-finder.css?v=8">
+    <link rel="stylesheet" href="./background-finder.css?v=9">
 
     <link rel="stylesheet" href="./themes-modal.css">
     <link rel="stylesheet" href="../shared-admin-nav.css?v=8">
@@ -242,7 +242,7 @@
         <div class="bgs2-filter-block">
             <label for="models-min-weight" class="bgs2-filter-block-label">Мин. вес цвета в оценке</label>
             <div class="bgs2-filter-block-row">
-                <input type="number" id="models-min-weight" min="0" max="100" step="1" value="5">
+                <input type="number" id="models-min-weight" min="0" max="100" step="1" value="30">
                 <span class="bgs2-filter-pct-sign">%</span>
             </div>
             <div class="bgs2-filter-block-hint">Модели, у которых фон зацепил цвет легче этого % их массы, не показываются</div>
@@ -277,7 +277,7 @@
                     <div class="bgs2-filter-block">
                         <label for="bgs2-min-mass" class="bgs2-filter-block-label">Мин. вес цвета в оценке</label>
                         <div class="bgs2-filter-block-row">
-                            <input type="number" id="bgs2-min-mass" min="0" max="100" step="1" value="5">
+                            <input type="number" id="bgs2-min-mass" min="0" max="100" step="1" value="30">
                             <span class="bgs2-filter-pct-sign">%</span>
                         </div>
                         <div class="bgs2-filter-block-hint">Группы и фоны, завязанные на цвет легче этого % массы модели, не показываются ниже</div>
@@ -362,7 +362,7 @@
 
     <script type="module" src="./themes-modal.js"></script>
     <script type="module" src="./themes-modal-nfts.js"></script>
-    <script type="module" src="./background-finder.js?v=7"></script>
+    <script type="module" src="./background-finder.js?v=8"></script>
 </body>
 
 </html>

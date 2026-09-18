@@ -65,13 +65,12 @@
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 11.5 12 4l9 7.5M5 10v9a1 1 0 001 1h4v-6h4v6h4a1 1 0 001-1v-9"/></svg>
                         <span>Главная</span>
                     </a>
+                    <!-- putya: "убери отдельную вкладку поиск по цвету, теперь это в похожих" —
+                         Поиск по цвету стал подвкладкой внутри Похожих на ColorWheel (см.
+                         setSearchSubtab в color-wheel.js), отдельная ссылка здесь больше не нужна. -->
                     <a href="../ColorWheel/color-wheel.html#search-similar" class="cw-tab">
                         <img src="https://cdn.changes.tg/gifts/models/Snake%20Box/png/Seashore.png" alt="">
                         <span>Похожие</span>
-                    </a>
-                    <a href="../ColorWheel/color-wheel.html#search" class="cw-tab">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7" stroke-linecap="round"/><path stroke-linecap="round" d="M21 21l-4.3-4.3"/></svg>
-                        <span>Поиск по цвету</span>
                     </a>
                 </div>
             </div>
@@ -113,7 +112,6 @@
                                     <button class="v2-seg-btn active" data-sort="count" data-i18n="sort_count">Кол-во</button>
                                     <button class="v2-seg-btn" data-sort="price" data-i18n="filter_sort_price">Цена</button>
                                     <button class="v2-seg-btn" data-sort="name" data-i18n="sort_name">Имя</button>
-                                    <button class="v2-seg-btn" data-sort="bg" data-i18n="filter_bg">Фон</button>
                                 </div>
                             </div>
 
@@ -135,38 +133,6 @@
                                 <div class="fp-col">
                                     <label class="fp-label" data-i18n="price_limit">Ограничение цены (TON):</label>
                                     <input type="number" id="fp-max-price" class="fp-input" placeholder="До скольки?" data-i18n-placeholder="price_limit_placeholder">
-                                </div>
-                            </div>
-
-                            <div class="fp-row fp-hidden" id="fp-bg-row">
-                                <div class="fp-col">
-                                    <label class="fp-label" data-i18n="min_compat">Мин. совпадение:</label>
-                                    <div class="custom-dropdown-container" id="percent-dropdown-container">
-                                        <div class="dropdown-header" id="percent-dropdown-header">
-                                            <span id="percent-selected-value">От 80%</span>
-                                            <div class="arrow"></div>
-                                        </div>
-                                        <div class="dropdown-list hidden" id="percent-dropdown-list">
-                                            <div class="list-option" data-value="95">От 95%</div>
-                                            <div class="list-option" data-value="90">От 90%</div>
-                                            <div class="list-option" data-value="80">От 80%</div>
-                                            <div class="list-option" data-value="70">От 70%</div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="fp-section fp-hidden" id="fp-color-section" style="margin-bottom: 16px; margin-top: 10px;">
-                                <label class="fp-label" data-i18n="bg_color">Цвет фона:</label>
-                                <div class="custom-dropdown-container" id="color-input-container">
-                                    <div class="dropdown-header with-search" id="color-dropdown-header">
-                                        <span class="selected-value-placeholder" id="color-selected-value" data-i18n="placeholder_select_color">Выберите цвет...</span>
-                                        <input type="text" class="dropdown-search" id="color-search-input" placeholder="Поиск цвета..." autocomplete="off" data-i18n-placeholder="placeholder_search_color">
-                                        <div class="arrow"></div>
-                                    </div>
-                                    <div class="dropdown-list hidden" id="color-dropdown-list">
-                                        <div id="color-list-options"></div>
-                                    </div>
                                 </div>
                             </div>
 
@@ -204,7 +170,7 @@
 
     <script type="module" src="../Monohrome/themes-modal.js"></script>
     <script type="module" src="../Monohrome/themes-modal-nfts.js"></script>
-    <script type="module" src="./themes.js?v=1"></script>
+    <script type="module" src="./themes.js?v=2"></script>
 </body>
 
 </html>
