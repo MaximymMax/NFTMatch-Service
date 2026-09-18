@@ -11,7 +11,7 @@
     <!-- putya: "модалка themes-modal-content должна быть при открытии любой карточки" — реальный
          themesModal (тот же, что на Монохромах/Тематиках/Похожих), а не своя. -->
     <link rel="stylesheet" href="../Monohrome/themes-modal.css">
-    <link rel="stylesheet" href="./color-wheel.css?v=24">
+    <link rel="stylesheet" href="./color-wheel.css?v=25">
     <script src="../config.js"></script>
     <!-- putya: "единая шапка для всех страниц... кнопки переключения языка, регистрации через тг" —
          те же скрипты, что и на остальных страницах; RU/EN и TG-бейдж переносятся в .cw-page-header
@@ -145,85 +145,100 @@
                  (режимы "Рецепт" и "Похожие модели"): FindModelsByColorRecipe/FindSimilarModels
                  вместо старых GetGlobalColorWheelNearestModels/MultiColorModels и SimilarNFTs. -->
             <div id="cw-panel-search" class="cw-container cw-panel hidden">
-                <h1 class="cw-title" id="cw-search-title">Поиск моделей по цвету</h1>
+                <!-- putya: "переключатель между режимами сделать по аналогии с переключателем между
+                     поиском по фонам и моделям в монохромах" — тот же .mode-switcher.mode-switcher-2,
+                     что и #main-mode-switcher на background-finder.html, тут переключает subtab. -->
+                <div class="mode-switcher-container cw-search-mode-switcher-container">
+                    <div class="mode-switcher mode-switcher-2" id="search-mode-switcher" data-active-mode="colors">
+                        <button type="button" class="mode-tab active" data-subtab="colors">По цветам</button>
+                        <button type="button" class="mode-tab" data-subtab="similar">Похожие</button>
+                    </div>
+                </div>
 
                 <div id="cw-search-colors" class="cw-search-subpanel">
-                    <div id="color-filters-list" class="cw-color-filters-list">
-                        <div class="cw-color-filter-row">
-                            <input type="color" class="filter-color-picker" value="#2563eb" title="Выбрать цвет">
-                            <input type="text" class="filter-color-hex cw-hex-input" value="#2563EB" maxlength="7" spellcheck="false">
-                            <div class="cw-pct-field">
-                                <input type="number" class="filter-color-pct" min="0" max="100" value="30" title="Целевой %">
-                                <span class="cw-pct-sign">%</span>
+                    <div class="cw-search-card">
+                        <div id="color-filters-list" class="cw-color-filters-list">
+                            <div class="cw-color-filter-row">
+                                <input type="color" class="filter-color-picker" value="#2563eb" title="Выбрать цвет">
+                                <input type="text" class="filter-color-hex cw-hex-input" value="#2563EB" maxlength="7" spellcheck="false">
+                                <div class="cw-pct-field">
+                                    <input type="number" class="filter-color-pct" min="0" max="100" value="30" title="Целевой %">
+                                    <span class="cw-pct-sign">%</span>
+                                </div>
                             </div>
+                        </div>
+
+                        <div class="cw-color-search-actions">
+                            <button type="button" id="add-color-filter-btn" class="cw-add-color-btn">+ Добавить цвет</button>
+                        </div>
+
+                        <!-- putya: "можно искать по основным" — режим "Доминирующие": без процентов,
+                             просто топ-N кубов модели по весу сопоставляются с N выбранными цветами. -->
+                        <div class="cw-recipe-mode-switch" id="recipe-mode-switch" data-active-mode="exact">
+                            <button type="button" class="cw-recipe-mode-btn active" data-recipemode="exact">Точный %</button>
+                            <button type="button" class="cw-recipe-mode-btn" data-recipemode="dominant">Доминирующие</button>
                         </div>
                     </div>
 
-                    <div class="cw-color-search-actions">
-                        <button type="button" id="add-color-filter-btn" class="cw-add-color-btn">+ Добавить цвет</button>
-                        <button type="button" id="color-search-btn" class="cw-color-search-btn">Найти</button>
-                    </div>
+                    <div class="cw-search-card">
+                        <div class="cw-recipe-fields-row">
+                            <label class="cw-num-field">
+                                <span>Мин. сходство</span>
+                                <span class="cw-num-field-input"><input type="number" id="recipe-min-sim" min="0" max="100" value="60"><i>%</i></span>
+                            </label>
+                            <label class="cw-num-field" id="recipe-tolerance-field">
+                                <span>Допуск веса</span>
+                                <span class="cw-num-field-input"><input type="number" id="recipe-tolerance" min="0" max="100" value="15"><i>%</i></span>
+                            </label>
+                        </div>
 
-                    <!-- putya: "можно искать по основным" — режим "Доминирующие": без процентов,
-                         просто топ-N кубов модели по весу сопоставляются с N выбранными цветами. -->
-                    <div class="cw-recipe-mode-switch" id="recipe-mode-switch" data-active-mode="exact">
-                        <button type="button" class="cw-recipe-mode-btn active" data-recipemode="exact">Точный %</button>
-                        <button type="button" class="cw-recipe-mode-btn" data-recipemode="dominant">Доминирующие</button>
-                    </div>
-
-                    <div class="cw-recipe-fields-row">
-                        <label class="cw-num-field">
-                            <span>Мин. сходство</span>
-                            <span class="cw-num-field-input"><input type="number" id="recipe-min-sim" min="0" max="100" value="60"><i>%</i></span>
+                        <!-- putya: "исключить модели должна быть под cw-color-search-actions" -->
+                        <label class="cw-exclude-toggle" id="exclude-off-recipe-label" title="Только при 2+ цветах">
+                            <input type="checkbox" id="exclude-off-recipe">
+                            Исключить модели с посторонними цветами
                         </label>
-                        <label class="cw-num-field" id="recipe-tolerance-field">
-                            <span>Допуск веса</span>
-                            <span class="cw-num-field-input"><input type="number" id="recipe-tolerance" min="0" max="100" value="15"><i>%</i></span>
-                        </label>
+
+                        <!-- putya: "можно исключать цвета" — отдельный список цветов-противопоказаний,
+                             модель отсеивается целиком, если такой цвет на ней заметно (>5%) есть. -->
+                        <div class="cw-exclude-colors-block">
+                            <span class="cw-exclude-colors-label">Цвета-противопоказания</span>
+                            <div id="recipe-exclude-colors-list" class="cw-exclude-colors-list"></div>
+                            <button type="button" id="recipe-add-exclude-color-btn" class="cw-add-color-btn">+ Добавить цвет-противопоказание</button>
+                        </div>
                     </div>
 
-                    <!-- putya: "исключить модели должна быть под cw-color-search-actions" -->
-                    <label class="cw-exclude-toggle" id="exclude-off-recipe-label" title="Только при 2+ цветах">
-                        <input type="checkbox" id="exclude-off-recipe">
-                        Исключить модели с посторонними цветами
-                    </label>
-
-                    <!-- putya: "можно исключать цвета" — отдельный список цветов-противопоказаний,
-                         модель отсеивается целиком, если такой цвет на ней заметно (>5%) есть. -->
-                    <div class="cw-exclude-colors-block">
-                        <span class="cw-exclude-colors-label">Цвета-противопоказания</span>
-                        <div id="recipe-exclude-colors-list" class="cw-exclude-colors-list"></div>
-                        <button type="button" id="recipe-add-exclude-color-btn" class="cw-add-color-btn">+ Добавить цвет-противопоказание</button>
-                    </div>
+                    <button type="button" id="color-search-btn" class="cw-color-search-btn cw-search-btn-wide">Найти</button>
 
                     <div id="color-search-results" class="cw-color-search-results"></div>
                 </div>
 
                 <div id="cw-search-similar" class="cw-search-subpanel hidden">
-                    <div class="cw-similar-pickers-row">
-                        <div class="cw-filter-row">
-                            <span class="cw-filter-label">Коллекция:</span>
-                            <div class="custom-dropdown-container" id="similar-gift-container">
-                                <div class="dropdown-header with-search" id="similar-gift-header">
-                                    <input type="text" id="similar-gift-search" class="dropdown-search" placeholder="Поиск..." autocomplete="off">
-                                    <span id="similar-gift-value" class="selected-value-placeholder">Выбери коллекцию</span>
-                                    <div class="arrow"></div>
-                                </div>
-                                <div class="dropdown-list hidden" id="similar-gift-list">
-                                    <div id="similar-gift-options"></div>
+                    <div class="cw-search-card">
+                        <div class="cw-similar-pickers-row">
+                            <div class="cw-filter-row">
+                                <span class="cw-filter-label">Коллекция:</span>
+                                <div class="custom-dropdown-container" id="similar-gift-container">
+                                    <div class="dropdown-header with-search" id="similar-gift-header">
+                                        <input type="text" id="similar-gift-search" class="dropdown-search" placeholder="Поиск..." autocomplete="off">
+                                        <span id="similar-gift-value" class="selected-value-placeholder">Выбери коллекцию</span>
+                                        <div class="arrow"></div>
+                                    </div>
+                                    <div class="dropdown-list hidden" id="similar-gift-list">
+                                        <div id="similar-gift-options"></div>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                        <div class="cw-filter-row">
-                            <span class="cw-filter-label">Модель:</span>
-                            <div class="custom-dropdown-container" id="similar-model-container">
-                                <div class="dropdown-header with-search" id="similar-model-header">
-                                    <input type="text" id="similar-model-search" class="dropdown-search" placeholder="Поиск..." autocomplete="off">
-                                    <span id="similar-model-value" class="selected-value-placeholder">Сначала выбери коллекцию</span>
-                                    <div class="arrow"></div>
-                                </div>
-                                <div class="dropdown-list hidden" id="similar-model-list">
-                                    <div id="similar-model-options"></div>
+                            <div class="cw-filter-row">
+                                <span class="cw-filter-label">Модель:</span>
+                                <div class="custom-dropdown-container" id="similar-model-container">
+                                    <div class="dropdown-header with-search" id="similar-model-header">
+                                        <input type="text" id="similar-model-search" class="dropdown-search" placeholder="Поиск..." autocomplete="off">
+                                        <span id="similar-model-value" class="selected-value-placeholder">Сначала выбери коллекцию</span>
+                                        <div class="arrow"></div>
+                                    </div>
+                                    <div class="dropdown-list hidden" id="similar-model-list">
+                                        <div id="similar-model-options"></div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -231,26 +246,26 @@
 
                     <!-- putya: "можно исключать цвета" — клик по цвету на диаграмме исключает его
                          из поиска (similarExcludedHexes), без повторного похода на сервер. -->
-                    <div id="similar-target-radar-box" class="cw-similar-radar-box hidden">
+                    <div id="similar-target-radar-box" class="cw-search-card cw-similar-radar-box hidden">
                         <div id="similar-target-radar"></div>
                         <div class="cw-similar-radar-hint">Клик по цвету исключает его из поиска</div>
                     </div>
 
-                    <div class="cw-recipe-fields-row">
-                        <label class="cw-num-field">
-                            <span>Мин. сходство</span>
-                            <span class="cw-num-field-input"><input type="number" id="similar-min-sim" min="0" max="100" value="75"><i>%</i></span>
+                    <div class="cw-search-card">
+                        <div class="cw-recipe-fields-row">
+                            <label class="cw-num-field">
+                                <span>Мин. сходство</span>
+                                <span class="cw-num-field-input"><input type="number" id="similar-min-sim" min="0" max="100" value="75"><i>%</i></span>
+                            </label>
+                        </div>
+
+                        <label class="cw-exclude-toggle" id="similar-ignore-order-label">
+                            <input type="checkbox" id="similar-ignore-order">
+                            Не учитывать порядок цветов между собой
                         </label>
                     </div>
 
-                    <label class="cw-exclude-toggle" id="similar-ignore-order-label">
-                        <input type="checkbox" id="similar-ignore-order">
-                        Не учитывать порядок цветов между собой
-                    </label>
-
-                    <div class="cw-color-search-actions">
-                        <button type="button" id="similar-search-btn" class="cw-color-search-btn" disabled>Найти похожие</button>
-                    </div>
+                    <button type="button" id="similar-search-btn" class="cw-color-search-btn cw-search-btn-wide" disabled>Найти похожие</button>
 
                     <div id="similar-search-results" class="cw-color-search-results"></div>
                 </div>
@@ -264,7 +279,7 @@
     </main>
 
     <script type="module" src="../Monohrome/themes-modal.js"></script>
-    <script src="./color-wheel.js?v=22"></script>
+    <script src="./color-wheel.js?v=23"></script>
 </body>
 
 </html>

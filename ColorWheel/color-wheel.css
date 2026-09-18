@@ -390,9 +390,51 @@
    #cw-panel-search теперь содержит два подраздела (colors/similar), переключаемых верхними
    вкладками "Похожие"/"Поиск по цвету" (см. setSearchSubtab в color-wheel.js). */
 .cw-search-subpanel {
-    width: 100%; display: flex; flex-direction: column; align-items: center; gap: 10px;
+    width: 100%; display: flex; flex-direction: column; align-items: center; gap: 14px;
 }
 .cw-search-subpanel.hidden { display: none; }
+
+/* putya: "переключатель между режимами сделать по аналогии с переключателем между поиском по
+   фонам и моделям в монохромах" — тот же .mode-switcher.mode-switcher-2, что и #main-mode-switcher
+   на background-finder.css (пилюля со скользящей подложкой), скопирован сюда (background-finder.css
+   на этой странице не подключён) и сужен под ширину остального контента этой колонки. */
+.cw-search-mode-switcher-container {
+    width: 100%; max-width: 460px;
+    background: var(--surface-elevated); border-radius: 12px; border: 1px solid var(--border-color);
+}
+.mode-switcher {
+    display: flex; background: transparent; border-radius: 0; padding: 4px; position: relative;
+    box-shadow: none; height: auto; border: none;
+}
+.mode-switcher::before {
+    content: ''; position: absolute; top: 4px; bottom: 4px; left: 4px;
+    background: rgba(37, 99, 235, .18); border: 1px solid rgba(37, 99, 235, .3);
+    border-radius: 8px; z-index: 1; transition: transform .35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+.mode-switcher.mode-switcher-2::before { width: calc((100% - 8px) / 2); }
+.mode-switcher.mode-switcher-2[data-active-mode="colors"]::before { transform: translateX(0%); }
+.mode-switcher.mode-switcher-2[data-active-mode="similar"]::before { transform: translateX(100%); }
+.mode-tab {
+    flex: 1; border: none; background: transparent; color: var(--text-muted);
+    font-size: 13px; font-weight: 700; padding: 11px 4px; z-index: 2; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; text-align: center;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: .3px;
+    transition: color .3s ease; font-family: inherit;
+}
+.mode-tab.active { color: var(--text-primary); }
+
+/* --- Общая карточка-группа для полей поиска — визуально отделяет каждый смысловой блок
+   (цвета/режим, пороги, пикеры, диаграмма) друг от друга вместо одного длинного списка подряд. --- */
+.cw-search-card {
+    width: 100%; max-width: 460px; box-sizing: border-box;
+    background: var(--surface-elevated); border: 1px solid var(--border-color);
+    border-radius: var(--radius); padding: 16px;
+    display: flex; flex-direction: column; gap: 12px;
+}
+
+.cw-search-btn-wide {
+    width: 100%; max-width: 460px; padding: 12px 18px; font-size: 14px;
+}
 
 /* --- Режим рецепта: "Точный %" / "Доминирующие" — тот же принцип переключателя, что и
    .mode-switcher на background-finder.css, но локальный (2 кнопки, без плашки поверх страницы). --- */
@@ -455,9 +497,7 @@
 .cw-similar-pickers-row .cw-filter-row { gap: 10px; }
 #similar-model-header.disabled { opacity: .5; pointer-events: none; }
 
-.cw-similar-radar-box {
-    width: 100%; max-width: 280px; display: flex; flex-direction: column; align-items: center; gap: 4px;
-}
+.cw-similar-radar-box { align-items: center; }
 .cw-similar-radar-box.hidden { display: none; }
 .cw-similar-radar-hint { font-size: 10.5px; color: var(--text-muted); text-align: center; }
 .cw-similar-radar-svg circle[data-hex] { cursor: pointer; }

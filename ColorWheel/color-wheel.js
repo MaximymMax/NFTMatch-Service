@@ -586,9 +586,14 @@
     const tabButtons = document.querySelectorAll('.cw-tab[data-tab]');
     const panelHome = document.getElementById('cw-panel-home');
     const panelSearch = document.getElementById('cw-panel-search');
-    const searchTitle = document.getElementById('cw-search-title');
     const searchColorsPanel = document.getElementById('cw-search-colors');
     const searchSimilarPanel = document.getElementById('cw-search-similar');
+    // putya: "переключатель между режимами сделать по аналогии с переключателем между поиском по
+    // фонам и моделям в монохромах" — тот же .mode-switcher.mode-switcher-2, что и на
+    // background-finder.html, живёт внутри самой панели поиска и дублирует то же переключение,
+    // что и верхние вкладки "Похожие"/"Поиск по цвету" (оба пути ведут в setSearchSubtab).
+    const searchModeSwitcher = document.getElementById('search-mode-switcher');
+    const searchModeTabs = searchModeSwitcher.querySelectorAll('.mode-tab[data-subtab]');
     let colorSearchLoaded = false;
     let similarPickerLoaded = false;
     let currentSearchSubtab = 'colors';
@@ -597,7 +602,8 @@
         currentSearchSubtab = subtab;
         searchColorsPanel.classList.toggle('hidden', subtab !== 'colors');
         searchSimilarPanel.classList.toggle('hidden', subtab !== 'similar');
-        searchTitle.textContent = subtab === 'similar' ? 'Похожие модели' : 'Поиск моделей по цвету';
+        searchModeSwitcher.dataset.activeMode = subtab;
+        searchModeTabs.forEach(btn => btn.classList.toggle('active', btn.dataset.subtab === subtab));
         tabButtons.forEach(btn => {
             if (btn.dataset.tab === 'search') btn.classList.toggle('active', btn.dataset.subtab === subtab);
         });
@@ -609,6 +615,7 @@
             loadSimilarPicker();
         }
     }
+    searchModeTabs.forEach(btn => btn.addEventListener('click', () => setSearchSubtab(btn.dataset.subtab)));
 
     function setActiveTab(tab, subtab) {
         panelHome.classList.toggle('hidden', tab !== 'home');
