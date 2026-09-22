@@ -70,6 +70,29 @@ const _v2ThemesCache = new Map(); // key: `${gift}/${model}` → V2 themes array
 const _oldThemesCache = new Map(); // key: `${gift}/${model}` → old themes array
 const _colorsCache = new Map(); // key: `${gift}/${model}` → parsed colors array
 const _bgScoresCache = new Map(); // key: `${gift}/${model}` → bgScores array (сейчас из MatchV4Dedup.AllBackgrounds)
+const _monoTypesCache = new Map(); // key: `${gift}/${model}` → { [имя фона]: тип монохрома }
+
+// Типы монохрома (MonoTypeClassifier на бэкенде). Показываем строку в карточке только для самих
+// монохромов — putya: "если модель не монохром, то вообще не надо писать, что там монохрома нет".
+const TM_MONO_LABELS = { flat: 'Чистый', tonal: 'Тональный', accent: 'Акцентный', achromatic: 'Ахроматический' };
+const TM_MONO_COLORS = { flat: '#22c55e', tonal: '#38bdf8', accent: '#a78bfa', achromatic: '#d4d4d8' };
+function tmMonoLabel(type) {
+    const t = String(type || '').toLowerCase();
+    if (!TM_MONO_LABELS[t]) return null;
+    return window.NFTi18n ? window.NFTi18n.t('mono_type_' + t, TM_MONO_LABELS[t]) : TM_MONO_LABELS[t];
+}
+// Обновляет строку "Монохром" в открытой карточке: прячет её, если сочетание монохромом не является.
+function tmSetMonoRow(type) {
+    const row = document.getElementById('tm-mono-row');
+    const val = document.getElementById('tm-mono-val');
+    if (!row || !val) return;
+    const label = tmMonoLabel(type);
+    if (!label) { row.style.display = 'none'; val.innerHTML = ''; return; }
+    const t = String(type).toLowerCase();
+    row.style.display = '';
+    val.innerHTML = `<span style="display:inline-flex;align-items:center;gap:6px;">
+        <span style="width:9px;height:9px;border-radius:50%;background:${TM_MONO_COLORS[t]};display:inline-block;"></span>${label}</span>`;
+}
 const _countCache = new Map(); // key: `${gift}/${model}/${bg}` → count number
 const _similarCache = new Map(); // ❗️ ДОБАВИТЬ ЭТУ СТРОКУ
 const _cubeCache = new Map(); // putya: "указывать основные цвета и весы" — key: `${gift}/${model}` → DebugCube-кластеры [{hex, weight}, ...]
@@ -231,6 +254,15 @@ async function tmFetchCubeAndBackgrounds(giftName, modelName) {
         })
             .then(r => r.ok ? r.json() : null)
             .then(data => {
+                // putya: "выводи информацию про тип монохрома в модалку, когда открываешь карточку".
+                // MatchV4Dedup отдаёт monoType по каждому фону — складываем в карту имя -> тип.
+                const types = {};
+                (tmPick(data, 'allBackgrounds') || []).forEach(b => {
+                    const n = tmPick(b, 'name');
+                    if (n) types[n] = String(tmPick(b, 'monoType') || 'none').toLowerCase();
+                });
+                _monoTypesCache.set(key, types);
+
                 const bgScores = (tmPick(data, 'allBackgrounds') || [])
                     .map(b => ({ Key: tmPick(b, 'name'), Value: (Number(tmPick(b, 'similarity')) || 0) / 100 }))
                     .filter(b => b.Key)
@@ -242,7 +274,7 @@ async function tmFetchCubeAndBackgrounds(giftName, modelName) {
     }
 
     const [cubes, bgScores] = await Promise.all([cubesPromise, bgScoresPromise]);
-    return { cubes, bgScores };
+    return { cubes, bgScores, monoTypes: _monoTypesCache.get(key) || {} };
 }
 
 // putya: "основные цвета и весы" — те же кружки, что у bg-palette-item, но без клика (это просто
@@ -819,6 +851,7 @@ async function onModelCardClick(gift, cardElement) {
             colors: parsedColors,
             cubes: cubes,
             bgScoreData: bgScoreData,
+            monoTypes: cubeAndBg.monoTypes || {},
             bgData: bgDataForDetails
         });
 
@@ -1205,6 +1238,13 @@ async function renderModelDetailView(modelData, preloadedData = null) {
                     <span id="tm-compat-val" class="info-value compat">${initialPercent}${initialPercent !== '—' ? '%' : ''}</span>
                 </div>
 
+                <!-- putya: "выводи информацию про тип монохрома в модалку". Строка появляется
+                     только если сочетание модель+фон реально монохром (см. tmSetMonoRow). -->
+                <div class="info-row" id="tm-mono-row" style="display:none;">
+                    <span class="info-label">${t('modal_mono_type', 'Монохром')}</span>
+                    <span id="tm-mono-val" class="info-value"></span>
+                </div>
+
                 <div class="info-row">
                     <span class="info-label">${t('modal_quantity', 'Количество')}</span>
                     <span class="info-value count">${modelData.Count || '-'} ${t('pcs', 'шт.')}</span>
@@ -1305,6 +1345,9 @@ async function renderModelDetailView(modelData, preloadedData = null) {
     }
 
     // --- Логика Аккордеона Фонов ---
+    // putya: тип монохрома для текущего фона (строка прячется, если это не монохром).
+    tmSetMonoRow((preloadedData?.monoTypes || {})[initialBgName]);
+
     const bgTrigger = document.getElementById('tm-bg-accordion-trigger');
     const bgContent = document.getElementById('tm-bg-accordion-content');
     const bgArrow = document.getElementById('tm-bg-arrow');
@@ -1896,6 +1939,9 @@ async function openModelDetail(giftName, modelName, bgName = null, onBack = null
         const phase1Data = {
             bgData: bgDataForDetails,
             bgScoreData: bgScoreData,
+            // putya: "выводи информацию про тип монохрома в модалку" — карта "фон -> тип" из того
+            // же MatchV4Dedup, что уже тянется для процентов совпадения.
+            monoTypes: cubeAndBg.monoTypes || {},
             cubes: cubes,
             v2Themes: aggResponse.V2Themes || [],
             similar: similarData
@@ -1971,6 +2017,13 @@ function renderModelDetailViewBody(modelData, preloadedData) {
                 <span id="tm-compat-val" class="info-value compat">${initialPercent}${initialPercent !== '—' ? '%' : ''}</span>
             </div>
 
+            <!-- putya: "выводи информацию про тип монохрома в модалку". Строка появляется только
+                 если сочетание модель+фон реально монохром (см. tmSetMonoRow). -->
+            <div class="info-row" id="tm-mono-row" style="display:none;">
+                <span class="info-label">${t('modal_mono_type', 'Монохром')}</span>
+                <span id="tm-mono-val" class="info-value"></span>
+            </div>
+
             <div class="info-row">
                 <span class="info-label">${t('modal_quantity', 'Количество')}</span>
                 <span class="info-value count">${modelData.Count || '-'} ${t('pcs', 'шт.')}</span>
@@ -2030,6 +2083,9 @@ function renderModelDetailViewBody(modelData, preloadedData) {
         };
     }
 
+    // putya: тип монохрома для текущего фона (строка прячется, если это не монохром).
+    tmSetMonoRow((preloadedData?.monoTypes || {})[initialBgName]);
+
     const bgTrigger = document.getElementById('tm-bg-accordion-trigger');
     const bgContent = document.getElementById('tm-bg-accordion-content');
     const bgArrow = document.getElementById('tm-bg-arrow');
@@ -2067,6 +2123,7 @@ function renderModelDetailViewBody(modelData, preloadedData) {
 
         if (bgText) bgText.textContent = newBgName || t('modal_choose', 'Выбрать...');
         if (compatVal) compatVal.textContent = `${matchPrc}${matchPrc !== '—' ? '%' : ''}`;
+        tmSetMonoRow(newBgName ? (preloadedData?.monoTypes || {})[newBgName] : null);
 
         pItems.forEach(item => {
             item.classList.remove('active');
@@ -2180,6 +2237,7 @@ function updateModelDetailView(modelData, preloadedData) {
 
     const compatVal = document.getElementById('tm-compat-val');
     if (compatVal) compatVal.textContent = `${initialPercent}${initialPercent !== '—' ? '%' : ''}`;
+    tmSetMonoRow((preloadedData?.monoTypes || {})[initialBgName]);
 
     const countEls = document.querySelectorAll('.info-value.count');
     countEls.forEach(el => { el.textContent = `${modelData.Count || '-'} ${t('pcs', 'шт.')}`; });

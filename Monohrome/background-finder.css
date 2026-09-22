@@ -754,6 +754,12 @@ main {
     display: inline-block; flex: 0 0 auto;
     background: rgba(255,255,255,.35);
 }
+/* Сколько таких сочетаний в текущем наборе (типов, которых нет, в меню вообще не будет). */
+.mono-filter-count {
+    flex: 0 0 auto; font-size: 0.78rem; font-weight: 700;
+    color: var(--text-muted); font-variant-numeric: tabular-nums;
+}
+.list-option.selected .mono-filter-count { color: var(--text-secondary); }
 
 /* Кнопка "?" рядом с типом - открывает модалку с пояснением (putya). */
 .mono-help-btn {

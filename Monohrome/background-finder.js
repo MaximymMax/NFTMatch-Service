@@ -953,7 +953,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     state.findBgs.selectedGifts = [data.giftName];
                     state.findBgs.selectedGift = data.giftName;
                     state.findBgs.selectedModel = data.modelName;
-                    updateMultiSelectText(dropdowns.giftBgs, state.findBgs.selectedGifts, window.NFTi18n ? window.NFTi18n.t('placeholder_all_collections') : 'Все коллекции');
+                    updateMultiSelectText(dropdowns.giftBgs, state.findBgs.selectedGifts, BGS_COLLECTIONS_PLACEHOLDER());
                     dropdowns.modelBgs.value.textContent = data.modelName;
                     await fetchAllModelNames(data.giftName, true);
                     displayMonocolorAlert(data.modelName);
@@ -1417,6 +1417,7 @@ function initUniversalFilters() {
 function renderUniversalResults(items, append = false) {
     resultsWrapper.classList.remove('results-initial-hide');
     const sourceItems = items || [];
+    setMonoTypeCounts(sourceItems, monoTypeOf);
     monoLastRender = () => renderUniversalResults(sourceItems, false);
     mountMonoFilterFor('findUniversal', () => monoLastRender && monoLastRender());
     items = sourceItems.filter(i => passesMonoFilter(monoTypeOf(i)));
@@ -1547,6 +1548,25 @@ function renderUniversalResults(items, append = false) {
     }
     function monoFilterActive() { return monoTypeFilter.size > 0; }
 
+    // putya: "не выводи типы монохромов которых не существует на данную модель или данную
+    // коллекцию". Перед каждой отрисовкой считаем, сколько чего есть в ТЕКУЩЕМ наборе, и
+    // показываем в меню только непустые типы. Заодно снимаем выбранный тип, если он из набора
+    // пропал, — иначе фильтр молча даёт пустой список.
+    let monoTypeCounts = null;
+    function setMonoTypeCounts(list, getType) {
+        const counts = {};
+        MONO_TYPE_ORDER.forEach(t => { counts[t] = 0; });
+        (list || []).forEach(x => {
+            const t = (getType ? getType(x) : monoTypeOf(x));
+            if (counts[t] !== undefined) counts[t]++;
+        });
+        monoTypeCounts = counts;
+        [...monoTypeFilter].forEach(t => { if (!counts[t]) monoTypeFilter.delete(t); });
+    }
+    function monoAvailableTypes() {
+        return MONO_TYPE_ORDER.filter(t => !monoTypeCounts || monoTypeCounts[t] > 0);
+    }
+
     // Пустой результат: отдельный текст, если пусто именно из-за фильтра. Раньше показывалось общее
     // "Подходящих моделей не найдено", и было не видно, что виноват выбранный тип (putya).
     function monoEmptyHtml(fallbackText) {
@@ -1631,10 +1651,13 @@ function renderUniversalResults(items, append = false) {
         if (!monoFilterEl) return;
         const options = monoFilterEl.querySelector('.mono-filter-options');
         const value = monoFilterEl.querySelector('.mono-filter-value');
-        const chosen = MONO_TYPE_ORDER.filter(t => monoTypeFilter.has(t));
+        const available = monoAvailableTypes();
+        // Ни одного монохрома в наборе — меню прячем целиком, фильтровать нечего.
+        monoFilterEl.style.display = available.length ? '' : 'none';
+        const chosen = available.filter(t => monoTypeFilter.has(t));
         value.textContent = chosen.length === 0
             ? 'Все типы'
-            : (chosen.length === MONO_TYPE_ORDER.length ? 'Только монохромы' : chosen.map(monoLabel).join(', '));
+            : (chosen.length === available.length ? 'Только монохромы' : chosen.map(monoLabel).join(', '));
         value.classList.toggle('mono-filter-on', chosen.length > 0);
 
         // "Все типы" — явная строка, иначе не понятно, что снятый фильтр показывает и не-монохромы
@@ -1643,11 +1666,13 @@ function renderUniversalResults(items, append = false) {
             <div class="list-option mono-filter-option${chosen.length === 0 ? ' selected' : ''}" data-type="__all">
                 <span class="option-text">Все типы</span>
             </div>`];
-        MONO_TYPE_ORDER.forEach(t => {
+        available.forEach(t => {
+            const cnt = monoTypeCounts ? monoTypeCounts[t] : null;
             rows.push(`
             <div class="list-option mono-filter-option${monoTypeFilter.has(t) ? ' selected' : ''}" data-type="${t}">
                 <span class="mono-dot mono-dot-${t}"></span>
                 <span class="option-text">${monoLabel(t)}</span>
+                ${cnt != null ? `<span class="mono-filter-count">${cnt}</span>` : ''}
                 <button type="button" class="mono-help-btn" data-help="${t}" title="Что это значит?">?</button>
             </div>`);
         });
@@ -1703,16 +1728,25 @@ function formatPrice(price) {
 }
 
 // Функция для добавления опции "Все" в начало списка
-function populateUniversalDropdown(container, items, type) {
+// includeAll=false — без строки "Выбрать все". putya: "когда пытаешься выбрать фоны под модель,
+// не надо разрешать все коллекции выбирать" — там сначала нужна конкретная коллекция, иначе
+// список моделей это весь каталог.
+// Плейсхолдер списка коллекций на вкладке "Фоны": там "все коллекции" больше не вариант.
+function BGS_COLLECTIONS_PLACEHOLDER() {
+    return window.NFTi18n ? window.NFTi18n.t('placeholder_select_collections', 'Выберите коллекцию') : 'Выберите коллекцию';
+}
+
+function populateUniversalDropdown(container, items, type, includeAll = true) {
     container.innerHTML = '';
     const fragment = document.createDocumentFragment();
-    
-    // Создаем опцию "Все"
-    const allOption = document.createElement('div');
-    allOption.classList.add('list-option');
-    allOption.dataset.value = 'ALL';
-    allOption.innerHTML = `<span class="option-text" style="font-weight:700; color:var(--primary-color);">${window.NFTi18n ? window.NFTi18n.t('btn_select_all') : 'Выбрать все'}</span>`;
-    fragment.appendChild(allOption);
+
+    if (includeAll) {
+        const allOption = document.createElement('div');
+        allOption.classList.add('list-option');
+        allOption.dataset.value = 'ALL';
+        allOption.innerHTML = `<span class="option-text" style="font-weight:700; color:var(--primary-color);">${window.NFTi18n ? window.NFTi18n.t('btn_select_all') : 'Выбрать все'}</span>`;
+        fragment.appendChild(allOption);
+    }
 
     items.forEach((item, index) => {
         const option = createDropdownOption(item, type, index < 15);
@@ -1876,7 +1910,7 @@ if (sortSwitcher) {
             if (cachedData) {
                 state.giftNames = JSON.parse(cachedData);
                 console.log('%c[Cache Success] Loaded gift names from sessionStorage:', 'color: purple', state.giftNames);
-                populateUniversalDropdown(dropdowns.giftBgs.options, state.giftNames, 'gift');
+                populateUniversalDropdown(dropdowns.giftBgs.options, state.giftNames, 'gift', false);
                 populateUniversalDropdown(dropdowns.giftModels.options, state.giftNames, 'gift');
                 return;
             }
@@ -1900,7 +1934,7 @@ if (sortSwitcher) {
                 console.error('[Cache Error] Ошибка сохранения в кэш:', error);
             }
 
-            populateUniversalDropdown(dropdowns.giftBgs.options, state.giftNames, 'gift');
+            populateUniversalDropdown(dropdowns.giftBgs.options, state.giftNames, 'gift', false);
             populateUniversalDropdown(dropdowns.giftModels.options, state.giftNames, 'gift');
 
         } catch (error) {
@@ -2343,6 +2377,17 @@ if (sortSwitcher) {
 
         // putya: фильтр типов монохрома — меню в панели вкладки; переключение перерисовывает уже
         // полученный ответ, без повторного запроса.
+        const bgsForCounts = [];
+        const seenBgNames = new Set();
+        [...((bgs2Pick(dedupData, 'groups') || []).flatMap(g => bgs2Pick(g, 'backgrounds') || [])),
+         ...(bgs2Pick(dedupData, 'allBackgrounds') || [])].forEach(b => {
+            const n = bgs2Pick(b, 'name');
+            if (n && seenBgNames.has(n)) return;
+            if (n) seenBgNames.add(n);
+            bgsForCounts.push(b);
+        });
+        setMonoTypeCounts(bgsForCounts, b => (bgs2Pick(b, 'monoType') || 'none').toLowerCase());
+
         monoLastRender = () => renderBgsV2(data);
         mountMonoFilterFor('findBgs', () => monoLastRender && monoLastRender());
 
@@ -2557,6 +2602,7 @@ if (sortSwitcher) {
 
     function renderBackgroundResults(backgroundData) {
         const sourceBackgrounds = backgroundData || [];
+        setMonoTypeCounts(sourceBackgrounds.filter(bg => bg.compatValue > 0), monoTypeOf);
         monoLastRender = () => renderBackgroundResults(sourceBackgrounds);
         mountMonoFilterFor('findBgs', () => monoLastRender && monoLastRender());
         resultsWrapper.classList.remove('results-initial-hide');
@@ -2671,6 +2717,7 @@ if (sortSwitcher) {
 
     function renderModelResults(modelData, backgroundColor) {
         const sourceModels = modelData || [];
+        setMonoTypeCounts(sourceModels.filter(m => m.compatValue > 0), monoTypeOf);
         monoLastRender = () => renderModelResults(sourceModels, backgroundColor);
         mountMonoFilterFor('findModels', () => monoLastRender && monoLastRender());
         resultsWrapper.classList.remove('results-initial-hide');
@@ -3339,14 +3386,11 @@ if (sortSwitcher) {
         if (!option) return;
 
         const val = option.dataset.value;
-        if (val === 'ALL') {
-            state.findBgs.selectedGifts = [];
-        } else {
-            const idx = state.findBgs.selectedGifts.indexOf(val);
-            if (idx > -1) state.findBgs.selectedGifts.splice(idx, 1);
-            else state.findBgs.selectedGifts.push(val);
-        }
-        updateMultiSelectText(dropdowns.giftBgs, state.findBgs.selectedGifts, window.NFTi18n ? window.NFTi18n.t('placeholder_all_collections') : 'Все коллекции');
+        if (!val || val === 'ALL') return;
+        const idx = state.findBgs.selectedGifts.indexOf(val);
+        if (idx > -1) state.findBgs.selectedGifts.splice(idx, 1);
+        else state.findBgs.selectedGifts.push(val);
+        updateMultiSelectText(dropdowns.giftBgs, state.findBgs.selectedGifts, BGS_COLLECTIONS_PLACEHOLDER());
 
         state.findBgs.lastResults = [];
         state.findBgs.v2Data = null;
@@ -3516,7 +3560,7 @@ if (sortSwitcher) {
 
         if (giftName) {
             state.findBgs.selectedGifts = [giftName];
-            updateMultiSelectText(dropdowns.giftBgs, state.findBgs.selectedGifts, window.NFTi18n ? window.NFTi18n.t('placeholder_all_collections') : 'Все коллекции');
+            updateMultiSelectText(dropdowns.giftBgs, state.findBgs.selectedGifts, BGS_COLLECTIONS_PLACEHOLDER());
             state.findBgs.selectedGift = giftName;
             await fetchAllModelNames(giftName, true);
         }
