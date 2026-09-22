@@ -1414,6 +1414,9 @@ function initUniversalFilters() {
 
 function renderUniversalResults(items, append = false) {
     resultsWrapper.classList.remove('results-initial-hide');
+    monoLastRender = () => renderUniversalResults(items, false);
+    renderMonoFilter(resultsWrapper, () => monoLastRender && monoLastRender());
+    items = (items || []).filter(i => passesMonoFilter(monoTypeOf(i)));
     
     if (!append) {
         resultsGrid.innerHTML = '';
@@ -1430,7 +1433,7 @@ function renderUniversalResults(items, append = false) {
     items.forEach(item => {
         const bgObj = fixedColors.find(c => c.name === item.BackgroundName || c.id === item.BackgroundName) || { gradient: '#16213a', name: item.BackgroundName };
         const modelImageUrl = `${API_PHOTO_URL}/${encodeURIComponent(item.CollectionName)}/png/${encodeURIComponent(item.ModelName)}.png`;
-        const compatValue = item.Coof.toFixed(1);
+        const monoType = monoTypeOf(item);
 
         const card = document.createElement('div');
         card.className = 'result-card-bg';
@@ -1448,6 +1451,7 @@ function renderUniversalResults(items, append = false) {
 
         card.innerHTML = `
             <div class="image-container">
+                ${monoTagHtml(monoType)}
                 <img data-src="${modelImageUrl}" alt="${item.ModelName}" class="model-image lazy-load">
             </div>
             <div class="info-container">
@@ -1456,7 +1460,6 @@ function renderUniversalResults(items, append = false) {
                     <div class="info-model">${item.ModelName}</div>
                 </div>
                 <div class="info-badges">
-                    <div class="badge-percent">${compatValue}%</div>
                     ${priceTag}
                 </div>
             </div>`;
@@ -1473,6 +1476,58 @@ function renderUniversalResults(items, append = false) {
     setupLazyLoading(resultsGrid, null, 'grid');
     setupUniversalIntersectionObserver();
 }
+
+    // === Типы монохрома (MonoTypeClassifier на бэкенде) =========================================
+    // putya: "проценты монохрома не будет, будут просто вот эти метки". Монохромные типы —
+    // flat/tonal/accent/achromatic; contrast/partial/none метку не получают.
+    const MONO_TYPE_LABELS = {
+        flat: 'Чистый',
+        tonal: 'Тональный',
+        accent: 'С акцентом',
+        achromatic: 'Ахроматический'
+    };
+    const MONO_TYPE_ORDER = ['flat', 'tonal', 'accent', 'achromatic'];
+    // Активный фильтр: пустое множество = показывать всё.
+    let monoTypeFilter = new Set();
+    // Последняя отрисовка результатов — чтобы переключение фильтра перерисовывало текущий список
+    // без повторного запроса к API.
+    let monoLastRender = null;
+
+    function monoTypeOf(item) {
+        const t = item && (item.MonoType || item.monoType);
+        return t ? String(t).toLowerCase() : 'none';
+    }
+    function isMonoType(t) { return Object.prototype.hasOwnProperty.call(MONO_TYPE_LABELS, t); }
+    function monoTagHtml(type) {
+        if (!isMonoType(type)) return '';
+        const label = window.NFTi18n ? window.NFTi18n.t('mono_type_' + type, MONO_TYPE_LABELS[type]) : MONO_TYPE_LABELS[type];
+        return `<span class="mono-tag mono-tag-${type}" title="${label}"><i></i>${label}</span>`;
+    }
+    function passesMonoFilter(type) {
+        return monoTypeFilter.size === 0 || monoTypeFilter.has(type);
+    }
+    // Ряд чипов над результатами. onChange перерисовывает текущий список.
+    function renderMonoFilter(container, onChange) {
+        if (!container) return;
+        let row = container.querySelector('.mono-filter-row');
+        if (!row) {
+            row = document.createElement('div');
+            row.className = 'mono-filter-row';
+            container.prepend(row);
+        }
+        row.innerHTML = MONO_TYPE_ORDER.map(t => {
+            const label = window.NFTi18n ? window.NFTi18n.t('mono_type_' + t, MONO_TYPE_LABELS[t]) : MONO_TYPE_LABELS[t];
+            return `<button class="mono-filter-chip${monoTypeFilter.has(t) ? ' active' : ''}" data-type="${t}"><i></i>${label}</button>`;
+        }).join('');
+        row.querySelectorAll('.mono-filter-chip').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const t = btn.dataset.type;
+                if (monoTypeFilter.has(t)) monoTypeFilter.delete(t); else monoTypeFilter.add(t);
+                renderMonoFilter(container, onChange);
+                if (typeof onChange === 'function') onChange();
+            });
+        });
+    }
 
 function formatPrice(price) {
     if (!price) return null;
@@ -1968,9 +2023,7 @@ if (sortSwitcher) {
     function bgs2Card(b) {
         const hex = bgs2Pick(b, 'hex') || '#000000';
         const name = bgs2Pick(b, 'name') || '';
-        const isMono = !!bgs2Pick(b, 'isMonochrome');
-        const monoScore = bgs2Pick(b, 'monoScore');
-        const score = monoScore != null ? monoScore : (bgs2Pick(b, 'similarity') || 0);
+        const monoType = (bgs2Pick(b, 'monoType') || 'none').toLowerCase();
 
         const giftName = state.findBgs.selectedGift || '';
         const modelName = state.findBgs.selectedModel || '';
@@ -1987,15 +2040,13 @@ if (sortSwitcher) {
         return `
           <div class="result-card-bg" style="background:${cardBg}" data-bg-name="${bgs2EscapeHtml(name)}">
             <div class="image-container">
+              ${monoTagHtml(monoType)}
               <img data-src="${modelImg}" alt="${bgs2EscapeHtml(modelName)}" class="model-image lazy-load">
             </div>
             <div class="info-container">
               <div class="info-text">
                 <div class="info-collection">${bgs2EscapeHtml(giftName)}</div>
                 <div class="info-model">${bgs2EscapeHtml(name)}</div>
-              </div>
-              <div class="info-badges">
-                <div class="badge-percent">${isMono ? '★ ' : ''}${Number(score).toFixed(1)}%</div>
               </div>
             </div>
           </div>
@@ -2071,6 +2122,7 @@ if (sortSwitcher) {
     function bgs2RenderAllBackgrounds(allBackgrounds, minMassPct) {
         if (!allBackgrounds || !allBackgrounds.length) return '';
         const filtered = allBackgrounds.filter(b => {
+            if (!passesMonoFilter((bgs2Pick(b, 'monoType') || 'none').toLowerCase())) return false;
             if (bgs2Pick(b, 'isMonochrome')) return true;
             const cubeWeight = bgs2Pick(b, 'bestCubeWeight');
             return cubeWeight == null || cubeWeight >= minMassPct;
@@ -2311,6 +2363,7 @@ if (sortSwitcher) {
                 compatValue: item.Similarity / 100,
                 cubeWeight: item.BestCubeWeight,
                 isMono: item.IsMonochrome,
+                MonoType: item.MonoType,
                 floorPrice: floorMap.get(`${item.GiftName}::${item.ModelName}`) || 0,
             }));
             console.log('%c[API Success] Received model data (FindModelsByBackground):', 'color: green', modelsToRender);
@@ -2329,6 +2382,8 @@ if (sortSwitcher) {
     }
 
     function renderBackgroundResults(backgroundData) {
+        monoLastRender = () => renderBackgroundResults(backgroundData);
+        renderMonoFilter(resultsWrapper, () => monoLastRender && monoLastRender());
         resultsWrapper.classList.remove('results-initial-hide');
         resultsGrid.innerHTML = '';
         if (!backgroundData || backgroundData.length === 0) {
@@ -2339,7 +2394,7 @@ if (sortSwitcher) {
         const modelImageUrl = `${API_PHOTO_URL}/${encodeURIComponent(state.findBgs.selectedGift)}/png/${encodeURIComponent(state.findBgs.selectedModel)}.png`;
         const fragment = document.createDocumentFragment();
 
-        backgroundData = backgroundData.filter(bg => bg.compatValue > 0);
+        backgroundData = backgroundData.filter(bg => bg.compatValue > 0 && passesMonoFilter(monoTypeOf(bg)));
         if (backgroundData.length === 0) {
             resultsGrid.innerHTML = `<p style="text-align: center;">${window.NFTi18n ? window.NFTi18n.t('no_matching_bgs') : 'Подходящих фонов не найдено.'}</p>`;
             return;
@@ -2348,19 +2403,16 @@ if (sortSwitcher) {
             const card = document.createElement('div');
             card.className = 'result-card-bg';
             card.style.background = bg.gradient;
-            const compatValue = (bg.compatValue * 100).toFixed(1);
 
             card.innerHTML = `
                 <div class="image-container">
+                    ${monoTagHtml(monoTypeOf(bg))}
                     <img data-src="${modelImageUrl}" alt="${state.findBgs.selectedModel}" class="model-image lazy-load">
                 </div>
                 <div class="info-container">
                     <div class="info-text">
                         <div class="info-collection">${state.findBgs.selectedGift}</div>
                         <div class="info-model">${bg.name}</div>
-                    </div>
-                    <div class="info-badges">
-                        <div class="badge-percent">${compatValue}%</div>
                     </div>
                 </div>`;
 
@@ -2443,6 +2495,8 @@ if (sortSwitcher) {
     }
 
     function renderModelResults(modelData, backgroundColor) {
+        monoLastRender = () => renderModelResults(modelData, backgroundColor);
+        renderMonoFilter(resultsWrapper, () => monoLastRender && monoLastRender());
         resultsWrapper.classList.remove('results-initial-hide');
         resultsGrid.innerHTML = '';
         if (!backgroundColor || !modelData || modelData.length === 0) {
@@ -2451,7 +2505,7 @@ if (sortSwitcher) {
         }
 
         const fragment = document.createDocumentFragment();
-        modelData = modelData.filter(model => model.compatValue > 0);
+        modelData = modelData.filter(model => model.compatValue > 0 && passesMonoFilter(monoTypeOf(model)));
         if (modelData.length === 0) {
             resultsGrid.innerHTML = `<p style="text-align: center;">${window.NFTi18n ? window.NFTi18n.t('no_matching_models') : 'Подходящих моделей не найдено.'}</p>`;
             return;
@@ -2461,7 +2515,6 @@ if (sortSwitcher) {
             const card = document.createElement('div');
             card.className = 'result-card-bg';
             card.style.background = backgroundColor.gradient;
-            const compatValue = (model.compatValue * 100).toFixed(1);
             const formattedPrice = model.floorPrice > 0 ? formatPrice(model.floorPrice) : null;
             const priceTag = formattedPrice ? `
                 <div class="badge-price" style="font-size: 0.9rem; font-weight: 800; display: flex; align-items: center; justify-content: center; gap: 4px;">
@@ -2477,6 +2530,7 @@ if (sortSwitcher) {
 
             card.innerHTML = `
                 <div class="image-container">
+                    ${monoTagHtml(monoTypeOf(model))}
                     <img data-src="${modelImageUrl}" alt="${model.modelName}" class="model-image lazy-load">
                 </div>
                 <div class="info-container">
@@ -2485,7 +2539,6 @@ if (sortSwitcher) {
                         <div class="info-model">${model.modelName}</div>
                     </div>
                     <div class="info-badges">
-                        <div class="badge-percent">${model.isMono ? '★ ' : ''}${compatValue}%</div>
                         ${priceTag}
                     </div>
                 </div>`;

@@ -716,6 +716,84 @@ main {
     border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
+/* putya: "на сайт надо добавить метки на карточки, такую метку сверху слева если это какой-то вид
+   монохрома, проценты монохрома не будет, будут просто вот эти метки" — метка типа поверх картинки
+   в левом верхнем углу карточки. Типы: flat/tonal/accent/achromatic (монохромы). */
+.mono-tag {
+    position: absolute; top: 6px; left: 6px; z-index: 3;
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 3px 7px; border-radius: 7px;
+    font-size: 0.68rem; font-weight: 800; letter-spacing: .01em;
+    color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.5);
+    background: rgba(0, 0, 0, .45); border: 1px solid rgba(255,255,255,.22);
+    backdrop-filter: blur(4px);
+    pointer-events: none; white-space: nowrap;
+}
+.mono-tag i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex: 0 0 auto; }
+.mono-tag-flat i { background: #22c55e; }
+.mono-tag-tonal i { background: #38bdf8; }
+.mono-tag-accent i { background: #a78bfa; }
+.mono-tag-achromatic i { background: #d4d4d8; }
+.result-card-bg .image-container { position: relative; }
+
+/* Фильтр по типу монохрома — ряд компактных чипов (putya: "добавить фильтры"). */
+.mono-filter-row {
+    display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 10px 0; align-items: center;
+}
+.mono-filter-chip {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 5px 10px; border-radius: 9px; cursor: pointer;
+    font-size: 0.78rem; font-weight: 700; color: var(--text-secondary);
+    background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.12);
+    transition: background .12s, color .12s, border-color .12s;
+}
+.mono-filter-chip:hover { color: #fff; border-color: rgba(255,255,255,.28); }
+.mono-filter-chip.active { background: var(--primary-color, #2563eb); color: #fff; border-color: transparent; }
+.mono-filter-chip i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+.mono-filter-chip[data-type="flat"] i { background: #22c55e; }
+.mono-filter-chip[data-type="tonal"] i { background: #38bdf8; }
+.mono-filter-chip[data-type="accent"] i { background: #a78bfa; }
+.mono-filter-chip[data-type="achromatic"] i { background: #d4d4d8; }
+
+/* putya: "на сайт надо добавить метки на карточки, такую метку сверху слева если это какой-то вид
+   монохрома, проценты монохрома не будет, будут просто вот эти метки" — метка типа поверх картинки
+   в левом верхнем углу карточки. Типы: flat/tonal/accent/achromatic (монохромы). */
+.mono-tag {
+    position: absolute; top: 6px; left: 6px; z-index: 3;
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 3px 7px; border-radius: 7px;
+    font-size: 0.68rem; font-weight: 800; letter-spacing: .01em;
+    color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.5);
+    background: rgba(0, 0, 0, .45); border: 1px solid rgba(255,255,255,.22);
+    backdrop-filter: blur(4px);
+    pointer-events: none; white-space: nowrap;
+}
+.mono-tag i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex: 0 0 auto; }
+.mono-tag-flat i { background: #22c55e; }
+.mono-tag-tonal i { background: #38bdf8; }
+.mono-tag-accent i { background: #a78bfa; }
+.mono-tag-achromatic i { background: #d4d4d8; }
+.result-card-bg .image-container { position: relative; }
+
+/* Фильтр по типу монохрома — ряд компактных чипов (putya: "добавить фильтры"). */
+.mono-filter-row {
+    display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 10px 0; align-items: center;
+}
+.mono-filter-chip {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 5px 10px; border-radius: 9px; cursor: pointer;
+    font-size: 0.78rem; font-weight: 700; color: var(--text-secondary);
+    background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.12);
+    transition: background .12s, color .12s, border-color .12s;
+}
+.mono-filter-chip:hover { color: #fff; border-color: rgba(255,255,255,.28); }
+.mono-filter-chip.active { background: var(--primary-color, #2563eb); color: #fff; border-color: transparent; }
+.mono-filter-chip i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+.mono-filter-chip[data-type="flat"] i { background: #22c55e; }
+.mono-filter-chip[data-type="tonal"] i { background: #38bdf8; }
+.mono-filter-chip[data-type="accent"] i { background: #a78bfa; }
+.mono-filter-chip[data-type="achromatic"] i { background: #d4d4d8; }
+
 
 .result-card-bg .bg-name {
     font-size: 0.85rem; 
