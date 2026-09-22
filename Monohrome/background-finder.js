@@ -1233,6 +1233,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    mountMonoFilterFor(mode, () => monoLastRender && monoLastRender());
+
     if (updateUrl) updateUrlState();
 }
 
@@ -1414,16 +1416,17 @@ function initUniversalFilters() {
 
 function renderUniversalResults(items, append = false) {
     resultsWrapper.classList.remove('results-initial-hide');
-    monoLastRender = () => renderUniversalResults(items, false);
-    renderMonoFilter(resultsWrapper, () => monoLastRender && monoLastRender());
-    items = (items || []).filter(i => passesMonoFilter(monoTypeOf(i)));
+    const sourceItems = items || [];
+    monoLastRender = () => renderUniversalResults(sourceItems, false);
+    mountMonoFilterFor('findUniversal', () => monoLastRender && monoLastRender());
+    items = sourceItems.filter(i => passesMonoFilter(monoTypeOf(i)));
     
     if (!append) {
         resultsGrid.innerHTML = '';
     }
     
     if (!append && (!items || items.length === 0)) {
-        resultsGrid.innerHTML = `<p style="text-align: center;">${window.NFTi18n ? window.NFTi18n.t('no_results') : 'Ничего не найдено.'}</p>`;
+        resultsGrid.innerHTML = monoEmptyHtml(window.NFTi18n ? window.NFTi18n.t('no_results') : 'Ничего не найдено.');
         return;
     }
 
@@ -1483,51 +1486,212 @@ function renderUniversalResults(items, append = false) {
     const MONO_TYPE_LABELS = {
         flat: 'Чистый',
         tonal: 'Тональный',
-        accent: 'С акцентом',
+        accent: 'Акцентный',
         achromatic: 'Ахроматический'
     };
+    // Полные названия и пояснения — те же формулировки, что в боте (MonoTypeText.cs).
+    const MONO_TYPE_TITLES = {
+        flat: 'Чистый монохром',
+        tonal: 'Тональный монохром',
+        accent: 'Акцентный монохром',
+        achromatic: 'Ахроматический монохром'
+    };
+    const MONO_TYPE_HELP = {
+        flat: [
+            'Модель и фон — один и тот же цвет: совпадает и тон, и светлота, и насыщенность.',
+            'Не меньше <b>90%</b> модели совпадает с фоном, а на посторонние цвета (другой тон, блики, далёкие оттенки) приходится <b>не больше 5%</b>.',
+            'Выглядит так, будто предмет вылит из того же материала, что и фон. Самый редкий тип.'
+        ],
+        tonal: [
+            'Один цвет, но в разных оттенках: свет, тень, блик. Например тёмно-бордовый предмет на красном фоне.',
+            'Совпавшая с фоном масса — не меньше <b>95%</b>, главный цвет модели совпадает с фоном по тону.',
+            'Затемнение цвет не меняет (бордовый — тот же красный), а осветление с потерей насыщенности уже даёт другой цвет (розовый), и такое сюда не попадает.'
+        ],
+        accent: [
+            'Модель выдержана в цвете фона, но есть небольшие вставки другого цвета или светлые блики — золотая пряжка, белые глаза, тёмный контур.',
+            'Основного цвета не меньше <b>65%</b>, а каждый посторонний цвет — не больше <b>15%</b>.',
+            'Сочетание всё ещё читается как монохром: акцент только подчёркивает основной цвет.'
+        ],
+        achromatic: [
+            'Чёрно-белая или серая модель на чёрном, сером или белом фоне — цвета как такового нет ни у модели, ни у фона.',
+            'Не меньше <b>90%</b> модели без выраженного тона, и по светлоте она рядом с фоном.',
+            'Сравниваются только светлота и оттенок серого: тон у таких цветов недостоверен. На сером фоне других типов монохрома не бывает.'
+        ]
+    };
     const MONO_TYPE_ORDER = ['flat', 'tonal', 'accent', 'achromatic'];
-    // Активный фильтр: пустое множество = показывать всё.
+    // Активный фильтр: пустое множество = «Все типы», то есть показываем и не-монохромы тоже.
     let monoTypeFilter = new Set();
     // Последняя отрисовка результатов — чтобы переключение фильтра перерисовывало текущий список
     // без повторного запроса к API.
     let monoLastRender = null;
+    // Фильтр живёт одним элементом и переезжает в панель активной вкладки (putya: "надо как-то в
+    // меню это все сделать"), поэтому колбэк перерисовки храним рядом с ним.
+    let monoFilterEl = null;
+    let monoFilterOnChange = null;
 
     function monoTypeOf(item) {
         const t = item && (item.MonoType || item.monoType);
         return t ? String(t).toLowerCase() : 'none';
     }
     function isMonoType(t) { return Object.prototype.hasOwnProperty.call(MONO_TYPE_LABELS, t); }
+    function monoLabel(t) {
+        return window.NFTi18n ? window.NFTi18n.t('mono_type_' + t, MONO_TYPE_LABELS[t]) : MONO_TYPE_LABELS[t];
+    }
     function monoTagHtml(type) {
         if (!isMonoType(type)) return '';
-        const label = window.NFTi18n ? window.NFTi18n.t('mono_type_' + type, MONO_TYPE_LABELS[type]) : MONO_TYPE_LABELS[type];
+        const label = monoLabel(type);
         return `<span class="mono-tag mono-tag-${type}" title="${label}"><i></i>${label}</span>`;
     }
     function passesMonoFilter(type) {
         return monoTypeFilter.size === 0 || monoTypeFilter.has(type);
     }
-    // Ряд чипов над результатами. onChange перерисовывает текущий список.
-    function renderMonoFilter(container, onChange) {
-        if (!container) return;
-        let row = container.querySelector('.mono-filter-row');
-        if (!row) {
-            row = document.createElement('div');
-            row.className = 'mono-filter-row';
-            container.prepend(row);
+    function monoFilterActive() { return monoTypeFilter.size > 0; }
+
+    // Пустой результат: отдельный текст, если пусто именно из-за фильтра. Раньше показывалось общее
+    // "Подходящих моделей не найдено", и было не видно, что виноват выбранный тип (putya).
+    function monoEmptyHtml(fallbackText) {
+        if (!monoFilterActive()) return `<p style="text-align: center;">${fallbackText}</p>`;
+        const names = MONO_TYPE_ORDER.filter(t => monoTypeFilter.has(t)).map(monoLabel).join(', ');
+        return `<div class="mono-empty">
+            <p>Ничего не подошло под выбранный тип монохрома (${names}).</p>
+            <p class="mono-empty-hint">Такое сочетание встречается редко — на большинстве фонов чистых и тональных монохромов единицы.</p>
+            <button type="button" class="mono-reset-btn">Показать все типы</button>
+        </div>`;
+    }
+
+    function monoResetFilter() {
+        monoTypeFilter.clear();
+        renderMonoFilterOptions();
+        if (typeof monoFilterOnChange === 'function') monoFilterOnChange();
+    }
+
+    // --- Модалка с пояснением (putya: "сделать кнопки вопросов, при нажатии вылазит модалка") ---
+    function openMonoHelp(type) {
+        if (!isMonoType(type)) return;
+        closeMonoHelp();
+        // Список фильтра закрываем: он рисуется в своём слое и иначе перекрывает модалку.
+        if (monoFilterEl) {
+            monoFilterEl.querySelector('.dropdown-list').classList.add('hidden');
+            monoFilterEl.querySelector('.dropdown-header').classList.remove('active');
         }
-        row.innerHTML = MONO_TYPE_ORDER.map(t => {
-            const label = window.NFTi18n ? window.NFTi18n.t('mono_type_' + t, MONO_TYPE_LABELS[t]) : MONO_TYPE_LABELS[t];
-            return `<button class="mono-filter-chip${monoTypeFilter.has(t) ? ' active' : ''}" data-type="${t}"><i></i>${label}</button>`;
-        }).join('');
-        row.querySelectorAll('.mono-filter-chip').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const t = btn.dataset.type;
-                if (monoTypeFilter.has(t)) monoTypeFilter.delete(t); else monoTypeFilter.add(t);
-                renderMonoFilter(container, onChange);
-                if (typeof onChange === 'function') onChange();
+        const overlay = document.createElement('div');
+        overlay.className = 'mono-help-overlay';
+        overlay.innerHTML = `
+            <div class="mono-help-card" role="dialog" aria-modal="true">
+                <button type="button" class="mono-help-close" aria-label="Закрыть">&times;</button>
+                <div class="mono-help-title"><span class="mono-tag mono-tag-${type}"><i></i>${monoLabel(type)}</span></div>
+                <h3>${MONO_TYPE_TITLES[type]}</h3>
+                ${MONO_TYPE_HELP[type].map(p => `<p>${p}</p>`).join('')}
+            </div>`;
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay || e.target.closest('.mono-help-close')) closeMonoHelp();
+        });
+        document.body.appendChild(overlay);
+        document.addEventListener('keydown', monoHelpEsc);
+    }
+    function closeMonoHelp() {
+        document.querySelectorAll('.mono-help-overlay').forEach(el => el.remove());
+        document.removeEventListener('keydown', monoHelpEsc);
+    }
+    function monoHelpEsc(e) { if (e.key === 'Escape') closeMonoHelp(); }
+
+    // --- Само меню фильтра ---
+    function buildMonoFilterEl() {
+        if (monoFilterEl) return monoFilterEl;
+        const wrap = document.createElement('div');
+        wrap.className = 'mono-filter-block';
+        wrap.innerHTML = `
+            <span class="filter-label">Тип монохрома:</span>
+            <div class="custom-dropdown-container mono-filter-dropdown">
+                <div class="dropdown-header">
+                    <span class="selected-value-placeholder mono-filter-value">Все типы</span>
+                    <div class="arrow"></div>
+                </div>
+                <div class="dropdown-list hidden">
+                    <div class="list-options mono-filter-options"></div>
+                </div>
+            </div>`;
+        const header = wrap.querySelector('.dropdown-header');
+        const list = wrap.querySelector('.dropdown-list');
+        header.addEventListener('click', () => {
+            const opening = list.classList.contains('hidden');
+            // Чужие дропдауны закрываем их же механизмом, чтобы не перекрывались.
+            if (opening && typeof toggleDropdown === 'function') toggleDropdown(null, true);
+            list.classList.toggle('hidden', !opening);
+            header.classList.toggle('active', opening);
+        });
+        document.addEventListener('click', (e) => {
+            if (!wrap.contains(e.target)) { list.classList.add('hidden'); header.classList.remove('active'); }
+        });
+        monoFilterEl = wrap;
+        return wrap;
+    }
+
+    function renderMonoFilterOptions() {
+        if (!monoFilterEl) return;
+        const options = monoFilterEl.querySelector('.mono-filter-options');
+        const value = monoFilterEl.querySelector('.mono-filter-value');
+        const chosen = MONO_TYPE_ORDER.filter(t => monoTypeFilter.has(t));
+        value.textContent = chosen.length === 0
+            ? 'Все типы'
+            : (chosen.length === MONO_TYPE_ORDER.length ? 'Только монохромы' : chosen.map(monoLabel).join(', '));
+        value.classList.toggle('mono-filter-on', chosen.length > 0);
+
+        // "Все типы" — явная строка, иначе не понятно, что снятый фильтр показывает и не-монохромы
+        // (putya: "я выбрал все, а пишет что не найдено ничего").
+        const rows = [`
+            <div class="list-option mono-filter-option${chosen.length === 0 ? ' selected' : ''}" data-type="__all">
+                <span class="option-text">Все типы</span>
+            </div>`];
+        MONO_TYPE_ORDER.forEach(t => {
+            rows.push(`
+            <div class="list-option mono-filter-option${monoTypeFilter.has(t) ? ' selected' : ''}" data-type="${t}">
+                <span class="mono-dot mono-dot-${t}"></span>
+                <span class="option-text">${monoLabel(t)}</span>
+                <button type="button" class="mono-help-btn" data-help="${t}" title="Что это значит?">?</button>
+            </div>`);
+        });
+        options.innerHTML = rows.join('');
+
+        options.querySelectorAll('.mono-filter-option').forEach(row => {
+            row.addEventListener('click', (e) => {
+                if (e.target.closest('.mono-help-btn')) { openMonoHelp(e.target.closest('.mono-help-btn').dataset.help); return; }
+                const t = row.dataset.type;
+                if (t === '__all') monoTypeFilter.clear();
+                else if (monoTypeFilter.has(t)) monoTypeFilter.delete(t);
+                else monoTypeFilter.add(t);
+                renderMonoFilterOptions();
+                if (typeof monoFilterOnChange === 'function') monoFilterOnChange();
             });
         });
     }
+
+    // Переносит меню в панель нужной вкладки. anchor — элемент, перед которым вставить.
+    function mountMonoFilter(host, onChange, anchor) {
+        if (!host) return;
+        const el = buildMonoFilterEl();
+        if (typeof onChange === 'function') monoFilterOnChange = onChange;
+        if (anchor && anchor.parentElement === host) host.insertBefore(el, anchor);
+        else if (el.parentElement !== host) host.appendChild(el);
+        renderMonoFilterOptions();
+    }
+
+    // Точка входа для switchMode и для функций отрисовки: вкладка -> её панель фильтров.
+    function mountMonoFilterFor(mode, onChange) {
+        if (mode === 'findUniversal') {
+            const host = document.querySelector('#find-universal-controls .filter-wrapper');
+            mountMonoFilter(host, onChange, document.getElementById('univ-search-btn'));
+        } else if (mode === 'findModels') {
+            mountMonoFilter(document.getElementById('find-models-controls'), onChange);
+        } else if (mode === 'findBgs') {
+            const host = document.getElementById('bgs-v2-wrapper');
+            mountMonoFilter(host, onChange, host ? host.querySelector('.bgs2-diagram-row') : null);
+        }
+    }
+
+    document.addEventListener('click', (e) => {
+        if (e.target.closest('.mono-reset-btn')) monoResetFilter();
+    });
 
 function formatPrice(price) {
     if (!price) return null;
@@ -2057,6 +2221,7 @@ if (sortSwitcher) {
         const monoItems = [];
         (groups || []).forEach(g => {
             (bgs2Pick(g, 'backgrounds') || []).forEach(b => {
+                if (!passesMonoFilter((bgs2Pick(b, 'monoType') || 'none').toLowerCase())) return;
                 if (bgs2Pick(b, 'isMonochrome')) monoItems.push(b);
             });
         });
@@ -2093,6 +2258,7 @@ if (sortSwitcher) {
 
             const backgrounds = (bgs2Pick(g, 'backgrounds') || [])
                 .filter(b => !bgs2Pick(b, 'isMonochrome'))
+                .filter(b => passesMonoFilter((bgs2Pick(b, 'monoType') || 'none').toLowerCase()))
                 .sort((a, b) => (bgs2Pick(b, 'similarity') || 0) - (bgs2Pick(a, 'similarity') || 0));
             if (!backgrounds.length) return '';
 
@@ -2175,6 +2341,11 @@ if (sortSwitcher) {
     function renderBgsV2(data) {
         const { debugCubeData, dedupData } = data;
 
+        // putya: фильтр типов монохрома — меню в панели вкладки; переключение перерисовывает уже
+        // полученный ответ, без повторного запроса.
+        monoLastRender = () => renderBgsV2(data);
+        mountMonoFilterFor('findBgs', () => monoLastRender && monoLastRender());
+
         const clusters = debugCubeData ? bgs2ClustersFromDebugCube(debugCubeData) : [];
         bgsV2Diagram.innerHTML = clusters.length
             ? bgs2BuildColorRadarSVG(clusters)
@@ -2215,7 +2386,10 @@ if (sortSwitcher) {
           </div>
         `;
 
-        bgsV2Body.innerHTML = monoHtml + switcherHtml + (viewMode === 'all' ? allHtml : groupsHtml);
+        const listHtml = viewMode === 'all' ? allHtml : groupsHtml;
+        bgsV2Body.innerHTML = (monoHtml || listHtml.trim())
+            ? monoHtml + switcherHtml + listHtml
+            : monoEmptyHtml('Подходящих фонов не найдено.');
         setupLazyLoading(bgsV2Body, null, 'grid');
     }
 
@@ -2382,8 +2556,9 @@ if (sortSwitcher) {
     }
 
     function renderBackgroundResults(backgroundData) {
-        monoLastRender = () => renderBackgroundResults(backgroundData);
-        renderMonoFilter(resultsWrapper, () => monoLastRender && monoLastRender());
+        const sourceBackgrounds = backgroundData || [];
+        monoLastRender = () => renderBackgroundResults(sourceBackgrounds);
+        mountMonoFilterFor('findBgs', () => monoLastRender && monoLastRender());
         resultsWrapper.classList.remove('results-initial-hide');
         resultsGrid.innerHTML = '';
         if (!backgroundData || backgroundData.length === 0) {
@@ -2394,9 +2569,9 @@ if (sortSwitcher) {
         const modelImageUrl = `${API_PHOTO_URL}/${encodeURIComponent(state.findBgs.selectedGift)}/png/${encodeURIComponent(state.findBgs.selectedModel)}.png`;
         const fragment = document.createDocumentFragment();
 
-        backgroundData = backgroundData.filter(bg => bg.compatValue > 0 && passesMonoFilter(monoTypeOf(bg)));
+        backgroundData = sourceBackgrounds.filter(bg => bg.compatValue > 0 && passesMonoFilter(monoTypeOf(bg)));
         if (backgroundData.length === 0) {
-            resultsGrid.innerHTML = `<p style="text-align: center;">${window.NFTi18n ? window.NFTi18n.t('no_matching_bgs') : 'Подходящих фонов не найдено.'}</p>`;
+            resultsGrid.innerHTML = monoEmptyHtml(window.NFTi18n ? window.NFTi18n.t('no_matching_bgs') : 'Подходящих фонов не найдено.');
             return;
         }
         backgroundData.forEach(bg => {
@@ -2495,8 +2670,9 @@ if (sortSwitcher) {
     }
 
     function renderModelResults(modelData, backgroundColor) {
-        monoLastRender = () => renderModelResults(modelData, backgroundColor);
-        renderMonoFilter(resultsWrapper, () => monoLastRender && monoLastRender());
+        const sourceModels = modelData || [];
+        monoLastRender = () => renderModelResults(sourceModels, backgroundColor);
+        mountMonoFilterFor('findModels', () => monoLastRender && monoLastRender());
         resultsWrapper.classList.remove('results-initial-hide');
         resultsGrid.innerHTML = '';
         if (!backgroundColor || !modelData || modelData.length === 0) {
@@ -2505,9 +2681,9 @@ if (sortSwitcher) {
         }
 
         const fragment = document.createDocumentFragment();
-        modelData = modelData.filter(model => model.compatValue > 0 && passesMonoFilter(monoTypeOf(model)));
+        modelData = sourceModels.filter(model => model.compatValue > 0 && passesMonoFilter(monoTypeOf(model)));
         if (modelData.length === 0) {
-            resultsGrid.innerHTML = `<p style="text-align: center;">${window.NFTi18n ? window.NFTi18n.t('no_matching_models') : 'Подходящих моделей не найдено.'}</p>`;
+            resultsGrid.innerHTML = monoEmptyHtml(window.NFTi18n ? window.NFTi18n.t('no_matching_models') : 'Подходящих моделей не найдено.');
             return;
         }
         modelData.forEach(model => {

@@ -717,7 +717,7 @@ main {
 }
 
 /* putya: "на сайт надо добавить метки на карточки, такую метку сверху слева если это какой-то вид
-   монохрома, проценты монохрома не будет, будут просто вот эти метки" — метка типа поверх картинки
+   монохрома, проценты монохрома не будет, будут просто вот эти метки" - метка типа поверх картинки
    в левом верхнем углу карточки. Типы: flat/tonal/accent/achromatic (монохромы). */
 .mono-tag {
     position: absolute; top: 6px; left: 6px; z-index: 3;
@@ -730,69 +730,78 @@ main {
     pointer-events: none; white-space: nowrap;
 }
 .mono-tag i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex: 0 0 auto; }
-.mono-tag-flat i { background: #22c55e; }
-.mono-tag-tonal i { background: #38bdf8; }
-.mono-tag-accent i { background: #a78bfa; }
-.mono-tag-achromatic i { background: #d4d4d8; }
+.mono-tag-flat i, .mono-dot.mono-dot-flat { background: #22c55e; }
+.mono-tag-tonal i, .mono-dot.mono-dot-tonal { background: #38bdf8; }
+.mono-tag-accent i, .mono-dot.mono-dot-accent { background: #a78bfa; }
+.mono-tag-achromatic i, .mono-dot.mono-dot-achromatic { background: #d4d4d8; }
 .result-card-bg .image-container { position: relative; }
 
-/* Фильтр по типу монохрома — ряд компактных чипов (putya: "добавить фильтры"). */
-.mono-filter-row {
-    display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 10px 0; align-items: center;
+/* Фильтр по типу монохрома. putya: "надо как-то в меню это все сделать, фильтры эти" - вместо ряда
+   чипов над результатами это выпадающее меню в панели фильтров активной вкладки. */
+.mono-filter-block {
+    display: flex; flex-direction: column; gap: 6px;
+    margin: 0 0 18px 0; width: 100%;
 }
-.mono-filter-chip {
-    display: inline-flex; align-items: center; gap: 5px;
-    padding: 5px 10px; border-radius: 9px; cursor: pointer;
-    font-size: 0.78rem; font-weight: 700; color: var(--text-secondary);
-    background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.12);
-    transition: background .12s, color .12s, border-color .12s;
+.mono-filter-block .filter-label { margin: 0; }
+.mono-filter-dropdown { width: 100%; }
+.mono-filter-value.mono-filter-on { color: var(--text-primary, #fff); font-weight: 700; }
+.list-option.mono-filter-option { justify-content: flex-start; gap: 10px; }
+/* Специфичность важна: общее правило .list-option .option-text ниже по файлу ставит flex-grow: 0,
+   и при flex-basis 0 текст схлопывался в нулевую ширину. */
+.list-option.mono-filter-option .option-text { flex: 1 1 auto; font-size: 0.95rem; }
+.mono-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    display: inline-block; flex: 0 0 auto;
+    background: rgba(255,255,255,.35);
 }
-.mono-filter-chip:hover { color: #fff; border-color: rgba(255,255,255,.28); }
-.mono-filter-chip.active { background: var(--primary-color, #2563eb); color: #fff; border-color: transparent; }
-.mono-filter-chip i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
-.mono-filter-chip[data-type="flat"] i { background: #22c55e; }
-.mono-filter-chip[data-type="tonal"] i { background: #38bdf8; }
-.mono-filter-chip[data-type="accent"] i { background: #a78bfa; }
-.mono-filter-chip[data-type="achromatic"] i { background: #d4d4d8; }
 
-/* putya: "на сайт надо добавить метки на карточки, такую метку сверху слева если это какой-то вид
-   монохрома, проценты монохрома не будет, будут просто вот эти метки" — метка типа поверх картинки
-   в левом верхнем углу карточки. Типы: flat/tonal/accent/achromatic (монохромы). */
-.mono-tag {
-    position: absolute; top: 6px; left: 6px; z-index: 3;
-    display: inline-flex; align-items: center; gap: 4px;
-    padding: 3px 7px; border-radius: 7px;
-    font-size: 0.68rem; font-weight: 800; letter-spacing: .01em;
-    color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.5);
-    background: rgba(0, 0, 0, .45); border: 1px solid rgba(255,255,255,.22);
-    backdrop-filter: blur(4px);
-    pointer-events: none; white-space: nowrap;
+/* Кнопка "?" рядом с типом - открывает модалку с пояснением (putya). */
+.mono-help-btn {
+    flex: 0 0 auto; width: 22px; height: 22px; border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 0.78rem; font-weight: 800; line-height: 1; cursor: pointer;
+    color: var(--text-secondary); background: rgba(255,255,255,.08);
+    border: 1px solid rgba(255,255,255,.18);
+    transition: background .15s, color .15s, border-color .15s;
 }
-.mono-tag i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex: 0 0 auto; }
-.mono-tag-flat i { background: #22c55e; }
-.mono-tag-tonal i { background: #38bdf8; }
-.mono-tag-accent i { background: #a78bfa; }
-.mono-tag-achromatic i { background: #d4d4d8; }
-.result-card-bg .image-container { position: relative; }
+.mono-help-btn:hover { background: rgba(255,255,255,.2); color: #fff; border-color: rgba(255,255,255,.4); }
 
-/* Фильтр по типу монохрома — ряд компактных чипов (putya: "добавить фильтры"). */
-.mono-filter-row {
-    display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 10px 0; align-items: center;
+.mono-help-overlay {
+    position: fixed; inset: 0; z-index: 99999;
+    display: flex; align-items: center; justify-content: center;
+    padding: 16px; background: rgba(4, 8, 20, .72); backdrop-filter: blur(4px);
 }
-.mono-filter-chip {
-    display: inline-flex; align-items: center; gap: 5px;
-    padding: 5px 10px; border-radius: 9px; cursor: pointer;
-    font-size: 0.78rem; font-weight: 700; color: var(--text-secondary);
-    background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.12);
-    transition: background .12s, color .12s, border-color .12s;
+.mono-help-card {
+    position: relative; width: 100%; max-width: 440px;
+    max-height: 80vh; overflow-y: auto;
+    padding: 22px 22px 18px;
+    background: var(--surface-elevated); border: 1px solid var(--border-color);
+    border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,.55);
 }
-.mono-filter-chip:hover { color: #fff; border-color: rgba(255,255,255,.28); }
-.mono-filter-chip.active { background: var(--primary-color, #2563eb); color: #fff; border-color: transparent; }
-.mono-filter-chip i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
-.mono-filter-chip[data-type="flat"] i { background: #22c55e; }
-.mono-filter-chip[data-type="tonal"] i { background: #38bdf8; }
-.mono-filter-chip[data-type="accent"] i { background: #a78bfa; }
-.mono-filter-chip[data-type="achromatic"] i { background: #d4d4d8; }
+.mono-help-card h3 { margin: 10px 0 12px; font-size: 1.15rem; color: var(--text-primary, #fff); }
+.mono-help-card p { margin: 0 0 10px; font-size: 0.92rem; line-height: 1.55; color: var(--text-secondary); }
+.mono-help-card p:last-child { margin-bottom: 0; }
+.mono-help-card b { color: var(--text-primary, #fff); }
+.mono-help-title .mono-tag { position: static; pointer-events: auto; font-size: 0.72rem; }
+.mono-help-close {
+    position: absolute; top: 10px; right: 12px;
+    width: 30px; height: 30px; border-radius: 50%;
+    background: transparent; border: none; cursor: pointer;
+    font-size: 1.5rem; line-height: 1; color: var(--text-muted);
+}
+.mono-help-close:hover { color: #fff; }
+
+/* Пустой результат именно из-за фильтра - объясняем, а не молчим (putya: "я выбрал все, а пишет
+   что не найдено ничего"). */
+.mono-empty { text-align: center; padding: 24px 12px; }
+.mono-empty p { margin: 0 0 8px; color: var(--text-secondary); }
+.mono-empty .mono-empty-hint { font-size: 0.85rem; color: var(--text-muted); }
+.mono-empty .mono-reset-btn {
+    margin-top: 10px; padding: 9px 16px; border-radius: 10px; cursor: pointer;
+    font-size: 0.86rem; font-weight: 700; color: #fff;
+    background: var(--primary-color, #2563eb); border: none;
+}
+.mono-empty .mono-reset-btn:hover { filter: brightness(1.1); }
 
 
 .result-card-bg .bg-name {
