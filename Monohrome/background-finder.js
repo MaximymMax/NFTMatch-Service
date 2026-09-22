@@ -1599,7 +1599,8 @@ function renderUniversalResults(items, append = false) {
         overlay.innerHTML = `
             <div class="mono-help-card" role="dialog" aria-modal="true">
                 <button type="button" class="mono-help-close" aria-label="Закрыть">&times;</button>
-                <div class="mono-help-title"><span class="mono-tag mono-tag-${type}"><i></i>${monoLabel(type)}</span></div>
+                <img class="mono-help-banner" src="/Monohrome/mono-types/${type}.png" alt="${MONO_TYPE_TITLES[type]}"
+                     onerror="this.remove()">
                 <h3>${MONO_TYPE_TITLES[type]}</h3>
                 ${MONO_TYPE_HELP[type].map(p => `<p>${p}</p>`).join('')}
             </div>`;

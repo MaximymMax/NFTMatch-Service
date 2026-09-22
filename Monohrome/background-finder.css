@@ -784,7 +784,13 @@ main {
     background: var(--surface-elevated); border: 1px solid var(--border-color);
     border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,.55);
 }
-.mono-help-card h3 { margin: 10px 0 12px; font-size: 1.15rem; color: var(--text-primary, #fff); }
+/* Баннер с примерами моделей — заголовок на картинке уже есть, но h3 ниже оставляем: он держит
+   вёрстку, если картинка не загрузилась (onerror её удаляет). */
+.mono-help-banner {
+    display: block; width: calc(100% + 44px); margin: -22px -22px 14px;
+    border-radius: 16px 16px 0 0; object-fit: cover;
+}
+.mono-help-card h3 { margin: 4px 0 12px; font-size: 1.15rem; color: var(--text-primary, #fff); }
 .mono-help-card p { margin: 0 0 10px; font-size: 0.92rem; line-height: 1.55; color: var(--text-secondary); }
 .mono-help-card p:last-child { margin-bottom: 0; }
 .mono-help-card b { color: var(--text-primary, #fff); }
