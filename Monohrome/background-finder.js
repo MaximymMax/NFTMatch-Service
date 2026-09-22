@@ -1600,8 +1600,8 @@ function renderUniversalResults(items, append = false) {
             <div class="mono-help-card" role="dialog" aria-modal="true">
                 <button type="button" class="mono-help-close" aria-label="Закрыть">&times;</button>
                 <img class="mono-help-banner" src="/Monohrome/mono-types/${type}.png" alt="${MONO_TYPE_TITLES[type]}"
-                     onerror="this.remove()">
-                <h3>${MONO_TYPE_TITLES[type]}</h3>
+                     onerror="this.closest('.mono-help-card').querySelector('h3').hidden = false; this.remove();">
+                <h3 hidden>${MONO_TYPE_TITLES[type]}</h3>
                 ${MONO_TYPE_HELP[type].map(p => `<p>${p}</p>`).join('')}
             </div>`;
         overlay.addEventListener('click', (e) => {

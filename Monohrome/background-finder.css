@@ -791,6 +791,7 @@ main {
     border-radius: 16px 16px 0 0; object-fit: cover;
 }
 .mono-help-card h3 { margin: 4px 0 12px; font-size: 1.15rem; color: var(--text-primary, #fff); }
+.mono-help-card h3[hidden] { display: none; }
 .mono-help-card p { margin: 0 0 10px; font-size: 0.92rem; line-height: 1.55; color: var(--text-secondary); }
 .mono-help-card p:last-child { margin-bottom: 0; }
 .mono-help-card b { color: var(--text-primary, #fff); }
