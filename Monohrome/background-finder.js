@@ -2184,6 +2184,30 @@ if (sortSwitcher) {
         // полом RADAR_MIN_R_FRAC=0.35, так что даже самый лёгкий кластер не схлопывается в точку).
         const orderedPts = pts.slice().sort((a, b) => a.angleDeg - b.angleDeg);
 
+        // putya: "надо чтобы центр тоже был вершиной в том случае, если он не вписывается в ту
+        // фигуру, которая получается если соединить все вершины по цветам; обводка должна быть по
+        // всем вершинам, учитывая центральную".
+        //
+        // Центр лежит ВНУТРИ многоугольника ровно тогда, когда вершины окружают его со всех сторон,
+        // то есть когда самый большой угловой разрыв между соседними вершинами меньше 180°. Если
+        // все цвета сгрудились в одном секторе (а при двух цветах это всегда так — "многоугольник"
+        // вырождается в отрезок), центр остаётся снаружи, и фигура обязана его обойти: он
+        // становится вершиной и вставляется в обводку внутрь этого самого большого разрыва.
+        let gapIdx = -1, maxGap = 0;
+        for (let i = 0; i < n; i++) {
+            const a = orderedPts[i], b = orderedPts[(i + 1) % n];
+            let gap = b.angleDeg - a.angleDeg;
+            if (gap <= 0) gap += 360;            // замыкающий разрыв (и единственный цвет: 360°)
+            if (gap > maxGap) { maxGap = gap; gapIdx = i; }
+        }
+        const centerIsVertex = n > 0 && maxGap >= 180;
+
+        const outlinePts = [];
+        orderedPts.forEach((p, i) => {
+            outlinePts.push(p);
+            if (centerIsVertex && i === gapIdx) outlinePts.push({ x: cx, y: cy, isCenter: true });
+        });
+
         const ringFracs = [0.25, 0.5, 0.75, 1];
         const rings = ringFracs.map(f =>
             `<circle cx="${cx}" cy="${cy}" r="${(maxR * f).toFixed(1)}" fill="none" stroke="rgba(255,255,255,.12)" stroke-width="1"/>`
@@ -2199,6 +2223,8 @@ if (sortSwitcher) {
         const radarUid = 'bgs2radar' + (bgs2RadarIdCounter++);
         let defs = '', wedges = '';
         for (let i = 0; i < n; i++) {
+            // Клин на месте разрыва — это область вне фигуры (центр там снаружи), заливать нечего.
+            if (centerIsVertex && i === gapIdx) continue;
             const a = orderedPts[i], b = orderedPts[(i + 1) % n];
             const gid = `grad-${radarUid}-${i}`;
             const mix = bgs2MixHex(a.hex, b.hex);
@@ -2209,13 +2235,15 @@ if (sortSwitcher) {
             wedges += `<polygon points="${cx},${cy} ${a.x.toFixed(1)},${a.y.toFixed(1)} ${b.x.toFixed(1)},${b.y.toFixed(1)}" fill="url(#${gid})"/>`;
         }
 
-        const outline = n >= 2
-            ? `<polygon points="${orderedPts.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ')}" fill="none" stroke="rgba(255,255,255,.9)" stroke-width="2" stroke-linejoin="round"/>`
+        const outline = outlinePts.length >= 2
+            ? `<polygon points="${outlinePts.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ')}" fill="none" stroke="rgba(255,255,255,.9)" stroke-width="2" stroke-linejoin="round"/>`
             : '';
 
         const vertexDots = pts.map(p =>
             `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="2.5" fill="${p.hex}"/>`
-        ).join('');
+        ).join('')
+        // Центральная вершина — такая же точка на изломе обводки, только нейтральная: цвета у неё нет.
+        + (centerIsVertex ? `<circle cx="${cx}" cy="${cy}" r="2.5" fill="rgba(255,255,255,.9)"/>` : '');
 
         const badges = pts.map(p =>
             `<circle cx="${p.lx.toFixed(1)}" cy="${p.ly.toFixed(1)}" r="${badgeR}" fill="${p.hex}" stroke="#fff" stroke-width="1.5"/>`
