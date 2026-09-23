@@ -603,7 +603,10 @@ main {
 /* --- ОБНОВЛЕННЫЕ СТИЛИ КАРТОЧКИ (С ДВУМЯ ПЛАШКАМИ ВНИЗУ) --- */
 .result-card-bg {
     border-radius: 16px;
-    overflow: hidden;
+    /* putya: "чтобы эта метка была прям на краю верхнем левом, чуть вылазила за карточку" —
+       overflow был hidden и срезал бы метку. Скругление переносим на сами части карточки:
+       картинку сверху и info-container снизу, вид остаётся прежним. */
+    overflow: visible;
     border: none;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
     display: flex;
@@ -621,6 +624,8 @@ main {
     position: relative;
     width: 100%;
     aspect-ratio: 1 / 1;
+    border-radius: 16px 16px 0 0;
+    overflow: hidden;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -638,6 +643,7 @@ main {
 
 /* Градиент снизу вверх */
 .result-card-bg .info-container {
+    border-radius: 0 0 16px 16px;
     padding: 30px 14px 14px 14px; 
     margin-top: -20px; /* Плавный наплыв на картинку */
     position: relative;
@@ -716,24 +722,39 @@ main {
     border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
-/* putya: "на сайт надо добавить метки на карточки, такую метку сверху слева если это какой-то вид
-   монохрома, проценты монохрома не будет, будут просто вот эти метки" - метка типа поверх картинки
-   в левом верхнем углу карточки. Типы: flat/tonal/accent/achromatic (монохромы). */
+/* putya: "сделай красивее метки про тип монохрома на карточку, чтобы эта метка была прям на краю
+   верхнем левом, чуть вылазила за карточку и с градиентом таким была небольшим" — метка висит на
+   самом углу, выступая за карточку на 6px, с градиентом в цвет типа. Лежит на .result-card-bg,
+   а не внутри .image-container: та обрезает содержимое по скруглению. */
 .mono-tag {
-    position: absolute; top: 6px; left: 6px; z-index: 3;
-    display: inline-flex; align-items: center; gap: 4px;
-    padding: 3px 7px; border-radius: 7px;
-    font-size: 0.68rem; font-weight: 800; letter-spacing: .01em;
-    color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.5);
-    background: rgba(0, 0, 0, .45); border: 1px solid rgba(255,255,255,.22);
-    backdrop-filter: blur(4px);
+    position: absolute; top: -6px; left: -6px; z-index: 5;
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 4px 9px 4px 8px;
+    border-radius: 9px 9px 9px 3px;
+    font-size: 0.66rem; font-weight: 800; letter-spacing: .02em;
+    color: #fff; text-shadow: 0 1px 2px rgba(0, 0, 0, .45);
+    background: linear-gradient(135deg, var(--mono-tag-a) 0%, var(--mono-tag-b) 100%);
+    border: 1px solid rgba(255, 255, 255, .28);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, .45), 0 0 0 1px rgba(0, 0, 0, .25);
     pointer-events: none; white-space: nowrap;
+    --mono-tag-a: #64748b; --mono-tag-b: #475569;
 }
-.mono-tag i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex: 0 0 auto; }
-.mono-tag-flat i, .mono-dot.mono-dot-flat { background: #22c55e; }
-.mono-tag-tonal i, .mono-dot.mono-dot-tonal { background: #38bdf8; }
-.mono-tag-accent i, .mono-dot.mono-dot-accent { background: #a78bfa; }
-.mono-tag-achromatic i, .mono-dot.mono-dot-achromatic { background: #d4d4d8; }
+.mono-tag i {
+    width: 6px; height: 6px; border-radius: 50%; display: inline-block; flex: 0 0 auto;
+    background: rgba(255, 255, 255, .85);
+    box-shadow: 0 0 6px rgba(255, 255, 255, .6);
+}
+.mono-tag-flat { --mono-tag-a: #34d399; --mono-tag-b: #059669; }
+.mono-tag-tonal { --mono-tag-a: #38bdf8; --mono-tag-b: #0369a1; }
+.mono-tag-accent { --mono-tag-a: #c084fc; --mono-tag-b: #7c3aed; }
+.mono-tag-achromatic { --mono-tag-a: #e2e8f0; --mono-tag-b: #94a3b8; }
+.mono-tag-achromatic { color: #1e293b; text-shadow: none; }
+.mono-tag-achromatic i { background: rgba(30, 41, 59, .7); box-shadow: none; }
+/* Точки в меню фильтра — те же цвета, что у градиента метки. */
+.mono-dot.mono-dot-flat { background: #34d399; }
+.mono-dot.mono-dot-tonal { background: #38bdf8; }
+.mono-dot.mono-dot-accent { background: #c084fc; }
+.mono-dot.mono-dot-achromatic { background: #e2e8f0; }
 .result-card-bg .image-container { position: relative; }
 
 /* Фильтр по типу монохрома. putya: "надо как-то в меню это все сделать, фильтры эти" - вместо ряда
@@ -760,6 +781,13 @@ main {
     color: var(--text-muted); font-variant-numeric: tabular-nums;
 }
 .list-option.selected .mono-filter-count { color: var(--text-secondary); }
+/* Отделяем групповые варианты ("Все типы" / "Только монохромы" / "Не монохромы") от списка
+   конкретных типов — они работают по-разному (putya). */
+.mono-filter-option.mono-filter-sep {
+    margin-bottom: 6px; padding-bottom: 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, .1);
+    border-radius: 0.5rem 0.5rem 0 0;
+}
 
 /* Кнопка "?" рядом с типом - открывает модалку с пояснением (putya). */
 .mono-help-btn {

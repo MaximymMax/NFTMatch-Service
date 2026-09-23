@@ -1454,8 +1454,8 @@ function renderUniversalResults(items, append = false) {
             </div>` : '';
 
         card.innerHTML = `
+            ${monoTagHtml(monoType)}
             <div class="image-container">
-                ${monoTagHtml(monoType)}
                 <img data-src="${modelImageUrl}" alt="${item.ModelName}" class="model-image lazy-load">
             </div>
             <div class="info-container">
@@ -1464,6 +1464,7 @@ function renderUniversalResults(items, append = false) {
                     <div class="info-model">${item.ModelName}</div>
                 </div>
                 <div class="info-badges">
+                    ${monoPercentBadge(monoType, item.Coof)}
                     ${priceTag}
                 </div>
             </div>`;
@@ -1542,10 +1543,27 @@ function renderUniversalResults(items, append = false) {
         const label = monoLabel(type);
         return `<span class="mono-tag mono-tag-${type}" title="${label}"><i></i>${label}</span>`;
     }
+    // putya: "добавь вариант только монохромы или нет (в ту менюшку)" — групповой режим поверх
+    // выбора конкретных типов: null = не задан, 'mono' = только монохромные типы, 'nonmono' = всё
+    // остальное (полумонохром, контраст, не монохром). Взаимоисключает поштучный выбор.
+    let monoGroupMode = null;
+
     function passesMonoFilter(type) {
+        if (monoGroupMode === 'mono') return isMonoType(type);
+        if (monoGroupMode === 'nonmono') return !isMonoType(type);
         return monoTypeFilter.size === 0 || monoTypeFilter.has(type);
     }
-    function monoFilterActive() { return monoTypeFilter.size > 0; }
+    function monoFilterActive() { return monoGroupMode !== null || monoTypeFilter.size > 0; }
+
+    // putya: "у монохромов проценты не пиши, а вот у полумонохромов и остальных не монохромов
+    // пиши" — у монохрома метка типа уже всё сказала, процент там лишний шум; у остальных он
+    // единственное, что отличает "почти подошло" от "мимо". pct — 0..100.
+    function monoPercentBadge(type, pct) {
+        if (isMonoType(type)) return '';
+        const v = Number(pct);
+        if (!isFinite(v) || v <= 0) return '';
+        return `<div class="badge-percent">${v.toFixed(1)}%</div>`;
+    }
 
     // putya: "не выводи типы монохромов которых не существует на данную модель или данную
     // коллекцию". Перед каждой отрисовкой считаем, сколько чего есть в ТЕКУЩЕМ наборе, и
@@ -1570,9 +1588,11 @@ function renderUniversalResults(items, append = false) {
     // "Подходящих моделей не найдено", и было не видно, что виноват выбранный тип (putya).
     function monoEmptyHtml(fallbackText) {
         if (!monoFilterActive()) return `<p style="text-align: center;">${fallbackText}</p>`;
-        const names = MONO_TYPE_ORDER.filter(t => monoTypeFilter.has(t)).map(monoLabel).join(', ');
+        const names = monoGroupMode === 'mono' ? 'только монохромы'
+            : monoGroupMode === 'nonmono' ? 'не монохромы'
+            : MONO_TYPE_ORDER.filter(t => monoTypeFilter.has(t)).map(monoLabel).join(', ');
         return `<div class="mono-empty">
-            <p>Ничего не подошло под выбранный тип монохрома (${names}).</p>
+            <p>Ничего не подошло под выбранный фильтр (${names}).</p>
             <p class="mono-empty-hint">Такое сочетание встречается редко — на большинстве фонов чистых и тональных монохромов единицы.</p>
             <button type="button" class="mono-reset-btn">Показать все типы</button>
         </div>`;
@@ -1580,6 +1600,7 @@ function renderUniversalResults(items, append = false) {
 
     function monoResetFilter() {
         monoTypeFilter.clear();
+        monoGroupMode = null;
         renderMonoFilterOptions();
         if (typeof monoFilterOnChange === 'function') monoFilterOnChange();
     }
@@ -1652,19 +1673,25 @@ function renderUniversalResults(items, append = false) {
         const options = monoFilterEl.querySelector('.mono-filter-options');
         const value = monoFilterEl.querySelector('.mono-filter-value');
         const available = monoAvailableTypes();
-        // Ни одного монохрома в наборе — меню прячем целиком, фильтровать нечего.
-        monoFilterEl.style.display = available.length ? '' : 'none';
+        monoFilterEl.style.display = '';
         const chosen = available.filter(t => monoTypeFilter.has(t));
-        value.textContent = chosen.length === 0
-            ? 'Все типы'
-            : (chosen.length === available.length ? 'Только монохромы' : chosen.map(monoLabel).join(', '));
-        value.classList.toggle('mono-filter-on', chosen.length > 0);
+        value.textContent = monoGroupMode === 'mono' ? 'Только монохромы'
+            : monoGroupMode === 'nonmono' ? 'Не монохромы'
+            : chosen.length === 0 ? 'Все типы'
+            : chosen.map(monoLabel).join(', ');
+        value.classList.toggle('mono-filter-on', monoFilterActive());
 
         // "Все типы" — явная строка, иначе не понятно, что снятый фильтр показывает и не-монохромы
         // (putya: "я выбрал все, а пишет что не найдено ничего").
         const rows = [`
-            <div class="list-option mono-filter-option${chosen.length === 0 ? ' selected' : ''}" data-type="__all">
+            <div class="list-option mono-filter-option${(!monoGroupMode && chosen.length === 0) ? ' selected' : ''}" data-type="__all">
                 <span class="option-text">Все типы</span>
+            </div>
+            <div class="list-option mono-filter-option${monoGroupMode === 'mono' ? ' selected' : ''}" data-type="__mono">
+                <span class="option-text">Только монохромы</span>
+            </div>
+            <div class="list-option mono-filter-option mono-filter-sep${monoGroupMode === 'nonmono' ? ' selected' : ''}" data-type="__nonmono">
+                <span class="option-text">Не монохромы</span>
             </div>`];
         available.forEach(t => {
             const cnt = monoTypeCounts ? monoTypeCounts[t] : null;
@@ -1682,9 +1709,14 @@ function renderUniversalResults(items, append = false) {
             row.addEventListener('click', (e) => {
                 if (e.target.closest('.mono-help-btn')) { openMonoHelp(e.target.closest('.mono-help-btn').dataset.help); return; }
                 const t = row.dataset.type;
-                if (t === '__all') monoTypeFilter.clear();
-                else if (monoTypeFilter.has(t)) monoTypeFilter.delete(t);
-                else monoTypeFilter.add(t);
+                if (t === '__all') { monoTypeFilter.clear(); monoGroupMode = null; }
+                else if (t === '__mono') { monoTypeFilter.clear(); monoGroupMode = monoGroupMode === 'mono' ? null : 'mono'; }
+                else if (t === '__nonmono') { monoTypeFilter.clear(); monoGroupMode = monoGroupMode === 'nonmono' ? null : 'nonmono'; }
+                else {
+                    // Поштучный выбор сбрасывает групповой режим — иначе непонятно, что победит.
+                    monoGroupMode = null;
+                    if (monoTypeFilter.has(t)) monoTypeFilter.delete(t); else monoTypeFilter.add(t);
+                }
                 renderMonoFilterOptions();
                 if (typeof monoFilterOnChange === 'function') monoFilterOnChange();
             });
@@ -2237,8 +2269,8 @@ if (sortSwitcher) {
 
         return `
           <div class="result-card-bg" style="background:${cardBg}" data-bg-name="${bgs2EscapeHtml(name)}">
+            ${monoTagHtml(monoType)}
             <div class="image-container">
-              ${monoTagHtml(monoType)}
               <img data-src="${modelImg}" alt="${bgs2EscapeHtml(modelName)}" class="model-image lazy-load">
             </div>
             <div class="info-container">
@@ -2246,6 +2278,7 @@ if (sortSwitcher) {
                 <div class="info-collection">${bgs2EscapeHtml(giftName)}</div>
                 <div class="info-model">${bgs2EscapeHtml(name)}</div>
               </div>
+              ${monoPercentBadge(monoType, bgs2Pick(b, 'similarity')) ? `<div class="info-badges">${monoPercentBadge(monoType, bgs2Pick(b, 'similarity'))}</div>` : ''}
             </div>
           </div>
         `;
@@ -2626,8 +2659,8 @@ if (sortSwitcher) {
             card.style.background = bg.gradient;
 
             card.innerHTML = `
+                ${monoTagHtml(monoTypeOf(bg))}
                 <div class="image-container">
-                    ${monoTagHtml(monoTypeOf(bg))}
                     <img data-src="${modelImageUrl}" alt="${state.findBgs.selectedModel}" class="model-image lazy-load">
                 </div>
                 <div class="info-container">
@@ -2635,6 +2668,7 @@ if (sortSwitcher) {
                         <div class="info-collection">${state.findBgs.selectedGift}</div>
                         <div class="info-model">${bg.name}</div>
                     </div>
+                    ${monoPercentBadge(monoTypeOf(bg), bg.compatValue * 100) ? `<div class="info-badges">${monoPercentBadge(monoTypeOf(bg), bg.compatValue * 100)}</div>` : ''}
                 </div>`;
 
             card.addEventListener('click', () => {
@@ -2752,8 +2786,8 @@ if (sortSwitcher) {
             // его отдельным бейджем на карточке.
 
             card.innerHTML = `
+                ${monoTagHtml(monoTypeOf(model))}
                 <div class="image-container">
-                    ${monoTagHtml(monoTypeOf(model))}
                     <img data-src="${modelImageUrl}" alt="${model.modelName}" class="model-image lazy-load">
                 </div>
                 <div class="info-container">
@@ -2762,6 +2796,7 @@ if (sortSwitcher) {
                         <div class="info-model">${model.modelName}</div>
                     </div>
                     <div class="info-badges">
+                        ${monoPercentBadge(monoTypeOf(model), model.compatValue * 100)}
                         ${priceTag}
                     </div>
                 </div>`;
