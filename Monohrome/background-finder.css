@@ -849,6 +849,17 @@ main {
 }
 .mono-empty .mono-reset-btn:hover { filter: brightness(1.1); }
 
+/* Кнопка догрузки следующей страницы результатов — на всю ширину сетки под карточками. */
+.mono-more-btn {
+    grid-column: 1 / -1;
+    margin-top: 6px; padding: 12px; border-radius: 12px; cursor: pointer;
+    font-size: 0.9rem; font-weight: 700; color: #fff;
+    background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.14);
+    transition: background .15s, border-color .15s;
+}
+.mono-more-btn:hover { background: rgba(255,255,255,.12); border-color: rgba(255,255,255,.3); }
+.mono-more-btn:disabled { opacity: .6; cursor: default; }
+
 
 .result-card-bg .bg-name {
     font-size: 0.85rem; 

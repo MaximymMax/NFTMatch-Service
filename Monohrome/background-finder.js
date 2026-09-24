@@ -718,6 +718,11 @@ document.addEventListener('DOMContentLoaded', () => {
             selectedGifts: [], // putya: "несколько коллекций в обеих режимах" — [] значит "все коллекции"
             selectedColor: null,
             lastResults: [],
+            // API отдаёт результат страницами (pageSize 50), поэтому держим позицию и итоги.
+            page: 1,
+            totalCount: 0,
+            totalPages: 1,
+            isLoadingMore: false,
         },
         findUniversal: {
             selectedGifts: [], 
@@ -1584,6 +1589,28 @@ function renderUniversalResults(items, append = false) {
     }
     function monoAvailableTypes() {
         return MONO_TYPE_ORDER.filter(t => !monoTypeCounts || monoTypeCounts[t] > 0);
+    }
+
+    // Счётчики приходят с сервера по всей выборке (TypeCounts), а не по загруженной странице —
+    // иначе в меню были бы числа текущих 50 карточек.
+    function setMonoTypeCountsFromServer(serverCounts) {
+        const counts = {};
+        MONO_TYPE_ORDER.forEach(t => { counts[t] = 0; });
+        Object.keys(serverCounts || {}).forEach(k => {
+            const key = String(k).toLowerCase();
+            if (counts[key] !== undefined) counts[key] = serverCounts[k] || 0;
+        });
+        monoTypeCounts = counts;
+        [...monoTypeFilter].forEach(t => { if (!counts[t]) monoTypeFilter.delete(t); });
+    }
+
+    // Активный фильтр в виде списка типов для серверного параметра monoTypes.
+    // null — фильтра нет, сервер отдаёт всё.
+    function monoServerTypes() {
+        if (monoGroupMode === 'mono') return MONO_TYPE_ORDER.join(',');
+        if (monoGroupMode === 'nonmono') return 'contrast,partial,none';
+        if (monoTypeFilter.size > 0) return [...monoTypeFilter].join(',');
+        return null;
     }
 
     // Пустой результат: отдельный текст, если пусто именно из-за фильтра. Раньше показывалось общее
@@ -2611,25 +2638,52 @@ if (sortSwitcher) {
     // клиентский фильтр отображения, как "Мин. вес цвета" на "Фоны". "несколько коллекций" — эндпоинт
     // сам не фильтрует по гифту, поэтому просеиваем ответ по state.findModels.selectedGifts на
     // клиенте; пустой выбор (как и везде в мультиселекте) значит "все коллекции".
-    async function fetchMatchingModels() {
+    // putya: "адаптируй эти пути на сайте под пагинацию, чтобы ничего не поломалось".
+    // API больше не отдаёт весь каталог одним ответом: страница 50 записей, фильтры по
+    // коллекциям и типам монохрома ушли на сервер (иначе в первой полусотне могло не оказаться
+    // ни одной подходящей модели). append=true догружает следующую страницу к уже показанным.
+    const MODELS_PAGE_SIZE = 50;
+
+    async function fetchMatchingModels(append = false) {
         if (!state.findModels.selectedColor) return;
+        if (append && state.findModels.isLoadingMore) return;
+
+        if (!append) {
+            state.findModels.page = 1;
+            state.findModels.lastResults = [];
+        }
+        state.findModels.isLoadingMore = append;
 
         const isGridEmpty = resultsGrid.innerHTML.trim() === '';
-        showLoading(isGridEmpty);
+        if (!append) showLoading(isGridEmpty);
 
         const minWeightInput = document.getElementById('models-min-weight');
         const minClusterWeight = minWeightInput ? (parseFloat(minWeightInput.value) || 0) : 0;
         const backgroundName = state.findModels.selectedColor.name;
-        const url = `${SERVER_BASE_URL}/api/MonoCoof/FindModelsByBackground?backgroundName=${encodeURIComponent(backgroundName)}&minSimilarity=0&minClusterWeight=${minClusterWeight}&monoOnly=false`;
+        const selectedGifts = state.findModels.selectedGifts;
+
+        const params = new URLSearchParams({
+            backgroundName,
+            minSimilarity: '0',
+            minClusterWeight: String(minClusterWeight),
+            monoOnly: 'false',
+            page: String(state.findModels.page),
+            pageSize: String(MODELS_PAGE_SIZE)
+        });
+        if (selectedGifts.length) params.set('gifts', selectedGifts.join(','));
+        const activeTypes = monoServerTypes();
+        if (activeTypes) params.set('monoTypes', activeTypes);
+
+        const url = `${SERVER_BASE_URL}/api/MonoCoof/FindModelsByBackground?${params.toString()}`;
 
         try {
             const response = await secureFetch(url, null);
-            const allMatches = response?.Models || [];
+            const filtered = response?.Models || [];
 
-            const selectedGifts = state.findModels.selectedGifts;
-            const filtered = selectedGifts.length
-                ? allMatches.filter(m => selectedGifts.includes(m.GiftName))
-                : allMatches;
+            state.findModels.totalCount = response?.TotalCount ?? filtered.length;
+            state.findModels.totalPages = response?.TotalPages ?? 1;
+            // Счётчики типов приходят с сервера по всей выборке, а не по странице.
+            if (response?.TypeCounts) setMonoTypeCountsFromServer(response.TypeCounts);
 
             const uniqueGifts = [...new Set(filtered.map(m => m.GiftName))];
             const floorMap = new Map();
@@ -2656,12 +2710,16 @@ if (sortSwitcher) {
 
             const resultsWithCounts = await fetchGiftCounts(modelsToRender, null, 'findModels');
 
-            state.findModels.lastResults = resultsWithCounts;
+            state.findModels.lastResults = append
+                ? state.findModels.lastResults.concat(resultsWithCounts)
+                : resultsWithCounts;
+            state.findModels.isLoadingMore = false;
             hideLoading();
-            renderModelResults(resultsWithCounts, state.findModels.selectedColor);
+            renderModelResults(state.findModels.lastResults, state.findModels.selectedColor);
 
         } catch (error) {
             console.error('[API Error] Ошибка при поиске моделей:', error);
+            state.findModels.isLoadingMore = false;
             hideLoading();
             resultsGrid.innerHTML = `<p style="text-align: center;">${window.NFTi18n ? window.NFTi18n.t('net_error') : 'Не удалось загрузить данные.'} ${error}</p>`;
         }
@@ -2785,9 +2843,11 @@ if (sortSwitcher) {
 
     function renderModelResults(modelData, backgroundColor) {
         const sourceModels = modelData || [];
-        setMonoTypeCounts(sourceModels.filter(m => m.compatValue > 0), monoTypeOf);
         monoLastRender = () => renderModelResults(sourceModels, backgroundColor);
-        mountMonoFilterFor('findModels', () => monoLastRender && monoLastRender());
+        // Счётчики уже проставлены из ответа сервера (setMonoTypeCountsFromServer), локально их
+        // пересчитывать нельзя: в руках только текущая страница. Смена фильтра — новый запрос
+        // с первой страницы, а не перерисовка загруженного.
+        mountMonoFilterFor('findModels', () => fetchMatchingModels(false));
         resultsWrapper.classList.remove('results-initial-hide');
         resultsGrid.innerHTML = '';
         if (!backgroundColor || !modelData || modelData.length === 0) {
@@ -2844,6 +2904,24 @@ if (sortSwitcher) {
             fragment.appendChild(card);
         });
         resultsGrid.appendChild(fragment);
+
+        // putya: "адаптируй пути на сайте под пагинацию" — кнопка догрузки следующей страницы.
+        // Показываем сколько всего нашлось, чтобы было видно, что список не обрезан молча.
+        const fm = state.findModels;
+        if (fm.page < fm.totalPages) {
+            const more = document.createElement('button');
+            more.type = 'button';
+            more.className = 'mono-more-btn';
+            more.textContent = `Показать ещё (${modelData.length} из ${fm.totalCount})`;
+            more.addEventListener('click', () => {
+                more.disabled = true;
+                more.textContent = 'Загружаю...';
+                fm.page += 1;
+                fetchMatchingModels(true);
+            });
+            resultsGrid.appendChild(more);
+        }
+
         setupLazyLoading(resultsGrid, null, 'grid');
     }
 
