@@ -1540,7 +1540,9 @@ function renderUniversalResults(items, append = false) {
     }
     function monoTagHtml(type) {
         if (!isMonoType(type)) return '';
-        const label = monoLabel(type);
+        // putya: "надо писать не просто акцентный, а акцентный моно". В меню фильтра слово лишнее —
+        // там заголовок "Тип монохрома:", а на карточке контекста нет.
+        const label = monoLabel(type) + ' моно';
         return `<span class="mono-tag mono-tag-${type}" title="${label}"><i></i>${label}</span>`;
     }
     // putya: "добавь вариант только монохромы или нет (в ту менюшку)" — групповой режим поверх
@@ -2344,7 +2346,7 @@ if (sortSwitcher) {
     // уже показаны отдельной плашкой выше (bgs2RenderMonoSection). "добавь возможность ставить
     // лимит веса цвета который учитывается в оценке" — minMassPct теперь берётся из поля ввода
     // (#bgs2-min-mass, см. renderBgsV2/fetchBgsV2), группы с массой ниже него не показываются.
-    const BGS2_GROUP_MIN_MASS_DEFAULT = 30;
+    const BGS2_GROUP_MIN_MASS_DEFAULT = 10;
     const BGS2_GROUP_MIN_MASS_FALLBACK = 10;
 
     function bgs2RenderGroups(groups, minMassPct) {
