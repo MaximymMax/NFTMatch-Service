@@ -1547,7 +1547,7 @@ function renderUniversalResults(items, append = false) {
         if (!isMonoType(type)) return '';
         // putya: "надо писать не просто акцентный, а акцентный моно". В меню фильтра слово лишнее —
         // там заголовок "Тип монохрома:", а на карточке контекста нет.
-        const label = monoLabel(type) + ' моно';
+        const label = monoLabel(type) + ' ' + (window.NFTi18n ? window.NFTi18n.t('mono_tag_suffix', 'моно') : 'моно');
         return `<span class="mono-tag mono-tag-${type}" title="${label}"><i></i>${label}</span>`;
     }
     // putya: "добавь вариант только монохромы или нет (в ту менюшку)" — групповой режим поверх

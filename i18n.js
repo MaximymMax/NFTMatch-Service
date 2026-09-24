@@ -46,6 +46,7 @@
             "filter_min_match": "Мин. совпадение:",
             "btn_find_combinations": "Найти сочетания",
             "results_best_combinations": "Лучшие сочетания",
+            "mono_tag_suffix": "моно",
             "mono_type_flat": "Чистый",
             "mono_type_tonal": "Тональный",
             "mono_type_accent": "Акцентный",
@@ -285,6 +286,7 @@
             "filter_min_match": "Min. match:",
             "btn_find_combinations": "Find Combinations",
             "results_best_combinations": "Best Combinations",
+            "mono_tag_suffix": "mono",
             "mono_type_flat": "Pure",
             "mono_type_tonal": "Tonal",
             "mono_type_accent": "Accent",
@@ -539,6 +541,394 @@
         return text;
     }
 
+
+    // ============================================================================================
+    // putya: "на сайт надо добавить полную локализацию под английский и русский, перепроверь всё
+    // и сделай везде её".
+    //
+    // Ключом служит сам русский текст: на сайте около 300 видимых фраз, половина из них собирается
+    // внутри JS-шаблонов вперемешку с разметкой. Расставлять там 300 вызовов t('key') значило бы
+    // переписать тринадцать файлов и рисковать рендером на всех страницах; вместо этого словарь
+    // применяется к уже отрисованному DOM — текстовые узлы и переводимые атрибуты. Старый механизм
+    // data-i18n продолжает работать и имеет приоритет.
+    // ============================================================================================
+    const EN_BY_RU = {
+        "Главная": "Home",
+        "Монохромы": "Monochromes",
+        "Тематики": "Themes",
+        "Похожие": "Similar",
+        "Поддержка": "Support",
+        "Поддержка проекта": "Support the project",
+        "Наш канал": "Our channel",
+        "Выйти": "Log out",
+        "Назад": "Back",
+        "Закрыть": "Close",
+        "Отмена": "Cancel",
+        "Применить": "Apply",
+        "Сохранить": "Save",
+        "Убрать": "Remove",
+        "Найти": "Search",
+        "Поиск": "Search",
+        "Поиск...": "Search...",
+        "Фильтры": "Filters",
+        "Сортировка": "Sorting",
+        "Сортировка:": "Sorting:",
+        "Способ сортировки": "Sort by",
+        "Выберите сортировку": "Choose sorting",
+        "Изменить направление": "Change direction",
+        "По возрастанию": "Ascending",
+        "По убыванию": "Descending",
+        "Развернуть": "Expand",
+        "Свернуть": "Collapse",
+        "Скрыть": "Hide",
+        "Позже": "Later",
+        "Да": "Yes",
+        "Нет": "No",
+        "Вы уверены?": "Are you sure?",
+        "Пусто": "Empty",
+        "пусто": "empty",
+        "Вид": "View",
+        "Загрузка...": "Loading...",
+        "Загрузка…": "Loading…",
+        "Загружаю...": "Loading...",
+        "Загружаю цветовой профиль…": "Loading colour profile…",
+        "Создание...": "Creating...",
+        "Перенаправление...": "Redirecting...",
+        "Ничего не найдено.": "Nothing found.",
+        "Ошибка загрузки.": "Loading error.",
+        "Ошибка генерации:": "Generation error:",
+        "Не удалось загрузить данные": "Failed to load data",
+        "Не удалось загрузить:": "Failed to load:",
+        "Не удалось загрузить коллекции.": "Failed to load collections.",
+        "Ошибка сети. Не удалось связаться с сервером.": "Network error. Could not reach the server.",
+        "Страница недоступна.": "Page unavailable.",
+        "Дерево пусто": "The tree is empty",
+        "Нет данных для этого среза": "No data for this slice",
+        "Нет данных о цветовом профиле.": "No colour profile data.",
+        "Для использования функций приложения необходимо авторизоваться через Telegram.": "You need to sign in with Telegram to use the app.",
+        "Пожалуйста, сначала авторизуйтесь через Telegram.": "Please sign in with Telegram first.",
+        "Открыть в Telegram-боте": "Open in the Telegram bot",
+        "Требуется подписка": "Subscription required",
+        "Чтобы пользоваться поиском маркета и продвинутой аналитикой, необходимо быть подписчиком нашего Telegram канала.": "To use market search and advanced analytics you need to be subscribed to our Telegram channel.",
+        "Перейти в канал": "Go to the channel",
+        "Перейти на канал": "Go to the channel",
+        "Подпишитесь, чтобы следить за обновлениями": "Subscribe to follow updates",
+        "Пользователь": "User",
+        "Обратиться к администратору": "Contact the administrator",
+        "Коллекции:": "Collections:",
+        "Коллекция:": "Collection:",
+        "Модель:": "Model:",
+        "Модели": "Models",
+        "Моделей": "Models",
+        "Фон": "Backdrop",
+        "Фон:": "Backdrop:",
+        "Фоны": "Backdrops",
+        "Фоны:": "Backdrops:",
+        "Задний фон:": "Backdrop:",
+        "Без фона": "No backdrop",
+        "Все коллекции": "All collections",
+        "все коллекции": "all collections",
+        "Все фоны": "All backdrops",
+        "Все фоны каталога": "All backdrops in the catalogue",
+        "Все типы": "All types",
+        "Все": "All",
+        "Вся коллекция": "Entire collection",
+        "Выбрать все": "Select all",
+        "Выбрать...": "Choose...",
+        "Выберите коллекцию": "Choose a collection",
+        "Выбери коллекцию": "Choose a collection",
+        "Сначала выбери коллекцию": "Choose a collection first",
+        "Выберите модель": "Choose a model",
+        "Выбери модель": "Choose a model",
+        "Выберите фон": "Choose a backdrop",
+        "Выберите набор коллекций": "Choose a set of collections",
+        "Набор коллекций для поиска:": "Collections to search in:",
+        "Выберите вид карточек": "Choose card layout",
+        "Название коллекции:": "Collection name:",
+        "Название модели:": "Model name:",
+        "Целевая модель": "Target model",
+        "Не выбран": "Not selected",
+        "Поиск тематики...": "Search themes...",
+        "Лучшие сочетания": "Best combinations",
+        "Найти сочетания": "Find combinations",
+        "Найти лучшие фоны для этой модели": "Find the best backdrops for this model",
+        "Найти лучшие модели с этим фоном": "Find the best models for this backdrop",
+        "Найти похожие": "Find similar",
+        "Похожие модели": "Similar models",
+        "Похожие по цвету": "Similar by colour",
+        "Похожие NFT": "Similar NFTs",
+        "Похожие гифты не найдены.": "No similar gifts found.",
+        "Подходящих моделей не найдено.": "No matching models found.",
+        "Подходящих фонов не найдено.": "No matching backdrops found.",
+        "Подходящих NFT не найдено.": "No matching NFTs found.",
+        "Моделей, подходящих под фон": "Models matching the backdrop",
+        "Ищу похожие модели по всему каталогу — может занять время…": "Searching the whole catalogue for similar models — this may take a while…",
+        "Совпадение:": "Match:",
+        "Мин. совпадение:": "Min. match:",
+        "Коэф.": "Score",
+        "Цена": "Price",
+        "Кол-во": "Count",
+        "Количество": "Quantity",
+        "Количество:": "Quantity:",
+        "По совпадению (возр.)": "By match (asc.)",
+        "По совпадению (убыв.)": "By match (desc.)",
+        "По количеству": "By quantity",
+        "По количеству (возр.)": "By quantity (asc.)",
+        "По количеству (убыв.)": "By quantity (desc.)",
+        "По имени": "By name",
+        "По названию": "By name",
+        "По флорам": "By floor price",
+        "По цветам": "By colours",
+        "По группам": "By groups",
+        "по цвету": "by colour",
+        "Списком": "As a list",
+        "Деревом": "As a tree",
+        "Режим отображения:": "Display mode:",
+        "Показать все типы": "Show all types",
+        "Сбросить срез": "Reset slice",
+        "Мин. вес цвета": "Min. colour weight",
+        "Мин. вес цвета в оценке": "Min. colour weight in scoring",
+        "Модели, у которых фон зацепил цвет легче этого % их массы, не показываются": "Models whose matched colour is lighter than this % of their mass are hidden",
+        "Группы и фоны, завязанные на цвет легче этого % массы модели, не показываются ниже": "Groups and backdrops tied to a colour lighter than this % of the model's mass are hidden below",
+        "Ограничение цены (TON):": "Price limit (TON):",
+        "Исключить модели с посторонними цветами": "Exclude models with foreign colours",
+        "Только при 2+ цветах": "Only with 2+ colours",
+        "нужно 2+ цвета": "2+ colours required",
+        "Тип монохрома:": "Monochrome type:",
+        "Чистый": "Pure",
+        "Тональный": "Tonal",
+        "Акцентный": "Accent",
+        "Ахроматический": "Achromatic",
+        "Чистый монохром": "Pure monochrome",
+        "Тональный монохром": "Tonal monochrome",
+        "Акцентный монохром": "Accent monochrome",
+        "Ахроматический монохром": "Achromatic monochrome",
+        "Только монохромы": "Monochromes only",
+        "только монохромы": "monochromes only",
+        "Не монохромы": "Non-monochromes",
+        "не монохромы": "non-monochromes",
+        "Что это значит?": "What does this mean?",
+        "Предмет того же цвета, что и фон.": "The object is the same colour as the backdrop.",
+        "Один цвет в разных оттенках: свет, тень, блик.": "One colour in different shades: light, shadow, highlight.",
+        "Предмет в цвете фона с мелкими вставками другого цвета.": "The object is in the backdrop colour with small inserts of another.",
+        "Чёрно-белый или серый предмет на чёрном, сером или белом фоне.": "A black, white or grey object on a black, grey or white backdrop.",
+        "Такое сочетание встречается редко — на большинстве фонов чистых и тональных монохромов единицы.": "Such combinations are rare — most backdrops have only a handful of pure and tonal monochromes.",
+        "• посторонних цветов —": "• foreign colours —",
+        "• каждый посторонний —": "• each foreign colour —",
+        "• совпадает": "• matches",
+        "• основного цвета —": "• main colour —",
+        "• без выраженного тона —": "• with no distinct hue —",
+        "• главный цвет — тот же, что у фона": "• the main colour is the same as the background",
+        "• по светлоте предмет рядом с фоном": "• the item is close to the background in lightness",
+        "не больше 5%": "no more than 5%",
+        "до 15%": "up to 15%",
+        "моно": "mono",
+        "монохромы": "monochromes",
+        "— сочетания, где модель и фон выдержаны в одном цвете.": "— combinations where the model and the backdrop share one colour.",
+        "Основные цвета": "Main colours",
+        "Выбранные цвета:": "Selected colours:",
+        "Выбрать цвет": "Pick a colour",
+        "Изменить цвет": "Change colour",
+        "Выберите цвет...": "Choose a colour...",
+        "+ Добавить цвет": "+ Add colour",
+        "Очистить выбор": "Clear selection",
+        "Светлота:": "Lightness:",
+        "Клик по цвету исключает его из поиска": "Click a colour to exclude it from the search",
+        "Выберете 3 оттенка основного цвета. Нажмите \"Сохранить\" для применения.": "Pick 3 shades of the main colour. Press \"Save\" to apply.",
+        "Цветовой профиль модели — размер круга и % показывают долю каждого цвета": "The model's colour profile — circle size and % show each colour's share",
+        "Диаграмма цветов моделей": "Model colour diagram",
+        "Кластеров": "Clusters",
+        "Красный": "Red",
+        "Оранжевый": "Orange",
+        "Жёлтый": "Yellow",
+        "Салатовый": "Lime",
+        "Зелёный": "Green",
+        "Изумрудный": "Emerald",
+        "Голубой": "Cyan",
+        "Синий": "Blue",
+        "Индиго": "Indigo",
+        "Фиолетовый": "Violet",
+        "Пурпурный": "Purple",
+        "Розовый": "Pink",
+        "пастельный": "pastel",
+        "весь диапазон": "full range",
+        "СПИСОК ТЕМАТИК": "THEME LIST",
+        "Список Тематик": "Theme list",
+        "Тематика": "Theme",
+        "Тематики:": "Themes:",
+        "Показывать тематики:": "Show themes:",
+        "Группа": "Group",
+        "группа": "group",
+        "группы": "groups",
+        "групп": "groups",
+        "подгруппа": "subgroup",
+        "подгруппы": "subgroups",
+        "подгрупп": "subgroups",
+        "подтема": "subtheme",
+        "подтемы": "subthemes",
+        "подтем": "subthemes",
+        "тематика": "theme",
+        "тематики": "themes",
+        "тематик": "themes",
+        "У этой тематики нет моделей": "This theme has no models",
+        "Визуал": "Visual",
+        "Логика": "Logic",
+        "Только название": "Name only",
+        "ПУТИ": "PATHS",
+        "ФОНЫ": "BACKDROPS",
+        "Сравнить с": "Compare with",
+        "Поиск NFT": "NFT search",
+        "Найденные NFT": "Found NFTs",
+        "Подарок": "Gift",
+        "подарок": "gift",
+        "подарка": "gift",
+        "подарков": "gifts",
+        "Фото подарка": "Gift photo",
+        "НЕУНИКАЛЬНЫЕ ПОДАРКИ": "NON-UNIQUE GIFTS",
+        "Обычные подарки Telegram, покупаются за звёзды": "Ordinary Telegram gifts, bought with stars",
+        "Пока нет доступных подарков.": "No gifts available yet.",
+        "Поиск на маркетах": "Market search",
+        "Топ 1 модель (Плотный вид)": "Top 1 model (compact view)",
+        "Топ 3 модели (Детальный вид)": "Top 3 models (detailed view)",
+        "Символ канала": "Channel symbol",
+        "Данный подарок является символом нашего проекта. Если есть желание поддержать, подарите его на канал.": "This gift is our project's symbol. If you would like to support us, send it to the channel.",
+        "API Управление": "API management",
+        "Ключи доступа": "Access keys",
+        "Базовый ключ": "Basic key",
+        "Расширенный ключ": "Extended key",
+        "Сгенерировать": "Generate",
+        "Сгенерировать ключ": "Generate key",
+        "Документация": "Documentation",
+        "Открыть Swagger UI": "Open Swagger UI",
+        "Ваш старый ключ будет": "Your old key will be",
+        "деактивирован": "deactivated",
+        ". Новый ключ будет показан только один раз.": ". The new key will be shown only once.",
+        "Сервис предоставляет программный интерфейс для разработчиков новых решений, связанных с NFT-подарками.": "The service provides an API for developers building new solutions around NFT gifts.",
+        "NFT Match предоставляет уникальную информацию": "NFT Match provides unique data",
+        ", которая позволит вам integrarровать продвинутую аналитику и сделать свой сервис лучше.": " that lets you embed advanced analytics and make your own service better.",
+        "NFTMatch — это полностью бесплатный проект, созданный с душой": "NFTMatch is a completely free project, made with care",
+        "Поддержать проект": "Support the project",
+        "Поддержать развитие проекта.": "Support the project's development.",
+        "Поддержать монетой TON на развитие серверов:": "Support server costs with TON:",
+        "Исходный код проекта на GitHub.": "Project source code on GitHub.",
+        "В его основе алгоритм": "It is built on the algorithm",
+        "— сервис для коллекционеров Telegram-подарков.": "— a service for Telegram gift collectors.",
+        ": он разбирает каждую модель на цвета и по ним подбирает подходящие фоны, находит визуально похожие модели и собирает": ": it breaks every model down into colours, matches backdrops to them, finds visually similar models and collects",
+        "шт.": "pcs.",
+        "моделей": "models",
+        "модели": "models",
+        "модель": "model",
+        "цветов": "colours",
+        "площади": "of the area",
+        "До скольки?": "Up to what?"
+    };
+
+    // Фразы с числами внутри — точным совпадением не берутся.
+    const EN_PATTERNS = [
+        ["^(\\d[\\d\\s]*) шт\\.$", "$1 pcs."],
+        ["^(\\d[\\d\\s]*) шт$", "$1 pcs"],
+        ["^(\\d[\\d\\s]*) тем\\.?$", "$1 themes"],
+        ["^(\\d[\\d\\s]*) гр\\.?$", "$1 groups"],
+        ["^(\\d[\\d\\s]*) моделей$", "$1 models"],
+        ["^(\\d[\\d\\s]*) цветов$", "$1 colours"],
+        ["^Показать ещё \\((\\d+) из (\\d+)\\)$", "Show more ($1 of $2)"],
+        ["^Выбрано \\((\\d+)\\)$", "Selected ($1)"],
+        ["^Выбрано: (\\d+)$", "Selected: $1"],
+        ["^Показано (\\d+) из (\\d+), по убыванию веса цвета\\.$", "Showing $1 of $2, by descending colour weight."],
+        ["^Показано (\\d+) из (\\d+)\\.?$", "Showing $1 of $2"],
+        ["^в 1 тематике$", "in 1 theme"],
+        ["^в (\\d+) тематиках?$", "in $1 themes"],
+        ["^(\\d+) тематик[аи]?$", "$1 themes"],
+        ["^Монохромы \\((\\d+)\\)$", "Monochromes ($1)"],
+        ["^([\\d.,]+)% массы модели$", "$1% of model mass"],
+        ["^Ничего не подошло под выбранный фильтр \\(([\\s\\S]+)\\)\\.$", "Nothing matched the selected filter ($1)."],
+        ["^Не удалось загрузить: ([\\s\\S]+)$", "Failed to load: $1"],
+        ["^#(\\d+): (.+) \\(([\\d.,]+)%\\), сходство ([\\d.,]+)%$", "#$1: $2 ($3%), similarity $4%"],
+        ["^(.+) · ([\\d.,]+)%, сходство ([\\d.,]+)%$", "$1 · $2%, similarity $3%"],
+        ["^Совпадение: ([\\d.,]+)%$", "Match: $1%"]
+    ].map(function (p) { return [new RegExp(p[0]), p[1]]; });
+
+    function tr(ru) {
+        if (currentLang !== 'en' || !ru) return ru;
+        const raw = String(ru);
+        const parts = raw.match(/^(\s*)([\s\S]*?)(\s*)$/);
+        const body = parts[2];
+        if (!body) return ru;
+        // В разметке одна и та же фраза может быть разбита переносами и отступами — для поиска
+        // по словарю схлопываем любые пробельные последовательности в один пробел.
+        const norm = body.replace(/\s+/g, ' ');
+
+        let out = EN_BY_RU[norm] !== undefined ? EN_BY_RU[norm] : null;
+        if (out === null) {
+            for (let i = 0; i < EN_PATTERNS.length; i++) {
+                if (EN_PATTERNS[i][0].test(norm)) {
+                    out = norm.replace(EN_PATTERNS[i][0], EN_PATTERNS[i][1]);
+                    break;
+                }
+            }
+        }
+        if (out === null) return ru;
+        return parts[1] + out + parts[3];
+    }
+
+    const TRANSLATABLE_ATTRS = ['placeholder', 'title', 'alt', 'aria-label'];
+    const SKIP_TAGS = { SCRIPT: 1, STYLE: 1, CODE: 1, PRE: 1, TEXTAREA: 1 };
+
+    function translateTree(root) {
+        if (currentLang !== 'en' || !root) return;
+        try {
+            const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+                acceptNode: function (node) {
+                    if (!node.nodeValue || !/[А-Яа-яЁё]/.test(node.nodeValue)) return NodeFilter.FILTER_REJECT;
+                    if (node.parentNode && SKIP_TAGS[node.parentNode.nodeName]) return NodeFilter.FILTER_REJECT;
+                    return NodeFilter.FILTER_ACCEPT;
+                }
+            });
+            const nodes = [];
+            let n;
+            while ((n = walker.nextNode())) nodes.push(n);
+            nodes.forEach(function (node) {
+                const out = tr(node.nodeValue);
+                if (out !== node.nodeValue) node.nodeValue = out;
+            });
+
+            const els = root.nodeType === 1 ? [root] : [];
+            const all = els.concat(Array.prototype.slice.call(
+                (root.querySelectorAll ? root.querySelectorAll('*') : [])));
+            all.forEach(function (el) {
+                TRANSLATABLE_ATTRS.forEach(function (a) {
+                    const v = el.getAttribute && el.getAttribute(a);
+                    if (v && /[А-Яа-яЁё]/.test(v)) {
+                        const out = tr(v);
+                        if (out !== v) el.setAttribute(a, out);
+                    }
+                });
+            });
+        } catch (e) { /* перевод не должен ломать страницу */ }
+    }
+
+    // Динамически отрисованные куски (карточки, модалки, списки) переводим по факту появления.
+    let translateQueued = false;
+    function runTranslatePass() {
+        if (!translateQueued) return;
+        translateQueued = false;
+        translateTree(document.body);
+    }
+    function scheduleTranslate() {
+        if (currentLang !== 'en' || translateQueued) return;
+        translateQueued = true;
+        // rAF не вызывается в фоновой вкладке и в невидимом фрейме, поэтому дублируем таймером:
+        // что сработает первым, то и переведёт, второй вызов уйдёт вхолостую.
+        if (typeof requestAnimationFrame === 'function') requestAnimationFrame(runTranslatePass);
+        setTimeout(runTranslatePass, 50);
+    }
+
+    function startObserver() {
+        if (currentLang !== 'en' || !document.body) return;
+        translateTree(document.body);
+        new MutationObserver(scheduleTranslate).observe(document.body, { childList: true, subtree: true });
+    }
+
     // Функция перевода DOM-элементов
     function translateDOM() {
         document.querySelectorAll('[data-i18n]').forEach(el => {
@@ -557,6 +947,7 @@
         });
 
         document.documentElement.lang = currentLang;
+        translateTree(document.body);
     }
 
     // Динамическое добавление верхней шапки с переключателем языка
@@ -687,8 +1078,15 @@
     // Экспортируем модуль глобально
     window.NFTi18n = {
         t,
+        tr,
+        translateTree,
         translateDOM,
         getLanguage: () => currentLang,
         setLanguage
     };
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', startObserver);
+    } else {
+        startObserver();
+    }
 })();
