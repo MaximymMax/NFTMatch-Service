@@ -456,8 +456,8 @@
             const data = await resp.json();
 
             statsEl.innerHTML = `
-                <div class="cw-stat-chip"><div class="cw-stat-value">${data.ModelsScanned}</div><div class="cw-stat-label">Моделей просканировано</div></div>
-                <div class="cw-stat-chip"><div class="cw-stat-value">${data.ClustersUsed}</div><div class="cw-stat-label">Кластеров учтено</div></div>
+                <div class="cw-stat-chip"><div class="cw-stat-value">${data.ModelsScanned}</div><div class="cw-stat-label">Моделей</div></div>
+                <div class="cw-stat-chip"><div class="cw-stat-value">${data.ClustersUsed}</div><div class="cw-stat-label">Кластеров</div></div>
             `;
 
             renderWheel(data.HueWheel);
