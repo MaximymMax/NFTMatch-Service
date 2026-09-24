@@ -1,6 +1,10 @@
-# 🎨 NFT Match - Telegram Gifts & NFTs Matcher
+# NFT Match
 
-![NFT Match](./PhotosReadMe/1.jpg)
+Analytics service for collectors of [Telegram NFT gifts](https://fragment.com/gifts). Matches gift models with backdrops, finds visually similar models and organises the catalogue into themes.
+
+**Site:** [nftmatch.pro](https://nftmatch.pro) · **Bot:** [@NFTMatchbot](https://t.me/NFTMatchbot) · **API:** [documentation](https://nftmatch.pro/API_info/api.html)
+
+The catalogue holds over 7000 models and around 600 000 possible model + backdrop combinations.
 
 [English](#english) | [Русский](#русский)
 
@@ -9,101 +13,119 @@
 <a name="english"></a>
 ## English
 
-**NFT Match** is a specialized analytical service designed for Telegram NFT Gift collectors. It helps users discover the most aesthetically harmonious combinations of gift models (2D Lottie animations) and backgrounds, search for visually similar items, and browse thematic collections.
+### Features
 
-### ⚙️ How works NFTMatch?
+- **Backdrop matching** for a model — and the other way round, models for a given backdrop
+- **Monochrome combination types** — shows exactly *how* a backdrop fits
+- **Similar model search** by colour profile, across the whole catalogue
+- **Themes** — over 500 themes, 70 groups and 315 theme-to-group links, each with the reason a model belongs
+- **Telegram bot** with the full feature set
+- **Public API** for embedding into third-party services
 
-**@NFTMatchbot evaluates the monochrome compatibility of a gift in three stages:**
-1. determines the key color,
-2. analyzes three of its shades and coverage percentage,
-3. calculates compatibility using the DeltaE 2000 formula, which accounts for human perception.
+### How the algorithm works
 
-A web application is available for manual correction.
+#### Colour profile of a model
 
-![Algorithm logic](./PhotosReadMe/2.jpg)
+A model is a Lottie animation, and it usually has no single "main colour": there is a base tone, a shadow, a highlight, a small patch of something else. So instead of one averaged colour the service breaks a model down into **colour cubes** — large patches, each with its own colour and a weight as a share of the area.
 
-#### Detailed step-by-step calculation:
+#### Similarity scoring
 
-1. **Finding the Key Color**
-   First, the algorithm analyzes the model (2D Lottie animation) and extracts one key color.
-   *Important:* this is not necessarily the most dominant color. It is the color that is logically central to the gift's composition.
-   For some complex models, the bot might make a mistake. We have anticipated this: open our Web App — there is a tool where you can manually specify the desired model color.
+Distance between colours is computed in **CIELAB** using the **HyABScaled** metric: the perceptual lightness and chroma normalisations are taken from CIEDE2000, while the distance itself is measured directly over Δa/Δb in Cartesian coordinates, as in HyAB.
 
-2. **Analyzing Shades and Weight**
-   After determining the base, the algorithm saves 3 shades of this color. This is necessary for variety, to account for light, shadows, and highlights.
-   For each of these shades, the percentage of coverage (weight) is calculated. If the color occupies 80% of the model, it will have the maximum impact on the final score.
+Hue angle is never computed, which removes its instability on low-chroma colours, where the a and b components are close to zero.
 
-3. **Calculating Compatibility**
-   The compatibility percentage is calculated using the **DeltaE 2000** formula.
-   The formula evaluates the difference between colors as close as possible to human perception. It considers not just digital RGB values, but how the eye sees saturation, brightness, and hue.
-   
-   *Note:* Sometimes you might see a score you disagree with. This is usually due to two reasons: incorrectly selected colors or algorithmic nuances.
-   
-   If you have suggestions for improving the algorithm or ideas for cooperation, write to the owner: **@Criminal_hamster**
-   
-   *Thank you for using NFTMatch!*
+For every colour of a model the result is two values: how close the backdrop is to that colour, and the share of that colour in the model.
 
-### 📂 Website Structure & Routing
-- **Home Page:** `/index.html` — Entry point, active carousel, and features grid.
-- **Monochromes:** `/Monohrome/background-finder.html` — Tool for matching model colors with backgrounds.
-- **Similar:** `/nft-page/index.html` — Algorithmic search for visually similar gifts across collections.
-- **Thematics:** `/Thematic/themes.html` — Catalog of items grouped into semantic categories with floor prices.
-- **API Credentials:** `/API_info/api.html` — API key generation hub for developers.
-- **Support:** `/Support/support.html` — Support the project development.
+#### Monochrome types
+
+A separate classifier determines **how** the match happened. Every cube is assigned a relation to the backdrop — same colour, a shade of the same colour, a highlight, a foreign colour — and the verdict follows from their combined shares:
+
+| Type | Meaning |
+|---|---|
+| **Pure** | the object is the same colour as the backdrop |
+| **Tonal** | one colour in different shades: light, shadow, highlight |
+| **Accent** | backdrop colour with small inserts of another |
+| **Achromatic** | black, white or grey object on a black, grey or white backdrop |
+| **Lightness contrast** | same hue, different lightness — reads as a different colour |
+| **Semi-monochrome** | the backdrop matches only part of the object |
+
+Out of 600 000 combinations about 7000 turn out to be monochrome — just over one percent. Pure ones: 223.
+
+### API
+
+The API exposes the same data the site and the bot run on:
+
+- **Matching** — backdrops for a model, models for a backdrop, similar models, search by colour recipe
+- **Monochromes** — the type of a model + backdrop combination and ready-made monochrome lists per backdrop
+- **Colour profile** — model cubes with weights, dominant colours
+- **Themes** — the tree of groups and themes, model membership, search
+- **Catalogue** — collections, models, backdrops, floor prices
+
+A free key with basic limits is available to everyone. An extended key is free for open public projects that credit NFT Match; for private projects it is a one-time payment of 20 Gram.
+
+---
+
+**Contact:** [@Criminal_hamster](https://t.me/Criminal_hamster)
 
 ---
 
 <a name="русский"></a>
 ## Русский
 
-**NFT Match** — аналитический сервис в сфере Telegram NFT-подарков, созданный для коллекционеров. Он позволяет подбирать наилучшие сочетания 2D Lottie-анимации модели подарка и его заднего фона, искать визуально похожие модели и изучать тематические подборки.
+Аналитический сервис для коллекционеров [Telegram NFT-подарков](https://fragment.com/gifts). Подбирает сочетания модели подарка и заднего фона, ищет визуально похожие модели и раскладывает каталог по тематикам.
 
-### ⚙️ Как работает NFTMatch?
+В каталоге более 7000 моделей и около 600 000 возможных сочетаний модель + фон.
 
-**@NFTMatchbot оценивает монохромность подарка в три этапа:**
-1. определяет ключевой цвет,
-2. анализирует три его оттенка и процент покрытия,
-3. рассчитывает совместимость по формуле DeltaE 2000, учитывающей восприятие человека.
+### Что умеет
 
-Для корректировки доступно веб-приложение.
+- **Подбор фонов под модель** — и наоборот, моделей под конкретный фон
+- **Типы монохромных сочетаний** — показывает, чем именно подходит
+- **Поиск похожих моделей** по цветовому профилю, через весь каталог
+- **Тематики** — более 500 тем, 70 групп и 315 связей тематика-группа, с указанием признака принадлежности
+- **Telegram-бот** с полным функционалом
+- **Публичное API** для встраивания в сторонние сервисы
 
-![Принцип работы алгоритма](./PhotosReadMe/2.jpg)
+### Как работает алгоритм
 
-#### Подробный расчет, шаг за шагом:
+#### Цветовой профиль модели
 
-1. **Поиск ключевого цвета**
-   Сначала алгоритм анализирует модель (2D Lottie-анимацию) и выделяет один ключевой цвет.
-   *Важно:* это не обязательно тот цвет, которого больше всего. Это цвет, который является логически главным в композиции подарка.
-   На некоторых сложных моделях бот может ошибиться. Мы предусмотрели это: зайдите в наше Web App — там есть инструмент, с помощью которого вы можете вручную указать нужный вам цвет модели.
+Модель — это Lottie-анимация, и «главного цвета» у неё обычно нет: есть основной, есть тень, блик, мелкая вставка другого оттенка. Поэтому вместо одного усреднённого цвета сервис разбирает модель на **цветовые кубы** — крупные пятна, у каждого свой цвет и вес в процентах площади.
 
-2. **Анализ оттенков и веса**
-   После определения основы алгоритм сохраняет 3 оттенка этого цвета. Это нужно для разнообразия, чтобы учитывать свет, тень и блики.
-   Для каждого из этих оттенков рассчитывается процент покрытия (вес). Если цвет занимает 80% модели, он будет максимально влиять на итоговую оценку.
+#### Оценка совпадения
 
-3. **Расчет совместимости**
-   Процент совместимости высчитывается по формуле **DeltaE 2000**.
-   Формула оценивает разницу между цветами максимально близко к человеческому восприятию. Она учитывает не просто цифровые значения RGB, а то, как глаз видит насыщенность, яркость и тон.
-   
-   *Примечание:* Иногда вы можете увидеть оценку, с которой не согласны. Чаще всего это связано с двумя причинами: неправильно выбранные цвета или нюансы алгоритма.
-   
-   Если у вас есть предложения по улучшению алгоритма или идеи для сотрудничества, напишите владельцу: **@Criminal_hamster**
-   
-   *Спасибо, что используете NFTMatch!*
+Расстояние между цветами вычисляется в цветовом пространстве **CIELAB** метрикой **HyABScaled**: перцептивные нормировки по светлоте и насыщенности взяты из CIEDE2000, само расстояние считается напрямую по Δa/Δb в декартовых координатах, как в HyAB.
 
-### 📂 Структура сайта и пути (Routing)
-- **Главная страница:** `/index.html` — Входная точка, карусель продаж и меню функций.
-- **Монохромы:** `/Monohrome/background-finder.html` — Инструмент для автоматического сопоставления модели и фона.
-- **Похожие:** `/nft-page/index.html` — Поиск визуально и геометрически похожих подарков по всем коллекциям.
-- **Тематики:** `/Thematic/themes.html` — Каталог подарков, сгруппированных по смысловым категориям, с ценами Floor Price.
-- **Личный кабинет API:** `/API_info/api.html` — Панель выпуска ключей для разработчиков.
-- **Поддержка:** `/Support/support.html` — Страница помощи развитию проекта.
+Угол тона при этом не вычисляется — это исключает его неустойчивость на малонасыщенных цветах, где составляющие a и b близки к нулю.
+
+Для каждого цвета модели результат — два значения: близость фона к этому цвету и доля этого цвета в модели.
+
+#### Типы монохромов
+
+Отдельный классификатор определяет, **каким образом** совпало. Каждый куб получает отношение к фону — тот же цвет, оттенок того же цвета, блик, посторонний, — и по их суммарным долям выносится вердикт:
+
+| Тип | Что это |
+|---|---|
+| **Чистый** | предмет того же цвета, что и фон |
+| **Тональный** | один цвет в разных оттенках: свет, тень, блик |
+| **Акцентный** | цвет фона с мелкими вставками другого |
+| **Ахроматический** | чёрно-белое или серое на чёрном, сером, белом |
+| **Контраст по светлоте** | тон тот же, светлота другая — читается как другой цвет |
+| **Полумонохром** | фон совпал лишь с частью предмета |
+
+Из 600 000 сочетаний монохромами оказываются около 7000 — чуть больше процента. Чистых — 223.
+
+### API
+
+Наружу отдаётся то же, на чём работают сайт и бот:
+
+- **Подбор** — фоны под модель, модели под фон, похожие модели, поиск по цветовому рецепту
+- **Монохромы** — тип сочетания модель + фон и готовые списки монохромов по фону
+- **Цветовой профиль** — кубы модели с весами, доминирующие цвета
+- **Тематики** — дерево групп и тем, принадлежность модели, поиск
+- **Каталог** — коллекции, модели, фоны, флор-цены
+
+Бесплатный ключ с базовыми лимитами доступен всем. Расширенный — бесплатно для открытых публичных проектов с упоминанием NFT Match; для частных проектов единоразово 20 Gram.
 
 ---
 
-### 🌐 Ссылки / Links
-- **Основной сайт:** [nftmatch.pro](https://nftmatch.pro)
-- **Демонстрационный сайт:** [maximymmax.github.io/NFTMatch-Service/](https://maximymmax.github.io/NFTMatch-Service/)
-- **Документация API (Swagger UI):** [nftmatch.pro/api/swagger/ui](https://nftmatch.pro/api/swagger/ui)
-- **Личный кабинет API:** [https://nftmatch.pro/API_info/api.html](https://nftmatch.pro/API_info/api.html)
-- **Телеграм-бот:** [@NFTMatchBot](https://t.me/NFTMatchBot)
-- **Телеграм-канал:** [@NFTStyler](https://t.me/NFTStyler)
+**Контакт:** [@Criminal_hamster](https://t.me/Criminal_hamster)
