@@ -3,6 +3,7 @@
 // и раскрывались только по IP-гейту владельца через фейковый фетч на ColorWheel-эндпоинт. Гейт убран
 // — теперь снимаем cw-admin-nav-hidden сразу для всех посетителей.
 (function () {
+    const SELF_SRC = document.currentScript && document.currentScript.src;
     // putya: "единая шапка для всех страниц... кнопки переключения языка, регистрации через тг,
     // апи, гитхаб" — RU/EN (i18n.js) и TG-логин/профиль (auth-badge.js) уже существуют на каждой
     // странице, но живут в СВОЁМ отдельном #nft-top-bar (position:fixed, поверх страницы), а не в
@@ -59,6 +60,24 @@
         ghResizeTimer = setTimeout(updateGithubPlacement, 150);
     });
 
+    // Раздел «Карточка» пока только для администратора: вкладка появляется в ряду вкладок на каждой
+    // странице, где он есть. Это лишь видимость — доступ к самим данным проверяет сервер (CardFunctions).
+    const CARD_ADMIN_ID = 7343414766;
+    function addCardTab() {
+        try {
+            const user = window.NFTAuth && window.NFTAuth.getUser();
+            if (!user || Number(user.telegramId || user.id) !== CARD_ADMIN_ID) return;
+            const tabs = document.querySelector('.cw-tabs');
+            if (!tabs || tabs.querySelector('[data-tab="card"]') || !SELF_SRC) return;
+            const a = document.createElement('a');
+            a.className = 'cw-tab' + (location.pathname.indexOf('/Card/') !== -1 ? ' active' : '');
+            a.setAttribute('data-tab', 'card');
+            a.href = new URL('Card/card.html', SELF_SRC).href;
+            a.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="3"/><path stroke-linecap="round" d="M3 10h18"/></svg><span>Карточка</span>';
+            tabs.appendChild(a);
+        } catch (e) { }
+    }
+
     // putya: "ну и где тут флажки?" (из прежнего гейта) — раскрытие было жёстко завязано на два ID
     // (#cw-admin-nav/#cw-admin-tabs), поэтому любой НОВЫЙ блок с классом cw-admin-nav-hidden
     // (например #tf-mode-switcher-container на Тематиках) никогда не открывался. Общий селектор
@@ -68,6 +87,7 @@
     function revealAndMerge() {
         document.querySelectorAll('.cw-admin-nav-hidden').forEach(el => el.classList.remove('cw-admin-nav-hidden'));
         mergeTopBarIntoHeader();
+        addCardTab();
         updateGithubPlacement();
     }
 
