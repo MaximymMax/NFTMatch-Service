@@ -789,12 +789,15 @@ async function flushSave(keepalive) {
   };
   if (kind === 'catalog') payload.tray = tray.map(t => ({ gift: t.gift, model: t.model }));   // подарки профиля берутся из профиля, их не храним
   try {
-    const r = await fetch(api('Card/Save?kind=' + kind), { method: 'PUT', keepalive: keepalive === true, headers: { 'Authorization': authHeader(), 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-    if (!r.ok) throw new Error(r.status);
+    const r = await fetch(api('Card/Save?kind=' + kind), { method: 'POST', keepalive: keepalive === true, headers: { 'Authorization': authHeader(), 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+    if (!r.ok) { const e = new Error(r.status); e.text = await r.text().catch(() => ''); throw e; }
     if (!dirty) setStatus('Сохранено ✓');
   } catch (e) {
-    dirty = true; setStatus('Не удалось сохранить — повторю', true);
-    clearTimeout(saveTimer); saveTimer = setTimeout(flushSave, 4000);
+    dirty = true;
+    const why = e.message && /^\d+$/.test(e.message) ? ' (' + e.message + (e.text ? ': ' + e.text.slice(0, 120) : '') + ')' : '';
+    setStatus('Не удалось сохранить' + why, true);
+    // отказ сервера (4xx) повторять бесполезно — следующее изменение попробует снова; сбой сети/5xx повторяем
+    if (!(+e.message >= 400 && +e.message < 500)) { clearTimeout(saveTimer); saveTimer = setTimeout(flushSave, 4000); }
   } finally { saving = false; }
 }
 function flush() { if (dirty && loaded) { clearTimeout(saveTimer); flushSave(true); } }
@@ -1000,9 +1003,9 @@ async function loadKind() {
       state.stickers.forEach(s => { if (!tray.some(t => t.id === s.id)) { const [gift, model] = splitId(s.id); tray.push({ id: s.id, gift, model }); } });
     } else {
       let info;
-      try { info = await apiGet('Card/ProfileGifts'); } catch (e) { info = { available: false }; }
+      try { info = await apiGet('Card/ProfileGifts'); } catch (e) { info = { available: false, error: 'HTTP ' + (e.status || '?') }; }
       tray = info.available ? profileTray(info) : [];
-      if (!info.available) { trayNote.dataset.fixed = '1'; trayNote.textContent = 'Подарки профиля недоступны: откройте профиль для просмотра и запустите бота @NFTMatchBot.'; }
+      if (!info.available) { trayNote.dataset.fixed = '1'; trayNote.textContent = 'Подарки профиля не получены' + (info.error ? ' (' + info.error + ')' : '') + '. Запустите бота @NFTMatchBot и откройте подарки в профиле.'; }
     }
     loaded = true; renderTray();
   } catch (e) {
@@ -1021,6 +1024,7 @@ async function switchKind(k) {
     loaded = false; menu.hidden = true; select(null);
     state.stickers.slice().forEach(s => detach(s.id));
     kind = k; tray = [];
+    document.getElementById('trayTitle').textContent = k === 'profile' ? 'Подарки профиля' : 'Выбранные';
     document.body.classList.toggle('profile', k === 'profile');
     kindEl.querySelectorAll('button').forEach(b => b.classList.toggle('active', b.dataset.kind === k));
     renderTray();
@@ -1080,5 +1084,16 @@ window.addEventListener('load', reportHeight);
 setInterval(reportHeight, 1500);   // страховка: размер меняют и подгружающиеся картинки
 reportHeight();
 window.__card = { tray: () => tray, kind: () => kind, switchKind, state, addToCard, evict, autoAdd, findPlacement, select, tiltTarget, get carry() { return carry; } };
+
+
+/* ---- «Выбранные» можно свернуть: состояние помним в браузере */
+const trayBoxEl = document.getElementById('trayBox');
+function setTrayCollapsed(on) {
+  trayBoxEl.classList.toggle('collapsed', on);
+  try { localStorage.setItem('cdTrayCollapsed', on ? '1' : ''); } catch (e) { /* ignore */ }
+  setTimeout(reportHeight, 50);
+}
+document.getElementById('trayHead').onclick = () => setTrayCollapsed(!trayBoxEl.classList.contains('collapsed'));
+try { if (localStorage.getItem('cdTrayCollapsed')) trayBoxEl.classList.add('collapsed'); } catch (e) { /* ignore */ }
 
 })();

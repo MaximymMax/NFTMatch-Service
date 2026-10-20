@@ -265,3 +265,9 @@ body.fs .bin { bottom: -78px; }
 body.profile .app { grid-template-columns: minmax(0, 1fr); max-width: 560px; margin: 0 auto; }
 body.profile .right { display: none; }
 body.fs .kind, body.fs .trayBox { display: none; }
+
+/* сворачиваемый блок «Выбранные» */
+.trayHead { cursor: pointer; user-select: none; }
+.trayHead::after { content: '▾'; margin-left: auto; color: var(--muted); transition: transform .2s; }
+.trayBox.collapsed .trayHead::after { transform: rotate(-90deg); }
+.trayBox.collapsed .tray, .trayBox.collapsed .note { display: none; }
