@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="../styles.css">
     <link rel="stylesheet" href="../glow.css?v=5">
     <link rel="stylesheet" href="../shared-admin-nav.css?v=18">
-    <link rel="stylesheet" href="./card.css?v=1">
+    <link rel="stylesheet" href="./card.css?v=2">
     <script src="../config.js"></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="../i18n.js?v=8"></script>
@@ -34,7 +34,7 @@
             </a>
         </div>
     </header>
-    <script src="../shared-admin-nav.js?v=11"></script>
+    <script src="../shared-admin-nav.js?v=10"></script>
 
     <main>
         <div class="main-container">
@@ -66,7 +66,7 @@
 
             <section class="cd-wrap">
                 <h1 class="cd-title">Конструктор карточки</h1>
-                <p class="cd-lead">Соберите карточку из Telegram-подарков: добавьте до <b>10</b> моделей, перетаскивайте их, поворачивайте и меняйте размер. Карточка сохраняется автоматически.</p>
+                <p class="cd-lead">Соберите карточку из Telegram-подарков: выберите коллекцию или найдите модель поиском, перетащите подарок на карточку (до <b>10</b>), двигайте, вращайте и меняйте размер. Карточку можно наклонять мышью или пальцем. Всё сохраняется автоматически.</p>
 
                 <!-- Гейт: карточка привязана к Telegram-аккаунту -->
                 <div id="cd-gate" class="cd-gate" hidden>
@@ -74,36 +74,12 @@
                     <a href="../index.html" class="cd-btn cd-btn-primary">Войти на главной</a>
                 </div>
 
-                <div id="cd-app" class="cd-app" hidden>
-                    <div class="cd-stage-col">
-                        <div class="cd-card" id="cd-card" aria-label="Карточка">
-                            <div class="cd-card-bg"></div>
-                            <div class="cd-card-brand">NFT MATCH</div>
-                            <div class="cd-card-empty" id="cd-empty">Добавьте подарок из поиска ниже</div>
-                            <div class="cd-layer" id="cd-layer"></div>
-                        </div>
-                        <div class="cd-bar">
-                            <span class="cd-count" id="cd-count">0 / 10</span>
-                            <span class="cd-status" id="cd-status"></span>
-                            <button type="button" class="cd-btn" id="cd-delete" disabled>Убрать выбранный</button>
-                            <button type="button" class="cd-btn cd-btn-danger" id="cd-clear" disabled>Очистить</button>
-                        </div>
-                        <p class="cd-hint">Тащите стикер, чтобы переместить. У выбранного стикера угловая ручка <b>↻</b> меняет поворот и размер, колёсико мыши — размер.</p>
-                    </div>
-
-                    <div class="cd-search-col">
-                        <input type="search" id="cd-q" class="cd-input" placeholder="Поиск по модели или коллекции…" autocomplete="off" spellcheck="false">
-                        <div class="cd-results" id="cd-results"></div>
-                        <button type="button" class="cd-btn cd-more" id="cd-more" hidden>Показать ещё</button>
-                        <div class="cd-note" id="cd-note"></div>
-                    </div>
-                </div>
+                <iframe id="cd-frame" class="cd-frame" title="Редактор карточки" hidden></iframe>
             </section>
         </div>
     </main>
 
-    <div class="cd-toast" id="cd-toast" role="status"></div>
-    <script src="./card.js?v=1"></script>
+        <script src="./card.js?v=2"></script>
 </body>
 
 </html>
