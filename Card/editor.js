@@ -79,7 +79,7 @@ void main(){
   vec2 p = q*vec2(asp,1.);
 
   // brushed (circular) metal: bright / dark sectors around a focal point that follows the tilt
-  vec2 focus = vec2(.09 + uTilt.y*.55, .06 - uTilt.x*.45);
+  vec2 focus = vec2(0., 0.);      // центр бликов всегда в центре карточки, при наклоне не съезжает
   vec2 d = p - focus;
   float r = length(d);
   float a = atan(d.y, d.x);
@@ -205,11 +205,6 @@ stage.addEventListener('pointermove', e => {
 const endTilt = e => { if (tiltDrag && e.pointerId === tiltDrag.id) { tiltDrag = null; tiltTarget.x = 0; tiltTarget.y = 0; } };
 stage.addEventListener('pointerup', endTilt);
 stage.addEventListener('pointercancel', endTilt);
-window.addEventListener('deviceorientation', e => {            // phones: tilt with the device
-  if (tiltDrag || e.gamma == null) return;
-  tiltTarget.y = clamp((e.gamma || 0) / 60, -.45, .45);
-  tiltTarget.x = clamp(((e.beta || 45) - 45) / 80, -.35, .35);
-}, true);
 
 /* ------------------------------------------------------------------ render loop */
 let last = performance.now();
