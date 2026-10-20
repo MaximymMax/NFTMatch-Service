@@ -1124,4 +1124,211 @@ function setTrayCollapsed(on) {
 document.getElementById('trayHead').onclick = () => { if (kind === 'catalog') setTrayCollapsed(!trayBoxEl.classList.contains('collapsed')); };
 try { if (localStorage.getItem('cdTrayCollapsed')) trayBoxEl.classList.add('collapsed'); } catch (e) { /* ignore */ }
 
+
+/* ================================================================== «Поделиться»: рендер карточки в картинку */
+/* Картинка 2400×1500: фон #283043 со светлым радиальным градиентом в центре, юзернейм бота слева сверху и сама
+   карточка. Шейдер рисуется заново в большом разрешении (без наклона), текст, чип и стикеры — на 2D-холсте;
+   размеры и позиции берутся из тех же долей, что и в вёрстке карточки. */
+const SHARE = { W: 2400, H: 1500, CW: 1760, BG: '#283043' };
+
+function glCardCanvas(w, h) {
+  const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+  const g = cv.getContext('webgl', { antialias: true, preserveDrawingBuffer: true, alpha: false });
+  if (!g) return null;
+  const sh = (t, src) => { const s = g.createShader(t); g.shaderSource(s, src); g.compileShader(s); return s; };
+  const pr = g.createProgram();
+  g.attachShader(pr, sh(g.VERTEX_SHADER, VS)); g.attachShader(pr, sh(g.FRAGMENT_SHADER, FS));
+  g.linkProgram(pr); g.useProgram(pr);
+  g.bindBuffer(g.ARRAY_BUFFER, g.createBuffer());
+  g.bufferData(g.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), g.STATIC_DRAW);
+  const loc = g.getAttribLocation(pr, 'p'); g.enableVertexAttribArray(loc); g.vertexAttribPointer(loc, 2, g.FLOAT, false, 0, 0);
+  const u = n => g.getUniformLocation(pr, n);
+  g.viewport(0, 0, w, h);
+  g.uniform2f(u('uSize'), w, h); g.uniform2f(u('uTilt'), 0, 0);
+  g.uniform3fv(u('uC0'), colorNow.c0); g.uniform3fv(u('uC1'), colorNow.c1);
+  g.uniform3fv(u('uP0'), colorNow.c0); g.uniform3fv(u('uP1'), colorNow.c1);
+  g.uniform2f(u('uOrg'), .5, .5); g.uniform1f(u('uRad'), -1); g.uniform1f(u('uSoft'), 1);
+  g.uniform1f(u('uTime'), performance.now() / 1000);
+  g.drawArrays(g.TRIANGLES, 0, 3);
+  return cv;
+}
+function loadImgCors(url) {
+  return new Promise(res => { const i = new Image(); i.crossOrigin = 'anonymous'; i.onload = () => res(i); i.onerror = () => res(null); i.src = url; });
+}
+function rrPath(x, w, h, r) {
+  x.beginPath(); x.moveTo(r, 0); x.arcTo(w, 0, w, h, r); x.arcTo(w, h, 0, h, r); x.arcTo(0, h, 0, 0, r); x.arcTo(0, 0, w, 0, r); x.closePath();
+}
+/* текст с межбуквенным интервалом (letterSpacing у canvas есть не везде), возвращает ширину */
+function spaced(x, text, px, py, sp, draw) {
+  let cx = px;
+  for (const ch of text) { if (draw) x.fillText(ch, cx, py); cx += x.measureText(ch).width + sp; }
+  return cx - px - sp;
+}
+
+async function renderCardImage() {
+  const { W, H, CW } = SHARE, CH = Math.round(CW / 1.648), cq = CW / 100;
+  try { await Promise.all(['500 40px Roboto', '400 40px Roboto', '700 40px "Roboto Mono"', '700 40px Inter'].map(f => document.fonts.load(f))); } catch (e) { /* ignore */ }
+
+  const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+  const x = cv.getContext('2d');
+
+  // фон: #283043 и светлое радиальное свечение в центре
+  x.fillStyle = SHARE.BG; x.fillRect(0, 0, W, H);
+  const rg = x.createRadialGradient(W / 2, H / 2, 0, W / 2, H / 2, Math.hypot(W, H) * .46);
+  rg.addColorStop(0, 'rgba(255,255,255,.24)'); rg.addColorStop(.55, 'rgba(255,255,255,.07)'); rg.addColorStop(1, 'rgba(255,255,255,0)');
+  x.fillStyle = rg; x.fillRect(0, 0, W, H);
+
+  // юзернейм бота слева сверху
+  x.fillStyle = 'rgba(255,255,255,.9)'; x.font = '700 52px Inter, Roboto, sans-serif'; x.textBaseline = 'top';
+  x.fillText('@' + (CFG.BOT_USERNAME || 'NFTMatchBot'), 90, 80);
+
+  // стикеры нужны до рисования (загружаем параллельно)
+  const stickers = state.stickers.slice().sort((a, b) => (a.z || 0) - (b.z || 0));
+  const imgs = await Promise.all(stickers.map(s => { const [g, m] = splitId(s.src); return loadImgCors(imgUrl(g, m)); }));
+  const glc = glCardCanvas(CW, CH);
+
+  const c0 = colorNow.c0, c1 = colorNow.c1, white = [1, 1, 1], black = [0, 0, 0];
+  x.save(); x.translate(Math.round((W - CW) / 2), Math.round((H - CH) / 2 + 30));
+
+  // тень под карточкой, затем сама карточка (скруглённый прямоугольник)
+  rrPath(x, CW, CH, CW * .076);
+  x.shadowColor = 'rgba(0,0,0,.5)'; x.shadowBlur = 90; x.shadowOffsetY = 40; x.fillStyle = '#16213a'; x.fill();
+  x.shadowColor = 'transparent'; x.shadowBlur = 0; x.shadowOffsetY = 0;
+  x.save(); rrPath(x, CW, CH, CW * .076); x.clip();
+  if (glc) x.drawImage(glc, 0, 0);
+  else { const lg = x.createLinearGradient(0, 0, CW, CH); lg.addColorStop(0, rgb2css(c0)); lg.addColorStop(1, rgb2css(c1)); x.fillStyle = lg; x.fillRect(0, 0, CW, CH); }
+
+  // баланс: бриллиант, «11 GRAM», «$33.00»
+  const by = CH * .41, gs = 8.4 * cq;
+  x.save(); x.translate(6.6 * cq, by - gs / 2); x.scale(gs / 64, gs / 64);
+  const gB = x.createLinearGradient(0, 8, 0, 58); gB.addColorStop(0, rgb2css(mix(c0, white, .86))); gB.addColorStop(1, rgb2css(mix(c1, white, .35)));
+  const gA = x.createLinearGradient(14, 8, 50, 22); gA.addColorStop(0, '#fff'); gA.addColorStop(1, rgb2css(mix(c0, white, .55)));
+  x.shadowColor = 'rgba(0,0,0,.18)'; x.shadowBlur = 1.2 * 64 / gs * cq * .5; x.shadowOffsetY = .4 * cq * 64 / gs;
+  x.fillStyle = gB; x.fill(new Path2D('M14 8h36l12 14-30 36L2 22z'));
+  x.shadowColor = 'transparent';
+  x.globalAlpha = .95; x.fillStyle = gA; x.fill(new Path2D('M14 8 24 22h16L50 8z'));
+  x.globalAlpha = .28; x.fillStyle = '#fff'; x.fill(new Path2D('M2 22h22L32 58zM62 22H40L32 58z'));
+  x.globalAlpha = .12; x.fill(new Path2D('M24 22 32 58 40 22z'));
+  x.globalAlpha = 1; x.fill(new Path2D('M47 6l1.6 4.2L53 12l-4.4 1.8L47 18l-1.6-4.2L41 12l4.4-1.8z'));
+  x.restore();
+
+  const fsz = 9.4 * cq;
+  x.textBaseline = 'alphabetic'; x.fillStyle = '#fff'; x.font = '500 ' + fsz + 'px Roboto, sans-serif';
+  x.shadowColor = 'rgba(0,0,0,.16)'; x.shadowBlur = .8 * cq; x.shadowOffsetY = .3 * cq;
+  const ax = 6.6 * cq + gs + 2.2 * cq, ay = by + fsz * .36;
+  x.fillText('11', ax, ay);
+  x.fillText('GRAM', ax + x.measureText('11').width + 2.2 * cq, ay);
+  x.shadowColor = 'transparent';
+  x.fillStyle = rgb2css(mix(c0, white, .62)); x.font = '400 ' + 4.6 * cq + 'px Roboto, sans-serif';
+  x.fillText('$33.00', 6.9 * cq, CH * .515 + 4.6 * cq * .95);
+
+  // имя владельца внизу слева
+  const holder = (document.getElementById('holder').textContent || 'COLLECTOR');
+  x.font = '700 ' + 3.6 * cq + 'px "Roboto Mono", monospace'; x.fillStyle = '#fff';
+  x.shadowColor = rgb2css(mix(c1, black, .55)); x.shadowBlur = .5 * cq; x.shadowOffsetY = .35 * cq;
+  spaced(x, holder, 6.6 * cq, CH * (1 - .085) - 3.6 * cq * .2, .08 * 3.6 * cq, true);
+  x.shadowColor = 'transparent';
+
+  // слова на торце: две вертикальные колонки
+  x.font = '700 ' + 2.85 * cq + 'px "Roboto Mono", monospace'; x.fillStyle = rgb2css(mix(c1, black, .12));
+  [[0, 3.4 / 2 + 2.4], [6, 3.4 / 2 + 2.4 + 3.5]].forEach(([from, off]) => {
+    const words = WORDS.slice(from, from + 6), sp = .05 * 2.85 * cq;
+    const widths = words.map(w => spaced(x, w, 0, 0, sp, false));
+    const top = CH * .065, span = CH * .87, gap = (span - widths.reduce((a, b) => a + b, 0)) / (words.length - 1);
+    let y = top;
+    words.forEach((w, i) => {
+      x.save(); x.translate(CW - off * cq, y); x.rotate(Math.PI / 2); x.textBaseline = 'middle';
+      spaced(x, w, 0, 0, sp, true); x.restore();
+      y += widths[i] + gap;
+    });
+  });
+
+  // стикеры
+  stickers.forEach((st, i) => {
+    const im = imgs[i]; if (!im) return;
+    const S = CW * .231 * st.sc;
+    x.save(); x.translate(st.x * CW, st.y * CH); x.rotate((st.r || 0) * Math.PI / 180);
+    x.shadowColor = 'rgba(10,15,28,.28)'; x.shadowBlur = 1.4 * cq; x.shadowOffsetY = .6 * cq;
+    x.drawImage(im, -S / 2, -S / 2, S, S); x.restore();
+  });
+
+  // чип поверх стикеров (в карточке под него вырезано отверстие — его нельзя закрыть)
+  x.save(); x.translate(69.94 * cq, CH * .361);
+  const cw2 = 14.29 * cq, ch2 = CH * .1756;
+  rrPath(x, cw2, ch2, 3 * cq);
+  x.shadowColor = 'rgba(0,0,0,.28)'; x.shadowBlur = 1.4 * cq; x.shadowOffsetY = .6 * cq;
+  const cg = x.createLinearGradient(0, 0, cw2, ch2);
+  cg.addColorStop(0, '#fbfbfb'); cg.addColorStop(.38, '#d9dbde'); cg.addColorStop(.52, '#b4b8bd'); cg.addColorStop(1, '#e9eaec');
+  x.fillStyle = cg; x.fill(); x.shadowColor = 'transparent';
+  x.translate(cw2 / 2 - 3.3 * cq, ch2 / 2 - 3.3 * cq); x.scale(6.6 * cq / 32, 6.6 * cq / 32);
+  x.strokeStyle = '#6f7478'; x.lineWidth = 2.6; x.lineJoin = 'round';
+  [[5, 5], [18.6, 5], [5, 18.6]].forEach(([qx, qy]) => { x.save(); x.translate(qx, qy); rrPath(x, 8.4, 8.4, 2); x.stroke(); x.restore(); });
+  x.fillStyle = '#6f7478';
+  [[19, 19], [24, 19], [19, 24], [24, 24]].forEach(([qx, qy]) => { x.save(); x.translate(qx, qy); rrPath(x, 3.4, 3.4, .7); x.fill(); x.restore(); });
+  x.restore();
+
+  x.restore();   // clip карточки
+  x.restore();
+  return cv;
+}
+
+/* ---- окно «Поделиться»: строится в родительской странице, чтобы быть поверх всего (в т.ч. полноэкранного режима) */
+function shareModal() {
+  const D = P.document;
+  if (!D.getElementById('cdShareCss')) {
+    const st = D.createElement('style'); st.id = 'cdShareCss';
+    st.textContent = '#cdShare{position:fixed;inset:0;z-index:10050;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(8,12,24,.72);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);font-family:Inter,Roboto,sans-serif}' +
+      '#cdShare .p{width:min(94vw,920px);max-height:94vh;overflow:auto;background:#16213a;border-radius:20px;padding:16px;color:#f1f5fa;box-shadow:0 20px 70px rgba(0,0,0,.6)}' +
+      '#cdShare .h{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;font-weight:800;font-size:16px}' +
+      '#cdShare .x{width:36px;height:36px;border-radius:18px;background:#1e2944;color:#fff;border:0;font-size:18px;cursor:pointer}' +
+      '#cdShare .pv{display:flex;align-items:center;justify-content:center;min-height:160px;border-radius:14px;background:#283043;overflow:hidden;color:#8fa0c4;font-size:14px}' +
+      '#cdShare .pv img{display:block;width:100%;height:auto}' +
+      '#cdShare .b{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap}' +
+      '#cdShare .b button{flex:1 1 140px;border:0;border-radius:12px;padding:13px 14px;font:700 14px Inter,sans-serif;cursor:pointer;background:#1e2944;color:#dbe4fa}' +
+      '#cdShare .b button.pr{background:#2563eb;color:#fff}#cdShare .b button:disabled{opacity:.45;cursor:default}' +
+      '#cdShare .m{margin-top:10px;font-size:12px;color:#8fa0c4;text-align:center;min-height:16px}';
+    D.head.appendChild(st);
+  }
+  const old = D.getElementById('cdShare'); if (old) old.remove();
+  const o = D.createElement('div'); o.id = 'cdShare';
+  o.innerHTML = '<div class="p"><div class="h"><span>Поделиться карточкой</span><button class="x" aria-label="Закрыть">✕</button></div>' +
+    '<div class="pv">Готовлю картинку…</div>' +
+    '<div class="b"><button class="dl" disabled>Скачать</button><button class="pr sh" disabled>Переслать</button></div><div class="m"></div></div>';
+  D.body.appendChild(o);
+  return o;
+}
+async function openShare() {
+  const o = shareModal(), D = P.document;
+  let url = null;
+  const close = () => { if (url) URL.revokeObjectURL(url); o.remove(); };
+  o.querySelector('.x').onclick = close;
+  o.addEventListener('pointerdown', e => { if (e.target === o) close(); });
+  const note = t => { o.querySelector('.m').textContent = t; };
+  let blob;
+  try {
+    const cv = await renderCardImage();
+    blob = await new Promise(r => cv.toBlob(r, 'image/png'));
+    if (!blob) throw new Error('empty');
+  } catch (e) {
+    o.querySelector('.pv').textContent = 'Не удалось подготовить картинку'; return;
+  }
+  url = URL.createObjectURL(blob);
+  const pv = o.querySelector('.pv'); pv.textContent = ''; const img = D.createElement('img'); img.src = url; img.alt = 'Карточка'; pv.appendChild(img);
+  const file = new File([blob], 'nftmatch-card.png', { type: 'image/png' });
+  const dl = o.querySelector('.dl'), sh = o.querySelector('.sh');
+  dl.disabled = false; sh.disabled = false;
+  dl.onclick = () => { const a = D.createElement('a'); a.href = url; a.download = 'nftmatch-card.png'; D.body.appendChild(a); a.click(); a.remove(); note('Картинка сохраняется…'); };
+  sh.onclick = async () => {
+    try {
+      if (P.navigator.canShare && P.navigator.canShare({ files: [file] })) { await P.navigator.share({ files: [file], title: 'Моя карточка NFT Match' }); return; }
+    } catch (e) { if (e && e.name === 'AbortError') return; }
+    try {
+      await P.navigator.clipboard.write([new P.ClipboardItem({ 'image/png': blob })]);
+      note('Картинка скопирована — вставьте её в чат.');
+    } catch (e) { note('Нажмите и удерживайте картинку, чтобы сохранить или переслать, либо нажмите «Скачать».'); }
+  };
+}
+document.getElementById('btnShare').onclick = openShare;
+window.__share = { render: renderCardImage, open: openShare };
+
 })();
