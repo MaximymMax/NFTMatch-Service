@@ -354,7 +354,7 @@ function layoutStickers() { state.stickers.forEach(st => placeSticker(st, 'insta
 function createStickerEl(st) {
   const el = document.createElement('div');
   el.className = 'sticker'; el.dataset.id = st.id;
-  el.appendChild(staticArt(st.id));
+  el.appendChild(staticArt(st.src));
   stickersEl.appendChild(el); stickerEls.set(st.id, el);
   return el;
 }
@@ -363,7 +363,7 @@ function createStickerEl(st) {
 function addToCard(gid, loc, sc, r, fromRect) {
   const list = state.stickers.slice().sort((a, b) => a.t - b.t);
   while (state.stickers.length >= MAX_STICKERS) evict(list.shift());           // 11th sticker: the oldest goes back to the list
-  const st = { id: gid, x: loc.x / cardW, y: loc.y / cardH, sc, r: r || 0, z: ++zSeq, t: ++tSeq };
+  const st = { id: newInstId(gid), src: gid, x: loc.x / cardW, y: loc.y / cardH, sc, r: r || 0, z: ++zSeq, t: ++tSeq };
   state.stickers.push(st);
   const el = createStickerEl(st);
   landFrom(st, el, fromRect);
@@ -392,7 +392,7 @@ function detach(gid) {
 function evict(st) {                                                           // flies back to its tile in the list
   const el = stickerEls.get(st.id), r = el ? el.getBoundingClientRect() : null, rot = st.r;
   detach(st.id);
-  if (r) flyBack(st.id, r, rot);
+  if (r) flyBack(st.src, r, rot);
 }
 function tileArt(gid) { const t = tiles.get(gid); return t && t.firstChild; }
 function flyBack(gid, r, rot) {
@@ -516,7 +516,7 @@ function gMove(e) {
   if (Math.hypot(e.clientX - G.sx, e.clientY - G.sy) <= SLOP) return;
   clearTimeout(G.timer); clearTimeout(G.hold);
   if (G.kind === 'stk') startCarry(e, G.st);
-  else if (G.center && !getSt(G.gid)) startCarry(e, null);                    // only from the middle of a tile, and only if it is not on the card yet
+  else if (G.center) startCarry(e, null);                    // only from the middle of a tile, and only if it is not on the card yet
   else cancelG();
 }
 function cancelG() { if (!G) return; clearTimeout(G.timer); clearTimeout(G.hold); if (G.tile) G.tile.classList.remove('held'); G = null; }
@@ -537,12 +537,12 @@ function gUp(e, cancelled) {
 /* ---- carrying: a copy of the sticker follows the finger (it first glides there from where it was) */
 function tileSize(gid) { const a = tileArt(gid); return a ? a.getBoundingClientRect().width * .66 : 60; }
 function startCarry(e, st) {
-  const gid = st ? st.id : G.gid;
+  const gid = st ? st.src : G.gid;
   menu.hidden = true; hideHint();
   const c = { gid, fromCard: !!st, st, x: e.clientX, y: e.clientY, hist: [], rot: 0, size: 0, hot: false, inCard: false, ox: 0, oy: 0 };
   let cx, cy;
   if (st) {
-    const el = stickerEls.get(gid), r = el.getBoundingClientRect();
+    const el = stickerEls.get(st.id), r = el.getBoundingClientRect();
     cx = r.left + r.width / 2; cy = r.top + r.height / 2; c.size = r.width; c.rot = st.r || 0;
     c.origin = { x: st.x, y: st.y, sc: st.sc, r: st.r };
     el.style.opacity = '0'; select(null);   // opacity, not visibility: duplicated svg ids would lose their clip paths
@@ -588,17 +588,17 @@ function dropCarry(g, e, cancelled) {
   const spot = { x: clamp(here.x, 0, cardW), y: clamp(here.y, 0, cardH) };
   const vel = velocityOf(c);
   if (c.fromCard) {
-    const st = c.st, el = stickerEls.get(c.gid);
-    if (!el || !getSt(c.gid)) return;
+    const st = c.st, el = stickerEls.get(st.id);
+    if (!el || !getSt(st.id)) return;
     el.style.opacity = '';
     if (cancelled) { placeSticker(st, 'ease'); return; }
-    if (c.hot) { detach(c.gid); flyToBin(gr, c.gid); return; }
+    if (c.hot) { detach(st.id); flyToBin(gr, c.gid); return; }
     if (inside) {                                                                   // dropped on the card: stays exactly there, no collision checks
       st.x = spot.x / cardW; st.y = spot.y / cardH; st.z = ++zSeq;
       landFrom(st, el, gr);
       save(); patDirty = true; return;
     }
-    const r = st.r; detach(c.gid); flyBack(c.gid, gr, r);                          // dropped anywhere else: back to the list
+    const r = st.r; detach(st.id); flyBack(c.gid, gr, r);                          // dropped anywhere else: back to the list
     return;
   }
   const fling = !cancelled && vel.v > 700 && (inside || vel.y < -600);              // thrown at the card: automatic placement
@@ -774,10 +774,15 @@ function photoArt(g, m, uid) {
   return wrap;
 }
 
+/* картинка в списке: подарок профиля — фото с фоном, остальное — модель */
+const listArt = item => item.uid ? photoArt(item.gift, item.model, item.uid) : staticArt(item.id);
+let instSeq = 0;
+const newInstId = src => src + '#' + (++instSeq);
+const countOn = src => state.stickers.filter(s => s.src === src).length;
+
 /* картинка стикера: PNG модели (вместо Lottie из примера) */
 function staticArt(gid) {
-  const [g, m, uid] = splitId(gid);
-  if (uid) return photoArt(g, m, uid);
+  const [g, m] = splitId(gid);
   const wrap = document.createElement('div'); wrap.className = 'lot';
   const img = new Image(); img.decoding = 'async'; img.draggable = false; img.alt = m; img.src = imgUrl(g, m);
   wrap.appendChild(img);
@@ -801,7 +806,7 @@ async function flushSave(keepalive) {
   saving = true; dirty = false;
   const payload = {
     stickers: state.stickers.slice().sort((a, b) => (a.z || 0) - (b.z || 0)).map(s => {
-      const [gift, model, uid] = splitId(s.id);
+      const [gift, model, uid] = splitId(s.src);
       return { gift, model, uid: uid || null, x: +s.x.toFixed(4), y: +s.y.toFixed(4), r: +wrap180(s.r || 0).toFixed(1), sc: +s.sc.toFixed(3) };
     })
   };
@@ -858,7 +863,7 @@ function addTrayTile(item) {
   const t = document.createElement('div');
   t.className = 'tile' + (item.uid ? ' photo' : ''); t.dataset.id = item.id; t.title = item.model + ' — ' + item.gift;
   t.innerHTML = '<div class="art"></div><b></b><small></small>';
-  t.firstChild.appendChild(staticArt(item.id));
+  t.firstChild.appendChild(listArt(item));
   const zone = document.createElement('div'); zone.className = 'zone'; t.firstChild.appendChild(zone);
   t.children[1].textContent = item.model; t.children[2].textContent = item.sub || item.gift;
   trayEl.appendChild(t); tiles.set(item.id, t);
@@ -873,7 +878,7 @@ const TRAY_MAX = 60;
 function toggleTray(gift, model) {
   const id = sid(gift, model), i = tray.findIndex(t => t.id === id);
   if (i >= 0) {
-    if (getSt(id)) { toast('Эта модель на карточке — сначала уберите её оттуда'); return; }
+    if (countOn(id)) { toast('Эта модель на карточке — сначала уберите её оттуда'); return; }
     tray.splice(i, 1);
   } else {
     if (tray.length >= TRAY_MAX) { toast('В выбранных может быть не больше ' + TRAY_MAX + ' моделей'); return; }
@@ -885,7 +890,8 @@ function refreshTiles() {
   tiles.forEach((t, id) => {
     const art = t.firstChild;
     art.querySelectorAll('.onc').forEach(n => n.remove());
-    if (getSt(id)) { const o = document.createElement('span'); o.className = 'onc'; o.textContent = 'На карточке'; art.appendChild(o); }
+    const n = countOn(id);
+    if (n) { const o = document.createElement('span'); o.className = 'onc'; o.textContent = n > 1 ? 'На карточке ×' + n : 'На карточке'; art.appendChild(o); }
   });
   catTiles.forEach((t, id) => t.classList.toggle('picked', tray.some(x => x.id === id)));
   document.getElementById('trayOn').textContent = 'на карточке ' + state.stickers.length + ' / ' + MAX_STICKERS;
@@ -896,8 +902,9 @@ function refreshTiles() {
 
 /* ---- меню по долгому нажатию: единственное действие — добавить / убрать */
 function openMenu(id, tile) {
-  const onCard = !!getSt(id);
-  menu.innerHTML = '<button data-a="sticker">' + (onCard ? ICON_REMOVE : ICON_ADD) + '<span>' + (onCard ? 'Убрать с карточки' : 'Добавить на карточку') + '</span></button>' +
+  const onCard = countOn(id) > 0;
+  menu.innerHTML = '<button data-a="sticker">' + ICON_ADD + '<span>Добавить на карточку</span></button>' +
+    (onCard ? '<button data-a="unstick">' + ICON_REMOVE + '<span>Убрать с карточки</span></button>' : '') +
     (kind === 'catalog' ? '<hr><button data-a="untray">' + ICON_REMOVE + '<span>Убрать из выбранных</span></button>' : '');
   menu.hidden = false;
   const a = app.getBoundingClientRect(), r = tile.getBoundingClientRect();
@@ -908,9 +915,11 @@ function openMenu(id, tile) {
     const b = e.target.closest('button'); if (!b) return;
     menu.hidden = true;
     if (b.dataset.a === 'untray') {
-      const st = getSt(id); if (st) detach(st.id);
+      state.stickers.filter(s => s.src === id).forEach(s => detach(s.id));
       tray = tray.filter(t => t.id !== id); renderTray(); save();
-    } else if (onCard) evict(getSt(id)); else autoAdd(id);
+    } else if (b.dataset.a === 'unstick') {
+      const last = state.stickers.filter(s => s.src === id).sort((a, b) => (b.t || 0) - (a.t || 0))[0]; if (last) evict(last);
+    } else autoAdd(id);
   };
 }
 document.addEventListener('pointerdown', e => { if (!menu.hidden && !e.target.closest('.menu')) menu.hidden = true; }, true);
@@ -1014,12 +1023,12 @@ async function loadKind() {
     const data = await apiGet('Card/Get?kind=' + kind);
     const minS = px(32) / U();
     (data.stickers || []).slice(0, MAX_STICKERS).forEach(s => {
-      const st = { id: sid(s.gift, s.model, s.uid), x: +s.x, y: +s.y, sc: clamp(+s.sc || 1, minS, SC_MAX), r: +s.r || 0, z: ++zSeq, t: ++tSeq };
+      const src = sid(s.gift, s.model, s.uid), st = { id: newInstId(src), src, x: +s.x, y: +s.y, sc: clamp(+s.sc || 1, minS, SC_MAX), r: +s.r || 0, z: ++zSeq, t: ++tSeq };
       state.stickers.push(st); createStickerEl(st); placeSticker(st, 'instant');
     });
     if (kind === 'catalog') {
       tray = (data.tray || []).map(t => ({ id: sid(t.gift, t.model), gift: t.gift, model: t.model }));
-      state.stickers.forEach(s => { if (!tray.some(t => t.id === s.id)) { const [gift, model] = splitId(s.id); tray.push({ id: s.id, gift, model }); } });
+      state.stickers.forEach(s => { if (!tray.some(t => t.id === s.src)) { const [gift, model] = splitId(s.src); tray.push({ id: s.src, gift, model }); } });
     } else {
       let info;
       try { info = await apiGet('Card/ProfileGifts'); } catch (e) { info = { available: false, error: 'HTTP ' + (e.status || '?') }; }
