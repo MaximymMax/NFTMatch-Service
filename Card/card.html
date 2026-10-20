@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>NFT MATCH — Карточка</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles.css">
+    <link rel="stylesheet" href="../glow.css?v=5">
+    <link rel="stylesheet" href="../shared-admin-nav.css?v=18">
+    <link rel="stylesheet" href="./card.css?v=1">
+    <script src="../config.js"></script>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="../i18n.js?v=8"></script>
+    <script src="../auth.js"></script>
+    <script src="../auth-badge.js"></script>
+</head>
+
+<body>
+    <!-- Шапка и вкладки — те же, что на Тематиках/Монохромах (см. Thematic/themes.html). -->
+    <header class="cw-page-header">
+        <div class="cw-header-group"></div>
+        <div class="cw-header-group">
+            <a href="https://github.com/MaximymMax/NFTMatch-Service" target="_blank" class="cw-header-link cw-header-link-gh cw-header-link-labeled cw-header-gh-slot" title="GitHub">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5C5.73.5.5 5.73.5 12c0 5.08 3.29 9.39 7.86 10.9.57.1.78-.25.78-.55 0-.27-.01-1.13-.02-2.04-3.2.7-3.88-1.35-3.88-1.35-.53-1.33-1.29-1.69-1.29-1.69-1.05-.72.08-.7.08-.7 1.17.08 1.78 1.2 1.78 1.2 1.03 1.77 2.71 1.26 3.37.96.1-.75.4-1.26.72-1.55-2.55-.29-5.24-1.28-5.24-5.7 0-1.26.45-2.29 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.18 1.18a11 11 0 015.8 0c2.2-1.49 3.17-1.18 3.17-1.18.64 1.59.24 2.76.12 3.05.74.8 1.19 1.83 1.19 3.09 0 4.43-2.7 5.41-5.26 5.69.42.36.77 1.06.77 2.15 0 1.56-.01 2.81-.01 3.19 0 .3.2.66.79.55A11.5 11.5 0 0023.5 12C23.5 5.73 18.27.5 12 .5z"/></svg>
+                <span>GitHub</span>
+            </a>
+            <a href="../API_info/api.html" class="cw-header-link cw-header-link-api cw-header-link-labeled" title="API">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                </svg>
+                <span>API</span>
+            </a>
+        </div>
+    </header>
+    <script src="../shared-admin-nav.js?v=10"></script>
+
+    <main>
+        <div class="main-container">
+            <div class="glow-effect glow-left"></div>
+            <div class="glow-effect glow-right"></div>
+
+            <div class="cw-tabs">
+                <a href="../Monohrome/background-finder.html" class="cw-tab">
+                    <img src="https://cdn.changes.tg/gifts/models/Spring%20Basket/png/Knitty%20Kitty.png" alt="">
+                    <span>Монохромы</span>
+                </a>
+                <a href="../Thematic/themes.html" class="cw-tab">
+                    <img src="https://cdn.changes.tg/gifts/models/Restless%20Jar/png/Kittens.png" alt="">
+                    <span>Тематики</span>
+                </a>
+                <a href="../index.html" class="cw-tab" data-tab="home">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 11.5 12 4l9 7.5M5 10v9a1 1 0 001 1h4v-6h4v6h4a1 1 0 001-1v-9"/></svg>
+                    <span>Главная</span>
+                </a>
+                <a href="../index.html#search-similar" class="cw-tab" data-tab="search">
+                    <img src="https://cdn.changes.tg/gifts/models/Snake%20Box/png/Seashore.png" alt="">
+                    <span>Похожие</span>
+                </a>
+                <a href="./card.html" class="cw-tab active" data-tab="card">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="3"/><path stroke-linecap="round" d="M3 10h18"/></svg>
+                    <span>Карточка</span>
+                </a>
+            </div>
+
+            <section class="cd-wrap">
+                <h1 class="cd-title">Конструктор карточки</h1>
+                <p class="cd-lead">Соберите карточку из Telegram-подарков: добавьте до <b>10</b> моделей, перетаскивайте их, поворачивайте и меняйте размер. Карточка сохраняется автоматически.</p>
+
+                <!-- Гейт: карточка привязана к Telegram-аккаунту -->
+                <div id="cd-gate" class="cd-gate" hidden>
+                    <p>Раздел пока доступен только администратору. Войдите через Telegram на главной.</p>
+                    <a href="../index.html" class="cd-btn cd-btn-primary">Войти на главной</a>
+                </div>
+
+                <div id="cd-app" class="cd-app" hidden>
+                    <div class="cd-stage-col">
+                        <div class="cd-card" id="cd-card" aria-label="Карточка">
+                            <div class="cd-card-bg"></div>
+                            <div class="cd-card-brand">NFT MATCH</div>
+                            <div class="cd-card-empty" id="cd-empty">Добавьте подарок из поиска ниже</div>
+                            <div class="cd-layer" id="cd-layer"></div>
+                        </div>
+                        <div class="cd-bar">
+                            <span class="cd-count" id="cd-count">0 / 10</span>
+                            <span class="cd-status" id="cd-status"></span>
+                            <button type="button" class="cd-btn" id="cd-delete" disabled>Убрать выбранный</button>
+                            <button type="button" class="cd-btn cd-btn-danger" id="cd-clear" disabled>Очистить</button>
+                        </div>
+                        <p class="cd-hint">Тащите стикер, чтобы переместить. У выбранного стикера угловая ручка <b>↻</b> меняет поворот и размер, колёсико мыши — размер.</p>
+                    </div>
+
+                    <div class="cd-search-col">
+                        <input type="search" id="cd-q" class="cd-input" placeholder="Поиск по модели или коллекции…" autocomplete="off" spellcheck="false">
+                        <div class="cd-results" id="cd-results"></div>
+                        <button type="button" class="cd-btn cd-more" id="cd-more" hidden>Показать ещё</button>
+                        <div class="cd-note" id="cd-note"></div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <div class="cd-toast" id="cd-toast" role="status"></div>
+    <script src="./card.js?v=1"></script>
+</body>
+
+</html>

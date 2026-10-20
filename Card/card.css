@@ -1,0 +1,111 @@
+/* Конструктор карточки. Цвета — переменные сайта из styles.css (--surface-*, --primary-color). */
+
+.cd-wrap { padding: 0 1.5rem 1.5rem; display: flex; flex-direction: column; gap: 14px; }
+.cd-title { font-size: 1.6rem; font-weight: 800; margin: 6px 0 0; }
+.cd-lead { color: var(--text-secondary); font-size: 14px; line-height: 1.5; max-width: 720px; }
+.cd-lead b { color: #fff; }
+
+.cd-gate {
+    background: var(--surface-elevated); border-radius: 14px; padding: 22px;
+    display: flex; flex-direction: column; align-items: flex-start; gap: 14px; color: var(--text-secondary);
+}
+
+.cd-app { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 22px; align-items: start; }
+.cd-app[hidden], .cd-gate[hidden] { display: none; }
+@media (max-width: 760px) { .cd-app { grid-template-columns: minmax(0, 1fr); } .cd-wrap { padding: 0 1rem 1rem; } }
+
+/* ---------- карточка ---------- */
+.cd-stage-col { display: flex; flex-direction: column; gap: 12px; }
+.cd-card {
+    position: relative; width: 100%; aspect-ratio: 1.586; border-radius: 22px;
+    touch-action: none; user-select: none; -webkit-user-select: none;
+    box-shadow: 0 18px 50px rgba(37, 99, 235, .35), 0 0 0 1px rgba(255, 255, 255, .08);
+}
+.cd-card-bg {
+    position: absolute; inset: 0; border-radius: inherit; overflow: hidden;
+    background:
+        radial-gradient(120% 90% at 85% 0%, rgba(59, 130, 246, .55) 0%, transparent 60%),
+        radial-gradient(90% 80% at 0% 100%, rgba(99, 102, 241, .40) 0%, transparent 60%),
+        linear-gradient(145deg, #1e2d57 0%, #121b36 55%, #0b1224 100%);
+}
+.cd-card-bg::after {
+    content: ""; position: absolute; inset: 0;
+    background: linear-gradient(115deg, transparent 35%, rgba(255, 255, 255, .07) 48%, transparent 60%);
+}
+.cd-card-brand {
+    position: absolute; left: 6%; bottom: 8%; font-weight: 800; letter-spacing: .22em;
+    font-size: clamp(11px, 2.6vw, 15px); color: rgba(255, 255, 255, .55); pointer-events: none;
+}
+.cd-card-empty {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    color: var(--text-muted); font-size: 14px; text-align: center; padding: 0 20%; pointer-events: none;
+}
+.cd-card-empty[hidden] { display: none; }
+.cd-layer { position: absolute; inset: 0; overflow: hidden; border-radius: inherit; }
+
+.cd-st {
+    position: absolute; left: 0; top: 0; cursor: grab; touch-action: none;
+    will-change: transform;
+}
+.cd-st img { width: 100%; height: 100%; object-fit: contain; pointer-events: none; -webkit-user-drag: none; filter: drop-shadow(0 4px 8px rgba(0, 0, 0, .35)); }
+.cd-st.drag { cursor: grabbing; }
+.cd-st.sel::before {
+    content: ""; position: absolute; inset: -2px; border-radius: 14px;
+    border: 2px dashed rgba(147, 197, 253, .9); pointer-events: none;
+}
+.cd-knob {
+    position: absolute; width: 30px; height: 30px; right: -8px; bottom: -8px; border-radius: 50%;
+    background: var(--primary-color); color: #fff; border: 2px solid #fff;
+    display: none; align-items: center; justify-content: center; font-size: 16px; line-height: 1;
+    cursor: nwse-resize; touch-action: none; box-shadow: 0 2px 8px rgba(0, 0, 0, .4);
+}
+.cd-st.sel .cd-knob { display: flex; }
+
+.cd-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.cd-count { font-weight: 800; font-size: 14px; background: var(--surface-elevated); padding: 6px 12px; border-radius: 10px; }
+.cd-status { font-size: 12px; color: var(--text-muted); margin-right: auto; }
+.cd-status.err { color: #f87171; }
+.cd-hint { font-size: 12px; color: var(--text-muted); line-height: 1.5; }
+.cd-hint b { color: var(--text-secondary); }
+
+/* ---------- поиск ---------- */
+.cd-search-col { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.cd-input {
+    width: 100%; background: var(--surface-elevated); color: var(--text-primary);
+    border: 1px solid rgba(255, 255, 255, .12); border-radius: 12px; padding: 12px 14px;
+    font: 500 14px 'Inter', sans-serif; outline: none;
+}
+.cd-input:focus { border-color: rgba(37, 99, 235, .8); box-shadow: 0 0 0 3px rgba(37, 99, 235, .25); }
+.cd-results { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 8px; max-height: 460px; overflow-y: auto; padding-right: 2px; }
+.cd-item {
+    display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 6px;
+    background: var(--surface-elevated); border: 1px solid transparent; border-radius: 12px;
+    color: var(--text-primary); font: inherit; cursor: pointer; text-align: center;
+    transition: transform .15s ease, background-color .15s ease, border-color .15s ease;
+}
+.cd-item:hover { transform: translateY(-2px); background: #263355; border-color: rgba(37, 99, 235, .5); }
+.cd-item img { width: 64px; height: 64px; object-fit: contain; }
+.cd-item b { font-size: 12px; font-weight: 700; line-height: 1.2; word-break: break-word; }
+.cd-item small { font-size: 10px; color: var(--text-muted); line-height: 1.2; }
+.cd-note { font-size: 13px; color: var(--text-muted); }
+
+/* ---------- кнопки / тост ---------- */
+.cd-btn {
+    background: var(--surface-elevated); color: var(--text-secondary); border: 1px solid transparent;
+    border-radius: 12px; padding: 9px 14px; font: 700 13px 'Inter', sans-serif; cursor: pointer;
+    text-decoration: none; transition: background-color .15s ease, transform .15s ease;
+}
+.cd-btn:hover:not(:disabled) { background: #263355; color: #fff; transform: translateY(-1px); }
+.cd-btn:disabled { opacity: .4; cursor: default; }
+.cd-btn-primary { background: var(--primary-color); color: #fff; }
+.cd-btn-primary:hover:not(:disabled) { background: var(--primary-hover); }
+.cd-btn-danger:hover:not(:disabled) { background: rgba(239, 68, 68, .3); }
+.cd-more { align-self: center; }
+.cd-toast {
+    position: fixed; left: 50%; bottom: 28px; transform: translate(-50%, 20px); opacity: 0; pointer-events: none;
+    background: #263355; color: #fff; padding: 10px 18px; border-radius: 12px; font-size: 13px; font-weight: 600;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, .4); transition: opacity .2s ease, transform .2s ease; z-index: 200;
+}
+.cd-toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+@media (max-width: 600px) { .cw-tab[data-tab="card"] { order: 4; } }
