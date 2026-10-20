@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <title>Редактор карточки</title>
 <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Roboto+Mono:wght@400;700&family=Inter:wght@500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="./editor.css?v=5">
+<link rel="stylesheet" href="./editor.css?v=6">
 </head>
 <body>
 <!-- Редактор карточки: карточка и перетаскивание перенесены из примера E:\TG Concept\web (WebGL-шейдер,
@@ -18,6 +18,7 @@
       <button type="button" class="active" data-kind="catalog">Из каталога</button>
       <button type="button" data-kind="profile">Подарки профиля</button>
     </div>
+    <div class="status" id="status"></div>
     <div class="stage" id="stage">
       <div class="scene" id="scene">
         <div class="card" id="card">
@@ -60,14 +61,12 @@
     </div>
 
     <div class="bar">
-      <span class="count" id="count">0 / 10</span>
-      <span class="status" id="status"></span>
       <button type="button" class="pill-btn" id="btnFs">⛶ На весь экран</button>
       <button type="button" class="pill-btn" id="btnClear" disabled>Очистить</button>
     </div>
 
     <div class="trayBox" id="trayBox">
-      <div class="trayHead" id="trayHead"><b id="trayTitle">Выбранные</b><span id="trayCount"></span></div>
+      <div class="trayHead" id="trayHead"><b id="trayTitle">Выбранные</b><span id="trayCount"></span><span class="on" id="trayOn"></span><span class="chev" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span></div>
       <div class="grid tray" id="tray"></div>
       <div class="note" id="trayNote"></div>
     </div>
@@ -95,6 +94,6 @@
   <div class="toast" id="toast" role="status"></div>
 </div>
 <meta name="theme-color" content="#16213a">
-<script src="./editor.js?v=5"></script>
+<script src="./editor.js?v=6"></script>
 </body>
 </html>

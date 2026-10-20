@@ -271,3 +271,27 @@ body.fs .kind, body.fs .trayBox { display: none; }
 .trayHead::after { content: '▾'; margin-left: auto; color: var(--muted); transition: transform .2s; }
 .trayBox.collapsed .trayHead::after { transform: rotate(-90deg); }
 .trayBox.collapsed .tray, .trayBox.collapsed .note { display: none; }
+
+/* статус сохранения по центру над карточкой, кнопки под ней по центру */
+.status { margin: 6px 0 0; min-height: 18px; text-align: center; font-size: 12px; }
+.bar { justify-content: center; }
+body.fs .status { display: none; }
+
+/* «Выбранные»: счётчик на карточке и заметная стрелка раскрытия */
+.trayHead { background: var(--elev); border-radius: 14px; padding: 10px 12px; gap: 10px; }
+.trayHead::after { content: none; }
+.trayHead:hover { background: #263355; }
+.trayHead .on { margin-left: auto; background: none; color: var(--muted); padding: 0; font-weight: 600; }
+.trayHead .chev { width: 30px; height: 30px; border-radius: 50%; background: var(--accent); color: #fff; display: grid; place-items: center;
+  box-shadow: 0 2px 8px rgba(58,139,255,.45); transition: transform .25s, background-color .15s; }
+.trayHead .chev svg { width: 18px; height: 18px; }
+.trayHead:hover .chev { background: #5aa0ff; }
+.trayBox.collapsed .chev { transform: rotate(-90deg); }
+
+/* подарки из профиля: полное фото подарка */
+.lot.photo { border-radius: 12%; overflow: hidden; }
+.lot.photo img { width: 100%; height: 100%; object-fit: cover; }
+.lot.photo.fallback img { object-fit: contain; padding: 8%; }
+.tile.photo .art { background: none; }
+.tile.photo .lot { width: 100%; height: 100%; margin: 0; }
+.tile.photo .art { overflow: hidden; border-radius: 14px; }

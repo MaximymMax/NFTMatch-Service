@@ -757,9 +757,27 @@ async function apiGet(path) {
   return r.json();
 }
 
+/* подарки профиля: фото экземпляра с Fragment (фон + модель целиком); если не загрузилось — цвета фона + модель */
+const profileMeta = new Map();                 // uid -> { center, edge }
+const fragUrl = uid => 'https://nft.fragment.com/gift/' + encodeURIComponent(uid.toLowerCase()) + '.medium.jpg';
+function photoArt(g, m, uid) {
+  const wrap = document.createElement('div'); wrap.className = 'lot photo';
+  const img = new Image(); img.decoding = 'async'; img.draggable = false; img.alt = m;
+  img.onerror = () => {
+    img.onerror = null; wrap.classList.add('fallback');
+    const meta = profileMeta.get(uid);
+    if (meta) wrap.style.background = 'radial-gradient(circle at 50% 46%, ' + meta.center + ', ' + meta.edge + ' 85%)';
+    img.src = imgUrl(g, m);
+  };
+  img.src = fragUrl(uid);
+  wrap.appendChild(img);
+  return wrap;
+}
+
 /* картинка стикера: PNG модели (вместо Lottie из примера) */
 function staticArt(gid) {
-  const [g, m] = splitId(gid);
+  const [g, m, uid] = splitId(gid);
+  if (uid) return photoArt(g, m, uid);
   const wrap = document.createElement('div'); wrap.className = 'lot';
   const img = new Image(); img.decoding = 'async'; img.draggable = false; img.alt = m; img.src = imgUrl(g, m);
   wrap.appendChild(img);
@@ -838,7 +856,7 @@ function addModelTile(gift, model) {
 /* плитка из «выбранных»: та же, что в списке подарков примера (зажать — меню, потянуть — на карточку) */
 function addTrayTile(item) {
   const t = document.createElement('div');
-  t.className = 'tile'; t.dataset.id = item.id; t.title = item.model + ' — ' + item.gift;
+  t.className = 'tile' + (item.uid ? ' photo' : ''); t.dataset.id = item.id; t.title = item.model + ' — ' + item.gift;
   t.innerHTML = '<div class="art"></div><b></b><small></small>';
   t.firstChild.appendChild(staticArt(item.id));
   const zone = document.createElement('div'); zone.className = 'zone'; t.firstChild.appendChild(zone);
@@ -870,7 +888,7 @@ function refreshTiles() {
     if (getSt(id)) { const o = document.createElement('span'); o.className = 'onc'; o.textContent = 'На карточке'; art.appendChild(o); }
   });
   catTiles.forEach((t, id) => t.classList.toggle('picked', tray.some(x => x.id === id)));
-  document.getElementById('count').textContent = state.stickers.length + ' / ' + MAX_STICKERS;
+  document.getElementById('trayOn').textContent = 'на карточке ' + state.stickers.length + ' / ' + MAX_STICKERS;
   document.getElementById('btnClear').disabled = !state.stickers.length;
   document.getElementById('trayCount').textContent = tray.length ? String(tray.length) : '';
   if (!trayNote.dataset.fixed) trayNote.textContent = tray.length ? '' : (kind === 'profile' ? 'В профиле нет уникальных подарков' : 'Нажмите на модели в каталоге, чтобы добавить их сюда. Отсюда их можно перетащить на карточку.');
@@ -987,6 +1005,7 @@ setTab('collections');
 /* ---- две карточки: из каталога и из подарков профиля; у каждой своё сохранение */
 const kindEl = document.getElementById('kindSwitch');
 function profileTray(info) {
+  (info.gifts || []).forEach(g => profileMeta.set(g.uid, { center: g.center, edge: g.edge }));
   return (info.gifts || []).map(g => ({ id: sid(g.gift, g.model, g.uid), gift: g.gift, model: g.model, uid: g.uid, sub: g.number ? '#' + g.number : g.gift }));
 }
 async function loadKind() {
