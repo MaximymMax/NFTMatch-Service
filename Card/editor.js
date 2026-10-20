@@ -859,57 +859,80 @@ function openMenu(id, tile) {
 }
 document.addEventListener('pointerdown', e => { if (!menu.hidden && !e.target.closest('.menu')) menu.hidden = true; }, true);
 
-/* ---- каталог: коллекции -> модели, общий поиск */
+/* ---- каталог с фильтрами: коллекции / модели / тематики (+ поиск внутри выбранного фильтра) */
 const qEl = document.getElementById('q'), crumbs = document.getElementById('crumbs'), moreBtn = document.getElementById('btnMore');
+const filtersEl = document.getElementById('filters');
 const PAGE = 60;
-let collections = null, view = { gift: null, q: '', offset: 0, seq: 0 };
+const PLACEHOLDERS = { collections: 'Найти коллекцию…', models: 'Найти модель или коллекцию…', themes: 'Найти тематику…' };
+let tab = 'collections', sel = null, collections = null, ver = 0, offset = 0;   // sel = { type: 'gift' | 'theme', key, title }
 
 function clearGrid() { gridEl.innerHTML = ''; tiles.clear(); }
-async function showCollections() {
-  view.gift = null; view.q = ''; view.seq++;
-  crumbs.hidden = true; moreBtn.hidden = true; clearGrid(); gridEl.classList.add('collections');
-  noteEl.textContent = 'Загружаю коллекции…';
+const words = s => s.toLowerCase().split(/\s+/).filter(Boolean);
+const errText = e => e.status === 403 ? 'Раздел доступен только администратору' : 'Не удалось загрузить данные';
+
+function setTab(t) {
+  tab = t; sel = null; qEl.value = ''; qEl.placeholder = PLACEHOLDERS[t];
+  filtersEl.querySelectorAll('button').forEach(b => b.classList.toggle('active', b.dataset.tab === t));
+  refresh();
+}
+function refresh() {
+  ver++; offset = 0; clearGrid(); moreBtn.hidden = true; noteEl.textContent = '';
+  crumbs.hidden = !sel;
+  document.getElementById('crumbTitle').textContent = sel ? sel.title : '';
+  const q = qEl.value.trim();
+  if (sel || tab === 'models') fetchModels(q);
+  else if (tab === 'collections') renderCollections(q);
+  else fetchThemes(q);
+}
+function tileFor(imgGift, imgModel, name, sub, onClick) {
+  const d = document.createElement('div'); d.className = 'ctile';
+  d.innerHTML = '<div class="art"></div><b></b><small></small>';
+  if (imgGift && imgModel) { const img = new Image(); img.alt = name; img.loading = 'lazy'; img.src = imgUrl(imgGift, imgModel); d.firstChild.appendChild(img); }
+  d.children[1].textContent = name; d.children[2].textContent = sub;
+  d.onclick = onClick; gridEl.appendChild(d);
+}
+async function renderCollections(q) {
+  gridEl.classList.add('collections');
+  const my = ver; noteEl.textContent = 'Загружаю коллекции…';
   try {
     if (!collections) collections = await apiGet('Card/Collections');
-    noteEl.textContent = '';
-    collections.forEach(c => {
-      const d = document.createElement('div'); d.className = 'ctile';
-      d.innerHTML = '<div class="art"></div><b></b><small></small>';
-      const img = new Image(); img.alt = c.name; img.loading = 'lazy'; img.src = imgUrl(c.name, c.sample); d.firstChild.appendChild(img);
-      d.children[1].textContent = c.name; d.children[2].textContent = c.count + ' мод.';
-      d.onclick = () => openCollection(c.name);
-      gridEl.appendChild(d);
-    });
-  } catch (e) { noteEl.textContent = e.status === 403 ? 'Раздел доступен только администратору' : 'Не удалось загрузить коллекции'; }
+    if (my !== ver) return;
+    const w = words(q);
+    const list = collections.filter(c => w.every(x => c.name.toLowerCase().includes(x)));
+    list.forEach(c => tileFor(c.name, c.sample, c.name, c.count + ' мод.', () => { sel = { type: 'gift', key: c.name, title: c.name }; qEl.value = ''; refresh(); }));
+    noteEl.textContent = list.length ? '' : 'Ничего не найдено';
+  } catch (e) { if (my === ver) noteEl.textContent = errText(e); }
 }
-function openCollection(name) { qEl.value = ''; view.gift = name; view.q = ''; loadModels(true); }
-async function loadModels(reset) {
-  const my = ++view.seq;
-  if (reset) { view.offset = 0; clearGrid(); gridEl.classList.remove('collections'); }
-  const searching = !!view.q;
-  crumbs.hidden = searching || !view.gift;
-  document.getElementById('crumbTitle').textContent = view.gift || '';
-  moreBtn.hidden = true; noteEl.textContent = 'Ищу…';
+async function fetchThemes(q) {
+  gridEl.classList.add('collections');
+  const my = ver; noteEl.textContent = 'Загружаю тематики…'; moreBtn.hidden = true;
   try {
-    const items = await apiGet('Card/SearchModels?q=' + encodeURIComponent(view.q) + (view.gift && !searching ? '&gift=' + encodeURIComponent(view.gift) : '') + '&limit=' + PAGE + '&offset=' + view.offset);
-    if (my !== view.seq) return;
+    const items = await apiGet('Card/Themes?q=' + encodeURIComponent(q) + '&limit=' + PAGE + '&offset=' + offset);
+    if (my !== ver) return;
+    items.forEach(t => tileFor(t.sampleGift, t.sampleModel, t.name, t.count + ' мод.', () => { sel = { type: 'theme', key: t.id, title: t.name }; qEl.value = ''; refresh(); }));
+    offset += items.length; moreBtn.hidden = items.length < PAGE;
+    noteEl.textContent = gridEl.children.length ? '' : 'Ничего не найдено';
+  } catch (e) { if (my === ver) noteEl.textContent = errText(e); }
+}
+async function fetchModels(q) {
+  gridEl.classList.remove('collections');
+  const my = ver; noteEl.textContent = 'Ищу…'; moreBtn.hidden = true;
+  let url = 'Card/SearchModels?q=' + encodeURIComponent(q) + '&limit=' + PAGE + '&offset=' + offset;
+  if (sel) url += (sel.type === 'gift' ? '&gift=' : '&theme=') + encodeURIComponent(sel.key);
+  try {
+    const items = await apiGet(url);
+    if (my !== ver) return;
     items.forEach(it => addModelTile(it.giftName, it.modelName));
-    view.offset += items.length;
-    moreBtn.hidden = items.length < PAGE;
+    offset += items.length; moreBtn.hidden = items.length < PAGE;
     noteEl.textContent = gridEl.children.length ? '' : 'Ничего не найдено';
     refreshTiles();
-  } catch (e) { if (my === view.seq) noteEl.textContent = 'Не удалось выполнить поиск'; }
+  } catch (e) { if (my === ver) noteEl.textContent = errText(e); }
 }
 let searchT;
-qEl.addEventListener('input', () => {
-  clearTimeout(searchT);
-  searchT = setTimeout(() => {
-    view.q = qEl.value.trim();
-    if (view.q) loadModels(true); else showCollections();
-  }, 250);
-});
-moreBtn.onclick = () => loadModels(false);
-document.getElementById('btnBack').onclick = () => showCollections();
+qEl.addEventListener('input', () => { clearTimeout(searchT); searchT = setTimeout(refresh, 250); });
+moreBtn.onclick = () => { const q = qEl.value.trim(); if (sel || tab === 'models') fetchModels(q); else fetchThemes(q); };
+filtersEl.addEventListener('click', e => { const b = e.target.closest('button'); if (b) setTab(b.dataset.tab); });
+document.getElementById('btnBack').onclick = () => { sel = null; qEl.value = ''; refresh(); };
 document.getElementById('btnClear').onclick = () => {
   if (state.stickers.length && confirm('Убрать все стикеры с карточки?')) state.stickers.slice().forEach(s => detach(s.id));
 };
@@ -921,7 +944,7 @@ if (user && user.username) document.getElementById('holder').textContent = ('@' 
 applyTheme(false);
 resize();
 requestAnimationFrame(frame);
-showCollections();
+setTab('collections');
 (async function loadCard() {
   try {
     const data = await apiGet('Card/Get');

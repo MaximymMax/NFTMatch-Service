@@ -220,4 +220,12 @@ html, body { height: auto; min-height: 0; background: transparent; display: bloc
 .bin { position: absolute; left: 50%; bottom: -62px; margin-left: -75px; opacity: 0; z-index: 45; }
 .bin.show { opacity: 1; }
 
-.amount, .unit { font-size: 7.4cqw; }
+
+/* фильтры каталога */
+.scene { perspective-origin: 50% 50%; }          /* центр карточки не уезжает при наклоне */
+.filters { display: flex; gap: 8px; flex-wrap: wrap; }
+.filters button { flex: 1 1 0; min-width: 90px; background: var(--elev); color: #c9d3ea; border: 1px solid transparent; border-radius: 12px;
+  padding: 10px 12px; font: 700 13px 'Inter', sans-serif; transition: background-color .15s, border-color .15s, color .15s; }
+.filters button:hover { background: #263355; color: #fff; }
+.filters button.active { background: linear-gradient(135deg, rgba(37,99,235,.35), rgba(37,99,235,.12)); border-color: rgba(37,99,235,.5); color: #fff; }
+.grid { scrollbar-color: #3a4a75 transparent; scrollbar-width: thin; }

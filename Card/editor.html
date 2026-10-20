@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <title>Редактор карточки</title>
 <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Roboto+Mono:wght@400;700&family=Inter:wght@500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="./editor.css?v=1">
+<link rel="stylesheet" href="./editor.css?v=2">
 </head>
 <body>
 <!-- Редактор карточки: карточка и перетаскивание перенесены из примера E:\TG Concept\web (WebGL-шейдер,
@@ -35,9 +35,9 @@
                   <path d="M24 22 32 58 40 22z" fill="#fff" opacity=".12"/>
                   <path class="sparkle" d="M47 6l1.6 4.2L53 12l-4.4 1.8L47 18l-1.6-4.2L41 12l4.4-1.8z" fill="#fff"/>
                 </svg>
-                <span class="amount">NFT</span><span class="unit">MATCH</span>
+                <span class="amount">11</span><span class="unit">GRAM</span>
               </div>
-              <div class="usd">Gift card</div>
+              <div class="usd">$33.00</div>
               <div class="holder" id="holder">COLLECTOR</div>
               <div class="chip" id="chip" aria-label="QR">
                 <svg viewBox="0 0 32 32"><g fill="none" stroke="#6f7478" stroke-width="2.6" stroke-linejoin="round"><rect x="5" y="5" width="8.4" height="8.4" rx="2"/><rect x="18.6" y="5" width="8.4" height="8.4" rx="2"/><rect x="5" y="18.6" width="8.4" height="8.4" rx="2"/></g><g fill="#6f7478"><rect x="19" y="19" width="3.4" height="3.4" rx=".7"/><rect x="24" y="19" width="3.4" height="3.4" rx=".7"/><rect x="19" y="24" width="3.4" height="3.4" rx=".7"/><rect x="24" y="24" width="3.4" height="3.4" rx=".7"/></g></svg>
@@ -65,9 +65,14 @@
   </section>
 
   <section class="right page" id="page">
-    <input type="search" id="q" class="search" placeholder="Поиск по моделям и коллекциям…" autocomplete="off" spellcheck="false">
+    <div class="filters" id="filters">
+      <button type="button" class="active" data-tab="collections">Коллекции</button>
+      <button type="button" data-tab="models">Модели</button>
+      <button type="button" data-tab="themes">Тематики</button>
+    </div>
+    <input type="search" id="q" class="search" placeholder="Найти коллекцию…" autocomplete="off" spellcheck="false">
     <div class="crumbs" id="crumbs" hidden>
-      <button type="button" class="pill-btn" id="btnBack">← Коллекции</button>
+      <button type="button" class="pill-btn" id="btnBack">← Назад</button>
       <b id="crumbTitle"></b>
     </div>
     <div class="grid" id="grid"></div>
@@ -80,6 +85,6 @@
   <div class="toast" id="toast" role="status"></div>
 </div>
 <meta name="theme-color" content="#16213a">
-<script src="./editor.js?v=1"></script>
+<script src="./editor.js?v=2"></script>
 </body>
 </html>
