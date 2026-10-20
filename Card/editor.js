@@ -36,9 +36,9 @@ const engrave = $('#engrave');
 let cardW = 400, cardH = 400 / 1.648;
 
 /* ------------------------------------------------------------------ 12 words on the right edge */
-const WORDS = ['BOLD', 'FERN', 'ARCH', 'MINT', 'LAKE', 'WOLF', 'JADE', 'PINE', 'ECHO', 'OPAL', 'DUSK', 'REED'];
-engrave.children[0].innerHTML = WORDS.slice(0, 6).map(w => '<b style="font-weight:inherit">' + w + '</b>').join('');
-engrave.children[1].innerHTML = WORDS.slice(6).map(w => '<b style="font-weight:inherit">' + w + '</b>').join('');
+const WORDS = (() => { let n = 'NFTMatchBot'; try { n = window.parent.CONFIG.BOT_USERNAME || n; } catch (e) { /* ignore */ } return Array(4).fill('@' + n); })();
+engrave.children[0].innerHTML = WORDS.slice(0, 2).map(w => '<b style="font-weight:inherit">' + w + '</b>').join('');
+engrave.children[1].innerHTML = WORDS.slice(2).map(w => '<b style="font-weight:inherit">' + w + '</b>').join('');
 
 /* ================================================================== WebGL card */
 const gl = glCanvas.getContext('webgl', { antialias: true, premultipliedAlpha: false, alpha: false }) ||
@@ -814,7 +814,7 @@ async function flushSave(keepalive) {
   try {
     const r = await fetch(api('Card/Save?kind=' + kind), { method: 'POST', keepalive: keepalive === true, headers: { 'Authorization': authHeader(), 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
     if (!r.ok) { const e = new Error(r.status); e.text = await r.text().catch(() => ''); throw e; }
-    if (!dirty) setStatus('Сохранено ✓');
+    if (!dirty) { setStatus('Сохранено ✓'); scheduleImageUpload(); }
   } catch (e) {
     dirty = true;
     const why = e.message && /^\d+$/.test(e.message) ? ' (' + e.message + (e.text ? ': ' + e.text.slice(0, 120) : '') + ')' : '';
@@ -1220,7 +1220,7 @@ async function renderCardImage() {
   x.fillText('GRAM', ax + x.measureText('11').width + 2.2 * cq, ay);
   x.shadowColor = 'transparent';
   x.fillStyle = rgb2css(mix(c0, white, .62)); x.font = '400 ' + 4.6 * cq + 'px Roboto, sans-serif';
-  x.fillText('$33.00', 6.9 * cq, CH * .515 + 4.6 * cq * .95);
+  x.fillText(document.querySelector('.usd').textContent, 6.9 * cq, CH * .515 + 4.6 * cq * .95);
 
   // имя владельца внизу слева
   const holder = (document.getElementById('holder').textContent || 'COLLECTOR');
@@ -1231,8 +1231,8 @@ async function renderCardImage() {
 
   // слова на торце: две вертикальные колонки
   x.font = '700 ' + 2.85 * cq + 'px "Roboto Mono", monospace'; x.fillStyle = rgb2css(mix(c1, black, .12));
-  [[0, 3.4 / 2 + 2.4], [6, 3.4 / 2 + 2.4 + 3.5]].forEach(([from, off]) => {
-    const words = WORDS.slice(from, from + 6), sp = .05 * 2.85 * cq;
+  [[0, 3.4 / 2 + 2.4], [2, 3.4 / 2 + 2.4 + 3.5]].forEach(([from, off]) => {
+    const words = WORDS.slice(from, from + 2), sp = .05 * 2.85 * cq;
     const widths = words.map(w => spaced(x, w, 0, 0, sp, false));
     const top = CH * .065, span = CH * .87, gap = (span - widths.reduce((a, b) => a + b, 0)) / (words.length - 1);
     let y = top;
@@ -1293,7 +1293,7 @@ function shareModal() {
   const o = D.createElement('div'); o.id = 'cdShare';
   o.innerHTML = '<div class="p"><div class="h"><span>Поделиться карточкой</span><button class="x" aria-label="Закрыть">✕</button></div>' +
     '<div class="pv">Готовлю картинку…</div>' +
-    '<div class="b"><button class="dl" disabled>Скачать</button><button class="pr sh" disabled>Переслать</button></div><div class="m"></div></div>';
+    '<div class="b"><button class="dl" disabled>Скачать</button><button class="pr sh" disabled>Переслать</button><button class="tg" hidden>В чат через бота</button></div><div class="m"></div></div>';
   D.body.appendChild(o);
   return o;
 }
@@ -1317,6 +1317,14 @@ async function openShare() {
   const file = new File([blob], 'nftmatch-card.png', { type: 'image/png' });
   const dl = o.querySelector('.dl'), sh = o.querySelector('.sh');
   dl.disabled = false; sh.disabled = false;
+  const tgBtn = o.querySelector('.tg');
+  try { if (P.Telegram && P.Telegram.WebApp && P.Telegram.WebApp.switchInlineQuery && P.Telegram.WebApp.initData) tgBtn.hidden = false; } catch (e) { /* ignore */ }
+  tgBtn.onclick = async () => {
+    tgBtn.disabled = true; note('Отправляю карточку боту…');
+    await uploadImage(true);
+    try { P.Telegram.WebApp.switchInlineQuery(kind === 'profile' ? 'mycard' : 'myideacard', ['users', 'groups', 'channels']); } catch (e) { note('Откройте любой чат и напишите @' + (CFG.BOT_USERNAME || 'NFTMatchBot') + ' ' + (kind === 'profile' ? 'mycard' : 'myideacard')); }
+    tgBtn.disabled = false;
+  };
   dl.onclick = () => { const a = D.createElement('a'); a.href = url; a.download = 'nftmatch-card.png'; D.body.appendChild(a); a.click(); a.remove(); note('Картинка сохраняется…'); };
   sh.onclick = async () => {
     try {
@@ -1330,5 +1338,55 @@ async function openShare() {
 }
 document.getElementById('btnShare').onclick = openShare;
 window.__share = { render: renderCardImage, open: openShare };
+
+
+/* ================================================================== картинка карточки для инлайна бота */
+/* После сохранения карточки (с паузой) рисуем её в JPEG и отправляем на сервер: бот отдаёт её по
+   @NFTMatchBot mycard (профиль) / myideacard (каталог). */
+let imgTimer = null, imgBusy = false;
+function scheduleImageUpload() { clearTimeout(imgTimer); imgTimer = setTimeout(() => uploadImage(false), 4000); }
+async function uploadImage(force) {
+  if (imgBusy || !loaded || (dirty && !force)) return;
+  const k = kind; imgBusy = true;
+  try {
+    const cv = await renderCardImage();
+    const blob = await new Promise(r => cv.toBlob(r, 'image/jpeg', .9));
+    if (!blob || k !== kind) return;
+    await fetch(api('Card/Image?kind=' + k), { method: 'POST', headers: { 'Authorization': authHeader(), 'Content-Type': 'image/jpeg' }, body: blob });
+  } catch (e) { /* картинка для инлайна не критична */ } finally { imgBusy = false; }
+}
+
+/* ================================================================== курс GRAM (бывший Toncoin) с биржи */
+/* 11 GRAM на карточке — демо-баланс, сумма в долларах считается по биржевому курсу GRAM/USDT.
+   Источники по очереди: Binance, OKX, Bybit; курс помним 5 минут. */
+const GRAM_AMOUNT = 11;
+const usdEl = document.querySelector('.usd');
+const RATE_SOURCES = [
+  { name: 'Binance', url: 'https://api.binance.com/api/v3/ticker/price?symbol=GRAMUSDT', pick: j => +j.price },
+  { name: 'OKX', url: 'https://www.okx.com/api/v5/market/ticker?instId=GRAM-USDT', pick: j => +j.data[0].last },
+  { name: 'Bybit', url: 'https://api.bybit.com/v5/market/tickers?category=spot&symbol=GRAMUSDT', pick: j => +j.result.list[0].lastPrice }
+];
+function showUsd(price, src) {
+  usdEl.textContent = '$' + (GRAM_AMOUNT * price).toFixed(2);
+  usdEl.title = '1 GRAM = $' + price + ' (' + src + ')';
+}
+async function loadGramRate() {
+  try {
+    const c = JSON.parse(sessionStorage.getItem('cdGram') || 'null');
+    if (c && Date.now() - c.t < 300000) { showUsd(c.p, c.s); return; }
+  } catch (e) { /* ignore */ }
+  for (const s of RATE_SOURCES) {
+    try {
+      const r = await fetch(s.url, { signal: AbortSignal.timeout(6000) });
+      if (!r.ok) continue;
+      const p = s.pick(await r.json());
+      if (!(p > 0)) continue;
+      showUsd(p, s.name);
+      try { sessionStorage.setItem('cdGram', JSON.stringify({ p, s: s.name, t: Date.now() })); } catch (e) { /* ignore */ }
+      return;
+    } catch (e) { /* следующий источник */ }
+  }
+}
+loadGramRate();
 
 })();
