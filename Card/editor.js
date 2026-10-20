@@ -749,8 +749,8 @@ const CFG = P.CONFIG || window.CONFIG || {};
 const api = p => (CFG.SERVER_BASE_URL || '') + '/api/' + p;
 function authHeader() { try { if (P.NFTAuth) return P.NFTAuth.getApiAuthHeader(); } catch (e) { /* ignore */ } return 'Tma invalid'; }
 const imgUrl = (g, m) => 'https://cdn.changes.tg/gifts/models/' + encodeURIComponent(g) + '/png/' + encodeURIComponent(m) + '.png';
-const sid = (g, m) => g + '|' + m;
-const splitId = id => { const i = id.indexOf('|'); return [id.slice(0, i), id.slice(i + 1)]; };
+const sid = (g, m, uid) => g + '|' + m + (uid ? '|' + uid : '');
+const splitId = id => id.split('|');
 async function apiGet(path) {
   const r = await fetch(api(path), { headers: { 'Authorization': authHeader() } });
   if (!r.ok) { const e = new Error('HTTP ' + r.status); e.status = r.status; throw e; }
@@ -770,6 +770,8 @@ function staticArt(gid) {
 const statusEl = document.getElementById('status');
 function setStatus(text, err) { statusEl.textContent = text; statusEl.classList.toggle('err', !!err); }
 let loaded = false, dirty = false, saving = false, saveTimer = null;
+let kind = 'catalog', switching = false;     // две карточки: 'catalog' (из каталога) и 'profile' (подарки профиля)
+let tray = [];                                  // выбранные: { id, gift, model, uid?, sub? }
 function save() {
   if (!loaded) return;
   dirty = true; setStatus('Сохраняю…');
@@ -779,14 +781,15 @@ async function flushSave(keepalive) {
   if (!loaded || !dirty) return;
   if (saving) { saveTimer = setTimeout(flushSave, 300); return; }
   saving = true; dirty = false;
-  const body = JSON.stringify({
+  const payload = {
     stickers: state.stickers.slice().sort((a, b) => (a.z || 0) - (b.z || 0)).map(s => {
-      const [gift, model] = splitId(s.id);
-      return { gift, model, x: +s.x.toFixed(4), y: +s.y.toFixed(4), r: +wrap180(s.r || 0).toFixed(1), sc: +s.sc.toFixed(3) };
+      const [gift, model, uid] = splitId(s.id);
+      return { gift, model, uid: uid || null, x: +s.x.toFixed(4), y: +s.y.toFixed(4), r: +wrap180(s.r || 0).toFixed(1), sc: +s.sc.toFixed(3) };
     })
-  });
+  };
+  if (kind === 'catalog') payload.tray = tray.map(t => ({ gift: t.gift, model: t.model }));   // подарки профиля берутся из профиля, их не храним
   try {
-    const r = await fetch(api('Card/Save'), { method: 'PUT', keepalive: keepalive === true, headers: { 'Authorization': authHeader(), 'Content-Type': 'application/json' }, body });
+    const r = await fetch(api('Card/Save?kind=' + kind), { method: 'PUT', keepalive: keepalive === true, headers: { 'Authorization': authHeader(), 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
     if (!r.ok) throw new Error(r.status);
     if (!dirty) setStatus('Сохранено ✓');
   } catch (e) {
@@ -816,16 +819,46 @@ function showHint(on) {
 /* ---- плитки подарков */
 const ICON_ADD = ICONS.sticker, ICON_REMOVE = ICONS.remove;
 const gridEl = document.getElementById('grid'), noteEl = document.getElementById('note');
+const catTiles = new Map();
+const trayEl = document.getElementById('tray'), trayNote = document.getElementById('trayNote');
+/* плитка каталога: тап добавляет модель в «выбранные», перетаскивать её на карточку нельзя */
 function addModelTile(gift, model) {
   const id = sid(gift, model);
   const t = document.createElement('div');
-  t.className = 'tile'; t.dataset.id = id; t.title = model + ' — ' + gift;
+  t.className = 'tile pick'; t.dataset.id = id; t.title = model + ' — ' + gift;
   t.innerHTML = '<div class="art"></div><b></b><small></small>';
   t.firstChild.appendChild(staticArt(id));
-  const zone = document.createElement('div'); zone.className = 'zone'; t.firstChild.appendChild(zone);
   t.children[1].textContent = model; t.children[2].textContent = gift;
-  gridEl.appendChild(t); tiles.set(id, t);
-  bindTile(t, { id });
+  t.onclick = () => toggleTray(gift, model);
+  gridEl.appendChild(t); catTiles.set(id, t);
+}
+/* плитка из «выбранных»: та же, что в списке подарков примера (зажать — меню, потянуть — на карточку) */
+function addTrayTile(item) {
+  const t = document.createElement('div');
+  t.className = 'tile'; t.dataset.id = item.id; t.title = item.model + ' — ' + item.gift;
+  t.innerHTML = '<div class="art"></div><b></b><small></small>';
+  t.firstChild.appendChild(staticArt(item.id));
+  const zone = document.createElement('div'); zone.className = 'zone'; t.firstChild.appendChild(zone);
+  t.children[1].textContent = item.model; t.children[2].textContent = item.sub || item.gift;
+  trayEl.appendChild(t); tiles.set(item.id, t);
+  bindTile(t, { id: item.id });
+}
+function renderTray() {
+  trayEl.innerHTML = ''; tiles.clear();
+  tray.forEach(addTrayTile);
+  refreshTiles();
+}
+const TRAY_MAX = 60;
+function toggleTray(gift, model) {
+  const id = sid(gift, model), i = tray.findIndex(t => t.id === id);
+  if (i >= 0) {
+    if (getSt(id)) { toast('Эта модель на карточке — сначала уберите её оттуда'); return; }
+    tray.splice(i, 1);
+  } else {
+    if (tray.length >= TRAY_MAX) { toast('В выбранных может быть не больше ' + TRAY_MAX + ' моделей'); return; }
+    tray.push({ id, gift, model });
+  }
+  renderTray(); save();
 }
 function refreshTiles() {
   tiles.forEach((t, id) => {
@@ -833,23 +866,30 @@ function refreshTiles() {
     art.querySelectorAll('.onc').forEach(n => n.remove());
     if (getSt(id)) { const o = document.createElement('span'); o.className = 'onc'; o.textContent = 'На карточке'; art.appendChild(o); }
   });
+  catTiles.forEach((t, id) => t.classList.toggle('picked', tray.some(x => x.id === id)));
   document.getElementById('count').textContent = state.stickers.length + ' / ' + MAX_STICKERS;
   document.getElementById('btnClear').disabled = !state.stickers.length;
+  document.getElementById('trayCount').textContent = tray.length ? String(tray.length) : '';
+  if (!trayNote.dataset.fixed) trayNote.textContent = tray.length ? '' : (kind === 'profile' ? 'В профиле нет уникальных подарков' : 'Нажмите на модели в каталоге, чтобы добавить их сюда. Отсюда их можно перетащить на карточку.');
 }
 
 /* ---- меню по долгому нажатию: единственное действие — добавить / убрать */
 function openMenu(id, tile) {
   const onCard = !!getSt(id);
-  menu.innerHTML = '<button data-a="sticker">' + (onCard ? ICON_REMOVE : ICON_ADD) + '<span>' + (onCard ? 'Убрать с карточки' : 'Добавить на карточку') + '</span></button>';
+  menu.innerHTML = '<button data-a="sticker">' + (onCard ? ICON_REMOVE : ICON_ADD) + '<span>' + (onCard ? 'Убрать с карточки' : 'Добавить на карточку') + '</span></button>' +
+    (kind === 'catalog' ? '<hr><button data-a="untray">' + ICON_REMOVE + '<span>Убрать из выбранных</span></button>' : '');
   menu.hidden = false;
   const a = app.getBoundingClientRect(), r = tile.getBoundingClientRect();
   let x = r.left - a.left + r.width * .5 - 20, y = r.top - a.top + r.height * .55;
-  x = clamp(x, 10, a.width - 230); y = clamp(y, 10, Math.max(10, a.height - 70));
+  x = clamp(x, 10, a.width - 230); y = clamp(y, 10, Math.max(10, a.height - 100));
   menu.style.left = x + 'px'; menu.style.top = y + 'px';
   menu.onclick = e => {
     const b = e.target.closest('button'); if (!b) return;
     menu.hidden = true;
-    if (onCard) evict(getSt(id)); else autoAdd(id);
+    if (b.dataset.a === 'untray') {
+      const st = getSt(id); if (st) detach(st.id);
+      tray = tray.filter(t => t.id !== id); renderTray(); save();
+    } else if (onCard) evict(getSt(id)); else autoAdd(id);
   };
 }
 document.addEventListener('pointerdown', e => { if (!menu.hidden && !e.target.closest('.menu')) menu.hidden = true; }, true);
@@ -861,7 +901,7 @@ const PAGE = 60;
 const PLACEHOLDERS = { collections: 'Найти коллекцию…', models: 'Найти модель или коллекцию…', themes: 'Найти тематику…' };
 let tab = 'collections', sel = null, collections = null, ver = 0, offset = 0;   // sel = { type: 'gift' | 'theme', key, title }
 
-function clearGrid() { gridEl.innerHTML = ''; tiles.clear(); }
+function clearGrid() { gridEl.innerHTML = ''; catTiles.clear(); }
 const words = s => s.toLowerCase().split(/\s+/).filter(Boolean);
 const errText = e => e.status === 403 ? 'Раздел доступен только администратору' : 'Не удалось загрузить данные';
 
@@ -940,21 +980,55 @@ applyTheme(false);
 resize();
 requestAnimationFrame(frame);
 setTab('collections');
-(async function loadCard() {
+
+/* ---- две карточки: из каталога и из подарков профиля; у каждой своё сохранение */
+const kindEl = document.getElementById('kindSwitch');
+function profileTray(info) {
+  return (info.gifts || []).map(g => ({ id: sid(g.gift, g.model, g.uid), gift: g.gift, model: g.model, uid: g.uid, sub: g.number ? '#' + g.number : g.gift }));
+}
+async function loadKind() {
+  loaded = false; trayNote.dataset.fixed = ''; setStatus('');
   try {
-    const data = await apiGet('Card/Get');
+    const data = await apiGet('Card/Get?kind=' + kind);
     const minS = px(32) / U();
     (data.stickers || []).slice(0, MAX_STICKERS).forEach(s => {
-      const st = { id: sid(s.gift, s.model), x: +s.x, y: +s.y, sc: clamp(+s.sc || 1, minS, SC_MAX), r: +s.r || 0, z: ++zSeq, t: ++tSeq };
+      const st = { id: sid(s.gift, s.model, s.uid), x: +s.x, y: +s.y, sc: clamp(+s.sc || 1, minS, SC_MAX), r: +s.r || 0, z: ++zSeq, t: ++tSeq };
       state.stickers.push(st); createStickerEl(st); placeSticker(st, 'instant');
     });
-    loaded = true; refreshTiles();
+    if (kind === 'catalog') {
+      tray = (data.tray || []).map(t => ({ id: sid(t.gift, t.model), gift: t.gift, model: t.model }));
+      state.stickers.forEach(s => { if (!tray.some(t => t.id === s.id)) { const [gift, model] = splitId(s.id); tray.push({ id: s.id, gift, model }); } });
+    } else {
+      let info;
+      try { info = await apiGet('Card/ProfileGifts'); } catch (e) { info = { available: false }; }
+      tray = info.available ? profileTray(info) : [];
+      if (!info.available) { trayNote.dataset.fixed = '1'; trayNote.textContent = 'Подарки профиля недоступны: откройте профиль для просмотра и запустите бота @NFTMatchBot.'; }
+    }
+    loaded = true; renderTray();
   } catch (e) {
     // loaded остаётся false: пустой экран не затрёт сохранённую карточку
     setStatus(e.status === 403 ? 'Раздел доступен только администратору' : 'Не удалось загрузить карточку — обновите страницу', true);
   }
-})();
-
+}
+async function switchKind(k) {
+  if (k === kind || switching) return;
+  switching = true;
+  try {
+    clearTimeout(saveTimer);
+    while (saving) await new Promise(r => setTimeout(r, 80));
+    await flushSave();
+    if (dirty) { toast('Не удалось сохранить карточку — попробуйте ещё раз'); return; }
+    loaded = false; menu.hidden = true; select(null);
+    state.stickers.slice().forEach(s => detach(s.id));
+    kind = k; tray = [];
+    document.body.classList.toggle('profile', k === 'profile');
+    kindEl.querySelectorAll('button').forEach(b => b.classList.toggle('active', b.dataset.kind === k));
+    renderTray();
+    await loadKind();
+  } finally { switching = false; }
+}
+kindEl.addEventListener('click', e => { const b = e.target.closest('button'); if (b) switchKind(b.dataset.kind); });
+loadKind();
 
 /* ---- полноэкранный горизонтальный режим: iframe растягивается на весь экран поверх размытой страницы,
    телефон переводится в альбомную ориентацию (а если не вышло — страница поворачивается CSS-ом) */
@@ -1005,6 +1079,6 @@ new ResizeObserver(reportHeight).observe(app);
 window.addEventListener('load', reportHeight);
 setInterval(reportHeight, 1500);   // страховка: размер меняют и подгружающиеся картинки
 reportHeight();
-window.__card = { state, addToCard, evict, autoAdd, findPlacement, select, tiltTarget, get carry() { return carry; } };
+window.__card = { tray: () => tray, kind: () => kind, switchKind, state, addToCard, evict, autoAdd, findPlacement, select, tiltTarget, get carry() { return carry; } };
 
 })();
