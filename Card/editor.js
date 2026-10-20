@@ -894,9 +894,8 @@ function refreshTiles() {
     if (n) { const o = document.createElement('span'); o.className = 'onc'; o.textContent = n > 1 ? 'На карточке ×' + n : 'На карточке'; art.appendChild(o); }
   });
   catTiles.forEach((t, id) => t.classList.toggle('picked', tray.some(x => x.id === id)));
-  document.getElementById('trayOn').textContent = 'на карточке ' + state.stickers.length + ' / ' + MAX_STICKERS;
-  document.getElementById('btnClear').disabled = !state.stickers.length;
-  document.getElementById('trayCount').textContent = tray.length ? String(tray.length) : '';
+    document.getElementById('btnClear').disabled = !state.stickers.length;
+  document.getElementById('trayCount').textContent = state.stickers.length + '/' + MAX_STICKERS;
   if (!trayNote.dataset.fixed) trayNote.textContent = tray.length ? '' : (kind === 'profile' ? 'В профиле нет уникальных подарков' : 'Нажмите на модели в каталоге, чтобы добавить их сюда. Отсюда их можно перетащить на карточку.');
 }
 
@@ -1053,6 +1052,7 @@ async function switchKind(k) {
     state.stickers.slice().forEach(s => detach(s.id));
     kind = k; tray = [];
     document.getElementById('trayTitle').textContent = k === 'profile' ? 'Подарки профиля' : 'Выбранные';
+    trayBoxEl.classList.toggle('static', k === 'profile');
     document.body.classList.toggle('profile', k === 'profile');
     kindEl.querySelectorAll('button').forEach(b => b.classList.toggle('active', b.dataset.kind === k));
     renderTray();
@@ -1121,7 +1121,7 @@ function setTrayCollapsed(on) {
   try { localStorage.setItem('cdTrayCollapsed', on ? '1' : ''); } catch (e) { /* ignore */ }
   setTimeout(reportHeight, 50);
 }
-document.getElementById('trayHead').onclick = () => setTrayCollapsed(!trayBoxEl.classList.contains('collapsed'));
+document.getElementById('trayHead').onclick = () => { if (kind === 'catalog') setTrayCollapsed(!trayBoxEl.classList.contains('collapsed')); };
 try { if (localStorage.getItem('cdTrayCollapsed')) trayBoxEl.classList.add('collapsed'); } catch (e) { /* ignore */ }
 
 })();

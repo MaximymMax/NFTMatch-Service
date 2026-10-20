@@ -295,3 +295,31 @@ body.fs .status { display: none; }
 .tile.photo .art { background: none; }
 .tile.photo .lot { width: 100%; height: 100%; margin: 0; }
 .tile.photo .art { overflow: hidden; border-radius: 14px; }
+
+/* ---- правки: счётчик в заголовке, стрелка, отступы статуса, мягкие края списков */
+.trayHead span { padding: 0; background: none; }
+.trayHead #trayCount { margin-left: auto; margin-right: 2px; background: none; color: var(--muted); font-size: 13px; font-weight: 700; }
+.trayHead .chev { display: flex; align-items: center; justify-content: center; padding: 0; line-height: 0; margin-left: 0; }
+.trayHead .chev svg { display: block; width: 18px; height: 18px; }
+.trayHead:hover { background: var(--elev); }
+.trayHead:hover .chev { background: var(--accent); }
+@media (hover: hover) {
+  .trayHead:hover { background: #263355; }
+  .trayHead:hover .chev { background: #5aa0ff; }
+}
+.trayHead:active { background: #2c3b63; }
+.trayHead:active .chev { background: #5aa0ff; }
+.trayBox.static .trayHead { cursor: default; }
+.trayBox.static .chev { display: none; }
+.trayBox.static .trayHead:hover, .trayBox.static .trayHead:active { background: var(--elev); }
+
+/* статус ровно посередине между переключателем и карточкой (зона касаний вокруг карточки остаётся) */
+.stage { padding-top: 32px; }
+.status { margin: 14px 0 -18px; position: relative; z-index: 2; pointer-events: none; }
+
+/* размытые края у прокручиваемых списков */
+.tray, .grid {
+  padding: 12px 2px 30px;
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 14px, #000 calc(100% - 34px), transparent 100%);
+  mask-image: linear-gradient(to bottom, transparent 0, #000 14px, #000 calc(100% - 34px), transparent 100%);
+}
