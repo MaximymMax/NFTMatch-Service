@@ -112,3 +112,8 @@
 
 .cd-frame { width: 100%; border: 0; min-height: 360px; background: transparent; display: block; }
 .cd-frame[hidden] { display: none; }
+
+/* полноэкранный режим редактора: iframe поверх страницы, фон размыт */
+.cd-frame.cd-fs { position: fixed; left: 0; top: 0; width: 100vw; height: 100vh; height: 100dvh; min-height: 0; z-index: 10000;
+  transform-origin: 0 0; background: rgba(8, 12, 24, .5); -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px); }
+body.cd-noscroll { overflow: hidden; }

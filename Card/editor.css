@@ -173,7 +173,7 @@ html, body { height: auto; min-height: 0; background: transparent; display: bloc
   display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 22px; align-items: start; padding: 4px 2px 8px; }
 @media (max-width: 760px) { .app { grid-template-columns: minmax(0, 1fr); } }
 .left { position: relative; min-width: 0; }
-.stage { position: relative; padding: 10px 6px 8px; }
+
 .page { overflow: visible; padding: 0; scrollbar-width: auto; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
 .card::after { background: radial-gradient(ellipse at center, rgba(0,0,0,.55), transparent 70%); }
 
@@ -229,3 +229,18 @@ html, body { height: auto; min-height: 0; background: transparent; display: bloc
 .filters button:hover { background: #263355; color: #fff; }
 .filters button.active { background: linear-gradient(135deg, rgba(37,99,235,.35), rgba(37,99,235,.12)); border-color: rgba(37,99,235,.5); color: #fff; }
 .grid { scrollbar-color: #3a4a75 transparent; scrollbar-width: thin; }
+
+/* зона вокруг карточки: на ней страница не скроллится (жесты уходят на наклон карточки) */
+.stage { position: relative; padding: 32px 28px 30px; touch-action: none; }
+.card { touch-action: none; }
+
+/* полноэкранный горизонтальный режим */
+.fs-exit { display: none; position: fixed; top: 14px; right: 14px; z-index: 80; width: 44px; height: 44px; border-radius: 22px;
+  background: rgba(30,41,68,.9); color: #fff; font-size: 20px; line-height: 1; }
+body.fs .fs-exit { display: block; }
+html:has(body.fs), body.fs { overflow: hidden; touch-action: none; }
+body.fs .app { display: block; padding: 0; height: 100vh; }
+body.fs .right, body.fs .bar { display: none; }
+body.fs .left { position: fixed; inset: 0; display: grid; place-items: center; }
+body.fs .stage { padding: 0; width: min(calc(100vw - 150px), calc((100vh - 130px) * 1.648)); }
+body.fs .bin { bottom: -78px; }

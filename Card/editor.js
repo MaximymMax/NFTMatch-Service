@@ -955,6 +955,50 @@ setTab('collections');
   }
 })();
 
+
+/* ---- полноэкранный горизонтальный режим: iframe растягивается на весь экран поверх размытой страницы,
+   телефон переводится в альбомную ориентацию (а если не вышло — страница поворачивается CSS-ом) */
+const frameEl = (() => { try { return P !== window ? P.document.getElementById('cd-frame') : null; } catch (e) { return null; } })();
+let fs = false;
+async function enterFs() {
+  if (!frameEl || fs) return;
+  fs = true; menu.hidden = true; select(null);
+  document.body.classList.add('fs'); frameEl.classList.add('cd-fs'); P.document.body.classList.add('cd-noscroll');
+  try { await P.document.documentElement.requestFullscreen({ navigationUI: 'hide' }); } catch (e) { /* iOS и др.: останется оверлей */ }
+  try { await P.screen.orientation.lock('landscape'); } catch (e) { /* не поддерживается */ }
+  fitFs();
+  setTimeout(fitFs, 350);
+}
+function fitFs() {
+  if (!fs || !frameEl) return;
+  const W = P.innerWidth, H = P.innerHeight;
+  if (H > W) {   // телефон остался в портрете: поворачиваем страницу на 90° сами
+    frameEl.classList.add('cd-rot');
+    frameEl.style.width = H + 'px'; frameEl.style.height = W + 'px'; frameEl.style.transform = 'translateX(' + W + 'px) rotate(90deg)';
+  } else {
+    frameEl.classList.remove('cd-rot');
+    frameEl.style.width = ''; frameEl.style.height = ''; frameEl.style.transform = '';
+  }
+}
+function exitFs() {
+  if (!fs) return;
+  fs = false; document.body.classList.remove('fs');
+  if (frameEl) { frameEl.classList.remove('cd-fs', 'cd-rot'); frameEl.style.width = ''; frameEl.style.height = ''; frameEl.style.transform = ''; }
+  P.document.body.classList.remove('cd-noscroll');
+  try { if (P.document.fullscreenElement) P.document.exitFullscreen(); } catch (e) { /* ignore */ }
+  try { P.screen.orientation.unlock(); } catch (e) { /* ignore */ }
+  setTimeout(reportHeight, 100);
+}
+try {
+  P.addEventListener('resize', fitFs);
+  P.document.addEventListener('fullscreenchange', () => { if (fs && !P.document.fullscreenElement) exitFs(); });
+} catch (e) { /* ignore */ }
+document.getElementById('btnFs').onclick = enterFs;
+document.getElementById('btnFsExit').onclick = exitFs;
+document.addEventListener('keydown', e => { if (e.key === 'Escape') exitFs(); });
+if (!frameEl) document.getElementById('btnFs').hidden = true;
+window.__fs = { enter: enterFs, exit: exitFs };
+
 /* высоту iframe по содержимому выставляет родительская страница (card.js) */
 function reportHeight() { try { P.postMessage({ cdHeight: Math.ceil(app.getBoundingClientRect().height) + 16 }, '*'); } catch (e) { /* ignore */ } }
 new ResizeObserver(reportHeight).observe(app);
