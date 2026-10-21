@@ -532,6 +532,25 @@
 
     const currentLang = detectLanguage();
 
+    // Язык, выбранный в переключателе, помним в облаке Telegram: в другой точке входа мини-приложения или на другом устройстве
+    // localStorage пустой, и язык определялся бы по клиенту Telegram. Один раз за сессию подтягиваем сохранённый язык и перезагружаем страницу.
+    (function syncLangWithCloud() {
+        try {
+            const tg = window.Telegram && window.Telegram.WebApp;
+            const cs = tg && tg.CloudStorage;
+            if (!cs || !tg.initData || !(tg.isVersionAtLeast && tg.isVersionAtLeast('6.9'))) return;
+            const local = localStorage.getItem('user_lang');
+            if (local && SUPPORTED_LANGS.includes(local)) { cs.setItem('user_lang', local); return; }
+            if (sessionStorage.getItem('langCloudChecked')) return;
+            sessionStorage.setItem('langCloudChecked', '1');
+            cs.getItem('user_lang', function (err, v) {
+                if (err || !SUPPORTED_LANGS.includes(v) || v === currentLang) return;
+                localStorage.setItem('user_lang', v);
+                location.reload();
+            });
+        } catch (e) { /* язык по умолчанию остаётся */ }
+    })();
+
     // Функция перевода
     function t(key, defaultValue = '', params = {}) {
         let text = translations[currentLang]?.[key];
@@ -1063,6 +1082,7 @@
     function setLanguage(lang) {
         if (SUPPORTED_LANGS.includes(lang)) {
             localStorage.setItem('user_lang', lang);
+            try { const cs = window.Telegram?.WebApp?.CloudStorage; if (cs) cs.setItem('user_lang', lang); } catch (e) { /* ignore */ }
             
             // Если в URL есть старый параметр lang, обновим его
             const url = new URL(window.location.href);

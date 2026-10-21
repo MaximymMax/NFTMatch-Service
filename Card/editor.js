@@ -1449,8 +1449,8 @@ async function renderCardImage() {
   x.textBaseline = 'alphabetic'; x.fillStyle = '#fff'; x.font = '500 ' + fsz + 'px Roboto, sans-serif';
   x.shadowColor = 'rgba(0,0,0,.16)'; x.shadowBlur = .8 * cq; x.shadowOffsetY = .3 * cq;
   const ax = 6.6 * cq + gs + 2.2 * cq, ay = by + fsz * .36;
-  x.fillText('11', ax, ay);
-  x.fillText('GRAM', ax + x.measureText('11').width + 2.2 * cq, ay);
+  x.fillText(String(GRAM_AMOUNT), ax, ay);
+  x.fillText('GRAM', ax + x.measureText(String(GRAM_AMOUNT)).width + 2.2 * cq, ay);
   x.shadowColor = 'transparent';
   x.fillStyle = rgb2css(mix(c0, white, .62)); x.font = '400 ' + 4.6 * cq + 'px Roboto, sans-serif';
   x.fillText(document.querySelector('.usd').textContent, 6.9 * cq, CH * .515 + 4.6 * cq * .95);
@@ -1596,7 +1596,7 @@ async function uploadImage(force) {
 /* ================================================================== курс GRAM (бывший Toncoin) с биржи */
 /* 11 GRAM на карточке — демо-баланс, сумма в долларах считается по биржевому курсу GRAM/USDT.
    Источники по очереди: Binance, OKX, Bybit; курс помним 5 минут. */
-const GRAM_AMOUNT = 11;
+const GRAM_AMOUNT = 10;
 const usdEl = document.querySelector('.usd');
 const RATE_SOURCES = [
   { name: 'Binance', url: 'https://api.binance.com/api/v3/ticker/price?symbol=GRAMUSDT', pick: j => +j.price },
