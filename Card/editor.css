@@ -326,6 +326,6 @@ body.fs .status { display: none; }
 
 /* режим просмотра по ссылке: только карточка на весь экран */
 body.view .fs-exit, body.view .bin, body.view .status { display: none !important; }
-body.view .stage { width: min(calc(100vw - 70px), calc((100vh - 70px) * 1.648)); }
-.cta { position: fixed; left: 50%; bottom: 14px; transform: translateX(-50%); z-index: 90; padding: 9px 16px; border-radius: 20px;
-  background: rgba(30,41,68,.85); color: #dbe4fa; font: 700 12px 'Inter', sans-serif; text-decoration: none; -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
+body.view .stage { width: min(calc(100vw - 70px), calc((100vh - 130px) * 1.648)); }
+.cta { position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%); z-index: 90; padding: 12px 26px; border: 0; border-radius: 24px; cursor: pointer;
+  background: #2563eb; color: #fff; font: 700 14px 'Inter', sans-serif; text-decoration: none; box-shadow: 0 6px 20px rgba(37,99,235,.45); }

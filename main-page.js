@@ -382,6 +382,10 @@ document.addEventListener('DOMContentLoaded', () => {
             case 'api':
                 targetUrl = './API_info/api.html';
                 break;
+            case 'card':
+                // чужая карточка: страница конструктора открывает её поверх себя на весь экран
+                targetUrl = './Card/card.html' + (/^[0-9a-f]{32}$/i.test(urlParams.get('id') || '') ? '?c=' + urlParams.get('id') : '');
+                break;
             case 'support':
                 targetUrl = './Support/support.html';
                 break;
@@ -490,6 +494,10 @@ document.addEventListener('DOMContentLoaded', () => {
             case 'monochrome_model':
                 if (parts[1]) params.set('gift', restoreParam(parts[1]));
                 if (parts[2]) params.set('model', restoreParam(parts[2]));
+                break;
+
+            case 'card':
+                if (parts[1]) params.set('id', parts[1]);   // ссылка на чужую карточку: card-<32 hex>
                 break;
 
             case 'similar':

@@ -1080,9 +1080,15 @@ async function startView() {
       state.stickers.push(st); createStickerEl(st); placeSticker(st, 'instant');
     });
   } catch (e) { toast('Карточка не найдена'); }
-  const cta = document.createElement('a');
-  cta.className = 'cta'; cta.target = '_top'; cta.textContent = 'Собрать свою карточку';
-  cta.href = (CFG.SERVER_BASE_URL || '') + '/Card/card.html';
+  // под карточкой кнопка: во встроенном виде (поверх страницы конструктора) она закрывает просмотр, отдельно — ведёт на конструктор
+  let cta;
+  if (new URLSearchParams(location.search).get('embed')) {
+    cta = document.createElement('button'); cta.type = 'button';
+    cta.onclick = () => { try { P.postMessage({ cdCloseView: true }, '*'); } catch (e) { /* ignore */ } };
+  } else {
+    cta = document.createElement('a'); cta.target = '_top'; cta.href = (CFG.SERVER_BASE_URL || '') + '/Card/card.html';
+  }
+  cta.className = 'cta'; cta.textContent = 'Настроить свою';
   document.body.appendChild(cta);
 }
 if (VIEW_ID) startView();
