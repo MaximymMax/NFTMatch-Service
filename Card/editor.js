@@ -1204,7 +1204,6 @@ function applyBg(bg, animate) {
   updateBgRow();
 }
 
-let allBackgrounds = null;
 async function openBgModal() {
   const D = P.document;
   if (!D.getElementById('cdBgCss')) {
@@ -1239,18 +1238,12 @@ async function openBgModal() {
     grid.innerHTML = '';
     const w = words(q);
     if (!w.length) item(T('По умолчанию'), DEFAULT_COLORS.c0, DEFAULT_COLORS.c1, !currentBg, () => applyBg(null, true));
-    (allBackgrounds || []).filter(b => w.every(x => b.name.toLowerCase().includes(x))).forEach(b => {
-      const g = bgFromColor(b.name, b.color);
-      item(b.name, g.c0, g.c1, currentBg && currentBg.name === b.name, () => applyBg(g, true));
+    (window.CARD_BGS || []).filter(b => w.every(x => b.name.toLowerCase().includes(x))).forEach(b => {
+      item(b.name, b.c0, b.c1, currentBg && currentBg.name === b.name, () => applyBg({ name: b.name, c0: b.c0, c1: b.c1 }, true));
     });
     if (!grid.children.length) { const n = D.createElement('div'); n.className = 'n'; n.textContent = T('Ничего не найдено'); grid.appendChild(n); }
   };
   inp.addEventListener('input', () => render(inp.value.trim()));
-  if (!allBackgrounds) {
-    grid.innerHTML = '<div class="n">' + T('Загружаю…') + '</div>';
-    try { allBackgrounds = (await apiGet('Card/Backgrounds')).filter(b => /^#[0-9a-f]{6}$/i.test(b.color || '')); }
-    catch (e) { grid.innerHTML = ''; const n = D.createElement('div'); n.className = 'n'; n.textContent = T('Не удалось загрузить фоны'); grid.appendChild(n); return; }
-  }
   render('');
 }
 document.getElementById('bgRow').onclick = openBgModal;
