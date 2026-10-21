@@ -352,7 +352,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Ссылка на карточку (c-<id>) открывается всегда: мини-приложение могло остаться в памяти Telegram
         // с флагом «уже обработано» от прошлой ссылки.
         const startParamNow = window.Telegram?.WebApp?.initDataUnsafe?.start_param || new URLSearchParams(window.location.search).get('startapp') || '';
-        const isCardLink = /^(c|card)-/i.test(startParamNow);
+        const isCardLink = /^(c|card)(-|$)/i.test(startParamNow);   // c-<id> — чужая карточка, card — свой конструктор
         if (!isCardLink && sessionStorage.getItem(PROCESSED_KEY)) {
             console.log('[DeepLink] Already processed.');
             return;
