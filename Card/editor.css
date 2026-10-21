@@ -351,3 +351,8 @@ body.fs .fsrow { display: none; }
 .bgrow b { font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .bgrow .go { color: var(--muted); font-size: 22px; line-height: 1; }
 body.fs .bgrow { display: none; }
+
+/* стикеры под текстом карточки (в примере они лежали поверх), рамка выбранного стикера — поверх всего */
+.face .stickers { z-index: 1; }
+.face .content { z-index: 2; }
+.face .fx { z-index: 3; }

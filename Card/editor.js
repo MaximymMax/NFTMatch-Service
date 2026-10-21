@@ -718,7 +718,6 @@ function tickFX(dt, now) {
     if (!st) { selId = null; ring.hidden = true; }
     else { const R = ringR(st); ring.style.width = ring.style.height = 2 * R + 'px'; ring.style.transform = 'translate(' + (st.x * cardW - R) + 'px,' + (st.y * cardH - R) + 'px) rotate(' + (st.r || 0) + 'deg)'; }
   }
-  updateOverlaps();
   if (patDirty || rev) drawPatterns();
 }
 
@@ -1167,7 +1166,18 @@ document.getElementById('btnClear').onclick = () => {
 
 /* ================================================================== init */
 const user = (() => { try { return P.NFTAuth && P.NFTAuth.getUser(); } catch (e) { return null; } })();
-if (user && (user.username || user.firstName)) document.getElementById('holder').textContent = (user.username ? '@' + user.username : user.firstName).toUpperCase();
+/* на карточке — имя человека (имя + фамилия); если длиннее 18 знаков, сокращаем: фамилию до инициала, а затем обрезаем с «…» */
+function holderName(u) {
+  if (!u) return '';
+  const first = (u.firstName || '').trim(), last = (u.lastName || '').trim();
+  let n = (first + ' ' + last).trim();
+  if (!n) return u.username ? '@' + u.username : '';
+  if (n.length > 18 && last) n = first + ' ' + last[0] + '.';
+  if (n.length > 18) n = n.slice(0, 17).trim() + '…';
+  return n;
+}
+const nameOnCard = holderName(user);
+if (nameOnCard) document.getElementById('holder').textContent = nameOnCard.toUpperCase();
 
 applyTheme(false);
 resize();
@@ -1431,6 +1441,15 @@ async function renderCardImage(size) {
   if (glc) x.drawImage(glc, 0, 0);
   else { const lg = x.createLinearGradient(0, 0, CW, CH); lg.addColorStop(0, rgb2css(c0)); lg.addColorStop(1, rgb2css(c1)); x.fillStyle = lg; x.fillRect(0, 0, CW, CH); }
 
+  // стикеры лежат под текстом
+  stickers.forEach((st, i) => {
+    const im = imgs[i]; if (!im) return;
+    const S = CW * .231 * st.sc;
+    x.save(); x.translate(st.x * CW, st.y * CH); x.rotate((st.r || 0) * Math.PI / 180);
+    x.shadowColor = 'rgba(10,15,28,.28)'; x.shadowBlur = 1.4 * cq; x.shadowOffsetY = .6 * cq;
+    x.drawImage(im, -S / 2, -S / 2, S, S); x.restore();
+  });
+
   // баланс: бриллиант, «11 GRAM», «$33.00»
   const by = CH * .41, gs = 8.4 * cq;
   x.save(); x.translate(6.6 * cq, by - gs / 2); x.scale(gs / 64, gs / 64);
@@ -1476,16 +1495,7 @@ async function renderCardImage(size) {
     });
   });
 
-  // стикеры
-  stickers.forEach((st, i) => {
-    const im = imgs[i]; if (!im) return;
-    const S = CW * .231 * st.sc;
-    x.save(); x.translate(st.x * CW, st.y * CH); x.rotate((st.r || 0) * Math.PI / 180);
-    x.shadowColor = 'rgba(10,15,28,.28)'; x.shadowBlur = 1.4 * cq; x.shadowOffsetY = .6 * cq;
-    x.drawImage(im, -S / 2, -S / 2, S, S); x.restore();
-  });
-
-  // чип поверх стикеров (в карточке под него вырезано отверстие — его нельзя закрыть)
+  // чип поверх всего (в карточке он тоже не закрывается)
   x.save(); x.translate(69.94 * cq, CH * .361);
   const cw2 = 14.29 * cq, ch2 = CH * .1756;
   rrPath(x, cw2, ch2, 3 * cq);

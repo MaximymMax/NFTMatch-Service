@@ -388,6 +388,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 break;
             case 'c':
             case 'card':
+                // язык по ссылке: если человек его ещё не выбирал, показываем по-русски (иначе сайт берёт язык клиента Telegram)
+                try { if (!localStorage.getItem('user_lang')) localStorage.setItem('user_lang', 'ru'); } catch (e) { /* ignore */ }
                 // чужая карточка: страница конструктора открывает её поверх себя на весь экран
                 targetUrl = './Card/card.html' + (/^[0-9a-z]{6,32}$/i.test(urlParams.get('id') || '') ? '?c=' + urlParams.get('id') : '');
                 break;
