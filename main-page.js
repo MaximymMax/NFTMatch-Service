@@ -349,7 +349,11 @@ document.addEventListener('DOMContentLoaded', () => {
     function handleDeepLink() {
         const PROCESSED_KEY = 'deepLinkProcessed_v4';
 
-        if (sessionStorage.getItem(PROCESSED_KEY)) {
+        // Ссылка на карточку (c-<id>) открывается всегда: мини-приложение могло остаться в памяти Telegram
+        // с флагом «уже обработано» от прошлой ссылки.
+        const startParamNow = window.Telegram?.WebApp?.initDataUnsafe?.start_param || new URLSearchParams(window.location.search).get('startapp') || '';
+        const isCardLink = /^(c|card)-/i.test(startParamNow);
+        if (!isCardLink && sessionStorage.getItem(PROCESSED_KEY)) {
             console.log('[DeepLink] Already processed.');
             return;
         }
@@ -372,7 +376,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!action) return;
 
         console.log('[DeepLink] Executing action:', action);
-        sessionStorage.setItem(PROCESSED_KEY, 'true');
+        if (!isCardLink) sessionStorage.setItem(PROCESSED_KEY, 'true');
         cleanCurrentUrlHistory();
         showLoadingIndicator();
 

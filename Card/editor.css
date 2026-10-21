@@ -329,3 +329,7 @@ body.view .fs-exit, body.view .bin, body.view .status { display: none !important
 body.view .stage { width: min(calc(100vw - 70px), calc((100vh - 130px) * 1.648)); }
 .cta { position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%); z-index: 90; padding: 12px 26px; border: 0; border-radius: 24px; cursor: pointer;
   background: #2563eb; color: #fff; font: 700 14px 'Inter', sans-serif; text-decoration: none; box-shadow: 0 6px 20px rgba(37,99,235,.45); }
+
+/* patch16: убираем тяжёлые фильтры на 3D-карточке (drop-shadow на каждом стикере и размытие тени перерисовывались при каждом кадре наклона) */
+.sticker { filter: none; }
+.card::after { filter: none; background: radial-gradient(ellipse at center, rgba(0,0,0,.5), transparent 70%); }

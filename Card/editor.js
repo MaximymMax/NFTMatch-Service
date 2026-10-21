@@ -149,7 +149,7 @@ function resize() {
   // untransformed size (getBoundingClientRect includes the tilt)
   cardW = card.offsetWidth; cardH = card.offsetHeight;
   card.style.setProperty('--cw', cardW + 'px');
-  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
   glCanvas.width = patCanvas.width = Math.round(cardW * dpr); glCanvas.height = patCanvas.height = Math.round(cardH * dpr);
   if (glOK) gl.viewport(0, 0, glCanvas.width, glCanvas.height);
   patDirty = true;
@@ -208,8 +208,11 @@ stage.addEventListener('pointerup', endTilt);
 stage.addEventListener('pointercancel', endTilt);
 
 /* ------------------------------------------------------------------ render loop */
-let last = performance.now();
+let last = performance.now(), lastGL = 0;
 function frame(now) {
+  const calm = !(tiltDrag || carry || G || rev || Math.abs(tiltVel.x) + Math.abs(tiltVel.y) > .004 || Math.abs(tilt.x - tiltTarget.x) + Math.abs(tilt.y - tiltTarget.y) > .001);
+  if (calm && now - lastGL < 66) { requestAnimationFrame(frame); return; }   // в покое блики медленные — хватает ~15 кадров в секунду
+  lastGL = now;
   const dt = Math.min(.05, (now - last) / 1000); last = now;
   // colour change spreading from the sticker
   let radPx = -1, softPx = 1;
@@ -251,7 +254,16 @@ function frame(now) {
 /* ================================================================== card geometry (what stickers must keep away from) */
 function px(v) { return v * cardW / 328; }       // "dp": the design is made for a 328 dp wide card
 function U() { return cardW * 0.231; }           // size of a sticker at scale 1
+let obsMemo = null;
+/* Препятствия считаются по размерам DOM (offsetWidth) — на каждом кадре это принудительная раскладка страницы. Кэшируем по размеру карточки и тексту. */
 function obstacles(inflate) {
+  const key = cardW + '|' + cardH + '|' + document.querySelector('.usd').textContent + '|' + document.getElementById('holder').textContent + '|' + (inflate ? 1 : 0);
+  if (obsMemo && obsMemo.key === key) return obsMemo.val;
+  const val = obstaclesRaw(inflate);
+  obsMemo = { key, val };
+  return val;
+}
+function obstaclesRaw(inflate) {
   const W = cardW, H = cardH, u = W / 336, f6 = W * 0.012, r = [];
   const bal = document.querySelector('.balance'), usd = document.querySelector('.usd'), hol = document.querySelector('.holder');
   const bw = bal.offsetWidth, bh = bal.offsetHeight;
@@ -747,6 +759,74 @@ function toast(msg) { toastEl.textContent = msg; toastEl.classList.add('show'); 
    и общий поиск (Card/SearchModels). */
 const P = window.parent !== window ? window.parent : window;
 const CFG = P.CONFIG || window.CONFIG || {};
+
+/* ================================================================== Локализация RU / EN */
+/* Язык берём у сайта (переключатель RU/EN в шапке пишет его в localStorage 'user_lang'). Тексты написаны по-русски; в английском
+   режиме их переводит словарь ниже — и в готовой разметке, и во всём, что рисуется позже (статусы, списки, меню, окна). */
+const LANG = (() => { try { return (P.NFTi18n && P.NFTi18n.getLanguage()) || localStorage.getItem('user_lang') || 'ru'; } catch (e) { return 'ru'; } })();
+const EN_UI = {
+  'Профиль': 'Profile', 'Коллекции': 'Collections', 'Модели': 'Models', 'Тематики': 'Themes',
+  'Найти подарок профиля…': 'Search profile gifts…', 'Найти коллекцию…': 'Search collections…',
+  'Найти модель или коллекцию…': 'Search a model or collection…', 'Найти тематику…': 'Search themes…',
+  '← Назад': '← Back', 'Показать ещё': 'Show more', 'Поделиться': 'Share', '⛶ На весь экран': '⛶ Fullscreen', 'Очистить': 'Clear',
+  'Выбранные': 'Selected', 'Убрать': 'Remove', 'Перетащите подарок сюда': 'Drag the gift here',
+  'Перетащите подарок на карточку, чтобы украсить её': 'Drag a gift onto the card to decorate it',
+  'Выйти из полноэкранного режима': 'Exit fullscreen',
+  'Загружаю коллекции…': 'Loading collections…', 'Загружаю тематики…': 'Loading themes…', 'Загружаю подарки профиля…': 'Loading profile gifts…',
+  'Ищу…': 'Searching…', 'Ничего не найдено': 'Nothing found', 'Не удалось загрузить данные': 'Failed to load data',
+  'Войдите через Telegram, чтобы пользоваться конструктором': 'Sign in with Telegram to use the builder',
+  'В профиле нет уникальных подарков': 'There are no unique gifts in your profile',
+  'Нажмите на подарки ниже, чтобы добавить их сюда. Отсюда их можно перетащить на карточку.': 'Tap the gifts below to add them here. From here you can drag them onto the card.',
+  'На карточке': 'On card', 'Добавить на карточку': 'Add to card', 'Убрать с карточки': 'Remove from card', 'Убрать из выбранных': 'Remove from selected',
+  'Нет свободного места на карточке': 'No free space on the card',
+  'Эта модель на карточке — сначала уберите её оттуда': 'This model is on the card — remove it from there first',
+  'Сохраняю…': 'Saving…', 'Сохранено ✓': 'Saved ✓', 'Не удалось загрузить карточку — обновите страницу': 'Failed to load the card — refresh the page',
+  'Карточка не найдена': 'Card not found', 'Настроить свою': 'Customize yours', 'Убрать все стикеры с карточки?': 'Remove all stickers from the card?',
+  'Поделиться карточкой': 'Share card', 'Готовлю ссылку…': 'Preparing the link…', 'Копировать ссылку': 'Copy link',
+  'Скинуть в чат с ботом': 'Send to the bot chat', 'Ссылка скопирована.': 'Link copied.',
+  'Выделите ссылку и скопируйте её вручную.': 'Select the link and copy it manually.', 'Готовлю картинку…': 'Preparing the image…',
+  'Закрыть': 'Close'
+};
+const EN_PAT = [
+  [/^(\d+) мод\.$/, '$1 models'],
+  [/^На карточке ×(\d+)$/, 'On card ×$1'],
+  [/^В выбранных может быть не больше (\d+) моделей$/, 'No more than $1 models can be selected'],
+  [/^Не удалось сохранить(.*)$/, 'Failed to save$1'],
+  [/^Не удалось получить ссылку(.*)$/, 'Could not get the link$1'],
+  [/^Подарки профиля не получены(.*)\. Запустите бота @(\S+) и откройте подарки в профиле\.$/, 'Profile gifts were not received$1. Start the bot @$2 and make sure your gifts are visible in your profile.'],
+  [/^Готово! Карточка с ссылкой отправлена в чат с @(\S+) — перешлите её оттуда\.$/, 'Done! The card with the link was sent to your chat with @$1 — forward it from there.'],
+  [/^Не получилось отправить(.*)\. Откройте чат с @(\S+) и нажмите \/start\.$/, 'Could not send$1. Open the chat with @$2 and press /start.']
+];
+function T(ru) {
+  if (LANG !== 'en' || !ru) return ru;
+  const m = String(ru).match(/^(\s*)([\s\S]*?)(\s*)$/), body = m[2].replace(/\s+/g, ' ');
+  if (!body) return ru;
+  if (EN_UI[body] !== undefined) return m[1] + EN_UI[body] + m[3];
+  for (const [re, to] of EN_PAT) if (re.test(body)) return m[1] + body.replace(re, to) + m[3];
+  return ru;
+}
+function trTree(root) {
+  if (LANG !== 'en' || !root) return;
+  try {
+    const doc = root.ownerDocument || document;
+    const w = doc.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: n => /[А-Яа-яЁё]/.test(n.nodeValue || '') ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT });
+    const nodes = []; let n; while ((n = w.nextNode())) nodes.push(n);
+    nodes.forEach(x => { const o = T(x.nodeValue); if (o !== x.nodeValue) x.nodeValue = o; });
+    const els = (root.nodeType === 1 ? [root] : []).concat(Array.from(root.querySelectorAll ? root.querySelectorAll('*') : []));
+    els.forEach(el => ['placeholder', 'title', 'alt', 'aria-label'].forEach(a => {
+      const v = el.getAttribute && el.getAttribute(a);
+      if (v && /[А-Яа-яЁё]/.test(v)) { const o = T(v); if (o !== v) el.setAttribute(a, o); }
+    }));
+  } catch (e) { /* перевод не должен ломать страницу */ }
+}
+if (LANG === 'en') {
+  document.documentElement.lang = 'en';
+  trTree(document.body);
+  let trQueued = false;
+  new MutationObserver(() => { if (trQueued) return; trQueued = true; setTimeout(() => { trQueued = false; trTree(document.body); }, 30); })
+    .observe(document.body, { childList: true, subtree: true });
+}
+
 const api = p => (CFG.SERVER_BASE_URL || '') + '/api/' + p;
 function authHeader() { try { if (P.NFTAuth) return P.NFTAuth.getApiAuthHeader(); } catch (e) { /* ignore */ } return 'Tma invalid'; }
 const imgUrl = (g, m) => 'https://cdn.changes.tg/gifts/models/' + encodeURIComponent(g) + '/png/' + encodeURIComponent(m) + '.png';
@@ -782,11 +862,44 @@ const newInstId = src => src + '#' + (++instSeq);
 const countOn = src => state.stickers.filter(s => s.src === src).length;
 
 /* картинка стикера: PNG модели (вместо Lottie из примера) */
-function staticArt(gid) {
+const bakedUrls = new Map(), baking = new Map(), bakeQueue = [];
+let bakeActive = 0;
+/* Модель с CDN весит ~370 КБ и декодируется целиком при каждом показе. Для карточки (стикеры, «выбранные», перелёты) один раз
+   рисуем её в 384 px и дальше используем лёгкую копию — это заметно разгружает наклон карточки с несколькими стикерами. */
+function bake(g, m) {
+  const key = g + '|' + m;
+  if (baking.has(key)) return baking.get(key);
+  const p = new Promise(res => {
+    bakeQueue.push(() => {
+      const i = new Image(); i.crossOrigin = 'anonymous';
+      const done = u => { bakeActive--; pumpBake(); res(u); };
+      i.onload = () => {
+        try {
+          const c = document.createElement('canvas'); c.width = c.height = 384;
+          c.getContext('2d').drawImage(i, 0, 0, 384, 384);
+          c.toBlob(b => { if (!b) return done(null); const u = URL.createObjectURL(b); bakedUrls.set(key, u); done(u); }, 'image/webp', .9);
+        } catch (e) { done(null); }
+      };
+      i.onerror = () => done(null);
+      i.src = imgUrl(g, m);
+    });
+    pumpBake();
+  });
+  baking.set(key, p);
+  return p;
+}
+function pumpBake() { while (bakeActive < 2 && bakeQueue.length) { bakeActive++; bakeQueue.shift()(); } }
+function modelImg(g, m, bakeIt) {
+  const img = new Image(); img.decoding = 'async'; img.draggable = false; img.alt = m;
+  const key = g + '|' + m, u = bakedUrls.get(key);
+  img.src = u || imgUrl(g, m);
+  if (bakeIt && !u) bake(g, m).then(url => { if (url) img.src = url; });
+  return img;
+}
+function staticArt(gid, noBake) {
   const [g, m] = splitId(gid);
   const wrap = document.createElement('div'); wrap.className = 'lot';
-  const img = new Image(); img.decoding = 'async'; img.draggable = false; img.alt = m; img.src = imgUrl(g, m);
-  wrap.appendChild(img);
+  wrap.appendChild(modelImg(g, m, !noBake));
   return wrap;
 }
 
@@ -855,7 +968,7 @@ function addModelTile(gift, model) {
   const t = document.createElement('div');
   t.className = 'tile pick'; t.dataset.id = id; t.title = model + ' — ' + gift;
   t.innerHTML = '<div class="art"></div><b></b><small></small>';
-  t.firstChild.appendChild(staticArt(id));
+  t.firstChild.appendChild(staticArt(id, true));
   t.children[1].textContent = model; t.children[2].textContent = gift;
   t.onclick = () => toggleTray(gift, model);
   gridEl.appendChild(t); catTiles.set(id, t);
@@ -885,6 +998,7 @@ function toggleTray(gift, model, uid, sub) {
   } else {
     if (tray.length >= TRAY_MAX) { toast('В выбранных может быть не больше ' + TRAY_MAX + ' моделей'); return; }
     tray.push({ id, gift, model, uid: uid || undefined, sub });
+    bake(gift, model);
   }
   renderTray(); save();
 }
@@ -937,7 +1051,7 @@ const words = s => s.toLowerCase().split(/\s+/).filter(Boolean);
 const errText = e => e.status === 403 ? 'Войдите через Telegram, чтобы пользоваться конструктором' : 'Не удалось загрузить данные';
 
 function setTab(t) {
-  tab = t; sel = null; qEl.value = ''; qEl.placeholder = PLACEHOLDERS[t];
+  tab = t; sel = null; qEl.value = ''; qEl.placeholder = T(PLACEHOLDERS[t]);
   filtersEl.querySelectorAll('button').forEach(b => b.classList.toggle('active', b.dataset.tab === t));
   refresh();
 }
@@ -1037,7 +1151,7 @@ moreBtn.onclick = () => { const q = qEl.value.trim(); if (sel || tab === 'models
 filtersEl.addEventListener('click', e => { const b = e.target.closest('button'); if (b) setTab(b.dataset.tab); });
 document.getElementById('btnBack').onclick = () => { sel = null; qEl.value = ''; refresh(); };
 document.getElementById('btnClear').onclick = () => {
-  if (state.stickers.length && confirm('Убрать все стикеры с карточки?')) state.stickers.slice().forEach(s => detach(s.id));
+  if (state.stickers.length && confirm(T('Убрать все стикеры с карточки?'))) state.stickers.slice().forEach(s => detach(s.id));
 };
 
 /* ================================================================== init */
@@ -1079,7 +1193,7 @@ async function startView() {
       const src = sid(s.gift, s.model, s.uid), st = { id: newInstId(src), src, x: +s.x, y: +s.y, sc: clamp(+s.sc || 1, minS, SC_MAX), r: +s.r || 0, z: ++zSeq, t: ++tSeq };
       state.stickers.push(st); createStickerEl(st); placeSticker(st, 'instant');
     });
-  } catch (e) { toast('Карточка не найдена'); }
+  } catch (e) { toast(T('Карточка не найдена')); }
   // под карточкой кнопка: во встроенном виде (поверх страницы конструктора) она закрывает просмотр, отдельно — ведёт на конструктор
   let cta;
   if (new URLSearchParams(location.search).get('embed')) {
@@ -1323,6 +1437,7 @@ function shareModal() {
     '<div class="lk">Готовлю ссылку…</div>' +
     '<div class="b"><button class="cp" disabled>Копировать ссылку</button><button class="pr bot" disabled>Скинуть в чат с ботом</button></div><div class="m"></div></div>';
   D.body.appendChild(o);
+  trTree(o);
   return o;
 }
 async function ensureShareLink() {
@@ -1339,14 +1454,14 @@ async function openShare() {
   const close = () => o.remove();
   o.querySelector('.x').onclick = close;
   o.addEventListener('pointerdown', e => { if (e.target === o) close(); });
-  const note = t => { o.querySelector('.m').textContent = t; };
+  const note = t => { o.querySelector('.m').textContent = T(t); };
   const lk = o.querySelector('.lk'), cp = o.querySelector('.cp'), bot = o.querySelector('.bot');
   let link;
   try {
     // по ссылке открывается серверная копия карточки — сначала дожидаемся сохранения
     clearTimeout(saveTimer); while (saving) await new Promise(r => setTimeout(r, 80)); await flushSave();
     link = await ensureShareLink();
-  } catch (e) { lk.textContent = 'Не удалось получить ссылку' + (e && /^\d+$/.test(e.message) ? ' (' + e.message + ')' : ''); return; }
+  } catch (e) { lk.textContent = T('Не удалось получить ссылку' + (e && /^\d+$/.test(e.message) ? ' (' + e.message + ')' : '')); return; }
   lk.textContent = link; cp.disabled = bot.disabled = false;
   cp.onclick = async () => {
     try { await P.navigator.clipboard.writeText(link); note('Ссылка скопирована.'); }
