@@ -1297,6 +1297,8 @@ async function startView() {
       state.stickers.push(st); createStickerEl(st); placeSticker(st, 'instant');
     });
   } catch (e) { toast(T('Карточка не найдена')); }
+  // вошедший человек (Telegram) учитывается как зритель ссылки
+  try { if (authHeader() !== 'Tma invalid') fetch(api('Card/View?c=' + encodeURIComponent(VIEW_ID)), { method: 'POST', headers: { 'Authorization': authHeader() } }).catch(() => {}); } catch (e) { /* ignore */ }
   // под карточкой кнопка: во встроенном виде (поверх страницы конструктора) она закрывает просмотр, отдельно — ведёт на конструктор
   let cta;
   if (new URLSearchParams(location.search).get('embed')) {
@@ -1528,6 +1530,7 @@ function shareModal() {
       '#cdShare .h{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;font-weight:800;font-size:16px}' +
       '#cdShare .x{width:36px;height:36px;border-radius:18px;background:#1e2944;color:#fff;border:0;font-size:18px;cursor:pointer}' +
       '#cdShare .lk{padding:13px 14px;border-radius:12px;background:#1e2944;font-size:14px;color:#c9d6f5;word-break:break-all;user-select:all;min-height:20px}' +
+      '#cdShare .vw{margin-top:10px;font-size:12px;color:#9fb0d6;line-height:1.5;word-break:break-word}#cdShare .vw b{color:#dbe4fa}' +
       '#cdShare .b{display:flex;flex-direction:column;gap:10px;margin-top:12px}' +
       '#cdShare .b button{border:0;border-radius:12px;padding:14px;font:700 14px Inter,sans-serif;cursor:pointer;background:#1e2944;color:#dbe4fa}' +
       '#cdShare .b button.pr{background:#2563eb;color:#fff}#cdShare .b button:disabled{opacity:.5;cursor:default}' +
@@ -1537,7 +1540,7 @@ function shareModal() {
   const old = D.getElementById('cdShare'); if (old) old.remove();
   const o = D.createElement('div'); o.id = 'cdShare';
   o.innerHTML = '<div class="p"><div class="h"><span>Поделиться карточкой</span><button class="x" aria-label="Закрыть">✕</button></div>' +
-    '<div class="lk">Готовлю ссылку…</div>' +
+    '<div class="lk">Готовлю ссылку…</div><div class="vw" hidden></div>' +
     '<div class="b"><button class="cp" disabled>Копировать ссылку</button><button class="pr bot" disabled>Скинуть в чат с ботом</button></div><div class="m"></div></div>';
   D.body.appendChild(o);
   trTree(o);
@@ -1566,6 +1569,15 @@ async function openShare() {
     link = await ensureShareLink();
   } catch (e) { lk.textContent = T('Не удалось получить ссылку' + (e && /^\d+$/.test(e.message) ? ' (' + e.message + ')' : '')); return; }
   lk.textContent = link; cp.disabled = bot.disabled = false;
+  // кто и сколько раз открыл ссылку
+  apiGet('Card/ViewStats').then(st => {
+    const vw = o.querySelector('.vw'); if (!st || !st.unique) return;
+    const names = (st.viewers || []).slice(0, 5).map(v => v.username ? '@' + v.username : 'id' + v.id).join(', ');
+    vw.hidden = false;
+    vw.innerHTML = '<b></b><span></span>';
+    vw.firstChild.textContent = (LANG === 'en' ? 'Link opened by: ' : 'Открыли ссылку: ') + st.unique + (LANG === 'en' ? ' people, ' : ' чел., ') + st.total + (LANG === 'en' ? ' views' : ' просмотров');
+    vw.lastChild.textContent = names ? ' — ' + names + (st.unique > 5 ? '…' : '') : '';
+  }).catch(() => { /* статистика не критична */ });
   cp.onclick = async () => {
     try { await P.navigator.clipboard.writeText(link); note('Ссылка скопирована.'); }
     catch (e) { try { const rg = D.createRange(); rg.selectNodeContents(lk); const s = P.getSelection(); s.removeAllRanges(); s.addRange(rg); D.execCommand('copy'); note('Ссылка скопирована.'); } catch (e2) { note('Выделите ссылку и скопируйте её вручную.'); } }
