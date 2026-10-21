@@ -566,6 +566,8 @@ function startCarry(e, st) {
   }
   c.ox = cx - e.clientX; c.oy = cy - e.clientY;
   c.el = document.createElement('div'); c.el.className = 'carry'; c.el.appendChild(staticArt(gid)); document.body.appendChild(c.el);
+  c.el.style.width = c.el.style.height = c.size + 'px';
+  c.el.style.transform = 'translate(' + (cx - c.size / 2) + 'px,' + (cy - c.size / 2) + 'px) rotate(' + c.rot + 'deg)';
   G.mode = 'carry'; G.carry = c; carry = c;
   card.classList.add('target');
   carryMove(e);
@@ -630,7 +632,8 @@ function tickCarry(dt) {
   const k = Math.pow(.9, dt * 60); c.ox *= k; c.oy *= k;
   let cx = c.x + c.ox, cy = c.y + c.oy, size, rotT = 0;
   if (c.hot) { const b = binCenter(); cx = b.x - 40; cy = b.y; size = 38; }
-  else if (c.inCard) { size = U() * 1.24 * clientScale(); rotT = c.fromCard ? (c.origin.r || 0) : 0; }
+  else if (c.fromCard) { size = sizeOf(c.st) * clientScale(); rotT = c.origin.r || 0; }          // свой размер и поворот — как выбрано
+  else if (c.inCard) { size = U() * clientScale(); }                                              // новый подарок — в размер, с которым он ляжет
   else size = tileSize(c.gid) * 1.24;
   const f = 1 - Math.pow(.0004, dt);
   c.size += (size - c.size) * f;
@@ -904,9 +907,13 @@ function staticArt(gid, noBake) {
 }
 
 /* ---- сохранение на бэкенде (после каждого изменения, с задержкой) */
-const statusEl = document.getElementById('status');
-function setStatus(text, err) { statusEl.textContent = text; statusEl.classList.toggle('err', !!err); }
-let loaded = false, dirty = false, saving = false, saveTimer = null;
+/* Статус сохранения на странице убран. Сбой показываем только коротким сообщением и не чаще раза в 6 секунд. */
+let lastErrToast = 0;
+function setStatus(text, err) {
+  if (!err || Date.now() - lastErrToast < 6000) return;
+  lastErrToast = Date.now(); toast(T(text));
+}
+let loaded = false, dirty = false, saving = false, saveTimer = null, saveFails = 0;
 const kind = 'catalog';                       // карточка одна (на сервере она хранится как kind=catalog)
 let tray = [];                                  // выбранные: { id, gift, model, uid?, sub? }
 function save() {
@@ -929,13 +936,15 @@ async function flushSave(keepalive) {
   try {
     const r = await fetch(api('Card/Save?kind=' + kind), { method: 'POST', keepalive: keepalive === true, headers: { 'Authorization': authHeader(), 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
     if (!r.ok) { const e = new Error(r.status); e.text = await r.text().catch(() => ''); throw e; }
-    if (!dirty) { setStatus('Сохранено ✓'); scheduleImageUpload(); }
+    saveFails = 0;
+    if (!dirty) scheduleImageUpload();
   } catch (e) {
     dirty = true;
     const why = e.message && /^\d+$/.test(e.message) ? ' (' + e.message + (e.text ? ': ' + e.text.slice(0, 120) : '') + ')' : '';
     setStatus('Не удалось сохранить' + why, true);
-    // отказ сервера (4xx) повторять бесполезно — следующее изменение попробует снова; сбой сети/5xx повторяем
-    if (!(+e.message >= 400 && +e.message < 500)) { clearTimeout(saveTimer); saveTimer = setTimeout(flushSave, 4000); }
+    // сбой сети, 5xx и лимит запросов (429) повторяем с нарастающей паузой; прочие отказы (4xx) повторять бесполезно — следующее изменение попробует снова
+    const code = +e.message;
+    if (!(code >= 400 && code < 500) || code === 429) { saveFails++; clearTimeout(saveTimer); saveTimer = setTimeout(flushSave, Math.min(15000, 2000 * saveFails)); }
   } finally { saving = false; }
 }
 function flush() { if (dirty && loaded) { clearTimeout(saveTimer); flushSave(true); } }

@@ -333,3 +333,10 @@ body.view .stage { width: min(calc(100vw - 70px), calc((100vh - 130px) * 1.648))
 /* patch16: убираем тяжёлые фильтры на 3D-карточке (drop-shadow на каждом стикере и размытие тени перерисовывались при каждом кадре наклона) */
 .sticker { filter: none; }
 .card::after { filter: none; background: radial-gradient(ellipse at center, rgba(0,0,0,.5), transparent 70%); }
+
+/* кнопка «На весь экран» вместо статуса сохранения: по центру над карточкой */
+.fsrow { display: flex; justify-content: center; margin: 12px 0 -16px; position: relative; z-index: 2; }
+body.fs .fsrow { display: none; }
+
+/* запасной размер копии при перетаскивании до первого кадра */
+.carry { width: 90px; height: 90px; }
