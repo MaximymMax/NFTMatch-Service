@@ -8,6 +8,7 @@
                drag = move, drag off the card / onto "Remove" = take it off, the 11th sticker replaces the oldest */
 (function () {
 'use strict';
+const VIEW_ID = new URLSearchParams(location.search).get('c');   // режим просмотра чужой карточки по ссылке
 
 const MAX_STICKERS = 10;
 const DEFAULT_COLORS = { c0: '#3AB0F8', c1: '#1488E1' };
@@ -482,7 +483,7 @@ let G = null, carry = null;
 
 /* touch on the card: knob of the selected sticker -> scale/rotate, a sticker -> tap / hold / drag, else the card tilts */
 function stickerDown(e) {
-  if (e.button > 0 || G) return false;
+  if (VIEW_ID || e.button > 0 || G) return false;
   const l = localPt(e.clientX, e.clientY);
   const sel = selId && getSt(selId);
   if (sel) {
@@ -793,7 +794,7 @@ function staticArt(gid) {
 const statusEl = document.getElementById('status');
 function setStatus(text, err) { statusEl.textContent = text; statusEl.classList.toggle('err', !!err); }
 let loaded = false, dirty = false, saving = false, saveTimer = null;
-let kind = 'catalog', switching = false;     // две карточки: 'catalog' (из каталога) и 'profile' (подарки профиля)
+const kind = 'catalog';                       // карточка одна (на сервере она хранится как kind=catalog)
 let tray = [];                                  // выбранные: { id, gift, model, uid?, sub? }
 function save() {
   if (!loaded) return;
@@ -810,7 +811,8 @@ async function flushSave(keepalive) {
       return { gift, model, uid: uid || null, x: +s.x.toFixed(4), y: +s.y.toFixed(4), r: +wrap180(s.r || 0).toFixed(1), sc: +s.sc.toFixed(3) };
     })
   };
-  if (kind === 'catalog') payload.tray = tray.map(t => ({ gift: t.gift, model: t.model }));   // подарки профиля берутся из профиля, их не храним
+  payload.tray = tray.map(t => ({ gift: t.gift, model: t.model, uid: t.uid || null }));
+  payload.holder = document.getElementById('holder').textContent;
   try {
     const r = await fetch(api('Card/Save?kind=' + kind), { method: 'POST', keepalive: keepalive === true, headers: { 'Authorization': authHeader(), 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
     if (!r.ok) { const e = new Error(r.status); e.text = await r.text().catch(() => ''); throw e; }
@@ -875,14 +877,14 @@ function renderTray() {
   refreshTiles();
 }
 const TRAY_MAX = 60;
-function toggleTray(gift, model) {
-  const id = sid(gift, model), i = tray.findIndex(t => t.id === id);
+function toggleTray(gift, model, uid, sub) {
+  const id = sid(gift, model, uid), i = tray.findIndex(t => t.id === id);
   if (i >= 0) {
     if (countOn(id)) { toast('Эта модель на карточке — сначала уберите её оттуда'); return; }
     tray.splice(i, 1);
   } else {
     if (tray.length >= TRAY_MAX) { toast('В выбранных может быть не больше ' + TRAY_MAX + ' моделей'); return; }
-    tray.push({ id, gift, model });
+    tray.push({ id, gift, model, uid: uid || undefined, sub });
   }
   renderTray(); save();
 }
@@ -894,9 +896,9 @@ function refreshTiles() {
     if (n) { const o = document.createElement('span'); o.className = 'onc'; o.textContent = n > 1 ? 'На карточке ×' + n : 'На карточке'; art.appendChild(o); }
   });
   catTiles.forEach((t, id) => t.classList.toggle('picked', tray.some(x => x.id === id)));
-    document.getElementById('btnClear').disabled = !state.stickers.length;
+  document.getElementById('btnClear').disabled = !state.stickers.length;
   document.getElementById('trayCount').textContent = state.stickers.length + '/' + MAX_STICKERS;
-  if (!trayNote.dataset.fixed) trayNote.textContent = tray.length ? '' : (kind === 'profile' ? 'В профиле нет уникальных подарков' : 'Нажмите на модели в каталоге, чтобы добавить их сюда. Отсюда их можно перетащить на карточку.');
+  trayNote.textContent = tray.length ? '' : 'Нажмите на подарки ниже, чтобы добавить их сюда. Отсюда их можно перетащить на карточку.';
 }
 
 /* ---- меню по долгому нажатию: единственное действие — добавить / убрать */
@@ -927,8 +929,8 @@ document.addEventListener('pointerdown', e => { if (!menu.hidden && !e.target.cl
 const qEl = document.getElementById('q'), crumbs = document.getElementById('crumbs'), moreBtn = document.getElementById('btnMore');
 const filtersEl = document.getElementById('filters');
 const PAGE = 60;
-const PLACEHOLDERS = { collections: 'Найти коллекцию…', models: 'Найти модель или коллекцию…', themes: 'Найти тематику…' };
-let tab = 'collections', sel = null, collections = null, ver = 0, offset = 0;   // sel = { type: 'gift' | 'theme', key, title }
+const PLACEHOLDERS = { profile: 'Найти подарок профиля…', collections: 'Найти коллекцию…', models: 'Найти модель или коллекцию…', themes: 'Найти тематику…' };
+let tab = 'profile', sel = null, collections = null, ver = 0, offset = 0;   // sel = { type: 'gift' | 'theme', key, title }
 
 function clearGrid() { gridEl.innerHTML = ''; catTiles.clear(); }
 const words = s => s.toLowerCase().split(/\s+/).filter(Boolean);
@@ -944,7 +946,8 @@ function refresh() {
   crumbs.hidden = !sel;
   document.getElementById('crumbTitle').textContent = sel ? sel.title : '';
   const q = qEl.value.trim();
-  if (sel || tab === 'models') fetchModels(q);
+  if (tab === 'profile' && !sel) fetchProfile(q);
+  else if (sel || tab === 'models') fetchModels(q);
   else if (tab === 'collections') renderCollections(q);
   else fetchThemes(q);
 }
@@ -992,9 +995,45 @@ async function fetchModels(q) {
     refreshTiles();
   } catch (e) { if (my === ver) noteEl.textContent = errText(e); }
 }
+/* подарки из профиля (Bot API getUserGifts): в списке — фото подарка с фоном; на карточку из «выбранных» ставится модель */
+let profileInfo = null;
+async function loadProfileInfo() {
+  if (profileInfo) return profileInfo;
+  try {
+    const info = await apiGet('Card/ProfileGifts');
+    (info.gifts || []).forEach(g => profileMeta.set(g.uid, { center: g.center, edge: g.edge }));
+    if (info.available || (info.gifts || []).length) profileInfo = info; else return info;   // неудачу не запоминаем — можно повторить
+    return info;
+  } catch (e) { return { available: false, error: 'HTTP ' + (e.status || '?'), gifts: [] }; }
+}
+function addProfileTile(g) {
+  const id = sid(g.gift, g.model, g.uid), sub = '#' + g.number;
+  const t = document.createElement('div');
+  t.className = 'tile pick photo'; t.dataset.id = id; t.title = g.model + ' — ' + g.gift + ' ' + sub;
+  t.innerHTML = '<div class="art"></div><b></b><small></small>';
+  t.firstChild.appendChild(photoArt(g.gift, g.model, g.uid));
+  t.children[1].textContent = g.model; t.children[2].textContent = sub + ' · ' + g.backdrop;
+  t.onclick = () => toggleTray(g.gift, g.model, g.uid, sub);
+  gridEl.appendChild(t); catTiles.set(id, t);
+}
+async function fetchProfile(q) {
+  gridEl.classList.remove('collections');
+  const my = ver; noteEl.textContent = 'Загружаю подарки профиля…'; moreBtn.hidden = true;
+  const info = await loadProfileInfo();
+  if (my !== ver) return;
+  if (!info.available) {
+    noteEl.textContent = 'Подарки профиля не получены' + (info.error ? ' (' + info.error + ')' : '') + '. Запустите бота @NFTMatchBot и откройте подарки в профиле.';
+    return;
+  }
+  const w = words(q);
+  const list = (info.gifts || []).filter(g => w.every(x => (g.model + ' ' + g.gift + ' ' + g.backdrop + ' ' + g.number).toLowerCase().includes(x)));
+  list.forEach(addProfileTile);
+  noteEl.textContent = list.length ? '' : (info.gifts && info.gifts.length ? 'Ничего не найдено' : 'В профиле нет уникальных подарков');
+  refreshTiles();
+}
 let searchT;
 qEl.addEventListener('input', () => { clearTimeout(searchT); searchT = setTimeout(refresh, 250); });
-moreBtn.onclick = () => { const q = qEl.value.trim(); if (sel || tab === 'models') fetchModels(q); else fetchThemes(q); };
+moreBtn.onclick = () => { const q = qEl.value.trim(); if (sel || tab === 'models') fetchModels(q); else if (tab === 'themes') fetchThemes(q); };
 filtersEl.addEventListener('click', e => { const b = e.target.closest('button'); if (b) setTab(b.dataset.tab); });
 document.getElementById('btnBack').onclick = () => { sel = null; qEl.value = ''; refresh(); };
 document.getElementById('btnClear').onclick = () => {
@@ -1008,59 +1047,46 @@ if (user && user.username) document.getElementById('holder').textContent = ('@' 
 applyTheme(false);
 resize();
 requestAnimationFrame(frame);
-setTab('collections');
-
-/* ---- две карточки: из каталога и из подарков профиля; у каждой своё сохранение */
-const kindEl = document.getElementById('kindSwitch');
-function profileTray(info) {
-  (info.gifts || []).forEach(g => profileMeta.set(g.uid, { center: g.center, edge: g.edge }));
-  return (info.gifts || []).map(g => ({ id: sid(g.gift, g.model, g.uid), gift: g.gift, model: g.model, uid: g.uid, sub: g.number ? '#' + g.number : g.gift }));
-}
-async function loadKind() {
-  loaded = false; trayNote.dataset.fixed = ''; setStatus('');
+/* ---- загрузка единственной карточки с сервера */
+async function loadCard() {
+  loaded = false; setStatus('');
   try {
     const data = await apiGet('Card/Get?kind=' + kind);
-    const minS = px(32) / U();
+    const minS = 0.4;   // как минимальный масштаб в примере; от размера карточки не зависит (в момент загрузки она может быть ещё без размера)
     (data.stickers || []).slice(0, MAX_STICKERS).forEach(s => {
       const src = sid(s.gift, s.model, s.uid), st = { id: newInstId(src), src, x: +s.x, y: +s.y, sc: clamp(+s.sc || 1, minS, SC_MAX), r: +s.r || 0, z: ++zSeq, t: ++tSeq };
       state.stickers.push(st); createStickerEl(st); placeSticker(st, 'instant');
     });
-    if (kind === 'catalog') {
-      tray = (data.tray || []).map(t => ({ id: sid(t.gift, t.model), gift: t.gift, model: t.model }));
-      state.stickers.forEach(s => { if (!tray.some(t => t.id === s.src)) { const [gift, model] = splitId(s.src); tray.push({ id: s.src, gift, model }); } });
-    } else {
-      let info;
-      try { info = await apiGet('Card/ProfileGifts'); } catch (e) { info = { available: false, error: 'HTTP ' + (e.status || '?') }; }
-      tray = info.available ? profileTray(info) : [];
-      if (!info.available) { trayNote.dataset.fixed = '1'; trayNote.textContent = 'Подарки профиля не получены' + (info.error ? ' (' + info.error + ')' : '') + '. Запустите бота @NFTMatchBot и откройте подарки в профиле.'; }
-    }
+    tray = (data.tray || []).map(t => ({ id: sid(t.gift, t.model, t.uid), gift: t.gift, model: t.model, uid: t.uid || undefined, sub: t.uid ? '#' + t.uid.split('-').pop() : undefined }));
+    state.stickers.forEach(s => { if (!tray.some(t => t.id === s.src)) { const [gift, model, uid] = splitId(s.src); tray.push({ id: s.src, gift, model, uid, sub: uid ? '#' + uid.split('-').pop() : undefined }); } });
     loaded = true; renderTray();
   } catch (e) {
     // loaded остаётся false: пустой экран не затрёт сохранённую карточку
     setStatus(e.status === 403 ? 'Раздел доступен только администратору' : 'Не удалось загрузить карточку — обновите страницу', true);
   }
 }
-async function switchKind(k) {
-  if (k === kind || switching) return;
-  switching = true;
+
+/* ---- просмотр по ссылке (view.html?c=...): та же карточка на весь экран, без входа и без правки */
+async function startView() {
+  document.body.classList.add('view', 'fs');
   try {
-    clearTimeout(saveTimer);
-    while (saving) await new Promise(r => setTimeout(r, 80));
-    await flushSave();
-    if (dirty) { toast('Не удалось сохранить карточку — попробуйте ещё раз'); return; }
-    loaded = false; menu.hidden = true; select(null);
-    state.stickers.slice().forEach(s => detach(s.id));
-    kind = k; tray = [];
-    document.getElementById('trayTitle').textContent = k === 'profile' ? 'Подарки профиля' : 'Выбранные';
-    trayBoxEl.classList.toggle('static', k === 'profile');
-    document.body.classList.toggle('profile', k === 'profile');
-    kindEl.querySelectorAll('button').forEach(b => b.classList.toggle('active', b.dataset.kind === k));
-    renderTray();
-    await loadKind();
-  } finally { switching = false; }
+    const r = await fetch(api('Card/Public/' + encodeURIComponent(VIEW_ID)));
+    if (!r.ok) throw new Error(r.status);
+    const data = await r.json();
+    if (data.holder) document.getElementById('holder').textContent = data.holder;
+    const minS = 0.4;   // как минимальный масштаб в примере; от размера карточки не зависит (в момент загрузки она может быть ещё без размера)
+    (data.stickers || []).slice(0, MAX_STICKERS).forEach(s => {
+      const src = sid(s.gift, s.model, s.uid), st = { id: newInstId(src), src, x: +s.x, y: +s.y, sc: clamp(+s.sc || 1, minS, SC_MAX), r: +s.r || 0, z: ++zSeq, t: ++tSeq };
+      state.stickers.push(st); createStickerEl(st); placeSticker(st, 'instant');
+    });
+  } catch (e) { toast('Карточка не найдена'); }
+  const cta = document.createElement('a');
+  cta.className = 'cta'; cta.target = '_top'; cta.textContent = 'Собрать свою карточку';
+  cta.href = (CFG.SERVER_BASE_URL || '') + '/Card/card.html';
+  document.body.appendChild(cta);
 }
-kindEl.addEventListener('click', e => { const b = e.target.closest('button'); if (b) switchKind(b.dataset.kind); });
-loadKind();
+if (VIEW_ID) startView();
+else { setTab('profile'); loadCard(); loadProfileInfo(); }
 
 /* ---- полноэкранный горизонтальный режим: iframe растягивается на весь экран поверх размытой страницы,
    телефон переводится в альбомную ориентацию (а если не вышло — страница поворачивается CSS-ом) */
@@ -1111,7 +1137,7 @@ new ResizeObserver(reportHeight).observe(app);
 window.addEventListener('load', reportHeight);
 setInterval(reportHeight, 1500);   // страховка: размер меняют и подгружающиеся картинки
 reportHeight();
-window.__card = { tray: () => tray, kind: () => kind, switchKind, state, addToCard, evict, autoAdd, findPlacement, select, tiltTarget, get carry() { return carry; } };
+window.__card = { tray: () => tray, kind: () => kind, state, addToCard, evict, autoAdd, findPlacement, select, tiltTarget, get carry() { return carry; } };
 
 
 /* ---- «Выбранные» можно свернуть: состояние помним в браузере */
@@ -1129,7 +1155,7 @@ try { if (localStorage.getItem('cdTrayCollapsed')) trayBoxEl.classList.add('coll
 /* Картинка 2400×1500: фон #283043 со светлым радиальным градиентом в центре, юзернейм бота слева сверху и сама
    карточка. Шейдер рисуется заново в большом разрешении (без наклона), текст, чип и стикеры — на 2D-холсте;
    размеры и позиции берутся из тех же долей, что и в вёрстке карточки. */
-const SHARE = { W: 2400, H: 1500, CW: 1760, BG: '#283043' };
+const SHARE = { W: 2400, H: 1500, CW: 2100, BG: '#283043' };
 
 function glCardCanvas(w, h) {
   const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
@@ -1177,10 +1203,6 @@ async function renderCardImage() {
   const rg = x.createRadialGradient(W / 2, H / 2, 0, W / 2, H / 2, Math.hypot(W, H) * .46);
   rg.addColorStop(0, 'rgba(255,255,255,.24)'); rg.addColorStop(.55, 'rgba(255,255,255,.07)'); rg.addColorStop(1, 'rgba(255,255,255,0)');
   x.fillStyle = rg; x.fillRect(0, 0, W, H);
-
-  // юзернейм бота слева сверху
-  x.fillStyle = 'rgba(255,255,255,.9)'; x.font = '700 52px Inter, Roboto, sans-serif'; x.textBaseline = 'top';
-  x.fillText('@' + (CFG.BOT_USERNAME || 'NFTMatchBot'), 90, 80);
 
   // стикеры нужны до рисования (загружаем параллельно)
   const stickers = state.stickers.slice().sort((a, b) => (a.z || 0) - (b.z || 0));
@@ -1272,7 +1294,8 @@ async function renderCardImage() {
   return cv;
 }
 
-/* ---- окно «Поделиться»: строится в родительской странице, чтобы быть поверх всего (в т.ч. полноэкранного режима) */
+/* ---- окно «Поделиться»: строится в родительской странице, чтобы быть поверх всего (в т.ч. полноэкранного режима).
+   В чат уходит картинка и ссылка: по ссылке любой человек открывает эту карточку на весь экран (view.html). */
 function shareModal() {
   const D = P.document;
   if (!D.getElementById('cdShareCss')) {
@@ -1283,19 +1306,25 @@ function shareModal() {
       '#cdShare .x{width:36px;height:36px;border-radius:18px;background:#1e2944;color:#fff;border:0;font-size:18px;cursor:pointer}' +
       '#cdShare .pv{display:flex;align-items:center;justify-content:center;min-height:160px;border-radius:14px;background:#283043;overflow:hidden;color:#8fa0c4;font-size:14px}' +
       '#cdShare .pv img{display:block;width:100%;height:auto}' +
+      '#cdShare .lk{margin-top:10px;padding:10px 12px;border-radius:10px;background:#1e2944;font-size:12px;color:#9fb0d6;word-break:break-all}' +
       '#cdShare .b{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap}' +
       '#cdShare .b button{flex:1 1 140px;border:0;border-radius:12px;padding:13px 14px;font:700 14px Inter,sans-serif;cursor:pointer;background:#1e2944;color:#dbe4fa}' +
-      '#cdShare .b button.pr{background:#2563eb;color:#fff}#cdShare .b button:disabled{opacity:.45;cursor:default}' +
+      '#cdShare .b button.pr{background:#2563eb;color:#fff}#cdShare .b button:disabled{opacity:.45;cursor:default}#cdShare [hidden]{display:none}' +
       '#cdShare .m{margin-top:10px;font-size:12px;color:#8fa0c4;text-align:center;min-height:16px}';
     D.head.appendChild(st);
   }
   const old = D.getElementById('cdShare'); if (old) old.remove();
   const o = D.createElement('div'); o.id = 'cdShare';
   o.innerHTML = '<div class="p"><div class="h"><span>Поделиться карточкой</span><button class="x" aria-label="Закрыть">✕</button></div>' +
-    '<div class="pv">Готовлю картинку…</div>' +
-    '<div class="b"><button class="dl" disabled>Скачать</button><button class="pr sh" disabled>Переслать</button><button class="tg" hidden>В чат через бота</button></div><div class="m"></div></div>';
+    '<div class="pv">Готовлю картинку…</div><div class="lk" hidden></div>' +
+    '<div class="b"><button class="pr sh" disabled>Отправить в чат</button><button class="tg" hidden>В чат через бота</button><button class="cp" disabled>Копировать ссылку</button><button class="dl" disabled>Скачать</button></div><div class="m"></div></div>';
   D.body.appendChild(o);
   return o;
+}
+async function ensureShareLink() {
+  const r = await fetch(api('Card/ShareLink?kind=' + kind), { method: 'POST', headers: { 'Authorization': authHeader() } });
+  if (!r.ok) throw new Error(r.status);
+  return (await r.json()).url;
 }
 async function openShare() {
   const o = shareModal(), D = P.document;
@@ -1304,36 +1333,45 @@ async function openShare() {
   o.querySelector('.x').onclick = close;
   o.addEventListener('pointerdown', e => { if (e.target === o) close(); });
   const note = t => { o.querySelector('.m').textContent = t; };
-  let blob;
+  let blob, link;
   try {
+    // карточка должна быть сохранена: по ссылке открывается её серверная копия
+    clearTimeout(saveTimer); while (saving) await new Promise(r => setTimeout(r, 80)); await flushSave();
     const cv = await renderCardImage();
     blob = await new Promise(r => cv.toBlob(r, 'image/png'));
     if (!blob) throw new Error('empty');
+    link = await ensureShareLink();
   } catch (e) {
-    o.querySelector('.pv').textContent = 'Не удалось подготовить картинку'; return;
+    o.querySelector('.pv').textContent = 'Не удалось подготовить картинку' + (e && /^\d+$/.test(e.message) ? ' (' + e.message + ')' : ''); return;
   }
   url = URL.createObjectURL(blob);
   const pv = o.querySelector('.pv'); pv.textContent = ''; const img = D.createElement('img'); img.src = url; img.alt = 'Карточка'; pv.appendChild(img);
+  const lk = o.querySelector('.lk'); lk.hidden = false; lk.textContent = link;
   const file = new File([blob], 'nftmatch-card.png', { type: 'image/png' });
-  const dl = o.querySelector('.dl'), sh = o.querySelector('.sh');
-  dl.disabled = false; sh.disabled = false;
-  const tgBtn = o.querySelector('.tg');
+  const text = 'Моя карточка NFT Match\n' + link;
+  const dl = o.querySelector('.dl'), sh = o.querySelector('.sh'), cp = o.querySelector('.cp'), tgBtn = o.querySelector('.tg');
+  dl.disabled = sh.disabled = cp.disabled = false;
   try { if (P.Telegram && P.Telegram.WebApp && P.Telegram.WebApp.switchInlineQuery && P.Telegram.WebApp.initData) tgBtn.hidden = false; } catch (e) { /* ignore */ }
-  tgBtn.onclick = async () => {
-    tgBtn.disabled = true; note('Отправляю карточку боту…');
-    await uploadImage(true);
-    try { P.Telegram.WebApp.switchInlineQuery(kind === 'profile' ? 'mycard' : 'myideacard', ['users', 'groups', 'channels']); } catch (e) { note('Откройте любой чат и напишите @' + (CFG.BOT_USERNAME || 'NFTMatchBot') + ' ' + (kind === 'profile' ? 'mycard' : 'myideacard')); }
-    tgBtn.disabled = false;
-  };
+
+  const copyLink = async () => { try { await P.navigator.clipboard.writeText(link); note('Ссылка скопирована.'); return true; } catch (e) { note('Скопируйте ссылку вручную: ' + link); return false; } };
+  cp.onclick = copyLink;
   dl.onclick = () => { const a = D.createElement('a'); a.href = url; a.download = 'nftmatch-card.png'; D.body.appendChild(a); a.click(); a.remove(); note('Картинка сохраняется…'); };
+  // фото и ссылка одним сообщением; если системное меню недоступно — копируем картинку и ссылку в буфер
   sh.onclick = async () => {
     try {
-      if (P.navigator.canShare && P.navigator.canShare({ files: [file] })) { await P.navigator.share({ files: [file], title: 'Моя карточка NFT Match' }); return; }
+      if (P.navigator.canShare && P.navigator.canShare({ files: [file] })) { await P.navigator.share({ files: [file], text }); return; }
     } catch (e) { if (e && e.name === 'AbortError') return; }
     try {
       await P.navigator.clipboard.write([new P.ClipboardItem({ 'image/png': blob })]);
-      note('Картинка скопирована — вставьте её в чат.');
-    } catch (e) { note('Нажмите и удерживайте картинку, чтобы сохранить или переслать, либо нажмите «Скачать».'); }
+      note('Картинка скопирована — вставьте её в чат и добавьте ссылку (кнопка «Копировать ссылку»).');
+    } catch (e) { await copyLink(); }
+  };
+  // внутри Telegram: бот присылает в выбранный чат фото со ссылкой (инлайн-режим)
+  tgBtn.onclick = async () => {
+    tgBtn.disabled = true; note('Отправляю карточку боту…');
+    await uploadImage(true);
+    try { P.Telegram.WebApp.switchInlineQuery('mycard', ['users', 'groups', 'channels']); } catch (e) { note('Откройте любой чат и напишите @' + (CFG.BOT_USERNAME || 'NFTMatchBot') + ' mycard'); }
+    tgBtn.disabled = false;
   };
 }
 document.getElementById('btnShare').onclick = openShare;

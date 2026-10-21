@@ -323,3 +323,9 @@ body.fs .status { display: none; }
   -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 14px, #000 calc(100% - 34px), transparent 100%);
   mask-image: linear-gradient(to bottom, transparent 0, #000 14px, #000 calc(100% - 34px), transparent 100%);
 }
+
+/* режим просмотра по ссылке: только карточка на весь экран */
+body.view .fs-exit, body.view .bin, body.view .status { display: none !important; }
+body.view .stage { width: min(calc(100vw - 70px), calc((100vh - 70px) * 1.648)); }
+.cta { position: fixed; left: 50%; bottom: 14px; transform: translateX(-50%); z-index: 90; padding: 9px 16px; border-radius: 20px;
+  background: rgba(30,41,68,.85); color: #dbe4fa; font: 700 12px 'Inter', sans-serif; text-decoration: none; -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }

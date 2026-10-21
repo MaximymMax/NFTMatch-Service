@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <title>Редактор карточки</title>
 <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Roboto+Mono:wght@400;700&family=Inter:wght@500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="./editor.css?v=10">
+<link rel="stylesheet" href="./editor.css?v=11">
 </head>
 <body>
 <!-- Редактор карточки: карточка и перетаскивание перенесены из примера E:\TG Concept\web (WebGL-шейдер,
@@ -14,10 +14,6 @@
 <div class="app" id="app">
 
   <section class="left">
-    <div class="kind" id="kindSwitch">
-      <button type="button" class="active" data-kind="catalog">Из каталога</button>
-      <button type="button" data-kind="profile">Подарки профиля</button>
-    </div>
     <div class="status" id="status"></div>
     <div class="stage" id="stage">
       <div class="scene" id="scene">
@@ -75,11 +71,12 @@
 
   <section class="right page" id="page">
     <div class="filters" id="filters">
-      <button type="button" class="active" data-tab="collections">Коллекции</button>
+      <button type="button" class="active" data-tab="profile">Профиль</button>
+      <button type="button" data-tab="collections">Коллекции</button>
       <button type="button" data-tab="models">Модели</button>
       <button type="button" data-tab="themes">Тематики</button>
     </div>
-    <input type="search" id="q" class="search" placeholder="Найти коллекцию…" autocomplete="off" spellcheck="false">
+    <input type="search" id="q" class="search" placeholder="Найти подарок профиля…" autocomplete="off" spellcheck="false">
     <div class="crumbs" id="crumbs" hidden>
       <button type="button" class="pill-btn" id="btnBack">← Назад</button>
       <b id="crumbTitle"></b>
@@ -95,6 +92,6 @@
   <div class="toast" id="toast" role="status"></div>
 </div>
 <meta name="theme-color" content="#16213a">
-<script src="./editor.js?v=10"></script>
+<script src="./editor.js?v=11"></script>
 </body>
 </html>

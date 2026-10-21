@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>Карточка NFT Match</title>
+<meta property="og:title" content="Карточка NFT Match">
+<meta property="og:description" content="Карточка из Telegram-подарков, собранная в NFT Match">
+<meta name="theme-color" content="#283043">
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #283043; }
+  body { background: radial-gradient(ellipse at 50% 50%, #424f6b 0%, #283043 62%); }
+  /* карточка открывается на весь экран горизонтально: в портрете страница поворачивается на 90° */
+  #f { position: fixed; left: 0; top: 0; width: 100vw; height: 100vh; height: 100dvh; border: 0; background: transparent; transform-origin: 0 0; }
+  #fsb { position: fixed; right: 12px; top: 12px; z-index: 5; width: 42px; height: 42px; border: 0; border-radius: 21px; cursor: pointer;
+    background: rgba(30, 41, 68, .85); color: #fff; font-size: 18px; line-height: 1; }
+  #fsb[hidden] { display: none; }
+</style>
+</head>
+<body>
+<script src="../config.js"></script>
+<iframe id="f" title="Карточка"></iframe>
+<button id="fsb" type="button" aria-label="На весь экран" hidden>⛶</button>
+<script>
+(function () {
+  var f = document.getElementById('f'), btn = document.getElementById('fsb');
+  var id = new URLSearchParams(location.search).get('c') || '';
+  f.src = './editor.html?c=' + encodeURIComponent(id);
+
+  function fit() {
+    var W = window.innerWidth, H = window.innerHeight;
+    if (H > W) {   // портрет: поворачиваем содержимое
+      f.style.width = H + 'px'; f.style.height = W + 'px'; f.style.transform = 'translateX(' + W + 'px) rotate(90deg)';
+    } else { f.style.width = ''; f.style.height = ''; f.style.transform = ''; }
+  }
+  window.addEventListener('resize', fit);
+  window.addEventListener('orientationchange', function () { setTimeout(fit, 150); });
+  fit();
+
+  // системный полноэкранный режим (нужно нажатие): заодно просим альбомную ориентацию
+  var root = document.documentElement;
+  if (root.requestFullscreen) {
+    btn.hidden = false;
+    btn.onclick = function () {
+      if (document.fullscreenElement) { document.exitFullscreen(); return; }
+      root.requestFullscreen({ navigationUI: 'hide' }).then(function () {
+        try { return screen.orientation.lock('landscape'); } catch (e) { /* не поддерживается */ }
+      }).catch(function () { /* ignore */ }).then(function () { setTimeout(fit, 300); });
+    };
+    document.addEventListener('fullscreenchange', function () { setTimeout(fit, 300); });
+  }
+})();
+</script>
+</body>
+</html>
