@@ -1274,6 +1274,8 @@ async function loadCard() {
     tray = (data.tray || []).map(t => ({ id: sid(t.gift, t.model, t.uid), gift: t.gift, model: t.model, uid: t.uid || undefined, sub: t.uid ? '#' + t.uid.split('-').pop() : undefined }));
     state.stickers.forEach(s => { if (!tray.some(t => t.id === s.src)) { const [gift, model, uid] = splitId(s.src); tray.push({ id: s.src, gift, model, uid, sub: uid ? '#' + uid.split('-').pop() : undefined }); } });
     loaded = true; renderTray();
+    // подпись на карточке (имя владельца) хранится на сервере — если она устарела, обновляем её
+    if ((data.holder || '') !== document.getElementById('holder').textContent) save();
   } catch (e) {
     // loaded остаётся false: пустой экран не затрёт сохранённую карточку
     setStatus(e.status === 403 ? 'Войдите через Telegram, чтобы пользоваться конструктором' : 'Не удалось загрузить карточку — обновите страницу', true);
