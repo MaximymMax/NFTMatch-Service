@@ -1402,8 +1402,8 @@ function spaced(x, text, px, py, sp, draw) {
   return cx - px - sp;
 }
 
-async function renderCardImage() {
-  const { W, H, CW } = SHARE, CH = Math.round(CW / 1.648), cq = CW / 100;
+async function renderCardImage(size) {
+  const { W, H, CW } = size || SHARE, CH = Math.round(CW / 1.648), cq = CW / 100;
   try { await Promise.all(['500 40px Roboto', '400 40px Roboto', '700 40px "Roboto Mono"', '700 40px Inter'].map(f => document.fonts.load(f))); } catch (e) { /* ignore */ }
 
   const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
@@ -1578,15 +1578,17 @@ window.__share = { render: renderCardImage, open: openShare };
 /* ================================================================== картинка карточки для инлайна бота */
 /* После сохранения карточки (с паузой) рисуем её в JPEG и отправляем на сервер: бот отдаёт её по
    @NFTMatchBot mycard (профиль) / myideacard (каталог). */
+/* Картинка для бота (инлайн, «в чат с ботом») меньше, чем для скачивания: ~1600 px и качество .82 — около 150–250 КБ вместо ~400. */
+const UPLOAD_SIZE = { W: 1600, H: 1000, CW: 1400 };
 let imgTimer = null, imgBusy = false;
-function scheduleImageUpload() { clearTimeout(imgTimer); imgTimer = setTimeout(() => uploadImage(false), 4000); }
+function scheduleImageUpload() { clearTimeout(imgTimer); imgTimer = setTimeout(() => uploadImage(false), 12000); }   // не после каждой правки, а когда человек притих
 async function uploadImage(force) {
   if (force) while (imgBusy) await new Promise(r => setTimeout(r, 100));
   if (imgBusy || !loaded || (dirty && !force)) return false;
   imgBusy = true;
   try {
-    const cv = await renderCardImage();
-    const blob = await new Promise(r => cv.toBlob(r, 'image/jpeg', .9));
+    const cv = await renderCardImage(UPLOAD_SIZE);
+    const blob = await new Promise(r => cv.toBlob(r, 'image/jpeg', .82));
     if (!blob) return false;
     const r = await fetch(api('Card/Image?kind=' + kind), { method: 'POST', headers: { 'Authorization': authHeader(), 'Content-Type': 'image/jpeg' }, body: blob });
     return r.ok;
