@@ -176,7 +176,6 @@ function applyTheme(animate, org, prevId) {
 function paintVars() {
   const c0 = colorNow.c0, c1 = colorNow.c1, root = document.documentElement.style;
   const accent = mix(c1, c0, .42);
-  root.setProperty('--accent', rgb2css(accent));
   root.setProperty('--usd', rgb2css(mix(c0, [1, 1, 1], .62)));
   root.setProperty('--shadow', rgb2css(mix(c1, [0, 0, 0], .55)));
   root.setProperty('--engrave', rgb2css(mix(c1, [0, 0, 0], .12)));
@@ -690,8 +689,6 @@ function drawPatterns() {
   const W = patCanvas.width, H = patCanvas.height;
   pctx.clearRect(0, 0, W, H);
   const layers = [];
-  if (rev) { if (rev.prev) layers.push({ id: rev.prev, out: true }); if (rev.next) layers.push({ id: rev.next, out: false }); }
-  else if (state.colorId) layers.push({ id: state.colorId, out: false });
   const f6 = W / 336, f7 = H / 205, soft = rev ? rev.soft : 1;
   const ox = rev ? rev.org.x * W : 0, oy = rev ? rev.org.y * H : 0, rad = rev ? (rev.rad || 0) : 0;
   let wait = false;
@@ -788,7 +785,8 @@ const EN_UI = {
   'Поделиться карточкой': 'Share card', 'Готовлю ссылку…': 'Preparing the link…', 'Копировать ссылку': 'Copy link',
   'Скинуть в чат с ботом': 'Send to the bot chat', 'Ссылка скопирована.': 'Link copied.',
   'Выделите ссылку и скопируйте её вручную.': 'Select the link and copy it manually.', 'Готовлю картинку…': 'Preparing the image…',
-  'Закрыть': 'Close'
+  'Закрыть': 'Close', 'Фон карточки': 'Card background', 'По умолчанию': 'Default', 'Найти фон…': 'Search backgrounds…',
+  'Фон от подарка': 'Background from gift', 'Не удалось загрузить фоны': 'Failed to load backgrounds', 'Загружаю…': 'Loading…'
 };
 const EN_PAT = [
   [/^(\d+) мод\.$/, '$1 models'],
@@ -933,6 +931,7 @@ async function flushSave(keepalive) {
   };
   payload.tray = tray.map(t => ({ gift: t.gift, model: t.model, uid: t.uid || null }));
   payload.holder = document.getElementById('holder').textContent;
+  payload.bg = currentBg;
   try {
     const r = await fetch(api('Card/Save?kind=' + kind), { method: 'POST', keepalive: keepalive === true, headers: { 'Authorization': authHeader(), 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
     if (!r.ok) { const e = new Error(r.status); e.text = await r.text().catch(() => ''); throw e; }
@@ -1029,6 +1028,7 @@ function openMenu(id, tile) {
   const onCard = countOn(id) > 0;
   menu.innerHTML = '<button data-a="sticker">' + ICON_ADD + '<span>Добавить на карточку</span></button>' +
     (onCard ? '<button data-a="unstick">' + ICON_REMOVE + '<span>Убрать с карточки</span></button>' : '') +
+    (giftBackdrop(id) ? '<button data-a="bgfrom">' + ICON_BG + '<span>Фон от подарка</span></button>' : '') +
     (kind === 'catalog' ? '<hr><button data-a="untray">' + ICON_REMOVE + '<span>Убрать из выбранных</span></button>' : '');
   menu.hidden = false;
   const a = app.getBoundingClientRect(), r = tile.getBoundingClientRect();
@@ -1038,7 +1038,9 @@ function openMenu(id, tile) {
   menu.onclick = e => {
     const b = e.target.closest('button'); if (!b) return;
     menu.hidden = true;
-    if (b.dataset.a === 'untray') {
+    if (b.dataset.a === 'bgfrom') {
+      const bd = giftBackdrop(id); if (bd) applyBg(bd, true);
+    } else if (b.dataset.a === 'untray') {
       state.stickers.filter(s => s.src === id).forEach(s => detach(s.id));
       tray = tray.filter(t => t.id !== id); renderTray(); save();
     } else if (b.dataset.a === 'unstick') {
@@ -1124,7 +1126,7 @@ async function loadProfileInfo() {
   if (profileInfo) return profileInfo;
   try {
     const info = await apiGet('Card/ProfileGifts');
-    (info.gifts || []).forEach(g => profileMeta.set(g.uid, { center: g.center, edge: g.edge }));
+    (info.gifts || []).forEach(g => profileMeta.set(g.uid, { center: g.center, edge: g.edge, name: g.backdrop }));
     if (info.available || (info.gifts || []).length) profileInfo = info; else return info;   // неудачу не запоминаем — можно повторить
     return info;
   } catch (e) { return { available: false, error: 'HTTP ' + (e.status || '?'), gifts: [] }; }
@@ -1170,6 +1172,91 @@ if (user && (user.username || user.firstName)) document.getElementById('holder')
 applyTheme(false);
 resize();
 requestAnimationFrame(frame);
+/* ================================================================== Фон карточки */
+/* Фон — два цвета градиента карточки (как «Apply colour» в примере: цвет растекается кругом от стикера). Выбрать можно из всех
+   фонов подарков (окно по нажатию на блок «Фон карточки») или взять у подарка из профиля (зажать плитку в «Выбранных»). */
+const ICON_BG = ICONS.colors;
+let currentBg = null;                                   // { name, c0, c1 } или null — по умолчанию
+const bgKey = bg => bg ? 'bg:' + bg.c0 + bg.c1 : null;
+const rgbToHex = c => '#' + c.map(v => Math.round(clamp(v, 0, 1) * 255).toString(16).padStart(2, '0')).join('');
+/* из одного цвета фона (как он лежит в базе) делаем градиент: светлее в центре, темнее к краю */
+function bgFromColor(name, color) {
+  const base = hex2rgb(color);
+  return { name, c0: rgbToHex(mix(base, [1, 1, 1], .12)), c1: rgbToHex(mix(base, [0, 0, 0], .22)) };
+}
+function giftBackdrop(id) {
+  const uid = splitId(id)[2], m = uid && profileMeta.get(uid);
+  if (!m || !m.center || !m.edge || (m.center === '#000000' && m.edge === '#000000')) return null;
+  return { name: m.name || 'Gift', c0: m.center, c1: m.edge };
+}
+function updateBgRow() {
+  const sw = document.getElementById('bgSw'), nm = document.getElementById('bgName');
+  const c0 = currentBg ? currentBg.c0 : DEFAULT_COLORS.c0, c1 = currentBg ? currentBg.c1 : DEFAULT_COLORS.c1;
+  sw.style.background = 'linear-gradient(135deg, ' + c0 + ', ' + c1 + ')';
+  nm.textContent = currentBg ? currentBg.name : T('По умолчанию');
+}
+function applyBg(bg, animate) {
+  currentBg = bg;
+  const key = bgKey(bg);
+  if (bg) byId[key] = { c0: bg.c0, c1: bg.c1 };
+  if (animate) setColour(key);                           // растекание цвета и сохранение — из примера
+  else { state.colorId = key; applyTheme(false); }
+  updateBgRow();
+}
+
+let allBackgrounds = null;
+async function openBgModal() {
+  const D = P.document;
+  if (!D.getElementById('cdBgCss')) {
+    const st = D.createElement('style'); st.id = 'cdBgCss';
+    st.textContent = '#cdBg{position:fixed;inset:0;z-index:10050;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(8,12,24,.72);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);font-family:Inter,Roboto,sans-serif}' +
+      '#cdBg .p{width:min(94vw,560px);max-height:88vh;display:flex;flex-direction:column;background:#16213a;border-radius:20px;padding:18px;color:#f1f5fa;box-shadow:0 20px 70px rgba(0,0,0,.6)}' +
+      '#cdBg .h{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;font-weight:800;font-size:16px}' +
+      '#cdBg .x{width:36px;height:36px;border-radius:18px;background:#1e2944;color:#fff;border:0;font-size:18px;cursor:pointer}' +
+      '#cdBg input{width:100%;box-sizing:border-box;background:#1e2944;color:#f1f5fa;border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:12px 14px;font:500 14px Inter,sans-serif;outline:none;margin-bottom:12px}' +
+      '#cdBg .g{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;overflow-y:auto;padding:2px 2px 8px;-webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 8px,#000 calc(100% - 24px),transparent 100%);mask-image:linear-gradient(to bottom,transparent 0,#000 8px,#000 calc(100% - 24px),transparent 100%)}' +
+      '#cdBg .it{display:flex;flex-direction:column;align-items:center;gap:6px;padding:8px 4px;border:2px solid transparent;border-radius:14px;background:#1e2944;color:#dbe4fa;font:600 12px Inter,sans-serif;cursor:pointer;text-align:center}' +
+      '#cdBg .it.on{border-color:#3a8bff}#cdBg .it:hover{background:#263355}' +
+      '#cdBg .sw{width:100%;aspect-ratio:1.6;border-radius:10px}#cdBg .n{color:#8fa0c4;padding:12px;text-align:center;font-size:13px}';
+    D.head.appendChild(st);
+  }
+  const old = D.getElementById('cdBg'); if (old) old.remove();
+  const o = D.createElement('div'); o.id = 'cdBg';
+  o.innerHTML = '<div class="p"><div class="h"><span>Фон карточки</span><button class="x" aria-label="Закрыть">✕</button></div>' +
+    '<input type="search" placeholder="Найти фон…" autocomplete="off" spellcheck="false"><div class="g"></div></div>';
+  D.body.appendChild(o); trTree(o);
+  const close = () => o.remove();
+  o.querySelector('.x').onclick = close;
+  o.addEventListener('pointerdown', e => { if (e.target === o) close(); });
+  const grid = o.querySelector('.g'), inp = o.querySelector('input');
+  const item = (name, c0, c1, on, click) => {
+    const b = D.createElement('button'); b.type = 'button'; b.className = 'it' + (on ? ' on' : '');
+    b.innerHTML = '<span class="sw"></span><span></span>';
+    b.firstChild.style.background = 'linear-gradient(135deg,' + c0 + ',' + c1 + ')'; b.lastChild.textContent = name;
+    b.onclick = () => { click(); close(); }; grid.appendChild(b);
+  };
+  const render = q => {
+    grid.innerHTML = '';
+    const w = words(q);
+    if (!w.length) item(T('По умолчанию'), DEFAULT_COLORS.c0, DEFAULT_COLORS.c1, !currentBg, () => applyBg(null, true));
+    (allBackgrounds || []).filter(b => w.every(x => b.name.toLowerCase().includes(x))).forEach(b => {
+      const g = bgFromColor(b.name, b.color);
+      item(b.name, g.c0, g.c1, currentBg && currentBg.name === b.name, () => applyBg(g, true));
+    });
+    if (!grid.children.length) { const n = D.createElement('div'); n.className = 'n'; n.textContent = T('Ничего не найдено'); grid.appendChild(n); }
+  };
+  inp.addEventListener('input', () => render(inp.value.trim()));
+  if (!allBackgrounds) {
+    grid.innerHTML = '<div class="n">' + T('Загружаю…') + '</div>';
+    try { allBackgrounds = (await apiGet('Card/Backgrounds')).filter(b => /^#[0-9a-f]{6}$/i.test(b.color || '')); }
+    catch (e) { grid.innerHTML = ''; const n = D.createElement('div'); n.className = 'n'; n.textContent = T('Не удалось загрузить фоны'); grid.appendChild(n); return; }
+  }
+  render('');
+}
+document.getElementById('bgRow').onclick = openBgModal;
+document.getElementById('bgRow').addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openBgModal(); } });
+updateBgRow();
+
 /* ---- загрузка единственной карточки с сервера */
 async function loadCard() {
   loaded = false; setStatus('');
@@ -1180,6 +1267,7 @@ async function loadCard() {
       const src = sid(s.gift, s.model, s.uid), st = { id: newInstId(src), src, x: +s.x, y: +s.y, sc: clamp(+s.sc || 1, minS, SC_MAX), r: +s.r || 0, z: ++zSeq, t: ++tSeq };
       state.stickers.push(st); createStickerEl(st); placeSticker(st, 'instant');
     });
+    if (data.bg && /^#[0-9a-f]{6}$/i.test(data.bg.c0) && /^#[0-9a-f]{6}$/i.test(data.bg.c1)) applyBg(data.bg, false);
     tray = (data.tray || []).map(t => ({ id: sid(t.gift, t.model, t.uid), gift: t.gift, model: t.model, uid: t.uid || undefined, sub: t.uid ? '#' + t.uid.split('-').pop() : undefined }));
     state.stickers.forEach(s => { if (!tray.some(t => t.id === s.src)) { const [gift, model, uid] = splitId(s.src); tray.push({ id: s.src, gift, model, uid, sub: uid ? '#' + uid.split('-').pop() : undefined }); } });
     loaded = true; renderTray();
@@ -1197,6 +1285,7 @@ async function startView() {
     if (!r.ok) throw new Error(r.status);
     const data = await r.json();
     if (data.holder) document.getElementById('holder').textContent = data.holder;
+    if (data.bg && /^#[0-9a-f]{6}$/i.test(data.bg.c0) && /^#[0-9a-f]{6}$/i.test(data.bg.c1)) applyBg(data.bg, false);
     const minS = 0.4;   // как минимальный масштаб в примере; от размера карточки не зависит (в момент загрузки она может быть ещё без размера)
     (data.stickers || []).slice(0, MAX_STICKERS).forEach(s => {
       const src = sid(s.gift, s.model, s.uid), st = { id: newInstId(src), src, x: +s.x, y: +s.y, sc: clamp(+s.sc || 1, minS, SC_MAX), r: +s.r || 0, z: ++zSeq, t: ++tSeq };

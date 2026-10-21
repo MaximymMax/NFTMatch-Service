@@ -340,3 +340,14 @@ body.fs .fsrow { display: none; }
 
 /* запасной размер копии при перетаскивании до первого кадра */
 .carry { width: 90px; height: 90px; }
+
+/* блок «Фон карточки» в «Выбранных» */
+.bgrow { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 14px; background: var(--elev); cursor: pointer; user-select: none; }
+.bgrow:active { background: #2c3b63; }
+@media (hover: hover) { .bgrow:hover { background: #263355; } }
+.bgrow .sw { width: 44px; height: 28px; border-radius: 8px; flex: none; box-shadow: inset 0 0 0 1px rgba(255,255,255,.18); }
+.bgrow .bt { display: flex; flex-direction: column; min-width: 0; flex: 1; line-height: 1.25; }
+.bgrow small { color: var(--muted); font-size: 11px; }
+.bgrow b { font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bgrow .go { color: var(--muted); font-size: 22px; line-height: 1; }
+body.fs .bgrow { display: none; }
