@@ -382,9 +382,10 @@ document.addEventListener('DOMContentLoaded', () => {
             case 'api':
                 targetUrl = './API_info/api.html';
                 break;
+            case 'c':
             case 'card':
                 // чужая карточка: страница конструктора открывает её поверх себя на весь экран
-                targetUrl = './Card/card.html' + (/^[0-9a-f]{32}$/i.test(urlParams.get('id') || '') ? '?c=' + urlParams.get('id') : '');
+                targetUrl = './Card/card.html' + (/^[0-9a-z]{6,32}$/i.test(urlParams.get('id') || '') ? '?c=' + urlParams.get('id') : '');
                 break;
             case 'support':
                 targetUrl = './Support/support.html';
@@ -496,8 +497,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (parts[2]) params.set('model', restoreParam(parts[2]));
                 break;
 
+            case 'c':
             case 'card':
-                if (parts[1]) params.set('id', parts[1]);   // ссылка на чужую карточку: card-<32 hex>
+                if (parts[1]) params.set('id', parts[1]);   // ссылка на чужую карточку: c-<id>
                 break;
 
             case 'similar':

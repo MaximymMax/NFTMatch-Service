@@ -32,12 +32,12 @@
         window.addEventListener('resize', fitView); fitView(); setTimeout(fitView, 400);
         window.addEventListener('message', (e) => { if (viewFrame && e.source === viewFrame.contentWindow && e.data && e.data.cdCloseView) closeView(); });
     }
-    if (viewId && /^[0-9a-f]{32}$/i.test(viewId)) openView(viewId);
+    if (viewId && /^[0-9a-z]{6,32}$/i.test(viewId)) openView(viewId);
 
     const frame = document.getElementById('cd-frame'), gate = document.getElementById('cd-gate');
     if (!window.NFTAuth || !NFTAuth.isAuthenticated()) { gate.hidden = false; return; }
     frame.hidden = false;
-    frame.src = './editor.html?v=12';
+    frame.src = './editor.html?v=13';
     // высоту iframe выставляем по содержимому редактора (он сообщает её сам)
     window.addEventListener('message', (e) => {
         if (e.source !== frame.contentWindow || !e.data || typeof e.data.cdHeight !== 'number' || frame.classList.contains('cd-fs')) return;

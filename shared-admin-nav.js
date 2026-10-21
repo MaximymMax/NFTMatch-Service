@@ -60,13 +60,9 @@
         ghResizeTimer = setTimeout(updateGithubPlacement, 150);
     });
 
-    // Раздел «Карточка» пока только для администратора: вкладка появляется в ряду вкладок на каждой
-    // странице, где он есть. Это лишь видимость — доступ к самим данным проверяет сервер (CardFunctions).
-    const CARD_ADMIN_ID = 7343414766;
+    // Раздел «Карточка»: вкладка появляется в ряду вкладок на каждой странице, где он есть.
     function addCardTab() {
         try {
-            const user = window.NFTAuth && window.NFTAuth.getUser();
-            if (!user || Number(user.telegramId || user.id) !== CARD_ADMIN_ID) return;
             const tabs = document.querySelector('.cw-tabs');
             if (!tabs || tabs.querySelector('[data-tab="card"]') || !SELF_SRC) return;
             const a = document.createElement('a');

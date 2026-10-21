@@ -934,7 +934,7 @@ let tab = 'profile', sel = null, collections = null, ver = 0, offset = 0;   // s
 
 function clearGrid() { gridEl.innerHTML = ''; catTiles.clear(); }
 const words = s => s.toLowerCase().split(/\s+/).filter(Boolean);
-const errText = e => e.status === 403 ? 'Раздел доступен только администратору' : 'Не удалось загрузить данные';
+const errText = e => e.status === 403 ? 'Войдите через Telegram, чтобы пользоваться конструктором' : 'Не удалось загрузить данные';
 
 function setTab(t) {
   tab = t; sel = null; qEl.value = ''; qEl.placeholder = PLACEHOLDERS[t];
@@ -1042,7 +1042,7 @@ document.getElementById('btnClear').onclick = () => {
 
 /* ================================================================== init */
 const user = (() => { try { return P.NFTAuth && P.NFTAuth.getUser(); } catch (e) { return null; } })();
-if (user && user.username) document.getElementById('holder').textContent = ('@' + user.username).toUpperCase();
+if (user && (user.username || user.firstName)) document.getElementById('holder').textContent = (user.username ? '@' + user.username : user.firstName).toUpperCase();
 
 applyTheme(false);
 resize();
@@ -1062,7 +1062,7 @@ async function loadCard() {
     loaded = true; renderTray();
   } catch (e) {
     // loaded остаётся false: пустой экран не затрёт сохранённую карточку
-    setStatus(e.status === 403 ? 'Раздел доступен только администратору' : 'Не удалось загрузить карточку — обновите страницу', true);
+    setStatus(e.status === 403 ? 'Войдите через Telegram, чтобы пользоваться конструктором' : 'Не удалось загрузить карточку — обновите страницу', true);
   }
 }
 
@@ -1300,30 +1300,28 @@ async function renderCardImage() {
   return cv;
 }
 
-/* ---- окно «Поделиться»: строится в родительской странице, чтобы быть поверх всего (в т.ч. полноэкранного режима).
-   В чат уходит картинка и ссылка: по ссылке любой человек открывает эту карточку на весь экран (view.html). */
+/* ---- окно «Поделиться»: короткая ссылка на карточку и кнопка «в чат с ботом». Строится в родительской странице,
+   чтобы быть поверх всего (в т.ч. полноэкранного режима). */
 function shareModal() {
   const D = P.document;
   if (!D.getElementById('cdShareCss')) {
     const st = D.createElement('style'); st.id = 'cdShareCss';
     st.textContent = '#cdShare{position:fixed;inset:0;z-index:10050;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(8,12,24,.72);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);font-family:Inter,Roboto,sans-serif}' +
-      '#cdShare .p{width:min(94vw,920px);max-height:94vh;overflow:auto;background:#16213a;border-radius:20px;padding:16px;color:#f1f5fa;box-shadow:0 20px 70px rgba(0,0,0,.6)}' +
-      '#cdShare .h{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;font-weight:800;font-size:16px}' +
+      '#cdShare .p{width:min(94vw,460px);background:#16213a;border-radius:20px;padding:18px;color:#f1f5fa;box-shadow:0 20px 70px rgba(0,0,0,.6)}' +
+      '#cdShare .h{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;font-weight:800;font-size:16px}' +
       '#cdShare .x{width:36px;height:36px;border-radius:18px;background:#1e2944;color:#fff;border:0;font-size:18px;cursor:pointer}' +
-      '#cdShare .pv{display:flex;align-items:center;justify-content:center;min-height:160px;border-radius:14px;background:#283043;overflow:hidden;color:#8fa0c4;font-size:14px}' +
-      '#cdShare .pv img{display:block;width:100%;height:auto}' +
-      '#cdShare .lk{margin-top:10px;padding:10px 12px;border-radius:10px;background:#1e2944;font-size:12px;color:#9fb0d6;word-break:break-all}' +
-      '#cdShare .b{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap}' +
-      '#cdShare .b button{flex:1 1 140px;border:0;border-radius:12px;padding:13px 14px;font:700 14px Inter,sans-serif;cursor:pointer;background:#1e2944;color:#dbe4fa}' +
-      '#cdShare .b button.pr{background:#2563eb;color:#fff}#cdShare .b button:disabled{opacity:.45;cursor:default}#cdShare [hidden]{display:none}' +
+      '#cdShare .lk{padding:13px 14px;border-radius:12px;background:#1e2944;font-size:14px;color:#c9d6f5;word-break:break-all;user-select:all;min-height:20px}' +
+      '#cdShare .b{display:flex;flex-direction:column;gap:10px;margin-top:12px}' +
+      '#cdShare .b button{border:0;border-radius:12px;padding:14px;font:700 14px Inter,sans-serif;cursor:pointer;background:#1e2944;color:#dbe4fa}' +
+      '#cdShare .b button.pr{background:#2563eb;color:#fff}#cdShare .b button:disabled{opacity:.5;cursor:default}' +
       '#cdShare .m{margin-top:10px;font-size:12px;color:#8fa0c4;text-align:center;min-height:16px}';
     D.head.appendChild(st);
   }
   const old = D.getElementById('cdShare'); if (old) old.remove();
   const o = D.createElement('div'); o.id = 'cdShare';
   o.innerHTML = '<div class="p"><div class="h"><span>Поделиться карточкой</span><button class="x" aria-label="Закрыть">✕</button></div>' +
-    '<div class="pv">Готовлю картинку…</div><div class="lk" hidden></div>' +
-    '<div class="b"><button class="pr sh" disabled>Отправить в чат</button><button class="tg" hidden>В чат через бота</button><button class="cp" disabled>Копировать ссылку</button><button class="dl" disabled>Скачать</button></div><div class="m"></div></div>';
+    '<div class="lk">Готовлю ссылку…</div>' +
+    '<div class="b"><button class="cp" disabled>Копировать ссылку</button><button class="pr bot" disabled>Скинуть в чат с ботом</button></div><div class="m"></div></div>';
   D.body.appendChild(o);
   return o;
 }
@@ -1332,52 +1330,39 @@ async function ensureShareLink() {
   if (!r.ok) throw new Error(r.status);
   return (await r.json()).url;
 }
+async function sendToBot() {
+  const r = await fetch(api('Card/SendToBot?kind=' + kind), { method: 'POST', headers: { 'Authorization': authHeader() } });
+  if (!r.ok) { const e = new Error(r.status); e.text = await r.text().catch(() => ''); throw e; }
+}
 async function openShare() {
   const o = shareModal(), D = P.document;
-  let url = null;
-  const close = () => { if (url) URL.revokeObjectURL(url); o.remove(); };
+  const close = () => o.remove();
   o.querySelector('.x').onclick = close;
   o.addEventListener('pointerdown', e => { if (e.target === o) close(); });
   const note = t => { o.querySelector('.m').textContent = t; };
-  let blob, link;
+  const lk = o.querySelector('.lk'), cp = o.querySelector('.cp'), bot = o.querySelector('.bot');
+  let link;
   try {
-    // карточка должна быть сохранена: по ссылке открывается её серверная копия
+    // по ссылке открывается серверная копия карточки — сначала дожидаемся сохранения
     clearTimeout(saveTimer); while (saving) await new Promise(r => setTimeout(r, 80)); await flushSave();
-    const cv = await renderCardImage();
-    blob = await new Promise(r => cv.toBlob(r, 'image/png'));
-    if (!blob) throw new Error('empty');
     link = await ensureShareLink();
-  } catch (e) {
-    o.querySelector('.pv').textContent = 'Не удалось подготовить картинку' + (e && /^\d+$/.test(e.message) ? ' (' + e.message + ')' : ''); return;
-  }
-  url = URL.createObjectURL(blob);
-  const pv = o.querySelector('.pv'); pv.textContent = ''; const img = D.createElement('img'); img.src = url; img.alt = 'Карточка'; pv.appendChild(img);
-  const lk = o.querySelector('.lk'); lk.hidden = false; lk.textContent = link;
-  const file = new File([blob], 'nftmatch-card.png', { type: 'image/png' });
-  const text = 'Моя карточка NFT Match\n' + link;
-  const dl = o.querySelector('.dl'), sh = o.querySelector('.sh'), cp = o.querySelector('.cp'), tgBtn = o.querySelector('.tg');
-  dl.disabled = sh.disabled = cp.disabled = false;
-  try { if (P.Telegram && P.Telegram.WebApp && P.Telegram.WebApp.switchInlineQuery && P.Telegram.WebApp.initData) tgBtn.hidden = false; } catch (e) { /* ignore */ }
-
-  const copyLink = async () => { try { await P.navigator.clipboard.writeText(link); note('Ссылка скопирована.'); return true; } catch (e) { note('Скопируйте ссылку вручную: ' + link); return false; } };
-  cp.onclick = copyLink;
-  dl.onclick = () => { const a = D.createElement('a'); a.href = url; a.download = 'nftmatch-card.png'; D.body.appendChild(a); a.click(); a.remove(); note('Картинка сохраняется…'); };
-  // фото и ссылка одним сообщением; если системное меню недоступно — копируем картинку и ссылку в буфер
-  sh.onclick = async () => {
-    try {
-      if (P.navigator.canShare && P.navigator.canShare({ files: [file] })) { await P.navigator.share({ files: [file], text }); return; }
-    } catch (e) { if (e && e.name === 'AbortError') return; }
-    try {
-      await P.navigator.clipboard.write([new P.ClipboardItem({ 'image/png': blob })]);
-      note('Картинка скопирована — вставьте её в чат и добавьте ссылку (кнопка «Копировать ссылку»).');
-    } catch (e) { await copyLink(); }
+  } catch (e) { lk.textContent = 'Не удалось получить ссылку' + (e && /^\d+$/.test(e.message) ? ' (' + e.message + ')' : ''); return; }
+  lk.textContent = link; cp.disabled = bot.disabled = false;
+  cp.onclick = async () => {
+    try { await P.navigator.clipboard.writeText(link); note('Ссылка скопирована.'); }
+    catch (e) { try { const rg = D.createRange(); rg.selectNodeContents(lk); const s = P.getSelection(); s.removeAllRanges(); s.addRange(rg); D.execCommand('copy'); note('Ссылка скопирована.'); } catch (e2) { note('Выделите ссылку и скопируйте её вручную.'); } }
   };
-  // внутри Telegram: бот присылает в выбранный чат фото со ссылкой (инлайн-режим)
-  tgBtn.onclick = async () => {
-    tgBtn.disabled = true; note('Отправляю карточку боту…');
-    await uploadImage(true);
-    try { P.Telegram.WebApp.switchInlineQuery('mycard', ['users', 'groups', 'channels']); } catch (e) { note('Откройте любой чат и напишите @' + (CFG.BOT_USERNAME || 'NFTMatchBot') + ' mycard'); }
-    tgBtn.disabled = false;
+  // бот присылает в личный чат с ним картинку карточки со ссылкой — оттуда её можно переслать кому угодно
+  bot.onclick = async () => {
+    bot.disabled = true; note('Готовлю картинку…');
+    try {
+      if (!(await uploadImage(true))) throw new Error('image');
+      await sendToBot();
+      note('Готово! Карточка с ссылкой отправлена в чат с @' + (CFG.BOT_USERNAME || 'NFTMatchBot') + ' — перешлите её оттуда.');
+    } catch (e) {
+      note('Не получилось отправить' + (e && /^\d+$/.test(e.message) ? ' (' + e.message + (e.text ? ': ' + e.text.slice(0, 80) : '') + ')' : '') + '. Откройте чат с @' + (CFG.BOT_USERNAME || 'NFTMatchBot') + ' и нажмите /start.');
+    }
+    bot.disabled = false;
   };
 }
 document.getElementById('btnShare').onclick = openShare;
@@ -1390,14 +1375,16 @@ window.__share = { render: renderCardImage, open: openShare };
 let imgTimer = null, imgBusy = false;
 function scheduleImageUpload() { clearTimeout(imgTimer); imgTimer = setTimeout(() => uploadImage(false), 4000); }
 async function uploadImage(force) {
-  if (imgBusy || !loaded || (dirty && !force)) return;
-  const k = kind; imgBusy = true;
+  if (force) while (imgBusy) await new Promise(r => setTimeout(r, 100));
+  if (imgBusy || !loaded || (dirty && !force)) return false;
+  imgBusy = true;
   try {
     const cv = await renderCardImage();
     const blob = await new Promise(r => cv.toBlob(r, 'image/jpeg', .9));
-    if (!blob || k !== kind) return;
-    await fetch(api('Card/Image?kind=' + k), { method: 'POST', headers: { 'Authorization': authHeader(), 'Content-Type': 'image/jpeg' }, body: blob });
-  } catch (e) { /* картинка для инлайна не критична */ } finally { imgBusy = false; }
+    if (!blob) return false;
+    const r = await fetch(api('Card/Image?kind=' + kind), { method: 'POST', headers: { 'Authorization': authHeader(), 'Content-Type': 'image/jpeg' }, body: blob });
+    return r.ok;
+  } catch (e) { return false; /* картинка для инлайна не критична */ } finally { imgBusy = false; }
 }
 
 /* ================================================================== курс GRAM (бывший Toncoin) с биржи */
