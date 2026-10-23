@@ -19,3 +19,22 @@
 .fd-like:disabled { opacity: .5; cursor: default; }
 .fd-more { align-self: center; }
 @media (max-width: 760px) { .fd-list { grid-template-columns: minmax(0, 1fr); } }
+
+.fd-item { position: relative; }
+.fd-tag { position: absolute; left: 10px; top: 10px; z-index: 1; padding: 4px 10px; border-radius: 99px; background: rgba(0, 0, 0, .6); color: #cbd5e1; font: 700 11px 'Inter', sans-serif; pointer-events: none; }
+
+/* просмотр карточки: размытая лента сзади, карточка по центру, снизу использованные модели */
+body.fd-lock { overflow: hidden; }
+.fd-ov { position: fixed; inset: 0; z-index: 10000; display: flex; align-items: center; justify-content: center; padding: 70px 16px 24px; overflow-y: auto;
+    background: rgba(8, 12, 24, .5); -webkit-backdrop-filter: blur(22px); backdrop-filter: blur(22px); }
+.fd-back { position: fixed; left: 14px; top: max(14px, env(safe-area-inset-top)); width: 46px; height: 46px; border-radius: 50%; border: 0; display: flex; align-items: center; justify-content: center;
+    background: rgba(30, 41, 68, .85); color: #fff; cursor: pointer; z-index: 1; }
+.fd-back svg { width: 24px; height: 24px; }
+.fd-ovbody { width: min(100%, 620px); margin: auto; display: flex; flex-direction: column; align-items: center; gap: 14px; }
+.fd-ovpic { width: 100%; aspect-ratio: 1.648; object-fit: cover; border-radius: 22px; box-shadow: 0 20px 60px rgba(0, 0, 0, .55); background: #1a2440; }
+.fd-ovwho { color: #dbe4fa; font: 700 14px 'Inter', sans-serif; text-align: center; }
+.fd-models { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; width: 100%; }
+.fd-m { position: relative; width: 78px; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 4px 6px; border-radius: 14px; background: rgba(30, 41, 68, .7); }
+.fd-m img { width: 56px; height: 56px; object-fit: contain; }
+.fd-m small { max-width: 100%; color: #9fb0d6; font: 600 10px 'Inter', sans-serif; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fd-m i { position: absolute; right: 4px; top: 4px; padding: 1px 6px; border-radius: 99px; background: #2563eb; color: #fff; font: 700 10px 'Inter', sans-serif; font-style: normal; }

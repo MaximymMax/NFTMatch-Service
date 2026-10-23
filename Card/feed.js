@@ -12,11 +12,43 @@
     const gifts = n => n + ' ' + (n % 10 === 1 && n % 100 !== 11 ? 'гифт' : (n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20)) ? 'гифта' : 'гифтов');
     let sort = 'top', skip = 0, busy = false;
 
+    const modelImg = (g, m) => 'https://cdn.changes.tg/gifts/models/' + encodeURIComponent(g) + '/png/' + encodeURIComponent(m) + '.png';
+    const nameOf = it => it.username ? '@' + it.username : (it.holder || 'Коллекционер');
+
+    /* Просмотр карточки: размытая лента на заднем плане, карточка по центру, снизу использованные модели; стрелка возвращает в ленту */
+    function openOverlay(it) {
+        const ov = document.createElement('div'); ov.className = 'fd-ov';
+        const back = document.createElement('button'); back.type = 'button'; back.className = 'fd-back'; back.setAttribute('aria-label', 'Назад к ленте');
+        back.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>';
+        const body = document.createElement('div'); body.className = 'fd-ovbody';
+        const pic = new Image(); pic.className = 'fd-ovpic'; pic.alt = ''; pic.src = it.imageUrl;
+        const who = document.createElement('div'); who.className = 'fd-ovwho';
+        who.textContent = nameOf(it) + ' · ' + gifts(it.gifts) + (it.public ? '' : ' · не опубликована');
+        const ms = document.createElement('div'); ms.className = 'fd-models';
+        (it.models || []).forEach(m => {
+            const c = document.createElement('div'); c.className = 'fd-m';
+            const im = new Image(); im.alt = m.model; im.loading = 'lazy'; im.src = modelImg(m.gift, m.model);
+            const cap = document.createElement('small'); cap.textContent = m.model;
+            c.append(im, cap);
+            if (m.count > 1) { const k = document.createElement('i'); k.textContent = '×' + m.count; c.appendChild(k); }
+            ms.appendChild(c);
+        });
+        body.append(pic, who, ms);
+        ov.append(back, body);
+        const close = () => { ov.remove(); document.body.classList.remove('fd-lock'); document.removeEventListener('keydown', onKey); };
+        const onKey = e => { if (e.key === 'Escape') close(); };
+        back.onclick = close;
+        ov.addEventListener('pointerdown', e => { if (e.target === ov) close(); });
+        document.addEventListener('keydown', onKey);
+        document.body.classList.add('fd-lock');
+        document.body.appendChild(ov);
+    }
+
     function row(it) {
         const el = document.createElement('div'); el.className = 'fd-item';
-        const name = it.username ? '@' + it.username : (it.holder || 'Коллекционер');
+        const name = nameOf(it);
         const pic = new Image(); pic.className = 'fd-pic'; pic.loading = 'lazy'; pic.alt = ''; pic.src = it.imageUrl;
-        pic.onclick = () => { location.href = './card.html?c=' + encodeURIComponent(it.id); };   // карточка открывается на весь экран
+        pic.onclick = () => openOverlay(it);
         const info = document.createElement('div'); info.className = 'fd-info';
         const ava = document.createElement('div'); ava.className = 'fd-ava'; ava.textContent = (name.replace('@', '')[0] || '?').toUpperCase();
         if (it.username) {          // аватарка из Telegram; нет фото — остаётся буква
@@ -31,10 +63,11 @@
         let n = it.likes;
         const paint = () => { like.innerHTML = HEART + '<span>' + n + '</span>'; };
         paint();
-        if (it.mine) like.disabled = true;
+        const canLike = it.public && it.id && !it.mine;          // лайкать можно только опубликованные чужие карточки
+        if (!canLike) like.disabled = true;
         let busyLike = false;
         like.onclick = async () => {
-            if (busyLike || it.mine) return; busyLike = true;
+            if (busyLike || !canLike) return; busyLike = true;
             const want = !like.classList.contains('on');
             like.classList.toggle('on', want); n += want ? 1 : -1; paint();
             try {
@@ -44,6 +77,7 @@
             busyLike = false;
         };
         info.append(ava, who, like);
+        if (!it.public) { const tag = document.createElement('span'); tag.className = 'fd-tag'; tag.textContent = 'Не опубликована'; el.appendChild(tag); }
         el.append(pic, info);
         return el;
     }
