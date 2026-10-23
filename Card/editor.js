@@ -1899,6 +1899,7 @@ async function publishRequest() {
       if (r.ok) { pubState[kind] = await r.json(); updatePubButton(); return 'ok'; }
       let body = {}; try { body = await r.json(); } catch (e) { /* не JSON */ }
       if (r.status === 403 && body.error === 'subscription_required') return 'sub';
+      if (r.status === 429 || r.status === 503) return 'busy';          // лимит запросов или Telegram не ответил — повторить чуть позже
       if (r.status === 409 && body.error === 'no_card' && attempt === 0) { dirty = true; loaded = true; await flushSave(); continue; }   // карточка ещё не сохранялась — сохраняем и повторяем
       return 'fail';
     }
@@ -1947,6 +1948,7 @@ async function openPublishModal() {
     const res = await publishRequest();
     if (res === 'ok') { close(); openPubModal(); return; }
     if (res === 'sub') { show(false); note(''); return; }
+    if (res === 'busy') { note('Сервер занят, попробуйте ещё раз через минуту'); go.disabled = false; return; }
     note('Не удалось опубликовать'); go.disabled = false;
   };
   check();
