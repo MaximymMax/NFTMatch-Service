@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="../glow.css?v=5">
     <link rel="stylesheet" href="../shared-admin-nav.css?v=22">
     <link rel="stylesheet" href="./card.css?v=42">
-    <link rel="stylesheet" href="./feed.css?v=3">
+    <link rel="stylesheet" href="./feed.css?v=4">
     <script src="../config.js"></script>
     <script>
         // Ссылка на чужую карточку (?c=...) открывается по-русски: язык задаём до i18n.js, который читает его из localStorage.
@@ -71,9 +71,28 @@
 
             <section class="cd-wrap">
                 <h1 class="cd-title">Лента карточек</h1>
-                <div class="fd-sort" id="fd-sort">
-                    <button type="button" class="on" data-s="top">Топ</button>
-                    <button type="button" data-s="new">Новые</button>
+                <div class="fd-filters">
+                    <input type="search" id="fd-q" class="fd-q" placeholder="Поиск по имени или id" autocomplete="off" spellcheck="false">
+                    <label class="fd-sel">Сортировка
+                        <select id="fd-sortsel">
+                            <option value="top">По лайкам</option>
+                            <option value="new">Сначала новые</option>
+                            <option value="old">Сначала старые</option>
+                            <option value="gifts">Больше подарков</option>
+                            <option value="giftsAsc">Меньше подарков</option>
+                        </select>
+                    </label>
+                    <div class="fd-chips" data-f="pub">
+                        <button type="button" class="on" data-v="all">Все</button>
+                        <button type="button" data-v="yes">Опубликованные</button>
+                        <button type="button" data-v="no">Неопубликованные</button>
+                    </div>
+                    <div class="fd-chips" data-f="kind">
+                        <button type="button" class="on" data-v="all">Любые карточки</button>
+                        <button type="button" data-v="catalog">Основные</button>
+                        <button type="button" data-v="second">Вторые</button>
+                    </div>
+                    <div id="fd-total" class="fd-total"></div>
                 </div>
                 <div id="fd-msg" class="fd-msg"></div>
                 <div id="fd-list" class="fd-list"></div>
@@ -82,7 +101,7 @@
         </div>
     </main>
 
-        <script src="./feed.js?v=3"></script>
+        <script src="./feed.js?v=4"></script>
 </body>
 
 </html>

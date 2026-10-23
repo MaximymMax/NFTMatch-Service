@@ -10,7 +10,9 @@
 
     const HEART = '<svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-9.6-9.2C1 8.6 3 5 6.4 5c2 0 3.7 1.1 5.6 3.2C13.9 6.1 15.6 5 17.6 5 21 5 23 8.6 21.6 11.8 19.5 16.4 12 21 12 21z" stroke-linejoin="round"/></svg>';
     const gifts = n => n + ' ' + (n % 10 === 1 && n % 100 !== 11 ? 'гифт' : (n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20)) ? 'гифта' : 'гифтов');
-    let sort = 'top', skip = 0, busy = false;
+    const F = { sort: 'top', pub: 'all', kind: 'all', q: '' };
+    const totalEl = document.getElementById('fd-total');
+    let skip = 0, busy = false, reqId = 0;
 
     const modelImg = (g, m) => 'https://cdn.changes.tg/gifts/models/' + encodeURIComponent(g) + '/png/' + encodeURIComponent(m) + '.png';
     const nameOf = it => it.username ? '@' + it.username : (it.holder || 'Коллекционер');
@@ -19,7 +21,8 @@
     const VER = (() => { try { return new URL(document.querySelector('link[href*="card.css"]').href).searchParams.get('v') || String(Date.now()); } catch (e) { return String(Date.now()); } })();
     // карточка в списке рисуется из данных (фон и стикеры), а не из картинки: картинка могла отстать от карточки
     function flatCard(it) {
-        const box = document.createElement('div'); box.className = 'fd-pic fd-flat';
+        const tile = document.createElement('div'); tile.className = 'fd-pic fd-tile';
+        const box = document.createElement('div'); box.className = 'fd-flat';
         const c0 = (it.bg && it.bg.c0) || '#3AB0F8', c1 = (it.bg && it.bg.c1) || '#1488E1';
         box.style.background = 'linear-gradient(135deg,' + c0 + ',' + c1 + ')';
         (it.stickers || []).forEach(s => {
@@ -28,9 +31,12 @@
             im.style.cssText = 'left:' + (s.x * 100) + '%;top:' + (s.y * 100) + '%;width:' + w + '%;transform:translate(-50%,-50%) rotate(' + (s.r || 0) + 'deg)';
             box.appendChild(im);
         });
-        const nm = document.createElement('span'); nm.className = 'fd-hold'; nm.textContent = it.holder || '';
-        box.appendChild(nm);
-        return box;
+        const txt = document.createElement('div'); txt.className = 'fd-txt';
+        txt.innerHTML = '<b class="fd-bal">◆ 10 GRAM</b><span class="fd-chip"></span><span class="fd-hold"></span>';
+        txt.querySelector('.fd-hold').textContent = it.holder || '';
+        box.appendChild(txt);
+        tile.appendChild(box);
+        return tile;
     }
 
     function openOverlay(it) {
@@ -106,31 +112,37 @@
     }
 
     async function load(reset) {
-        if (busy) return; busy = true;
+        const my = ++reqId;
+        if (busy && !reset) return; busy = true;
         if (reset) { skip = 0; list.innerHTML = ''; }
         msg.textContent = 'Загружаю…';
         try {
             let d, last;
             for (let i = 0; i < 3 && !d; i++) {
                 try {
-                    const r = await fetch(api('Card/Feed?sort=' + sort + '&skip=' + skip), { headers: { 'Authorization': auth() } });
+                    const r = await fetch(api('Card/Feed?sort=' + F.sort + '&pub=' + F.pub + '&kind=' + F.kind + '&q=' + encodeURIComponent(F.q) + '&skip=' + skip), { headers: { 'Authorization': auth() } });
                     if (r.status === 403) { location.replace('./card.html'); return; }
                     if (!r.ok) throw new Error(r.status);
                     d = await r.json();
                 } catch (e) { last = e; await new Promise(res => setTimeout(res, 600 * (i + 1))); }
             }
             if (!d) throw last;
+            if (my !== reqId) { busy = false; return; }          // за это время фильтр сменили — ответ устарел
             d.items.forEach(it => list.appendChild(row(it)));
+            totalEl.textContent = 'Найдено: ' + d.total;
             skip += d.items.length; more.hidden = !d.hasMore;
             msg.textContent = list.children.length ? '' : 'Пока нет опубликованных карточек';
         } catch (e) { msg.textContent = 'Не удалось загрузить ленту'; }
         busy = false;
     }
 
-    document.querySelectorAll('#fd-sort button').forEach(b => b.onclick = () => {
-        document.querySelectorAll('#fd-sort button').forEach(x => x.classList.toggle('on', x === b));
-        sort = b.dataset.s; load(true);
-    });
+    document.getElementById('fd-sortsel').onchange = e => { F.sort = e.target.value; load(true); };
+    document.querySelectorAll('.fd-chips').forEach(g => g.querySelectorAll('button').forEach(b => b.onclick = () => {
+        g.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
+        F[g.dataset.f] = b.dataset.v; load(true);
+    }));
+    let qTimer = null;
+    document.getElementById('fd-q').oninput = e => { clearTimeout(qTimer); qTimer = setTimeout(() => { F.q = e.target.value.trim(); load(true); }, 350); };
     more.onclick = () => load(false);
     load(true);
 })();
