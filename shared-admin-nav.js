@@ -80,9 +80,14 @@
     function isCardAdmin() {
         try { const u = window.NFTAuth && NFTAuth.getUser(); return !!u && Number(u.telegramId || u.id) === ADMIN_TG_ID; } catch (e) { return false; }
     }
+    // Мини-карточка: фон выбранного пользователем цвета, блик, чип и две строки — без 3D и без стикеров.
     function paintMiniCard(el, c0, c1) {
         el.style.background = 'linear-gradient(135deg,' + c0 + ',' + c1 + ')';
     }
+    window.cdPaintMini = function (c0, c1) {
+        document.querySelectorAll('.cw-mini-card').forEach(m => paintMiniCard(m, c0, c1));
+        try { localStorage.setItem('cd_mini', JSON.stringify({ c0: c0, c1: c1 })); } catch (e) { }
+    };
     function applyAdminNav() {
         try {
             const tabs = document.querySelector('.cw-tabs');
@@ -94,7 +99,11 @@
             // вместо значка — мини-карточка: цвета берём из кэша, свежие подтягиваем с сервера
             const mini = document.createElement('span');
             mini.className = 'cw-mini-card';
-            mini.style.cssText = 'width:34px;height:21px;border-radius:5px;flex:0 0 auto;box-shadow:0 0 0 1px rgba(255,255,255,.18),0 2px 6px rgba(0,0,0,.35)';
+            mini.style.cssText = 'position:relative;overflow:hidden;width:46px;height:29px;border-radius:7px;flex:0 0 auto;box-shadow:0 0 0 1px rgba(255,255,255,.22),0 3px 8px rgba(0,0,0,.4)';
+            mini.innerHTML = '<span style="position:absolute;inset:0;background:radial-gradient(120% 90% at 85% 0%,rgba(255,255,255,.38),transparent 60%)"></span>' +
+                '<span style="position:absolute;right:5px;top:5px;width:9px;height:7px;border-radius:2px;background:rgba(255,255,255,.75)"></span>' +
+                '<span style="position:absolute;left:5px;bottom:9px;width:16px;height:3px;border-radius:2px;background:rgba(255,255,255,.85)"></span>' +
+                '<span style="position:absolute;left:5px;bottom:4px;width:10px;height:2px;border-radius:2px;background:rgba(255,255,255,.55)"></span>';
             let c0 = '#3AB0F8', c1 = '#1488E1';
             try { const k = JSON.parse(localStorage.getItem('cd_mini') || 'null'); if (k && k.c0 && k.c1) { c0 = k.c0; c1 = k.c1; } } catch (e) { }
             paintMiniCard(mini, c0, c1);
@@ -117,6 +126,7 @@
                 feed.href = new URL('Card/feed.html', SELF_SRC).href;
                 feed.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 21h8M12 17v4M7 4h10v5a5 5 0 01-10 0V4zM7 6H4v1a3 3 0 003 3M17 6h3v1a3 3 0 01-3 3"/></svg><span>Лента</span>';
                 tabs.append(home, feed, card);
+                tabs.classList.add('cd-three');
                 home.classList.remove('active');
             } else {
                 // на остальных страницах Карточка и Главная меняются местами

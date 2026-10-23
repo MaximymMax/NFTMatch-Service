@@ -1224,6 +1224,7 @@ function updateBgRow() {
   const c0 = currentBg ? currentBg.c0 : DEFAULT_COLORS.c0, c1 = currentBg ? currentBg.c1 : DEFAULT_COLORS.c1;
   sw.style.background = 'linear-gradient(135deg, ' + c0 + ', ' + c1 + ')';
   nm.textContent = currentBg ? currentBg.name : T('По умолчанию');
+  if (kind === 'catalog') { try { if (P.cdPaintMini) P.cdPaintMini(c0, c1); } catch (e) { /* мини-карточка в меню не критична */ } }   // мини-карточка в меню — фон основной карточки
 }
 function applyBg(bg, animate) {
   currentBg = bg;
