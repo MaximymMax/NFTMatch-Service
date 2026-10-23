@@ -426,3 +426,29 @@ body.admin .bar .pill-btn { flex: 1 1 0; min-width: 0; width: auto; }
 /* карусель идёт от края до края окна редактора (оно уже растянуто до границы секции), поэтому сдвиг равен только внутреннему полю */
 body.admin .carousel { margin-left: calc(-1 * var(--padin, 0px)); }
 @media (max-width: 760px) { body.admin .carousel { margin-right: calc(-1 * var(--padin, 0px)); } }
+
+/* ===== боковые карточки: лёгкий блюр самих карточек, центры на одной линии с центральной ===== */
+.peek { filter: none; opacity: 1; top: 32px; transform: none; }
+.peek:hover { filter: none; opacity: 1; }
+.peek .pc { overflow: hidden; }
+.peek .pc img, .peek .pc.empty span { filter: blur(1.6px); transform: scale(1.04); }
+.peek .pc.empty { background: linear-gradient(135deg, #2d4a8a, #1b2a52); }
+.peek .pc.empty span { display: block; }
+.peek .pc.locked { filter: blur(1px); }
+body.admin .carousel .stage { padding-top: 32px; }
+
+/* заглушка закрытой карточки в центре */
+.lockedWrap { position: relative; z-index: 2; padding: 32px 0 14px; }
+.lockedWrap .lockcard { aspect-ratio: 1.648; border-radius: 22px; background: #0b0b0e; border: 2px dashed #5a5f69; box-sizing: border-box;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; color: #8a8f99; }
+.lockedWrap .lockcard b { font-size: 22px; color: #c9ccd3; }
+.lockedWrap .lockcard small { font-size: 12px; }
+.lockedWrap .buy { display: block; margin: 20px auto 6px; padding: 13px 26px; background: #2563eb; color: #fff; }
+.lockedWrap.out-l { animation: slOutL .17s ease-in forwards; }
+.lockedWrap.out-r { animation: slOutR .17s ease-in forwards; }
+.lockedWrap.in-l { animation: slInL .23s ease-out; }
+.lockedWrap.in-r { animation: slInR .23s ease-out; }
+/* когда в центре закрытая карточка, инструменты обычных карточек не нужны */
+body.locked-center .fsrow, body.locked-center .bar, body.locked-center .trayBox, body.locked-center .bgrow { display: none; }
+body.locked-center .right { opacity: .35; pointer-events: none; }
+body.fs .lockedWrap { display: none !important; }

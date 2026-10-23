@@ -795,7 +795,8 @@ const EN_UI = {
   'Не удалось снять с публикации': 'Failed to unpublish', 'Не удалось подготовить картинку': 'Failed to prepare the image',
   'Очистить карточку': 'Clear the card', 'Слишком много лайков, попробуйте позже': 'Too many likes, try again later',
   'Сделать свою карточку': 'Make your own card', 'Не удалось сохранить карточку — попробуйте ещё раз': 'Could not save the card — try again',
-  'Нравится': 'Like'
+  'Нравится': 'Like', 'Закрытая карточка': 'Locked card', 'Открыть за 50 ★': 'Unlock for 50 ★',
+  'Закрытая карточка откроется за 50 звёзд. Оплата скоро появится — пока можно оформлять первую и вторую карточки.': 'The locked card unlocks for 50 stars. Payment is coming soon — for now you can design the first and the second card.'
 };
 const EN_PAT = [
   [/^(\d+) мод\.$/, '$1 models'],
@@ -1692,6 +1693,8 @@ function tgOpenLink(url) {
 }
 
 /* ---- карусель */
+const SLOT_ORDER = ['second', 'catalog', 'locked'];   // слева направо; закрытая карточка — заглушка без данных
+let slotNow = 'catalog';                              // что сейчас в центре
 function peekHtml(k) {
   if (k === 'locked') return '<div class="pc locked"><svg viewBox="0 0 24 24" width="30" height="30"><rect x="5" y="11" width="14" height="9" rx="2" fill="none" stroke="#8a8f99" stroke-width="2"/><path d="M8 11V8a4 4 0 018 0v3" fill="none" stroke="#8a8f99" stroke-width="2" stroke-linecap="round"/></svg><b>50 ★</b></div>';
   return previews[k] ? '<div class="pc"><img alt="" src="' + previews[k] + '"></div>' : '<div class="pc empty"><span>' + T(k === 'second' ? 'Новая карточка' : 'Карточка') + '</span></div>';
@@ -1699,47 +1702,69 @@ function peekHtml(k) {
 function renderPeeks() {
   const L = document.getElementById('peekL'), R = document.getElementById('peekR');
   if (!L || !R) return;
-  if (kind === 'catalog') {
-    L.hidden = false; L.innerHTML = peekHtml('second'); L.dataset.go = 'second';
-    R.hidden = false; R.innerHTML = peekHtml('locked'); R.dataset.go = 'locked';
-  } else {
-    L.hidden = true; L.dataset.go = '';
-    R.hidden = false; R.innerHTML = peekHtml('catalog'); R.dataset.go = 'catalog';
-  }
-  document.querySelectorAll('.dots i').forEach(d => d.classList.toggle('on', d.dataset.k === kind));
+  const set = (el, k) => { el.hidden = !k; el.dataset.go = k || ''; if (k) el.innerHTML = peekHtml(k); };
+  if (slotNow === 'catalog') { set(L, 'second'); set(R, 'locked'); }
+  else if (slotNow === 'second') { set(L, null); set(R, 'catalog'); }
+  else { set(L, 'catalog'); set(R, null); }
 }
-function goPeek(k) {
-  if (!k) return;
-  if (k === 'locked') { toast(T('Скоро')); return; }
-  goSlot(k);
-}
-function slotShift(step) {            // step: -1 влево по ряду (к «второй»), +1 вправо (к закрытой)
-  const i = SLOT_KINDS.indexOf(kind) + step;
-  if (i < 0) return;
-  if (i >= SLOT_KINDS.length) { toast(T('Скоро')); return; }
-  goSlot(SLOT_KINDS[i]);
+function goPeek(k) { if (k) goSlot(k); }
+function slotShift(step) {            // step: -1 влево по ряду, +1 вправо
+  const i = SLOT_ORDER.indexOf(slotNow) + step;
+  if (i < 0 || i >= SLOT_ORDER.length) return;
+  goSlot(SLOT_ORDER[i]);
 }
 async function goSlot(target) {
-  if (slotSwitching || target === kind || !SLOT_KINDS.includes(target)) return;
+  if (slotSwitching || target === slotNow || !SLOT_ORDER.includes(target)) return;
   slotSwitching = true;
-  const stageEl = document.getElementById('stage');
-  const toLeft = SLOT_KINDS.indexOf(target) < SLOT_KINDS.indexOf(kind);   // выбираем левую карточку: содержимое уезжает вправо
+  const stageEl = document.getElementById('stage'), lockedEl = document.getElementById('lockedWrap');
+  const toLeft = SLOT_ORDER.indexOf(target) < SLOT_ORDER.indexOf(slotNow);      // едем к левой карточке: уходящая уезжает вправо
+  const outEl = slotNow === 'locked' ? lockedEl : stageEl, inEl = target === 'locked' ? lockedEl : stageEl;
+  const animOut = toLeft ? 'out-r' : 'out-l', animIn = toLeft ? 'in-r' : 'in-l';
   try {
-    clearTimeout(saveTimer); while (saving) await sleep(80); await flushSave();
-    if (dirty) { toast(T('Не удалось сохранить карточку — попробуйте ещё раз')); return; }
-    menu.hidden = true; select(null);
-    if (imgDirty) { clearTimeout(imgTimer); await uploadImage(true); }          // картинка для бота у уходящей карточки должна быть свежей
-    try { const cv = await renderCardImage(PREVIEW_SIZE); const b = await new Promise(r => cv.toBlob(r, 'image/webp', .8)); if (b) setPreview(kind, b); } catch (e) { /* превью не критично */ }
-    stageEl.classList.add(toLeft ? 'out-r' : 'out-l'); await sleep(170);
-    loaded = false;
-    state.stickers.slice().forEach(s => detach(s.id));
-    tray = []; trayEl.innerHTML = ''; tiles.clear();
-    currentBg = null; state.colorId = null; applyTheme(false); updateBgRow();
-    kind = target; document.body.dataset.kind = kind;
-    await loadCard();
-    renderPeeks(); refreshPublish();
-    stageEl.classList.remove('out-r', 'out-l'); stageEl.classList.add(toLeft ? 'in-r' : 'in-l'); await sleep(230); stageEl.classList.remove('in-r', 'in-l');
-  } finally { stageEl.classList.remove('out-r', 'out-l', 'in-r', 'in-l'); slotSwitching = false; }
+    if (slotNow !== 'locked') {
+      clearTimeout(saveTimer); while (saving) await sleep(80); await flushSave();
+      if (dirty) { toast(T('Не удалось сохранить карточку — попробуйте ещё раз')); return; }
+      menu.hidden = true; select(null);
+      if (imgDirty) { clearTimeout(imgTimer); await uploadImage(true); }          // картинка для бота у уходящей карточки должна быть свежей
+      try { const cv = await renderCardImage(PREVIEW_SIZE); const b = await new Promise(r => cv.toBlob(r, 'image/webp', .8)); if (b) setPreview(kind, b); } catch (e) { /* превью не критично */ }
+    }
+    outEl.classList.add(animOut); await sleep(170);
+    outEl.style.display = 'none'; outEl.classList.remove(animOut);
+    if (target !== 'locked' && target !== kind) {
+      loaded = false;
+      state.stickers.slice().forEach(s => detach(s.id));
+      tray = []; trayEl.innerHTML = ''; tiles.clear();
+      currentBg = null; state.colorId = null; applyTheme(false); updateBgRow();
+      kind = target; document.body.dataset.kind = kind;
+      await loadCard();
+      refreshPublish();
+    }
+    slotNow = target;
+    document.body.classList.toggle('locked-center', target === 'locked');
+    inEl.style.display = ''; inEl.classList.add(animIn);
+    renderPeeks();
+    await sleep(230); inEl.classList.remove(animIn);
+  } finally { stageEl.classList.remove('out-r', 'out-l', 'in-r', 'in-l'); lockedEl.classList.remove('out-r', 'out-l', 'in-r', 'in-l'); slotSwitching = false; }
+}
+
+/* уведомления выводим в родительской странице: окно редактора высокое, и «всплывашка» внутри него оказывается за пределами экрана */
+function toast(msg) {
+  try {
+    if (frameEl) {
+      const D = P.document;
+      if (!D.getElementById('cdToastCss')) {
+        const st = D.createElement('style'); st.id = 'cdToastCss';
+        st.textContent = '#cdToast{position:fixed;left:50%;bottom:28px;transform:translate(-50%,20px);opacity:0;pointer-events:none;max-width:88vw;text-align:center;background:#263355;color:#fff;padding:11px 18px;border-radius:14px;font:600 13px Inter,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.45);transition:opacity .2s,transform .2s;z-index:10070}#cdToast.show{opacity:1;transform:translate(-50%,0)}';
+        D.head.appendChild(st);
+      }
+      let t = D.getElementById('cdToast');
+      if (!t) { t = D.createElement('div'); t.id = 'cdToast'; t.setAttribute('role', 'status'); D.body.appendChild(t); }
+      t.textContent = msg; t.classList.add('show');
+      clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove('show'), 2400);
+      return;
+    }
+  } catch (e) { /* запасной вариант ниже */ }
+  toastEl.textContent = msg; toastEl.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => toastEl.classList.remove('show'), 2200);
 }
 
 /* ---- публикация */
@@ -1852,7 +1877,15 @@ function initAdmin() {
   stageEl.parentNode.insertBefore(car, stageEl);
   const L = document.createElement('div'); L.id = 'peekL'; L.className = 'peek peekL'; L.hidden = true;
   const R = document.createElement('div'); R.id = 'peekR'; R.className = 'peek peekR';
-  car.appendChild(L); car.appendChild(stageEl); car.appendChild(R);
+  // закрытая карточка: чёрная, с серым пунктиром (рендерить её не нужно — только заглушка)
+  const lockedWrap = document.createElement('div'); lockedWrap.id = 'lockedWrap'; lockedWrap.className = 'lockedWrap'; lockedWrap.style.display = 'none';
+  lockedWrap.innerHTML = '<div class="lockcard"><svg viewBox="0 0 24 24" width="44" height="44"><rect x="5" y="11" width="14" height="9" rx="2" fill="none" stroke="#8a8f99" stroke-width="1.8"/><path d="M8 11V8a4 4 0 018 0v3" fill="none" stroke="#8a8f99" stroke-width="1.8" stroke-linecap="round"/></svg><b>50 ★</b><small>Закрытая карточка</small></div>' +
+    '<button type="button" class="pill-btn buy">Открыть за 50 ★</button>';
+  lockedWrap.querySelector('.buy').onclick = () => {
+    const { o } = pubModalShell('<div class="lk">Закрытая карточка откроется за 50 звёзд. Оплата скоро появится — пока можно оформлять первую и вторую карточки.</div>');
+    o.querySelector('.h span').textContent = T('Скоро'); trTree(o);
+  };
+  car.appendChild(L); car.appendChild(stageEl); car.appendChild(lockedWrap); car.appendChild(R);
   // iframe выходит за поля страницы до краёв секции, чтобы боковые карточки лежали прямо на её границе
   function setBleed() {
     try {
