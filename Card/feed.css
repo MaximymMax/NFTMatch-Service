@@ -30,9 +30,9 @@
 
 /* просмотр карточки: размытая лента сзади, карточка по центру, снизу использованные модели */
 body.fd-lock { overflow: hidden; }
-.fd-ov { position: fixed; inset: 0; z-index: 10000; display: flex; align-items: center; justify-content: center; padding: 70px 16px 24px; overflow-y: auto;
+.fd-ov { position: fixed; inset: 0; z-index: 10000; display: flex; align-items: center; justify-content: center; padding: 138px 16px 24px; overflow-y: auto;
     background: rgba(8, 12, 24, .5); -webkit-backdrop-filter: blur(22px); backdrop-filter: blur(22px); }
-.fd-back { position: fixed; left: 14px; top: max(14px, env(safe-area-inset-top)); width: 46px; height: 46px; border-radius: 50%; border: 0; display: flex; align-items: center; justify-content: center;
+.fd-back { position: fixed; left: 14px; top: max(80px, calc(env(safe-area-inset-top) + 70px)); width: 46px; height: 46px; border-radius: 50%; border: 0; display: flex; align-items: center; justify-content: center;
     background: rgba(30, 41, 68, .85); color: #fff; cursor: pointer; z-index: 1; }
 .fd-back svg { width: 24px; height: 24px; }
 .fd-ovbody { width: min(100%, 620px); margin: auto; display: flex; flex-direction: column; align-items: center; gap: 14px; }
@@ -57,3 +57,5 @@ body.fd-lock { overflow: hidden; }
 .fd-bal { position: absolute; left: 6.9%; top: 12%; font: 800 8.4cqw 'Inter', sans-serif; color: #fff; text-shadow: 0 1px 6px rgba(0, 0, 0, .25); }
 .fd-chip { position: absolute; right: 12%; top: 40%; width: 11cqw; height: 8cqw; border-radius: 1.8cqw; background: linear-gradient(135deg, #eceff3, #aeb4bd); box-shadow: 0 1px 4px rgba(0, 0, 0, .3); }
 .fd-hold { position: absolute; left: 6.9%; bottom: 8%; font: 700 4.2cqw 'Inter', sans-serif; letter-spacing: .12em; color: #fff; text-transform: uppercase; text-shadow: 0 1px 4px rgba(0, 0, 0, .35); }
+
+.fd-shot img { position: absolute; display: block; width: 115.4%; left: -7.7%; top: -13%; max-width: none; pointer-events: none; }

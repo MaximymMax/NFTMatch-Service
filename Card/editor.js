@@ -1304,6 +1304,12 @@ async function loadCard(prefetched) {
     tray = (data.tray || []).map(t => ({ id: sid(t.gift, t.model, t.uid), gift: t.gift, model: t.model, uid: t.uid || undefined, sub: t.uid ? '#' + t.uid.split('-').pop() : undefined }));
     state.stickers.forEach(s => { if (!tray.some(t => t.id === s.src)) { const [gift, model, uid] = splitId(s.src); tray.push({ id: s.src, gift, model, uid, sub: uid ? '#' + uid.split('-').pop() : undefined }); } });
     loaded = true; renderTray();
+    // картинка на сервере отстала от карточки (закрыли приложение до отправки) или её ещё нет — догоняем
+    try {
+      const k0 = kind;
+      const behind = state.stickers.length && (!data.imageUrl || (data.imageAt && data.updatedAt && Date.parse(data.imageAt) < Date.parse(data.updatedAt) - 5000));
+      if (behind) setTimeout(() => { if (loaded && kind === k0 && !imgBusy && !dirty) uploadImage(true); }, 3500);
+    } catch (e) { /* не критично */ }
     // подпись на карточке (имя владельца) хранится на сервере — если она устарела, обновляем её
     if ((data.holder || '') !== document.getElementById('holder').textContent) save();
   } catch (e) {
@@ -1669,7 +1675,12 @@ window.__share = { render: renderCardImage, open: openShare };
 /* Картинка для бота (инлайн, «в чат с ботом») меньше, чем для скачивания: ~1600 px и качество .82 — около 150–250 КБ вместо ~400. */
 const UPLOAD_SIZE = { W: 1600, H: 1000, CW: 1400 };
 let imgTimer = null, imgBusy = false, imgDirty = false;
-function scheduleImageUpload() { imgDirty = true; clearTimeout(imgTimer); imgTimer = setTimeout(() => uploadImage(false), 12000); }   // не после каждой правки, а когда человек притих
+const IMG_DELAY = 5 * 60 * 1000;     // картинка для ленты и бота обновляется через 5 минут после последней правки
+function scheduleImageUpload() { imgDirty = true; clearTimeout(imgTimer); imgTimer = setTimeout(() => uploadImage(false), IMG_DELAY); }
+// ушли из приложения (или свернули его) раньше срока — отправляем сразу, пока страница жива
+function flushImageOnLeave() { if (imgDirty && !imgBusy && loaded && !VIEW_ID) { clearTimeout(imgTimer); uploadImage(true); } }
+document.addEventListener('visibilitychange', () => { if (document.hidden) flushImageOnLeave(); });
+window.addEventListener('pagehide', flushImageOnLeave);
 async function uploadImage(force) {
   if (force) while (imgBusy) await new Promise(r => setTimeout(r, 100));
   if (imgBusy || !loaded || (dirty && !force)) return false;

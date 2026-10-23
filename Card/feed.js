@@ -20,8 +20,18 @@
     /* Просмотр карточки: размытая лента на заднем плане, карточка по центру, снизу использованные модели; стрелка возвращает в ленту */
     const VER = (() => { try { return new URL(document.querySelector('link[href*="card.css"]').href).searchParams.get('v') || String(Date.now()); } catch (e) { return String(Date.now()); } })();
     // карточка в списке рисуется из данных (фон и стикеры), а не из картинки: картинка могла отстать от карточки
-    function flatCard(it) {
+    // Серверная картинка — карточка на фоне (1600×1000, карточка 1400 в центре): показываем только саму карточку
+    function shotCard(it) {
         const tile = document.createElement('div'); tile.className = 'fd-pic fd-tile';
+        const box = document.createElement('div'); box.className = 'fd-flat fd-shot';
+        const im = new Image(); im.alt = ''; im.loading = 'lazy'; im.draggable = false; im.src = it.imageUrl;
+        im.onerror = () => { tile.replaceWith(flatCard(it, true)); };
+        box.appendChild(im); tile.appendChild(box);
+        return tile;
+    }
+    function flatCard(it, replaced) {
+        const tile = document.createElement('div'); tile.className = 'fd-pic fd-tile';
+        if (replaced) tile.onclick = () => openOverlay(it);
         const box = document.createElement('div'); box.className = 'fd-flat';
         const c0 = (it.bg && it.bg.c0) || '#3AB0F8', c1 = (it.bg && it.bg.c1) || '#1488E1';
         box.style.background = 'linear-gradient(135deg,' + c0 + ',' + c1 + ')';
@@ -40,6 +50,7 @@
     }
 
     function openOverlay(it) {
+        if (document.querySelector('.fd-ov')) return;          // пока открыта одна карточка, другие не открываем
         const ov = document.createElement('div'); ov.className = 'fd-ov';
         const back = document.createElement('button'); back.type = 'button'; back.className = 'fd-back'; back.setAttribute('aria-label', 'Назад к ленте');
         back.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>';
@@ -76,7 +87,7 @@
     function row(it) {
         const el = document.createElement('div'); el.className = 'fd-item';
         const name = nameOf(it);
-        const pic = flatCard(it);
+        const pic = it.imageUrl ? shotCard(it) : flatCard(it);
         pic.onclick = () => openOverlay(it);
         const info = document.createElement('div'); info.className = 'fd-info';
         const ava = document.createElement('div'); ava.className = 'fd-ava'; ava.textContent = (name.replace('@', '')[0] || '?').toUpperCase();
