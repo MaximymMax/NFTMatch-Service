@@ -796,7 +796,9 @@ const EN_UI = {
   'Очистить карточку': 'Clear the card', 'Слишком много лайков, попробуйте позже': 'Too many likes, try again later',
   'Сделать свою карточку': 'Make your own card', 'Не удалось сохранить карточку — попробуйте ещё раз': 'Could not save the card — try again',
   'Публикация карточки': 'Publish the card',
-  'Опубликованную карточку смогут увидеть другие пользователи и оценить её лайком. Число лайков видите только вы. Делитесь карточкой с друзьями: по ссылке она открывается прямо в приложении. Снять карточку с публикации можно в любой момент.': 'Other users will be able to see a published card and rate it with a like. Only you can see the number of likes. Share your card with friends: the link opens it right in the app. You can unpublish the card at any time.',
+  'Поделитесь карточкой с друзьями, чтобы набрать лайки!': 'Share your card with friends to collect likes!',
+  'Самые популярные работы попадут в ленту лучших в боте.': 'The most popular cards will make it to the best-works feed in the bot.',
+  'Снять карточку с публикации можно в любой момент.': 'You can unpublish the card at any time.',
   'Проверяю подписку на канал…': 'Checking the channel subscription…', '✓ Вы подписаны на канал': '✓ You are subscribed to the channel',
   'Для публикации нужно подписаться на наш канал': 'To publish, you need to subscribe to our channel', 'Не удалось проверить подписку': 'Could not check the subscription',
   'Проверить ещё раз': 'Check again', 'Я подписался — проверить': 'I subscribed — check', 'Проверить подписку': 'Check subscription', 'Публикую…': 'Publishing…',
@@ -1035,7 +1037,6 @@ function refreshTiles() {
     if (n) { const o = document.createElement('span'); o.className = 'onc'; o.textContent = n > 1 ? 'На карточке ×' + n : 'На карточке'; art.appendChild(o); }
   });
   catTiles.forEach((t, id) => t.classList.toggle('picked', tray.some(x => x.id === id)));
-  if (!ADMIN_UI) document.getElementById('btnClear').disabled = !state.stickers.length;
   document.getElementById('trayCount').textContent = state.stickers.length + '/' + MAX_STICKERS;
   trayNote.textContent = tray.length ? '' : 'Нажмите на подарки ниже, чтобы добавить их сюда. Отсюда их можно перетащить на карточку.';
 }
@@ -1893,7 +1894,9 @@ function pubModalShell(inner) {
 /* Окно публикации: что это значит, проверка подписки на канал и кнопка «Опубликовать». */
 async function openPublishModal() {
   const { o, close, note } = pubModalShell(
-    '<div class="lk">Опубликованную карточку смогут увидеть другие пользователи и оценить её лайком. Число лайков видите только вы. Делитесь карточкой с друзьями: по ссылке она открывается прямо в приложении. Снять карточку с публикации можно в любой момент.</div>' +
+    '<div class="lk" style="font-weight:700;font-size:16px;color:#fff">Поделитесь карточкой с друзьями, чтобы набрать лайки!</div>' +
+    '<div class="lk">Самые популярные работы попадут в ленту лучших в боте.</div>' +
+    '<div class="lk">Снять карточку с публикации можно в любой момент.</div>' +
     '<div class="vw sub">Проверяю подписку на канал…</div>' +
     '<div class="b"><button class="pr go" disabled>Опубликовать</button><button class="ch" hidden>Открыть канал</button><button class="rc" hidden>Проверить подписку</button></div>');
   o.querySelector('.h span').textContent = T('Публикация карточки');
@@ -1979,6 +1982,16 @@ async function downloadCard() {
   finally { btnDl.disabled = false; }
 }
 
+/* Кнопка «Опубликовать» на месте «Очистить» + быстрый сброс маленькой ссылкой внизу блока «Выбранные» (у всех пользователей). */
+function setupPublishButton() {
+  btnPub.disabled = false; btnPub.textContent = 'Опубликовать';
+  btnPub.onclick = () => { if ((pubState[kind] || {}).public) openPubModal(); else openPublishModal(); };
+  const clr = document.createElement('button'); clr.type = 'button'; clr.className = 'linkbtn'; clr.textContent = 'Очистить карточку';
+  clr.onclick = () => { if (state.stickers.length && confirm(T('Убрать все стикеры с карточки?'))) state.stickers.slice().forEach(s => detach(s.id)); };
+  document.getElementById('trayBox').appendChild(clr);
+  refreshPublish();
+}
+
 /* ---- сборка админского интерфейса */
 function initAdmin() {
   document.body.classList.add('admin');
@@ -2038,16 +2051,10 @@ function initAdmin() {
 
   // кнопки: «Скачать» и «Опубликовать» вместо «Поделиться» и «Очистить»
   btnDl.textContent = 'Скачать'; btnDl.onclick = downloadCard;
-  btnPub.disabled = false; btnPub.textContent = 'Опубликовать';
-  btnPub.onclick = () => { if ((pubState[kind] || {}).public) openPubModal(); else openPublishModal(); };
-
-  // быстрый сброс убран с экрана — остаётся маленькой ссылкой внизу блока «Выбранные»
-  const clr = document.createElement('button'); clr.type = 'button'; clr.className = 'linkbtn'; clr.textContent = 'Очистить карточку';
-  clr.onclick = () => { if (state.stickers.length && confirm(T('Убрать все стикеры с карточки?'))) state.stickers.slice().forEach(s => detach(s.id)); };
-  trayBox.appendChild(clr);
+  setupPublishButton();
 
   try { new ResizeObserver(layoutPeeks).observe(car); } catch (e) { window.addEventListener('resize', layoutPeeks); }
-  renderPeeks(); refreshPublish();
+  renderPeeks();
   // превью второй карточки (последняя загруженная картинка)
   apiGet('Card/Get?kind=second').then(async d => { if (d.imageUrl && !previews.second) { const b = await cropServerPreview(d.imageUrl); if (b) setPreview('second', b); } }).catch(() => { /* пока нет данных */ });
 }
@@ -2089,6 +2096,6 @@ function setupLike() {
   }).catch(() => { /* лайк недоступен */ });
 }
 
-if (ADMIN_UI) initAdmin();
+if (ADMIN_UI) initAdmin(); else if (!VIEW_ID) setupPublishButton();      // публикация и лайки открыты всем; карусель из трёх карточек — пока только у администратора
 
 })();
