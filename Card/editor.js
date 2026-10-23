@@ -800,6 +800,7 @@ const EN_UI = {
   'Проверяю подписку на канал…': 'Checking the channel subscription…', '✓ Вы подписаны на канал': '✓ You are subscribed to the channel',
   'Для публикации нужно подписаться на наш канал': 'To publish, you need to subscribe to our channel', 'Не удалось проверить подписку': 'Could not check the subscription',
   'Проверить ещё раз': 'Check again', 'Я подписался — проверить': 'I subscribed — check', 'Проверить подписку': 'Check subscription', 'Публикую…': 'Publishing…',
+  'Откройте карточку в Telegram, чтобы поставить лайк': 'Open the card in Telegram to like it',
   'Нравится': 'Like', 'Закрытая карточка': 'Locked card', 'Открыть за 50 ★': 'Unlock for 50 ★',
   'Закрытая карточка откроется за 50 звёзд. Оплата скоро появится — пока можно оформлять первую и вторую карточки.': 'The locked card unlocks for 50 stars. Payment is coming soon — for now you can design the first and the second card.'
 };
@@ -1309,6 +1310,7 @@ async function loadCard(prefetched) {
 }
 
 /* ---- просмотр по ссылке (view.html?c=...): та же карточка на весь экран, без входа и без правки */
+let viewPublic = false;       // опубликована ли просматриваемая карточка
 async function startView() {
   document.body.classList.add('view', 'fs');
   try {
@@ -1316,6 +1318,7 @@ async function startView() {
     if (!r.ok) throw new Error(r.status);
     const data = await r.json();
     if (data.holder) document.getElementById('holder').textContent = data.holder;
+    viewPublic = !!data.isPublic;
     if (data.bg && /^#[0-9a-f]{6}$/i.test(data.bg.c0) && /^#[0-9a-f]{6}$/i.test(data.bg.c1)) applyBg(data.bg, false);
     const minS = 0.4;   // как минимальный масштаб в примере; от размера карточки не зависит (в момент загрузки она может быть ещё без размера)
     (data.stickers || []).slice(0, MAX_STICKERS).forEach(s => {
@@ -2049,12 +2052,29 @@ function initAdmin() {
 }
 
 /* ---- сердечко на странице просмотра (только для публичной чужой карточки; число лайков зрителю не показываем) */
+function heartButton(liked) {
+  const h = document.createElement('button'); h.type = 'button'; h.className = 'heart' + (liked ? ' on' : ''); h.setAttribute('aria-label', 'Нравится');
+  h.innerHTML = '<svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-9.6-9.2C1 8.6 3 5 6.4 5c2 0 3.7 1.1 5.6 3.2C13.9 6.1 15.6 5 17.6 5 21 5 23 8.6 21.6 11.8 19.5 16.4 12 21 12 21z" stroke-width="2" stroke-linejoin="round"/></svg>';
+  document.body.appendChild(h);
+  return h;
+}
 function setupLike() {
-  try { if (authHeader() === 'Tma invalid') return; } catch (e) { return; }
+  let authed = true;
+  try { authed = authHeader() !== 'Tma invalid'; } catch (e) { authed = false; }
+  if (!authed) {
+    // лайк по ссылке может поставить любой: без входа сердечко ведёт в Telegram, где человек уже опознан
+    if (!viewPublic) return;
+    const h = heartButton(false);
+    h.onclick = () => {
+      toast(T('Откройте карточку в Telegram, чтобы поставить лайк'));
+      const link = 'https://t.me/' + (CFG.BOT_USERNAME || 'NFTMatchBot') + '/find?startapp=c-' + encodeURIComponent(VIEW_ID);
+      setTimeout(() => { try { P.open(link, '_blank'); } catch (e) { location.href = link; } }, 700);
+    };
+    return;
+  }
   apiGet('Card/LikeState?c=' + encodeURIComponent(VIEW_ID)).then(st => {
     if (!st || !st.enabled) return;
-    const h = document.createElement('button'); h.type = 'button'; h.className = 'heart' + (st.liked ? ' on' : ''); h.setAttribute('aria-label', 'Нравится');
-    h.innerHTML = '<svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-9.6-9.2C1 8.6 3 5 6.4 5c2 0 3.7 1.1 5.6 3.2C13.9 6.1 15.6 5 17.6 5 21 5 23 8.6 21.6 11.8 19.5 16.4 12 21 12 21z" stroke-width="2" stroke-linejoin="round"/></svg>';
+    const h = heartButton(st.liked);
     let busy = false;
     h.onclick = async () => {
       if (busy) return; busy = true;
@@ -2065,7 +2085,6 @@ function setupLike() {
       } catch (e) { h.classList.toggle('on', !want); }
       busy = false;
     };
-    document.body.appendChild(h);
   }).catch(() => { /* лайк недоступен */ });
 }
 
