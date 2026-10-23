@@ -491,3 +491,11 @@ body.fs .lockedWrap { display: none !important; }
 .viewbar .heart:active { transform: scale(.92); }
 .viewbar .heart svg { width: 24px; height: 24px; }
 body.view .stage { width: min(calc(100vw - 70px), calc((100vh - 130px) * 1.648)); }
+
+/* полноэкранный режим и просмотр по ссылке: карточка меньше (на ПК не растягивается во весь экран), кнопки внизу крупнее */
+body.fs .stage { width: min(calc(100vw - 190px), calc((100vh - 180px) * 1.648), 700px); }
+body.view .stage { width: min(calc(100vw - 110px), calc((100vh - 200px) * 1.648), 680px); }
+.viewbar { bottom: 20px; gap: 12px; }
+.viewbar .cta { height: 56px; padding: 0 30px; font-size: 16px; border-radius: 28px; }
+.viewbar .heart { width: 56px; height: 56px; }
+.viewbar .heart svg { width: 29px; height: 29px; }
