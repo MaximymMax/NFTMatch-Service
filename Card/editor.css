@@ -465,3 +465,20 @@ body.fs .lockedWrap { display: none !important; }
 .lockedWrap .lockcard { gap: 14px; }
 .lockedWrap .lockcard small { font-size: 13px; letter-spacing: .02em; }
 .lockedWrap .lockcard .buy { margin: 0; display: inline-block; padding: 13px 26px; }
+
+/* ===== плавный ход карусели ===== */
+.stage.out-l, .lockedWrap.out-l { animation: slOutL2 .21s cubic-bezier(.4, 0, 1, 1) forwards; }
+.stage.out-r, .lockedWrap.out-r { animation: slOutR2 .21s cubic-bezier(.4, 0, 1, 1) forwards; }
+.stage.in-l, .lockedWrap.in-l { animation: slInL2 .32s cubic-bezier(.22, .8, .26, 1) both; }
+.stage.in-r, .lockedWrap.in-r { animation: slInR2 .32s cubic-bezier(.22, .8, .26, 1) both; }
+@keyframes slOutL2 { to { transform: translateX(-30%) scale(.9); opacity: 0; } }
+@keyframes slOutR2 { to { transform: translateX(30%) scale(.9); opacity: 0; } }
+@keyframes slInL2 { from { transform: translateX(30%) scale(.9); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes slInR2 { from { transform: translateX(-30%) scale(.9); opacity: 0; } to { transform: none; opacity: 1; } }
+.peek.swap { animation: peekIn .32s cubic-bezier(.22, .8, .26, 1) both; }
+@keyframes peekIn { from { opacity: 0; transform: scale(.9); } to { opacity: 1; transform: none; } }
+.peek .pc img { transform: none; }
+
+/* пока идёт загрузка, уходящая карточка не исчезает совсем, а лишь отодвигается и тускнеет — без пустого кадра */
+@keyframes slOutL2 { to { transform: translateX(-26%) scale(.92); opacity: .22; } }
+@keyframes slOutR2 { to { transform: translateX(26%) scale(.92); opacity: .22; } }

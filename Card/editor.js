@@ -1272,10 +1272,10 @@ document.getElementById('bgRow').addEventListener('keydown', e => { if (e.key ==
 updateBgRow();
 
 /* ---- загрузка единственной карточки с сервера */
-async function loadCard() {
+async function loadCard(prefetched) {
   loaded = false; setStatus('');
   try {
-    const data = await apiGet('Card/Get?kind=' + kind);
+    const data = prefetched || await apiGet('Card/Get?kind=' + kind);
     const minS = 0.4;   // как минимальный масштаб в примере; от размера карточки не зависит (в момент загрузки она может быть ещё без размера)
     (data.stickers || []).slice(0, MAX_STICKERS).forEach(s => {
       const src = sid(s.gift, s.model, s.uid), st = { id: newInstId(src), src, x: +s.x, y: +s.y, sc: clamp(+s.sc || 1, minS, SC_MAX), r: +s.r || 0, z: ++zSeq, t: ++tSeq };
@@ -1394,7 +1394,7 @@ try { if (localStorage.getItem('cdTrayCollapsed')) trayBoxEl.classList.add('coll
    размеры и позиции берутся из тех же долей, что и в вёрстке карточки. */
 const SHARE = { W: 2400, H: 1500, CW: 2100, BG: '#283043' };
 
-function glCardCanvas(w, h) {
+function glCardCanvas(w, h, c0, c1) {
   const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
   const g = cv.getContext('webgl', { antialias: true, preserveDrawingBuffer: true, alpha: false });
   if (!g) return null;
@@ -1408,8 +1408,8 @@ function glCardCanvas(w, h) {
   const u = n => g.getUniformLocation(pr, n);
   g.viewport(0, 0, w, h);
   g.uniform2f(u('uSize'), w, h); g.uniform2f(u('uTilt'), 0, 0);
-  g.uniform3fv(u('uC0'), colorNow.c0); g.uniform3fv(u('uC1'), colorNow.c1);
-  g.uniform3fv(u('uP0'), colorNow.c0); g.uniform3fv(u('uP1'), colorNow.c1);
+  g.uniform3fv(u('uC0'), c0); g.uniform3fv(u('uC1'), c1);
+  g.uniform3fv(u('uP0'), c0); g.uniform3fv(u('uP1'), c1);
   g.uniform2f(u('uOrg'), .5, .5); g.uniform1f(u('uRad'), -1); g.uniform1f(u('uSoft'), 1);
   g.uniform1f(u('uTime'), performance.now() / 1000);
   g.drawArrays(g.TRIANGLES, 0, 3);
@@ -1429,30 +1429,41 @@ function spaced(x, text, px, py, sp, draw) {
 }
 
 async function renderCardImage(size) {
+  // снимок состояния — до первого await: дальше экран уже может быть переключён на другую карточку
+  const snap = {
+    stickers: state.stickers.slice().sort((a, b) => (a.z || 0) - (b.z || 0)).map(s => Object.assign({}, s)),
+    c0: colorNow.c0.slice(), c1: colorNow.c1.slice(),
+    holder: document.getElementById('holder').textContent || 'COLLECTOR', usd: document.querySelector('.usd').textContent
+  };
   const { W, H, CW } = size || SHARE, CH = Math.round(CW / 1.648), cq = CW / 100;
   try { await Promise.all(['500 40px Roboto', '400 40px Roboto', '700 40px "Roboto Mono"', '700 40px Inter'].map(f => document.fonts.load(f))); } catch (e) { /* ignore */ }
 
-  const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+  const only = !!(size && size.cardOnly);          // режим превью: холст ровно по карточке, без фона и тени
+  const cv = document.createElement('canvas'); cv.width = only ? CW : W; cv.height = only ? CH : H;
   const x = cv.getContext('2d');
 
-  // фон: #283043 и светлое радиальное свечение в центре
-  x.fillStyle = SHARE.BG; x.fillRect(0, 0, W, H);
-  const rg = x.createRadialGradient(W / 2, H / 2, 0, W / 2, H / 2, Math.hypot(W, H) * .46);
-  rg.addColorStop(0, 'rgba(255,255,255,.24)'); rg.addColorStop(.55, 'rgba(255,255,255,.07)'); rg.addColorStop(1, 'rgba(255,255,255,0)');
-  x.fillStyle = rg; x.fillRect(0, 0, W, H);
+  if (!only) {
+    // фон: #283043 и светлое радиальное свечение в центре
+    x.fillStyle = SHARE.BG; x.fillRect(0, 0, W, H);
+    const rg = x.createRadialGradient(W / 2, H / 2, 0, W / 2, H / 2, Math.hypot(W, H) * .46);
+    rg.addColorStop(0, 'rgba(255,255,255,.24)'); rg.addColorStop(.55, 'rgba(255,255,255,.07)'); rg.addColorStop(1, 'rgba(255,255,255,0)');
+    x.fillStyle = rg; x.fillRect(0, 0, W, H);
+  }
 
   // стикеры нужны до рисования (загружаем параллельно)
-  const stickers = state.stickers.slice().sort((a, b) => (a.z || 0) - (b.z || 0));
+  const stickers = snap.stickers;
   const imgs = await Promise.all(stickers.map(s => { const [g, m] = splitId(s.src); return loadImgCors(imgUrl(g, m)); }));
-  const glc = glCardCanvas(CW, CH);
+  const glc = glCardCanvas(CW, CH, snap.c0, snap.c1);
 
-  const c0 = colorNow.c0, c1 = colorNow.c1, white = [1, 1, 1], black = [0, 0, 0];
-  x.save(); x.translate(Math.round((W - CW) / 2), Math.round((H - CH) / 2 + 30));
+  const c0 = snap.c0, c1 = snap.c1, white = [1, 1, 1], black = [0, 0, 0];
+  x.save(); if (!only) x.translate(Math.round((W - CW) / 2), Math.round((H - CH) / 2 + 30));
 
   // тень под карточкой, затем сама карточка (скруглённый прямоугольник)
-  rrPath(x, CW, CH, CW * .076);
-  x.shadowColor = 'rgba(0,0,0,.5)'; x.shadowBlur = 90; x.shadowOffsetY = 40; x.fillStyle = '#16213a'; x.fill();
-  x.shadowColor = 'transparent'; x.shadowBlur = 0; x.shadowOffsetY = 0;
+  if (!only) {
+    rrPath(x, CW, CH, CW * .076);
+    x.shadowColor = 'rgba(0,0,0,.5)'; x.shadowBlur = 90; x.shadowOffsetY = 40; x.fillStyle = '#16213a'; x.fill();
+    x.shadowColor = 'transparent'; x.shadowBlur = 0; x.shadowOffsetY = 0;
+  }
   x.save(); rrPath(x, CW, CH, CW * .076); x.clip();
   if (glc) x.drawImage(glc, 0, 0);
   else { const lg = x.createLinearGradient(0, 0, CW, CH); lg.addColorStop(0, rgb2css(c0)); lg.addColorStop(1, rgb2css(c1)); x.fillStyle = lg; x.fillRect(0, 0, CW, CH); }
@@ -1488,10 +1499,10 @@ async function renderCardImage(size) {
   x.fillText('GRAM', ax + x.measureText(String(GRAM_AMOUNT)).width + 2.2 * cq, ay);
   x.shadowColor = 'transparent';
   x.fillStyle = rgb2css(mix(c0, white, .62)); x.font = '400 ' + 4.6 * cq + 'px Roboto, sans-serif';
-  x.fillText(document.querySelector('.usd').textContent, 6.9 * cq, CH * .515 + 4.6 * cq * .95);
+  x.fillText(snap.usd, 6.9 * cq, CH * .515 + 4.6 * cq * .95);
 
   // имя владельца внизу слева
-  const holder = (document.getElementById('holder').textContent || 'COLLECTOR');
+  const holder = snap.holder;
   x.font = '700 ' + 3.6 * cq + 'px "Roboto Mono", monospace'; x.fillStyle = '#fff';
   x.shadowColor = rgb2css(mix(c1, black, .55)); x.shadowBlur = .5 * cq; x.shadowOffsetY = .35 * cq;
   spaced(x, holder, 6.6 * cq, CH * (1 - .085) - 3.6 * cq * .2, .08 * 3.6 * cq, true);
@@ -1627,7 +1638,6 @@ async function uploadImage(force) {
     const cv = await renderCardImage(UPLOAD_SIZE);
     const blob = await new Promise(r => cv.toBlob(r, 'image/jpeg', .82));
     if (!blob) return false;
-    setPreview(k, blob);
     const r = await fetch(api('Card/Image?kind=' + k), { method: 'POST', headers: { 'Authorization': authHeader(), 'Content-Type': 'image/jpeg' }, body: blob });
     if (r.ok) imgDirty = false;
     return r.ok;
@@ -1673,7 +1683,7 @@ loadGramRate();
    кнопки «Скачать» и «Опубликовать», окно опубликованной карточки. Остальные пользователи работают с одной карточкой как раньше.
    Сервер для остальных ничего не меняет: вторая карточка (kind=second) и запрет ссылки у неопубликованной действуют только для администратора. */
 const SLOT_KINDS = ['second', 'catalog'];           // открытые карточки по порядку слева направо; справа — закрытая
-const PREVIEW_SIZE = { W: 640, H: 400, CW: 560 };
+const PREVIEW_SIZE = { W: 560, H: 340, CW: 560, cardOnly: true };
 const CHANNEL_URL = 'https://t.me/NFTStyler';       // канал, на который нужно подписаться, чтобы опубликовать карточку
 const previews = {};                                 // kind -> адрес картинки для боковых слотов карусели
 const pubState = {};                                 // kind -> { public, likes }
@@ -1702,7 +1712,11 @@ function peekHtml(k) {
 function renderPeeks() {
   const L = document.getElementById('peekL'), R = document.getElementById('peekR');
   if (!L || !R) return;
-  const set = (el, k) => { el.hidden = !k; el.dataset.go = k || ''; if (k) el.innerHTML = peekHtml(k); };
+  const set = (el, k) => {
+    const was = el.dataset.go || '';
+    el.hidden = !k; el.dataset.go = k || '';
+    if (k) { el.innerHTML = peekHtml(k); if (k !== was) { el.classList.remove('swap'); void el.offsetWidth; el.classList.add('swap'); } }
+  };
   if (slotNow === 'catalog') { set(L, 'locked'); set(R, 'second'); }
   else if (slotNow === 'second') { set(L, 'catalog'); set(R, null); }
   else { set(L, null); set(R, 'catalog'); }
@@ -1725,6 +1739,7 @@ function slotShift(step) {            // step: -1 влево по ряду, +1 �
   if (i < 0 || i >= SLOT_ORDER.length) return;
   goSlot(SLOT_ORDER[i]);
 }
+const preloadImg = u => new Promise(res => { const i = new Image(); i.onload = i.onerror = () => res(); i.src = u; setTimeout(res, 1500); });
 async function goSlot(target) {
   if (slotSwitching || target === slotNow || !SLOT_ORDER.includes(target)) return;
   slotSwitching = true;
@@ -1732,30 +1747,48 @@ async function goSlot(target) {
   const toLeft = SLOT_ORDER.indexOf(target) < SLOT_ORDER.indexOf(slotNow);      // едем к левой карточке: уходящая уезжает вправо
   const outEl = slotNow === 'locked' ? lockedEl : stageEl, inEl = target === 'locked' ? lockedEl : stageEl;
   const animOut = toLeft ? 'out-r' : 'out-l', animIn = toLeft ? 'in-r' : 'in-l';
+  const needData = target !== 'locked' && target !== kind;
   try {
-    if (slotNow !== 'locked') {
-      clearTimeout(saveTimer); while (saving) await sleep(80); await flushSave();
-      if (dirty) { toast(T('Не удалось сохранить карточку — попробуйте ещё раз')); return; }
-      menu.hidden = true; select(null);
-      if (imgDirty) { clearTimeout(imgTimer); await uploadImage(true); }          // картинка для бота у уходящей карточки должна быть свежей
-      try { const cv = await renderCardImage(PREVIEW_SIZE); const b = await new Promise(r => cv.toBlob(r, 'image/webp', .8)); if (b) setPreview(kind, b); } catch (e) { /* превью не критично */ }
+    outEl.classList.add(animOut);                                                // сразу даём отклик, остальное идёт параллельно с анимацией
+    menu.hidden = true; select(null);
+    let data = null, failed = false;
+    await Promise.all([
+      sleep(210),
+      (async () => {                                                             // сохраняем уходящую карточку и снимаем её превью
+        if (slotNow === 'locked') return;
+        clearTimeout(saveTimer); while (saving) await sleep(80); await flushSave();
+        if (dirty) { failed = 'save'; return; }
+        if (imgDirty && !imgBusy) { clearTimeout(imgTimer); uploadImage(true); }   // картинка для бота у уходящей карточки обновляется в фоне (по снимку состояния)
+        try { const cv = await renderCardImage(PREVIEW_SIZE); const b = await new Promise(r => cv.toBlob(r, 'image/webp', .85)); if (b) setPreview(kind, b); } catch (e) { /* превью не критично */ }
+      })(),
+      (async () => {                                                             // данные новой карточки и её картинки подгружаем заранее
+        if (!needData) return;
+        try {
+          data = await apiGet('Card/Get?kind=' + target);
+          await Promise.all((data.stickers || []).slice(0, MAX_STICKERS).map(s => preloadImg(imgUrl(s.gift, s.model))));
+        } catch (e) { failed = 'load'; }
+      })()
+    ]);
+    if (failed) {
+      outEl.classList.remove(animOut);
+      toast(T(failed === 'save' ? 'Не удалось сохранить карточку — попробуйте ещё раз' : 'Не удалось загрузить карточку — обновите страницу'));
+      return;
     }
-    outEl.classList.add(animOut); await sleep(170);
     outEl.style.display = 'none'; outEl.classList.remove(animOut);
-    if (target !== 'locked' && target !== kind) {
+    if (needData) {
       loaded = false;
       state.stickers.slice().forEach(s => detach(s.id));
       tray = []; trayEl.innerHTML = ''; tiles.clear();
       currentBg = null; state.colorId = null; applyTheme(false); updateBgRow();
       kind = target; document.body.dataset.kind = kind;
-      await loadCard();
+      await loadCard(data);                                                      // данные уже на руках — без запроса и без «дёрганья»
       refreshPublish();
     }
     slotNow = target;
     document.body.classList.toggle('locked-center', target === 'locked');
     inEl.style.display = ''; inEl.classList.add(animIn);
     renderPeeks();
-    await sleep(230); inEl.classList.remove(animIn);
+    await sleep(320); inEl.classList.remove(animIn);
   } finally { stageEl.classList.remove('out-r', 'out-l', 'in-r', 'in-l'); lockedEl.classList.remove('out-r', 'out-l', 'in-r', 'in-l'); slotSwitching = false; }
 }
 
@@ -1777,6 +1810,18 @@ function toast(msg) {
     }
   } catch (e) { /* запасной вариант ниже */ }
   toastEl.textContent = msg; toastEl.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => toastEl.classList.remove('show'), 2200);
+}
+
+/* ---- превью с сервера: последняя загруженная картинка — это композиция на фоне (UPLOAD_SIZE), вырезаем из неё саму карточку */
+async function cropServerPreview(url) {
+  const im = await loadImgCors(url); if (!im) return null;
+  const { W, H, CW } = UPLOAD_SIZE, CH = Math.round(CW / 1.648);
+  const sx = Math.round((W - CW) / 2), sy = Math.round((H - CH) / 2 + 30);
+  const c = document.createElement('canvas'); c.width = 560; c.height = Math.round(560 / 1.648);
+  const x = c.getContext('2d');
+  rrPath(x, c.width, c.height, c.width * .076); x.clip();
+  x.drawImage(im, sx, sy, CW, CH, 0, 0, c.width, c.height);
+  return await new Promise(r => c.toBlob(r, 'image/webp', .85));
 }
 
 /* ---- публикация */
@@ -1949,7 +1994,7 @@ function initAdmin() {
   try { new ResizeObserver(layoutPeeks).observe(car); } catch (e) { window.addEventListener('resize', layoutPeeks); }
   renderPeeks(); refreshPublish();
   // превью второй карточки (последняя загруженная картинка)
-  apiGet('Card/Get?kind=second').then(d => { if (d.imageUrl && !previews.second) { previews.second = d.imageUrl; renderPeeks(); } }).catch(() => { /* пока нет данных */ });
+  apiGet('Card/Get?kind=second').then(async d => { if (d.imageUrl && !previews.second) { const b = await cropServerPreview(d.imageUrl); if (b) setPreview('second', b); } }).catch(() => { /* пока нет данных */ });
 }
 
 /* ---- сердечко на странице просмотра (только для публичной чужой карточки; число лайков зрителю не показываем) */
