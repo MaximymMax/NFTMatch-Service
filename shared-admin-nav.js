@@ -74,6 +74,58 @@
         } catch (e) { }
     }
 
+    // Администратору: «Карточка» стоит в центре ряда на месте «Главной» и показывает его мини-карточку (только фон),
+    // а на страницах раздела в ряду остаются три кнопки — Главная, Лента, Карточка.
+    const ADMIN_TG_ID = 7343414766;
+    function isCardAdmin() {
+        try { const u = window.NFTAuth && NFTAuth.getUser(); return !!u && Number(u.telegramId || u.id) === ADMIN_TG_ID; } catch (e) { return false; }
+    }
+    function paintMiniCard(el, c0, c1) {
+        el.style.background = 'linear-gradient(135deg,' + c0 + ',' + c1 + ')';
+    }
+    function applyAdminNav() {
+        try {
+            const tabs = document.querySelector('.cw-tabs');
+            if (!tabs || tabs.dataset.cdAdmin || !isCardAdmin()) return false;
+            const card = tabs.querySelector('[data-tab="card"]'), home = tabs.querySelector('[data-tab="home"]');
+            if (!card || !home) return false;
+            tabs.dataset.cdAdmin = '1';
+            const inCard = location.pathname.indexOf('/Card/') !== -1;
+            // вместо значка — мини-карточка: цвета берём из кэша, свежие подтягиваем с сервера
+            const mini = document.createElement('span');
+            mini.className = 'cw-mini-card';
+            mini.style.cssText = 'width:34px;height:21px;border-radius:5px;flex:0 0 auto;box-shadow:0 0 0 1px rgba(255,255,255,.18),0 2px 6px rgba(0,0,0,.35)';
+            let c0 = '#3AB0F8', c1 = '#1488E1';
+            try { const k = JSON.parse(localStorage.getItem('cd_mini') || 'null'); if (k && k.c0 && k.c1) { c0 = k.c0; c1 = k.c1; } } catch (e) { }
+            paintMiniCard(mini, c0, c1);
+            const icon = card.querySelector('svg'); if (icon) icon.replaceWith(mini); else card.insertBefore(mini, card.firstChild);
+            try {
+                fetch(((window.CONFIG && CONFIG.SERVER_BASE_URL) || '') + '/api/Card/Get?kind=catalog', { headers: { 'Authorization': NFTAuth.getApiAuthHeader() } })
+                    .then(r => r.ok ? r.json() : null).then(d => {
+                        if (!d) return;
+                        const n0 = d.bg && d.bg.c0 || '#3AB0F8', n1 = d.bg && d.bg.c1 || '#1488E1';
+                        paintMiniCard(mini, n0, n1);
+                        try { localStorage.setItem('cd_mini', JSON.stringify({ c0: n0, c1: n1 })); } catch (e) { }
+                    }).catch(() => { });
+            } catch (e) { }
+            if (inCard) {
+                // в разделе: Главная, Лента, Карточка — остальное убираем
+                tabs.querySelectorAll('.cw-tab').forEach(t => { if (t !== home && t !== card) t.remove(); });
+                const feed = document.createElement('a');
+                feed.className = 'cw-tab' + (location.pathname.indexOf('feed.html') !== -1 ? ' active' : '');
+                feed.setAttribute('data-tab', 'feed');
+                feed.href = new URL('Card/feed.html', SELF_SRC).href;
+                feed.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 21h8M12 17v4M7 4h10v5a5 5 0 01-10 0V4zM7 6H4v1a3 3 0 003 3M17 6h3v1a3 3 0 01-3 3"/></svg><span>Лента</span>';
+                tabs.append(home, feed, card);
+                home.classList.remove('active');
+            } else {
+                // на остальных страницах Карточка и Главная меняются местами
+                const ph = document.createComment(''); home.replaceWith(ph); card.replaceWith(home); ph.replaceWith(card);
+            }
+            return true;
+        } catch (e) { return false; }
+    }
+
     // putya: "ну и где тут флажки?" (из прежнего гейта) — раскрытие было жёстко завязано на два ID
     // (#cw-admin-nav/#cw-admin-tabs), поэтому любой НОВЫЙ блок с классом cw-admin-nav-hidden
     // (например #tf-mode-switcher-container на Тематиках) никогда не открывался. Общий селектор
@@ -84,6 +136,7 @@
         document.querySelectorAll('.cw-admin-nav-hidden').forEach(el => el.classList.remove('cw-admin-nav-hidden'));
         mergeTopBarIntoHeader();
         addCardTab();
+        if (!applyAdminNav()) { window.addEventListener('load', () => setTimeout(applyAdminNav, 800)); }
         updateGithubPlacement();
     }
 

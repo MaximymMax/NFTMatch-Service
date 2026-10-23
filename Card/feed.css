@@ -1,0 +1,21 @@
+/* Лента карточек: список опубликованных карточек с автором, числом подарков и лайком. */
+.fd-sort { display: flex; gap: 8px; }
+.fd-sort button { flex: 0 0 auto; border: 0; border-radius: 12px; padding: 10px 18px; font: 700 13px 'Inter', sans-serif; background: var(--surface-elevated); color: var(--text-secondary); cursor: pointer; }
+.fd-sort button.on { background: var(--primary-color); color: #fff; }
+.fd-msg { color: var(--text-secondary); font-size: 14px; }
+.fd-msg:empty { display: none; }
+.fd-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 18px; }
+.fd-item { background: var(--surface-elevated); border-radius: 16px; overflow: hidden; display: flex; flex-direction: column; }
+.fd-pic { display: block; width: 100%; aspect-ratio: 1.648; object-fit: cover; background: #1a2440; cursor: pointer; }
+.fd-info { display: flex; align-items: center; gap: 10px; padding: 12px 14px; }
+.fd-ava { width: 40px; height: 40px; border-radius: 50%; flex: 0 0 auto; object-fit: cover; background: #2a3a66; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 800; }
+.fd-who { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.fd-who b { color: #fff; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fd-who small { color: var(--text-secondary); font-size: 12px; }
+.fd-like { flex: 0 0 auto; display: flex; align-items: center; gap: 6px; border: 0; border-radius: 99px; padding: 8px 14px; background: #1e2944; color: #dbe4fa; font: 700 13px 'Inter', sans-serif; cursor: pointer; }
+.fd-like svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; }
+.fd-like.on { background: rgba(239, 68, 68, .18); color: #ff6b81; }
+.fd-like.on svg { fill: currentColor; }
+.fd-like:disabled { opacity: .5; cursor: default; }
+.fd-more { align-self: center; }
+@media (max-width: 760px) { .fd-list { grid-template-columns: minmax(0, 1fr); } }
