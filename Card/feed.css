@@ -31,10 +31,16 @@ body.fd-lock { overflow: hidden; }
     background: rgba(30, 41, 68, .85); color: #fff; cursor: pointer; z-index: 1; }
 .fd-back svg { width: 24px; height: 24px; }
 .fd-ovbody { width: min(100%, 620px); margin: auto; display: flex; flex-direction: column; align-items: center; gap: 14px; }
-.fd-ovpic { width: 100%; aspect-ratio: 1.648; object-fit: cover; border-radius: 22px; box-shadow: 0 20px 60px rgba(0, 0, 0, .55); background: #1a2440; }
+.fd-ovpic { width: 100%; border: 0; background: transparent; display: block; }
 .fd-ovwho { color: #dbe4fa; font: 700 14px 'Inter', sans-serif; text-align: center; }
 .fd-models { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; width: 100%; }
 .fd-m { position: relative; width: 78px; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 4px 6px; border-radius: 14px; background: rgba(30, 41, 68, .7); }
 .fd-m img { width: 56px; height: 56px; object-fit: contain; }
 .fd-m small { max-width: 100%; color: #9fb0d6; font: 600 10px 'Inter', sans-serif; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .fd-m i { position: absolute; right: 4px; top: 4px; padding: 1px 6px; border-radius: 99px; background: #2563eb; color: #fff; font: 700 10px 'Inter', sans-serif; font-style: normal; }
+
+/* карточка в списке: фон и стикеры из данных */
+.fd-flat { position: relative; overflow: hidden; }
+.fd-flat::after { content: ""; position: absolute; inset: 0; background: radial-gradient(120% 90% at 85% 0%, rgba(255, 255, 255, .22), transparent 60%); pointer-events: none; }
+.fd-st { position: absolute; aspect-ratio: 1; object-fit: contain; pointer-events: none; filter: drop-shadow(0 3px 6px rgba(0, 0, 0, .3)); }
+.fd-hold { position: absolute; left: 6%; bottom: 7%; font: 700 11px 'Inter', sans-serif; letter-spacing: .1em; color: rgba(255, 255, 255, .85); text-transform: uppercase; pointer-events: none; z-index: 1; }

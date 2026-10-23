@@ -16,12 +16,34 @@
     const nameOf = it => it.username ? '@' + it.username : (it.holder || 'Коллекционер');
 
     /* Просмотр карточки: размытая лента на заднем плане, карточка по центру, снизу использованные модели; стрелка возвращает в ленту */
+    const VER = (() => { try { return new URL(document.querySelector('link[href*="card.css"]').href).searchParams.get('v') || String(Date.now()); } catch (e) { return String(Date.now()); } })();
+    // карточка в списке рисуется из данных (фон и стикеры), а не из картинки: картинка могла отстать от карточки
+    function flatCard(it) {
+        const box = document.createElement('div'); box.className = 'fd-pic fd-flat';
+        const c0 = (it.bg && it.bg.c0) || '#3AB0F8', c1 = (it.bg && it.bg.c1) || '#1488E1';
+        box.style.background = 'linear-gradient(135deg,' + c0 + ',' + c1 + ')';
+        (it.stickers || []).forEach(s => {
+            const im = new Image(); im.className = 'fd-st'; im.alt = ''; im.loading = 'lazy'; im.draggable = false; im.src = modelImg(s.gift, s.model);
+            const w = (s.sc || 1) * 23.1;
+            im.style.cssText = 'left:' + (s.x * 100) + '%;top:' + (s.y * 100) + '%;width:' + w + '%;transform:translate(-50%,-50%) rotate(' + (s.r || 0) + 'deg)';
+            box.appendChild(im);
+        });
+        const nm = document.createElement('span'); nm.className = 'fd-hold'; nm.textContent = it.holder || '';
+        box.appendChild(nm);
+        return box;
+    }
+
     function openOverlay(it) {
         const ov = document.createElement('div'); ov.className = 'fd-ov';
         const back = document.createElement('button'); back.type = 'button'; back.className = 'fd-back'; back.setAttribute('aria-label', 'Назад к ленте');
         back.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>';
         const body = document.createElement('div'); body.className = 'fd-ovbody';
-        const pic = new Image(); pic.className = 'fd-ovpic'; pic.alt = ''; pic.src = it.imageUrl;
+        // живая 3D-карточка из редактора (режим ленты): данные присылаем сообщением, когда он готов
+        const pic = document.createElement('iframe'); pic.className = 'fd-ovpic'; pic.title = 'Карточка';
+        pic.src = './editor.html?feed=1&embed=1&v=' + VER;
+        const fit = () => { const w = Math.min(ov.clientWidth - 32, 620); pic.style.height = Math.round((w - 24) / 1.648 + 48) + 'px'; };
+        const onMsg = e => { if (e.source === pic.contentWindow && e.data && e.data.cdFeedReady) pic.contentWindow.postMessage({ cdFeedCard: { holder: it.holder, bg: it.bg, stickers: it.stickers } }, '*'); };
+        window.addEventListener('message', onMsg); window.addEventListener('resize', fit);
         const who = document.createElement('div'); who.className = 'fd-ovwho';
         who.textContent = nameOf(it) + ' · ' + gifts(it.gifts) + (it.public ? '' : ' · не опубликована');
         const ms = document.createElement('div'); ms.className = 'fd-models';
@@ -35,19 +57,20 @@
         });
         body.append(pic, who, ms);
         ov.append(back, body);
-        const close = () => { ov.remove(); document.body.classList.remove('fd-lock'); document.removeEventListener('keydown', onKey); };
+        const close = () => { ov.remove(); document.body.classList.remove('fd-lock'); document.removeEventListener('keydown', onKey); window.removeEventListener('message', onMsg); window.removeEventListener('resize', fit); };
         const onKey = e => { if (e.key === 'Escape') close(); };
         back.onclick = close;
         ov.addEventListener('pointerdown', e => { if (e.target === ov) close(); });
         document.addEventListener('keydown', onKey);
         document.body.classList.add('fd-lock');
         document.body.appendChild(ov);
+        fit();
     }
 
     function row(it) {
         const el = document.createElement('div'); el.className = 'fd-item';
         const name = nameOf(it);
-        const pic = new Image(); pic.className = 'fd-pic'; pic.loading = 'lazy'; pic.alt = ''; pic.src = it.imageUrl;
+        const pic = flatCard(it);
         pic.onclick = () => openOverlay(it);
         const info = document.createElement('div'); info.className = 'fd-info';
         const ava = document.createElement('div'); ava.className = 'fd-ava'; ava.textContent = (name.replace('@', '')[0] || '?').toUpperCase();

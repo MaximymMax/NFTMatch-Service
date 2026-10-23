@@ -499,3 +499,8 @@ body.view .stage { width: min(calc(100vw - 110px), calc((100vh - 200px) * 1.648)
 .viewbar .cta { height: 56px; padding: 0 30px; font-size: 16px; border-radius: 28px; }
 .viewbar .heart { width: 56px; height: 56px; }
 .viewbar .heart svg { width: 29px; height: 29px; }
+
+/* живая карточка в ленте: прозрачный фон, карточка на всю ширину окна, ничего лишнего */
+html:has(body.feedview), body.feedview { background: transparent !important; }
+body.feedview .stage { width: calc(100vw - 24px) !important; margin: 12px auto !important; }
+body.feedview .fsrow, body.feedview .viewbar, body.feedview .fs-exit { display: none !important; }

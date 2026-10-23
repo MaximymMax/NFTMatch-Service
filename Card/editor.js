@@ -8,7 +8,7 @@
                drag = move, drag off the card / onto "Remove" = take it off, the 11th sticker replaces the oldest */
 (function () {
 'use strict';
-const VIEW_ID = new URLSearchParams(location.search).get('c');   // режим просмотра чужой карточки по ссылке
+const VIEW_ID = new URLSearchParams(location.search).get('c') || (new URLSearchParams(location.search).get('feed') ? '_feed' : null);   // режим просмотра чужой карточки: по ссылке или из ленты ('_feed')
 
 const MAX_STICKERS = 10;
 const DEFAULT_COLORS = { c0: '#3AB0F8', c1: '#1488E1' };
@@ -1314,20 +1314,31 @@ async function loadCard(prefetched) {
 
 /* ---- просмотр по ссылке (view.html?c=...): та же карточка на весь экран, без входа и без правки */
 let viewPublic = false;       // опубликована ли просматриваемая карточка
+/* карточка из данных {holder, bg, stickers}: фон, имя и стикеры (то же для просмотра по ссылке и из ленты) */
+function fillViewCard(data) {
+  if (data.holder) document.getElementById('holder').textContent = data.holder;
+  if (data.bg && /^#[0-9a-f]{6}$/i.test(data.bg.c0) && /^#[0-9a-f]{6}$/i.test(data.bg.c1)) applyBg(data.bg, false);
+  const minS = 0.4;   // как минимальный масштаб в примере; от размера карточки не зависит (в момент загрузки она может быть ещё без размера)
+  (data.stickers || []).slice(0, MAX_STICKERS).forEach(s => {
+    const src = sid(s.gift, s.model, s.uid), st = { id: newInstId(src), src, x: +s.x, y: +s.y, sc: clamp(+s.sc || 1, minS, SC_MAX), r: +s.r || 0, z: ++zSeq, t: ++tSeq };
+    state.stickers.push(st); createStickerEl(st); placeSticker(st, 'instant');
+  });
+}
 async function startView() {
   document.body.classList.add('view', 'fs');
+  if (VIEW_ID === '_feed') {
+    // живая 3D-карточка внутри страницы ленты: данные присылает страница, кнопок и лайка здесь нет
+    document.body.classList.add('feedview');
+    window.addEventListener('message', e => { if (e.source === P && e.data && e.data.cdFeedCard) fillViewCard(e.data.cdFeedCard); });
+    try { P.postMessage({ cdFeedReady: true }, '*'); } catch (e) { /* ignore */ }
+    return;
+  }
   try {
     const r = await fetch(api('Card/Public/' + encodeURIComponent(VIEW_ID)));
     if (!r.ok) throw new Error(r.status);
     const data = await r.json();
-    if (data.holder) document.getElementById('holder').textContent = data.holder;
     viewPublic = !!data.isPublic;
-    if (data.bg && /^#[0-9a-f]{6}$/i.test(data.bg.c0) && /^#[0-9a-f]{6}$/i.test(data.bg.c1)) applyBg(data.bg, false);
-    const minS = 0.4;   // как минимальный масштаб в примере; от размера карточки не зависит (в момент загрузки она может быть ещё без размера)
-    (data.stickers || []).slice(0, MAX_STICKERS).forEach(s => {
-      const src = sid(s.gift, s.model, s.uid), st = { id: newInstId(src), src, x: +s.x, y: +s.y, sc: clamp(+s.sc || 1, minS, SC_MAX), r: +s.r || 0, z: ++zSeq, t: ++tSeq };
-      state.stickers.push(st); createStickerEl(st); placeSticker(st, 'instant');
-    });
+    fillViewCard(data);
   } catch (e) { toast(T('Карточка не найдена')); }
   // вошедший человек (Telegram) учитывается как зритель ссылки
   try { if (authHeader() !== 'Tma invalid') fetch(api('Card/View?c=' + encodeURIComponent(VIEW_ID)), { method: 'POST', headers: { 'Authorization': authHeader() } }).catch(() => {}); } catch (e) { /* ignore */ }
