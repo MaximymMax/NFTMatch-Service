@@ -1337,7 +1337,8 @@ async function startView() {
     cta = document.createElement('a'); cta.target = '_top'; cta.href = (CFG.SERVER_BASE_URL || '') + '/Card/card.html';
   }
   cta.className = 'cta'; cta.textContent = 'Сделать свою карточку';
-  document.body.appendChild(cta);
+  const bar = document.createElement('div'); bar.id = 'viewBar'; bar.className = 'viewbar';     // кнопка и сердечко — в одном ряду
+  bar.appendChild(cta); document.body.appendChild(bar);
   setupLike();
 }
 if (VIEW_ID) startView();
@@ -2055,7 +2056,7 @@ function initAdmin() {
 function heartButton(liked) {
   const h = document.createElement('button'); h.type = 'button'; h.className = 'heart' + (liked ? ' on' : ''); h.setAttribute('aria-label', 'Нравится');
   h.innerHTML = '<svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-9.6-9.2C1 8.6 3 5 6.4 5c2 0 3.7 1.1 5.6 3.2C13.9 6.1 15.6 5 17.6 5 21 5 23 8.6 21.6 11.8 19.5 16.4 12 21 12 21z" stroke-width="2" stroke-linejoin="round"/></svg>';
-  document.body.appendChild(h);
+  (document.getElementById('viewBar') || document.body).appendChild(h);
   return h;
 }
 function setupLike() {

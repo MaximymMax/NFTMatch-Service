@@ -482,3 +482,12 @@ body.fs .lockedWrap { display: none !important; }
 /* пока идёт загрузка, уходящая карточка не исчезает совсем, а лишь отодвигается и тускнеет — без пустого кадра */
 @keyframes slOutL2 { to { transform: translateX(-26%) scale(.92); opacity: .22; } }
 @keyframes slOutR2 { to { transform: translateX(26%) scale(.92); opacity: .22; } }
+
+/* страница просмотра: «Сделать свою карточку» и сердечко в одном ряду внизу */
+.viewbar { position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%); z-index: 90; display: flex; align-items: center; gap: 10px; }
+.viewbar .cta, .viewbar .heart { position: static; transform: none; bottom: auto; left: auto; }
+.viewbar .cta { height: 46px; padding: 0 24px; display: inline-flex; align-items: center; white-space: nowrap; }
+.viewbar .heart { width: 46px; height: 46px; flex: none; }
+.viewbar .heart:active { transform: scale(.92); }
+.viewbar .heart svg { width: 24px; height: 24px; }
+body.view .stage { width: min(calc(100vw - 70px), calc((100vh - 130px) * 1.648)); }
