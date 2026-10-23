@@ -758,6 +758,7 @@ function toast(msg) { toastEl.textContent = msg; toastEl.classList.add('show'); 
    и общий поиск (Card/SearchModels). */
 const P = window.parent !== window ? window.parent : window;
 const CFG = P.CONFIG || window.CONFIG || {};
+const ADMIN_UI = (() => { try { const u = P.NFTAuth && P.NFTAuth.getUser(); return !VIEW_ID && !!u && Number(u.telegramId || u.id) === 7343414766; } catch (e) { return false; } })();
 
 /* ================================================================== Локализация RU / EN */
 /* Язык берём у сайта (переключатель RU/EN в шапке пишет его в localStorage 'user_lang'). Тексты написаны по-русски; в английском
@@ -785,7 +786,16 @@ const EN_UI = {
   'Скинуть в чат с ботом': 'Send to the bot chat', 'Ссылка скопирована.': 'Link copied.',
   'Выделите ссылку и скопируйте её вручную.': 'Select the link and copy it manually.', 'Готовлю картинку…': 'Preparing the image…',
   'Закрыть': 'Close', 'Фон карточки': 'Card background', 'По умолчанию': 'Default', 'Найти фон…': 'Search backgrounds…',
-  'Фон от подарка': 'Background from gift', 'Не удалось загрузить фоны': 'Failed to load backgrounds', 'Загружаю…': 'Loading…'
+  'Фон от подарка': 'Background from gift', 'Не удалось загрузить фоны': 'Failed to load backgrounds', 'Загружаю…': 'Loading…',
+  'Скачать': 'Download', 'Опубликовать': 'Publish', 'Опубликовано': 'Published', 'Лайки:': 'Likes:', 'Карточка опубликована': 'Card published',
+  'Снять с публикации': 'Unpublish', 'Подпишитесь на канал': 'Subscribe to the channel',
+  'Чтобы показывать свою карточку другим, подпишитесь на наш канал.': 'To show your card to others, subscribe to our channel.',
+  'Открыть канал': 'Open channel', 'Я подписался': 'I subscribed', 'Проверяю…': 'Checking…', 'Скоро': 'Coming soon', 'Новая карточка': 'New card',
+  'Карточка': 'Card', 'Не удалось опубликовать': 'Failed to publish', 'Карточка снята с публикации': 'Card unpublished',
+  'Не удалось снять с публикации': 'Failed to unpublish', 'Не удалось подготовить картинку': 'Failed to prepare the image',
+  'Очистить карточку': 'Clear the card', 'Слишком много лайков, попробуйте позже': 'Too many likes, try again later',
+  'Сделать свою карточку': 'Make your own card', 'Не удалось сохранить карточку — попробуйте ещё раз': 'Could not save the card — try again',
+  'Нравится': 'Like'
 };
 const EN_PAT = [
   [/^(\d+) мод\.$/, '$1 models'],
@@ -911,7 +921,7 @@ function setStatus(text, err) {
   lastErrToast = Date.now(); toast(T(text));
 }
 let loaded = false, dirty = false, saving = false, saveTimer = null, saveFails = 0;
-const kind = 'catalog';                       // карточка одна (на сервере она хранится как kind=catalog)
+let kind = 'catalog';                       // карточка одна (на сервере она хранится как kind=catalog)
 let tray = [];                                  // выбранные: { id, gift, model, uid?, sub? }
 function save() {
   if (!loaded) return;
@@ -1017,7 +1027,7 @@ function refreshTiles() {
     if (n) { const o = document.createElement('span'); o.className = 'onc'; o.textContent = n > 1 ? 'На карточке ×' + n : 'На карточке'; art.appendChild(o); }
   });
   catTiles.forEach((t, id) => t.classList.toggle('picked', tray.some(x => x.id === id)));
-  document.getElementById('btnClear').disabled = !state.stickers.length;
+  if (!ADMIN_UI) document.getElementById('btnClear').disabled = !state.stickers.length;
   document.getElementById('trayCount').textContent = state.stickers.length + '/' + MAX_STICKERS;
   trayNote.textContent = tray.length ? '' : 'Нажмите на подарки ниже, чтобы добавить их сюда. Отсюда их можно перетащить на карточку.';
 }
@@ -1307,8 +1317,9 @@ async function startView() {
   } else {
     cta = document.createElement('a'); cta.target = '_top'; cta.href = (CFG.SERVER_BASE_URL || '') + '/Card/card.html';
   }
-  cta.className = 'cta'; cta.textContent = 'Настроить свою';
+  cta.className = 'cta'; cta.textContent = 'Сделать свою карточку';
   document.body.appendChild(cta);
+  setupLike();
 }
 if (VIEW_ID) startView();
 else { setTab('profile'); loadCard(); loadProfileInfo(); }
@@ -1604,17 +1615,20 @@ window.__share = { render: renderCardImage, open: openShare };
    @NFTMatchBot mycard (профиль) / myideacard (каталог). */
 /* Картинка для бота (инлайн, «в чат с ботом») меньше, чем для скачивания: ~1600 px и качество .82 — около 150–250 КБ вместо ~400. */
 const UPLOAD_SIZE = { W: 1600, H: 1000, CW: 1400 };
-let imgTimer = null, imgBusy = false;
-function scheduleImageUpload() { clearTimeout(imgTimer); imgTimer = setTimeout(() => uploadImage(false), 12000); }   // не после каждой правки, а когда человек притих
+let imgTimer = null, imgBusy = false, imgDirty = false;
+function scheduleImageUpload() { imgDirty = true; clearTimeout(imgTimer); imgTimer = setTimeout(() => uploadImage(false), 12000); }   // не после каждой правки, а когда человек притих
 async function uploadImage(force) {
   if (force) while (imgBusy) await new Promise(r => setTimeout(r, 100));
   if (imgBusy || !loaded || (dirty && !force)) return false;
   imgBusy = true;
+  const k = kind;    // вид карточки на момент начала: пока рисуется картинка, слот могут переключить
   try {
     const cv = await renderCardImage(UPLOAD_SIZE);
     const blob = await new Promise(r => cv.toBlob(r, 'image/jpeg', .82));
     if (!blob) return false;
-    const r = await fetch(api('Card/Image?kind=' + kind), { method: 'POST', headers: { 'Authorization': authHeader(), 'Content-Type': 'image/jpeg' }, body: blob });
+    setPreview(k, blob);
+    const r = await fetch(api('Card/Image?kind=' + k), { method: 'POST', headers: { 'Authorization': authHeader(), 'Content-Type': 'image/jpeg' }, body: blob });
+    if (r.ok) imgDirty = false;
     return r.ok;
   } catch (e) { return false; /* картинка для инлайна не критична */ } finally { imgBusy = false; }
 }
@@ -1651,5 +1665,254 @@ async function loadGramRate() {
   }
 }
 loadGramRate();
+
+
+/* ================================================================== Две карточки, публикация и лайки */
+/* Пока всё это видит только администратор (ADMIN_UI): карусель из трёх слотов (слева вторая карточка, в центре основная, справа закрытая),
+   кнопки «Скачать» и «Опубликовать», окно опубликованной карточки. Остальные пользователи работают с одной карточкой как раньше.
+   Сервер для остальных ничего не меняет: вторая карточка (kind=second) и запрет ссылки у неопубликованной действуют только для администратора. */
+const SLOT_KINDS = ['second', 'catalog'];           // открытые карточки по порядку слева направо; справа — закрытая
+const PREVIEW_SIZE = { W: 640, H: 400, CW: 560 };
+const CHANNEL_URL = 'https://t.me/NFTStyler';       // канал, на который нужно подписаться, чтобы опубликовать карточку
+const previews = {};                                 // kind -> адрес картинки для боковых слотов карусели
+const pubState = {};                                 // kind -> { public, likes }
+let slotSwitching = false;
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+function setPreview(k, blob) {
+  if (!ADMIN_UI || !blob) return;
+  if (previews[k] && previews[k].startsWith('blob:')) URL.revokeObjectURL(previews[k]);
+  previews[k] = URL.createObjectURL(blob);
+  renderPeeks();
+}
+
+function tgOpenLink(url) {
+  try { const t = P.Telegram && P.Telegram.WebApp; if (t && t.initData && t.openTelegramLink && /^https:\/\/t\.me\//.test(url)) { t.openTelegramLink(url); return; } } catch (e) { /* ignore */ }
+  try { P.open(url, '_blank'); } catch (e) { /* ignore */ }
+}
+
+/* ---- карусель */
+function peekHtml(k) {
+  if (k === 'locked') return '<div class="pc locked"><svg viewBox="0 0 24 24" width="30" height="30"><rect x="5" y="11" width="14" height="9" rx="2" fill="none" stroke="#8a8f99" stroke-width="2"/><path d="M8 11V8a4 4 0 018 0v3" fill="none" stroke="#8a8f99" stroke-width="2" stroke-linecap="round"/></svg><b>50 ★</b></div>';
+  return previews[k] ? '<div class="pc"><img alt="" src="' + previews[k] + '"></div>' : '<div class="pc empty"><span>' + T(k === 'second' ? 'Новая карточка' : 'Карточка') + '</span></div>';
+}
+function renderPeeks() {
+  const L = document.getElementById('peekL'), R = document.getElementById('peekR');
+  if (!L || !R) return;
+  if (kind === 'catalog') {
+    L.hidden = false; L.innerHTML = peekHtml('second'); L.dataset.go = 'second';
+    R.hidden = false; R.innerHTML = peekHtml('locked'); R.dataset.go = 'locked';
+  } else {
+    L.hidden = true; L.dataset.go = '';
+    R.hidden = false; R.innerHTML = peekHtml('catalog'); R.dataset.go = 'catalog';
+  }
+  document.querySelectorAll('.dots i').forEach(d => d.classList.toggle('on', d.dataset.k === kind));
+}
+function goPeek(k) {
+  if (!k) return;
+  if (k === 'locked') { toast(T('Скоро')); return; }
+  goSlot(k);
+}
+function slotShift(step) {            // step: -1 влево по ряду (к «второй»), +1 вправо (к закрытой)
+  const i = SLOT_KINDS.indexOf(kind) + step;
+  if (i < 0) return;
+  if (i >= SLOT_KINDS.length) { toast(T('Скоро')); return; }
+  goSlot(SLOT_KINDS[i]);
+}
+async function goSlot(target) {
+  if (slotSwitching || target === kind || !SLOT_KINDS.includes(target)) return;
+  slotSwitching = true;
+  const stageEl = document.getElementById('stage');
+  const toLeft = SLOT_KINDS.indexOf(target) < SLOT_KINDS.indexOf(kind);   // выбираем левую карточку: содержимое уезжает вправо
+  try {
+    clearTimeout(saveTimer); while (saving) await sleep(80); await flushSave();
+    if (dirty) { toast(T('Не удалось сохранить карточку — попробуйте ещё раз')); return; }
+    menu.hidden = true; select(null);
+    if (imgDirty) { clearTimeout(imgTimer); await uploadImage(true); }          // картинка для бота у уходящей карточки должна быть свежей
+    try { const cv = await renderCardImage(PREVIEW_SIZE); const b = await new Promise(r => cv.toBlob(r, 'image/webp', .8)); if (b) setPreview(kind, b); } catch (e) { /* превью не критично */ }
+    stageEl.classList.add(toLeft ? 'out-r' : 'out-l'); await sleep(170);
+    loaded = false;
+    state.stickers.slice().forEach(s => detach(s.id));
+    tray = []; trayEl.innerHTML = ''; tiles.clear();
+    currentBg = null; state.colorId = null; applyTheme(false); updateBgRow();
+    kind = target; document.body.dataset.kind = kind;
+    await loadCard();
+    renderPeeks(); refreshPublish();
+    stageEl.classList.remove('out-r', 'out-l'); stageEl.classList.add(toLeft ? 'in-r' : 'in-l'); await sleep(230); stageEl.classList.remove('in-r', 'in-l');
+  } finally { stageEl.classList.remove('out-r', 'out-l', 'in-r', 'in-l'); slotSwitching = false; }
+}
+
+/* ---- публикация */
+const btnPub = document.getElementById('btnClear'), btnDl = document.getElementById('btnShare');
+async function refreshPublish() {
+  try { pubState[kind] = await apiGet('Card/Visibility?kind=' + kind); }
+  catch (e) { pubState[kind] = pubState[kind] || { public: false, likes: 0 }; }
+  updatePubButton();
+}
+function updatePubButton() {
+  const st = pubState[kind] || {};
+  btnPub.textContent = st.public ? 'Опубликовано' : 'Опубликовать';
+  btnPub.classList.toggle('green', !!st.public); btnPub.disabled = false;
+}
+async function publish() {
+  btnPub.disabled = true;
+  try {
+    clearTimeout(saveTimer); while (saving) await sleep(80); await flushSave();
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const r = await fetch(api('Card/Visibility?kind=' + kind + '&public=true'), { method: 'POST', headers: { 'Authorization': authHeader() } });
+      if (r.ok) { pubState[kind] = await r.json(); updatePubButton(); openPubModal(); return; }
+      let body = {}; try { body = await r.json(); } catch (e) { /* не JSON */ }
+      if (r.status === 403 && body.error === 'subscription_required') { openSubModal(); return; }
+      if (r.status === 409 && body.error === 'no_card' && attempt === 0) { dirty = true; loaded = true; await flushSave(); continue; }   // карточка ещё не сохранялась — сохраняем и повторяем
+      toast(T('Не удалось опубликовать')); return;
+    }
+  } catch (e) { toast(T('Не удалось опубликовать')); }
+  finally { btnPub.disabled = false; updatePubButton(); }
+}
+function pubModalShell(inner) {
+  const D = P.document;
+  shareModal();                                        // подключает общие стили окон
+  const o = D.getElementById('cdShare');
+  o.innerHTML = '<div class="p"><div class="h"><span></span><button class="x" aria-label="Закрыть">✕</button></div>' + inner + '<div class="m"></div></div>';
+  const close = () => o.remove();
+  o.querySelector('.x').onclick = close;
+  o.addEventListener('pointerdown', e => { if (e.target === o) close(); });
+  return { o, close, note: t => { o.querySelector('.m').textContent = T(t); } };
+}
+function openSubModal() {
+  const { o, close, note } = pubModalShell('<div class="lk">Чтобы показывать свою карточку другим, подпишитесь на наш канал.</div>' +
+    '<div class="b"><button class="pr ch">Открыть канал</button><button class="ok">Я подписался</button></div>');
+  o.querySelector('.h span').textContent = T('Подпишитесь на канал');
+  trTree(o);
+  o.querySelector('.ch').onclick = () => tgOpenLink(CHANNEL_URL);
+  o.querySelector('.ok').onclick = async () => { note('Проверяю…'); close(); await publish(); };
+}
+async function openPubModal() {
+  const { o, close, note } = pubModalShell('<div class="vw big"><b>Лайки: <span class="lc">…</span></b></div><div class="lk">Готовлю ссылку…</div><div class="vw views" hidden></div>' +
+    '<div class="b"><button class="cp" disabled>Копировать ссылку</button><button class="bot" disabled>Скинуть в чат с ботом</button><button class="un">Снять с публикации</button></div>');
+  o.querySelector('.h span').textContent = T('Карточка опубликована');
+  trTree(o);
+  const lk = o.querySelector('.lk'), cp = o.querySelector('.cp'), bot = o.querySelector('.bot');
+  apiGet('Card/Visibility?kind=' + kind).then(st => { pubState[kind] = st; o.querySelector('.lc').textContent = st.likes || 0; updatePubButton(); }).catch(() => { o.querySelector('.lc').textContent = '0'; });
+  let link;
+  try { link = await ensureShareLink(); }
+  catch (e) { lk.textContent = T('Не удалось получить ссылку'); link = null; }
+  if (link) {
+    lk.textContent = link; cp.disabled = bot.disabled = false;
+    cp.onclick = async () => { try { await P.navigator.clipboard.writeText(link); note('Ссылка скопирована.'); } catch (e) { note('Выделите ссылку и скопируйте её вручную.'); } };
+    bot.onclick = async () => {
+      bot.disabled = true; note('Готовлю картинку…');
+      try { if (!(await uploadImage(true))) throw new Error('image'); await sendToBot(); note('Готово! Карточка с ссылкой отправлена в чат с @' + (CFG.BOT_USERNAME || 'NFTMatchBot') + ' — перешлите её оттуда.'); }
+      catch (e) { note('Не получилось отправить' + (e && /^\d+$/.test(e.message) ? ' (' + e.message + ')' : '') + '. Откройте чат с @' + (CFG.BOT_USERNAME || 'NFTMatchBot') + ' и нажмите /start.'); }
+      bot.disabled = false;
+    };
+    apiGet('Card/ViewStats?kind=' + kind).then(st => {
+      const vw = o.querySelector('.views'); if (!st || !st.unique) return;
+      const names = (st.viewers || []).slice(0, 5).map(v => v.username ? '@' + v.username : 'id' + v.id).join(', ');
+      vw.hidden = false; vw.textContent = (LANG === 'en' ? 'Link opened by: ' : 'Открыли ссылку: ') + st.unique + (LANG === 'en' ? ' people, ' : ' чел., ') + st.total + (LANG === 'en' ? ' views' : ' просмотров') + (names ? ' — ' + names : '');
+    }).catch(() => { /* статистика не критична */ });
+  }
+  o.querySelector('.un').onclick = async () => {
+    try {
+      const r = await fetch(api('Card/Visibility?kind=' + kind + '&public=false'), { method: 'POST', headers: { 'Authorization': authHeader() } });
+      if (!r.ok) throw new Error(r.status);
+      pubState[kind] = await r.json(); updatePubButton(); close(); toast(T('Карточка снята с публикации'));
+    } catch (e) { note('Не удалось снять с публикации'); }
+  };
+}
+
+/* ---- скачать картинку (без ссылки) */
+async function downloadCard() {
+  btnDl.disabled = true;
+  try {
+    const t = P.Telegram && P.Telegram.WebApp;
+    if (t && t.initData && t.downloadFile && t.isVersionAtLeast && t.isVersionAtLeast('8.0')) {
+      // в мини-приложении скачивание идёт по адресу: загружаем картинку на сервер и отдаём клиенту Telegram
+      if (await uploadImage(true)) {
+        const d = await apiGet('Card/Get?kind=' + kind);
+        if (d.imageUrl) { t.downloadFile({ url: d.imageUrl, file_name: 'nftmatch-card.jpg' }); return; }
+      }
+    }
+    const cv = await renderCardImage();
+    const blob = await new Promise(r => cv.toBlob(r, 'image/png'));
+    if (!blob) throw new Error('empty');
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'nftmatch-card.png';
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  } catch (e) { toast(T('Не удалось подготовить картинку')); }
+  finally { btnDl.disabled = false; }
+}
+
+/* ---- сборка админского интерфейса */
+function initAdmin() {
+  document.body.classList.add('admin');
+  const stageEl = document.getElementById('stage');
+
+  // карусель: боковые слоты с размытыми «кусочками» соседних карточек, точки под ней
+  const car = document.createElement('div'); car.id = 'carousel'; car.className = 'carousel';
+  stageEl.parentNode.insertBefore(car, stageEl);
+  const L = document.createElement('div'); L.id = 'peekL'; L.className = 'peek peekL'; L.hidden = true;
+  const R = document.createElement('div'); R.id = 'peekR'; R.className = 'peek peekR';
+  car.appendChild(L); car.appendChild(stageEl); car.appendChild(R);
+  const dots = document.createElement('div'); dots.className = 'dots';
+  dots.innerHTML = '<i data-k="second"></i><i data-k="catalog"></i><i data-k="locked"></i>';
+  car.after(dots);
+  dots.addEventListener('click', e => { const d = e.target.closest('i'); if (d) goPeek(d.dataset.k); });
+  L.addEventListener('click', () => goPeek(L.dataset.go));
+  R.addEventListener('click', () => goPeek(R.dataset.go));
+
+  // свайп: по боковым слотам и по полю вокруг карточки (само поле карточки и стикеры — наклон и перетаскивание)
+  let sw = null;
+  car.addEventListener('pointerdown', e => {
+    if (e.target.closest('.card') || e.target.closest('.sticker') || e.target.closest('.bin')) { sw = null; return; }
+    sw = { x: e.clientX, y: e.clientY, t: Date.now(), id: e.pointerId };
+  }, true);
+  car.addEventListener('pointerup', e => {
+    if (!sw || e.pointerId !== sw.id) return;
+    const dx = e.clientX - sw.x, dy = e.clientY - sw.y, dt = Date.now() - sw.t; sw = null;
+    if (Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy) * 1.4 && dt < 800) slotShift(dx > 0 ? -1 : 1);
+  }, true);
+  car.addEventListener('pointercancel', () => { sw = null; }, true);
+
+  // фон карточки — выше блока «Выбранные»
+  const trayBox = document.getElementById('trayBox');
+  trayBox.parentNode.insertBefore(document.getElementById('bgRow'), trayBox);
+
+  // кнопки: «Скачать» и «Опубликовать» вместо «Поделиться» и «Очистить»
+  btnDl.textContent = 'Скачать'; btnDl.onclick = downloadCard;
+  btnPub.disabled = false; btnPub.textContent = 'Опубликовать';
+  btnPub.onclick = () => { if ((pubState[kind] || {}).public) openPubModal(); else publish(); };
+
+  // быстрый сброс убран с экрана — остаётся маленькой ссылкой внизу блока «Выбранные»
+  const clr = document.createElement('button'); clr.type = 'button'; clr.className = 'linkbtn'; clr.textContent = 'Очистить карточку';
+  clr.onclick = () => { if (state.stickers.length && confirm(T('Убрать все стикеры с карточки?'))) state.stickers.slice().forEach(s => detach(s.id)); };
+  trayBox.appendChild(clr);
+
+  renderPeeks(); refreshPublish();
+  // превью второй карточки (последняя загруженная картинка)
+  apiGet('Card/Get?kind=second').then(d => { if (d.imageUrl && !previews.second) { previews.second = d.imageUrl; renderPeeks(); } }).catch(() => { /* пока нет данных */ });
+}
+
+/* ---- сердечко на странице просмотра (только для публичной чужой карточки; число лайков зрителю не показываем) */
+function setupLike() {
+  try { if (authHeader() === 'Tma invalid') return; } catch (e) { return; }
+  apiGet('Card/LikeState?c=' + encodeURIComponent(VIEW_ID)).then(st => {
+    if (!st || !st.enabled) return;
+    const h = document.createElement('button'); h.type = 'button'; h.className = 'heart' + (st.liked ? ' on' : ''); h.setAttribute('aria-label', 'Нравится');
+    h.innerHTML = '<svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-9.6-9.2C1 8.6 3 5 6.4 5c2 0 3.7 1.1 5.6 3.2C13.9 6.1 15.6 5 17.6 5 21 5 23 8.6 21.6 11.8 19.5 16.4 12 21 12 21z" stroke-width="2" stroke-linejoin="round"/></svg>';
+    let busy = false;
+    h.onclick = async () => {
+      if (busy) return; busy = true;
+      const want = !h.classList.contains('on'); h.classList.toggle('on', want);
+      try {
+        const r = await fetch(api('Card/Like?c=' + encodeURIComponent(VIEW_ID) + '&like=' + want), { method: 'POST', headers: { 'Authorization': authHeader() } });
+        if (!r.ok) { h.classList.toggle('on', !want); if (r.status === 429) toast(T('Слишком много лайков, попробуйте позже')); }
+      } catch (e) { h.classList.toggle('on', !want); }
+      busy = false;
+    };
+    document.body.appendChild(h);
+  }).catch(() => { /* лайк недоступен */ });
+}
+
+if (ADMIN_UI) initAdmin();
 
 })();

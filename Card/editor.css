@@ -356,3 +356,45 @@ body.fs .bgrow { display: none; }
 .face .stickers { z-index: 1; }
 .face .content { z-index: 2; }
 .face .fx { z-index: 3; }
+
+/* ================= карусель из трёх карточек (только администратор) ================= */
+body.admin .carousel { position: relative; overflow-x: clip; padding: 0 22px; }
+body.admin .carousel .stage { padding-left: 16px; padding-right: 16px; }
+.peek { position: absolute; top: calc(50% - 4px); width: calc(100% - 76px); aspect-ratio: 1.648; transform: translateY(-50%);
+  border-radius: 22px; overflow: hidden; cursor: pointer; filter: blur(2.5px); opacity: .72; z-index: 1; transition: opacity .2s, filter .2s; }
+.peek:hover { opacity: .9; filter: blur(1.6px); }
+.peek[hidden] { display: none; }
+.peekL { left: calc(102px - 100%); }
+.peekR { left: calc(100% - 26px); }
+.peek .pc { position: absolute; inset: 0; border-radius: inherit; }
+.peek .pc img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.peek .pc.empty { background: linear-gradient(135deg, #2d4a8a, #1b2a52); display: grid; place-items: center; color: #9fb0d6; font-weight: 700; font-size: 13px; }
+.peek .pc.locked { background: #0b0b0e; border: 2px dashed #5a5f69; border-radius: 22px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; color: #8a8f99; box-sizing: border-box; }
+body.admin .carousel .stage { position: relative; z-index: 2; }
+.stage.out-l { animation: slOutL .17s ease-in forwards; }
+.stage.out-r { animation: slOutR .17s ease-in forwards; }
+.stage.in-l { animation: slInL .23s ease-out; }
+.stage.in-r { animation: slInR .23s ease-out; }
+@keyframes slOutL { to { transform: translateX(-34%); opacity: 0; } }
+@keyframes slOutR { to { transform: translateX(34%); opacity: 0; } }
+@keyframes slInL { from { transform: translateX(34%); opacity: 0; } }
+@keyframes slInR { from { transform: translateX(-34%); opacity: 0; } }
+.dots { display: flex; justify-content: center; gap: 8px; margin: 2px 0 4px; }
+.dots i { width: 7px; height: 7px; border-radius: 50%; background: rgba(255,255,255,.22); cursor: pointer; transition: background-color .2s, transform .2s; }
+.dots i.on { background: #3a8bff; transform: scale(1.25); }
+body.fs .peek, body.fs .dots, body.fs .linkbtn { display: none; }
+body.fs .carousel { padding: 0; overflow: visible; }
+
+/* кнопки публикации */
+.pill-btn.green { background: #16a34a; color: #fff; }
+@media (hover: hover) { .pill-btn.green:hover:not(:disabled) { background: #15803d; } }
+.linkbtn { align-self: center; margin-top: 4px; background: none; border: 0; color: var(--muted); font: 600 12px 'Inter', sans-serif; text-decoration: underline; cursor: pointer; padding: 6px 8px; }
+.linkbtn:hover { color: #c9d3ea; }
+
+/* сердечко на странице просмотра */
+.heart { position: fixed; left: 50%; bottom: 74px; transform: translateX(-50%); z-index: 90; width: 54px; height: 54px; border-radius: 50%; border: 0; cursor: pointer;
+  background: rgba(30,41,68,.88); display: grid; place-items: center; box-shadow: 0 6px 18px rgba(0,0,0,.4); transition: transform .15s; }
+.heart:active { transform: translateX(-50%) scale(.92); }
+.heart svg { width: 28px; height: 28px; fill: none; stroke: #ff6b81; transition: fill .15s; }
+.heart.on svg { fill: #ff4d6a; stroke: #ff4d6a; }
+body.view .stage { width: min(calc(100vw - 70px), calc((100vh - 170px) * 1.648)); }
