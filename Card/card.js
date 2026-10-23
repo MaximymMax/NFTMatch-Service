@@ -42,6 +42,7 @@
         window.addEventListener('resize', fitView); fitView(); setTimeout(fitView, 400);
         window.addEventListener('message', (e) => { if (viewFrame && e.source === viewFrame.contentWindow && e.data && e.data.cdCloseView) closeView(); });
     }
+    window.cdOpenView = (id) => { if (!viewFrame && /^[0-9a-z]{6,32}$/i.test(id)) openView(id); };     // из ленты в редакторе
     if (viewId && /^[0-9a-z]{6,32}$/i.test(viewId)) openView(viewId);
 
     const frame = document.getElementById('cd-frame'), gate = document.getElementById('cd-gate');

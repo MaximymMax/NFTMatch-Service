@@ -759,6 +759,8 @@ function toast(msg) { toastEl.textContent = msg; toastEl.classList.add('show'); 
 const P = window.parent !== window ? window.parent : window;
 const CFG = P.CONFIG || window.CONFIG || {};
 const ADMIN_UI = (() => { try { const u = P.NFTAuth && P.NFTAuth.getUser(); return !VIEW_ID; } catch (e) { return false; } })();
+// Лента опубликованных карточек: пока только у администратора (сервер тоже отдаёт её только ему)
+const FEED_UI = (() => { try { const u = P.NFTAuth && P.NFTAuth.getUser(); return !VIEW_ID && !!u && Number(u.telegramId || u.id) === 7343414766; } catch (e) { return false; } })();
 
 /* ================================================================== Локализация RU / EN */
 /* Язык берём у сайта (переключатель RU/EN в шапке пишет его в localStorage 'user_lang'). Тексты написаны по-русски; в английском
@@ -803,6 +805,8 @@ const EN_UI = {
   'Для публикации нужно подписаться на наш канал': 'To publish, you need to subscribe to our channel', 'Не удалось проверить подписку': 'Could not check the subscription',
   'Проверить ещё раз': 'Check again', 'Я подписался — проверить': 'I subscribed — check', 'Проверить подписку': 'Check subscription', 'Публикую…': 'Publishing…',
   'Откройте карточку в Telegram, чтобы поставить лайк': 'Open the card in Telegram to like it',
+  'Лента лучших': 'Best works', '🏆 Лента лучших': '🏆 Best works', 'Топ': 'Top', 'Новые': 'New', 'Загружаю…': 'Loading…', 'Моя': 'Mine',
+  'Пока нет опубликованных карточек': 'No published cards yet', 'Не удалось загрузить ленту': 'Could not load the feed', 'Показать ещё': 'Show more',
   'Нравится': 'Like', 'Закрытая карточка': 'Locked card', 'Открыть за 50 ★': 'Unlock for 50 ★',
   'Закрытая карточка откроется за 50 звёзд. Оплата скоро появится — пока можно оформлять первую и вторую карточки.': 'The locked card unlocks for 50 stars. Payment is coming soon — for now you can design the first and the second card.'
 };
@@ -1961,6 +1965,48 @@ async function openPubModal() {
   };
 }
 
+/* ---- лента опубликованных карточек: «Топ» по лайкам и «Новые»; нажатие открывает карточку на весь экран */
+async function openFeedModal() {
+  const { o, close, note } = pubModalShell(
+    '<style>#cdShare .fdt{display:flex;gap:8px}#cdShare .fdt button{flex:1;border:0;border-radius:12px;padding:11px;font:700 13px Inter,sans-serif;background:#1e2944;color:#9fb0d6;cursor:pointer}' +
+    '#cdShare .fdt button.on{background:#2563eb;color:#fff}#cdShare .fdl{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;max-height:58vh;overflow:auto;-webkit-overflow-scrolling:touch}' +
+    '#cdShare .fdi{position:relative;border-radius:12px;overflow:hidden;cursor:pointer;background:#1e2944;aspect-ratio:1.648}#cdShare .fdi img{width:100%;height:100%;object-fit:cover;display:block}' +
+    '#cdShare .fdi span{position:absolute;left:6px;bottom:6px;padding:3px 8px;border-radius:99px;background:rgba(0,0,0,.55);color:#fff;font:700 12px Inter,sans-serif}' +
+    '#cdShare .fdi i{position:absolute;right:6px;top:6px;padding:2px 7px;border-radius:99px;background:rgba(37,99,235,.9);color:#fff;font:700 11px Inter,sans-serif;font-style:normal}' +
+    '@media(min-width:700px){#cdShare .fdl{grid-template-columns:repeat(3,1fr)}}</style>' +
+    '<div class="fdt"><button class="on" data-s="top">Топ</button><button data-s="new">Новые</button></div>' +
+    '<div class="fdl"></div><div class="b"><button class="more" hidden>Показать ещё</button></div>');
+  o.querySelector('.h span').textContent = T('Лента лучших'); trTree(o);
+  const list = o.querySelector('.fdl'), more = o.querySelector('.more');
+  let sort = 'top', skip = 0, busy = false;
+  const load = async (reset) => {
+    if (busy) return; busy = true;
+    if (reset) { skip = 0; list.innerHTML = ''; }
+    note('Загружаю…');
+    try {
+      const d = await apiGetRetry('Card/Feed?sort=' + sort + '&skip=' + skip);
+      d.items.forEach(it => {
+        const el = document.createElement('div'); el.className = 'fdi';
+        el.innerHTML = '<img loading="lazy" alt=""><span></span>' + (it.mine ? '<i>Моя</i>' : '');
+        el.querySelector('img').src = it.imageUrl;
+        el.querySelector('span').textContent = '♥ ' + it.likes + (it.holder ? ' · ' + it.holder : '');
+        el.onclick = () => { close(); try { P.cdOpenView(it.id); } catch (e) { /* страница просмотра недоступна */ } };
+        list.appendChild(el);
+      });
+      skip += d.items.length; more.hidden = !d.hasMore;
+      note(list.children.length ? '' : 'Пока нет опубликованных карточек');
+      trTree(o);
+    } catch (e) { note('Не удалось загрузить ленту'); }
+    busy = false;
+  };
+  o.querySelectorAll('.fdt button').forEach(b => b.onclick = () => {
+    o.querySelectorAll('.fdt button').forEach(x => x.classList.toggle('on', x === b)); sort = b.dataset.s; load(true);
+  });
+  more.onclick = () => load(false);
+  trTree(o);
+  load(true);
+}
+
 /* ---- скачать картинку (без ссылки) */
 async function downloadCard() {
   btnDl.disabled = true;
@@ -2096,6 +2142,11 @@ function setupLike() {
   }).catch(() => { /* лайк недоступен */ });
 }
 
+if (FEED_UI) {
+  const fb = document.createElement('button'); fb.type = 'button'; fb.className = 'pill-btn'; fb.id = 'btnFeed'; fb.textContent = '🏆 Лента лучших';
+  fb.style.cssText = 'width:100%;margin-top:8px'; fb.onclick = openFeedModal;
+  document.querySelector('.bar').after(fb);
+}
 if (ADMIN_UI) initAdmin(); else if (!VIEW_ID) setupPublishButton();      // публикация и лайки открыты всем; карусель из трёх карточек — пока только у администратора
 
 })();
