@@ -117,3 +117,8 @@
 .cd-frame.cd-fs { position: fixed; left: 0; top: 0; width: 100vw; height: 100vh; height: 100dvh; min-height: 0; z-index: 10000;
   transform-origin: 0 0; background: rgba(8, 12, 24, .5); -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px); }
 body.cd-noscroll { overflow: hidden; }
+
+/* админская карусель: iframe выходит за поля секции (ширину поля сообщает сам редактор через --bleed) */
+.cd-frame.cd-bleed { margin-left: calc(-1 * var(--bleed, 0px)); margin-right: calc(-1 * var(--bleed, 0px)); width: calc(100% + 2 * var(--bleed, 0px)); }
+.cd-frame.cd-fs.cd-bleed { margin: 0; width: 100vw; }
+.cd-admin .cd-title { text-align: center; }

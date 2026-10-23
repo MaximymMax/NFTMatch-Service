@@ -398,3 +398,31 @@ body.fs .carousel { padding: 0; overflow: visible; }
 .heart svg { width: 28px; height: 28px; fill: none; stroke: #ff6b81; transition: fill .15s; }
 .heart.on svg { fill: #ff4d6a; stroke: #ff4d6a; }
 body.view .stage { width: min(calc(100vw - 70px), calc((100vh - 170px) * 1.648)); }
+
+/* ===== карусель: боковые карточки на самой границе секции, центральная крупнее ===== */
+body.admin .app { padding-left: var(--padx, 2px); padding-right: var(--padx, 2px); }
+body.admin .carousel { padding: 0 44px; margin-left: calc(-1 * var(--padx, 0px)); margin-right: 0; }
+@media (max-width: 760px) { body.admin .carousel { margin-right: calc(-1 * var(--padx, 0px)); } }
+body.admin .carousel .stage { padding-left: 0; padding-right: 0; }
+.peek { width: calc(100% - 88px); }
+.peekL { left: calc(36px - (100% - 88px)); }
+.peekR { left: calc(100% - 36px); }
+.dots { display: none; }
+
+/* кнопки «Скачать» / «Опубликовать»: одной ширины, по центру, с воздухом сверху и снизу */
+body.admin .bar { justify-content: center; gap: 12px; margin: 22px 0 20px; padding: 0; }
+body.admin .bar .pill-btn { flex: 0 0 154px; width: 154px; padding: 12px 10px; text-align: center; }
+
+/* поля остального содержимого — как у секции, а карусель идёт до внешнего края */
+body.admin .app { padding-left: var(--padin, 2px); padding-right: var(--padin, 2px); }
+body.admin .carousel { margin-left: calc(-1 * var(--padx, 0px)); }
+@media (max-width: 760px) { body.admin .carousel { margin-right: calc(-1 * var(--padx, 0px)); } }
+body.admin .carousel .stage { padding-bottom: 14px; }
+
+/* кнопки одной ширины в один ряд, по центру */
+body.admin .bar { flex-wrap: nowrap; width: min(100%, 340px); margin: 24px auto 22px; }
+body.admin .bar .pill-btn { flex: 1 1 0; min-width: 0; width: auto; }
+
+/* карусель идёт от края до края окна редактора (оно уже растянуто до границы секции), поэтому сдвиг равен только внутреннему полю */
+body.admin .carousel { margin-left: calc(-1 * var(--padin, 0px)); }
+@media (max-width: 760px) { body.admin .carousel { margin-right: calc(-1 * var(--padin, 0px)); } }

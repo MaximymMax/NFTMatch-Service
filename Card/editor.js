@@ -1853,10 +1853,24 @@ function initAdmin() {
   const L = document.createElement('div'); L.id = 'peekL'; L.className = 'peek peekL'; L.hidden = true;
   const R = document.createElement('div'); R.id = 'peekR'; R.className = 'peek peekR';
   car.appendChild(L); car.appendChild(stageEl); car.appendChild(R);
-  const dots = document.createElement('div'); dots.className = 'dots';
-  dots.innerHTML = '<i data-k="second"></i><i data-k="catalog"></i><i data-k="locked"></i>';
-  car.after(dots);
-  dots.addEventListener('click', e => { const d = e.target.closest('i'); if (d) goPeek(d.dataset.k); });
+  // iframe выходит за поля страницы до краёв секции, чтобы боковые карточки лежали прямо на её границе
+  function setBleed() {
+    try {
+      // до внешнего края секции: поля обёртки раздела и самой секции (.main-container)
+      let px = 0, el = frameEl.parentElement;
+      while (el && el !== P.document.body) {
+        px += parseFloat(P.getComputedStyle(el).paddingLeft) || 0;
+        if (el.classList && el.classList.contains('main-container')) break;
+        el = el.parentElement;
+      }
+      const own = parseFloat(P.getComputedStyle(frameEl.parentElement).paddingLeft) || 0;   // поля внутри секции остаются у остального содержимого
+      frameEl.style.setProperty('--bleed', px + 'px');
+      document.documentElement.style.setProperty('--padx', px + 'px');
+      document.documentElement.style.setProperty('--padin', own + 'px');
+    } catch (e) { /* ignore */ }
+  }
+  if (frameEl) { frameEl.classList.add('cd-bleed'); setBleed(); try { P.addEventListener('resize', setBleed); } catch (e) { /* ignore */ } }
+  try { P.document.body.classList.add('cd-admin'); } catch (e) { /* ignore */ }
   L.addEventListener('click', () => goPeek(L.dataset.go));
   R.addEventListener('click', () => goPeek(R.dataset.go));
 
