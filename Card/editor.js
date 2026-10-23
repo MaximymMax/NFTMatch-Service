@@ -796,7 +796,7 @@ const EN_UI = {
   'Очистить карточку': 'Clear the card', 'Слишком много лайков, попробуйте позже': 'Too many likes, try again later',
   'Сделать свою карточку': 'Make your own card', 'Не удалось сохранить карточку — попробуйте ещё раз': 'Could not save the card — try again',
   'Публикация карточки': 'Publish the card',
-  'Опубликованную карточку можно открыть по ссылке и поставить ей лайк. Число лайков видите только вы. Снять карточку с публикации можно в любой момент.': 'A published card can be opened by link and liked. Only you can see the number of likes. You can unpublish the card at any time.',
+  'Опубликованную карточку смогут увидеть другие пользователи и оценить её лайком. Число лайков видите только вы. Делитесь карточкой с друзьями: по ссылке она открывается прямо в приложении. Снять карточку с публикации можно в любой момент.': 'Other users will be able to see a published card and rate it with a like. Only you can see the number of likes. Share your card with friends: the link opens it right in the app. You can unpublish the card at any time.',
   'Проверяю подписку на канал…': 'Checking the channel subscription…', '✓ Вы подписаны на канал': '✓ You are subscribed to the channel',
   'Для публикации нужно подписаться на наш канал': 'To publish, you need to subscribe to our channel', 'Не удалось проверить подписку': 'Could not check the subscription',
   'Проверить ещё раз': 'Check again', 'Я подписался — проверить': 'I subscribed — check', 'Проверить подписку': 'Check subscription', 'Публикую…': 'Publishing…',
@@ -905,8 +905,9 @@ function bake(g, m) {
   return p;
 }
 function pumpBake() { while (bakeActive < 2 && bakeQueue.length) { bakeActive++; bakeQueue.shift()(); } }
-function modelImg(g, m, bakeIt) {
+function modelImg(g, m, bakeIt, lazy) {
   const img = new Image(); img.decoding = 'async'; img.draggable = false; img.alt = m;
+  if (lazy) img.loading = 'lazy';
   const key = g + '|' + m, u = bakedUrls.get(key);
   img.src = u || imgUrl(g, m);
   if (bakeIt && !u) bake(g, m).then(url => { if (url) img.src = url; });
@@ -915,7 +916,7 @@ function modelImg(g, m, bakeIt) {
 function staticArt(gid, noBake) {
   const [g, m] = splitId(gid);
   const wrap = document.createElement('div'); wrap.className = 'lot';
-  wrap.appendChild(modelImg(g, m, !noBake));
+  wrap.appendChild(modelImg(g, m, !noBake, !!noBake));
   return wrap;
 }
 
@@ -1068,7 +1069,7 @@ document.addEventListener('pointerdown', e => { if (!menu.hidden && !e.target.cl
 /* ---- каталог с фильтрами: коллекции / модели / тематики (+ поиск внутри выбранного фильтра) */
 const qEl = document.getElementById('q'), crumbs = document.getElementById('crumbs'), moreBtn = document.getElementById('btnMore');
 const filtersEl = document.getElementById('filters');
-const PAGE = 60;
+const PAGE = 36;
 const PLACEHOLDERS = { profile: 'Найти подарок профиля…', collections: 'Найти коллекцию…', models: 'Найти модель или коллекцию…', themes: 'Найти тематику…' };
 let tab = 'profile', sel = null, collections = null, ver = 0, offset = 0;   // sel = { type: 'gift' | 'theme', key, title }
 
@@ -1277,10 +1278,19 @@ document.getElementById('bgRow').addEventListener('keydown', e => { if (e.key ==
 updateBgRow();
 
 /* ---- загрузка единственной карточки с сервера */
+/* Запрос с повтором: при обрыве сети и ответах 5xx (сервер перезапускается) пробуем ещё до двух раз. */
+async function apiGetRetry(path, tries = 3) {
+  let last;
+  for (let i = 0; i < tries; i++) {
+    try { return await apiGet(path); }
+    catch (e) { last = e; if (e.status && e.status < 500) throw e; await sleep(700 * (i + 1)); }
+  }
+  throw last;
+}
 async function loadCard(prefetched) {
   loaded = false; setStatus('');
   try {
-    const data = prefetched || await apiGet('Card/Get?kind=' + kind);
+    const data = prefetched || await apiGetRetry('Card/Get?kind=' + kind);
     const minS = 0.4;   // как минимальный масштаб в примере; от размера карточки не зависит (в момент загрузки она может быть ещё без размера)
     (data.stickers || []).slice(0, MAX_STICKERS).forEach(s => {
       const src = sid(s.gift, s.model, s.uid), st = { id: newInstId(src), src, x: +s.x, y: +s.y, sc: clamp(+s.sc || 1, minS, SC_MAX), r: +s.r || 0, z: ++zSeq, t: ++tSeq };
@@ -1389,7 +1399,7 @@ function setTrayCollapsed(on) {
   try { localStorage.setItem('cdTrayCollapsed', on ? '1' : ''); } catch (e) { /* ignore */ }
   setTimeout(reportHeight, 50);
 }
-document.getElementById('trayHead').onclick = () => { if (kind === 'catalog') setTrayCollapsed(!trayBoxEl.classList.contains('collapsed')); };
+document.getElementById('trayHead').onclick = () => setTrayCollapsed(!trayBoxEl.classList.contains('collapsed'));
 try { if (localStorage.getItem('cdTrayCollapsed')) trayBoxEl.classList.add('collapsed'); } catch (e) { /* ignore */ }
 
 
@@ -1399,26 +1409,34 @@ try { if (localStorage.getItem('cdTrayCollapsed')) trayBoxEl.classList.add('coll
    размеры и позиции берутся из тех же долей, что и в вёрстке карточки. */
 const SHARE = { W: 2400, H: 1500, CW: 2100, BG: '#283043' };
 
+let renderGL = null;      // один общий контекст для всех картинок: размер холста меняется под каждый рендер
 function glCardCanvas(w, h, c0, c1) {
-  const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
-  const g = cv.getContext('webgl', { antialias: true, preserveDrawingBuffer: true, alpha: false });
-  if (!g) return null;
-  const sh = (t, src) => { const s = g.createShader(t); g.shaderSource(s, src); g.compileShader(s); return s; };
-  const pr = g.createProgram();
-  g.attachShader(pr, sh(g.VERTEX_SHADER, VS)); g.attachShader(pr, sh(g.FRAGMENT_SHADER, FS));
-  g.linkProgram(pr); g.useProgram(pr);
-  g.bindBuffer(g.ARRAY_BUFFER, g.createBuffer());
-  g.bufferData(g.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), g.STATIC_DRAW);
-  const loc = g.getAttribLocation(pr, 'p'); g.enableVertexAttribArray(loc); g.vertexAttribPointer(loc, 2, g.FLOAT, false, 0, 0);
-  const u = n => g.getUniformLocation(pr, n);
+  if (!renderGL) {
+    const cv = document.createElement('canvas');
+    const g = cv.getContext('webgl', { antialias: true, preserveDrawingBuffer: true, alpha: false });
+    if (!g) return null;
+    const sh = (t, src) => { const s = g.createShader(t); g.shaderSource(s, src); g.compileShader(s); return s; };
+    const pr = g.createProgram();
+    g.attachShader(pr, sh(g.VERTEX_SHADER, VS)); g.attachShader(pr, sh(g.FRAGMENT_SHADER, FS));
+    g.linkProgram(pr); g.useProgram(pr);
+    g.bindBuffer(g.ARRAY_BUFFER, g.createBuffer());
+    g.bufferData(g.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), g.STATIC_DRAW);
+    const loc = g.getAttribLocation(pr, 'p'); g.enableVertexAttribArray(loc); g.vertexAttribPointer(loc, 2, g.FLOAT, false, 0, 0);
+    const uni = {};
+    ['uSize', 'uTilt', 'uC0', 'uC1', 'uP0', 'uP1', 'uOrg', 'uRad', 'uSoft', 'uTime'].forEach(n => { uni[n] = g.getUniformLocation(pr, n); });
+    cv.addEventListener('webglcontextlost', e => { e.preventDefault(); renderGL = null; });   // потеряли — пересоздадим при следующем рендере
+    renderGL = { cv, g, uni };
+  }
+  const { cv, g, uni } = renderGL;
+  cv.width = w; cv.height = h;
   g.viewport(0, 0, w, h);
-  g.uniform2f(u('uSize'), w, h); g.uniform2f(u('uTilt'), 0, 0);
-  g.uniform3fv(u('uC0'), c0); g.uniform3fv(u('uC1'), c1);
-  g.uniform3fv(u('uP0'), c0); g.uniform3fv(u('uP1'), c1);
-  g.uniform2f(u('uOrg'), .5, .5); g.uniform1f(u('uRad'), -1); g.uniform1f(u('uSoft'), 1);
-  g.uniform1f(u('uTime'), performance.now() / 1000);
+  g.uniform2f(uni.uSize, w, h); g.uniform2f(uni.uTilt, 0, 0);
+  g.uniform3fv(uni.uC0, c0); g.uniform3fv(uni.uC1, c1);
+  g.uniform3fv(uni.uP0, c0); g.uniform3fv(uni.uP1, c1);
+  g.uniform2f(uni.uOrg, .5, .5); g.uniform1f(uni.uRad, -1); g.uniform1f(uni.uSoft, 1);
+  g.uniform1f(uni.uTime, performance.now() / 1000);
   g.drawArrays(g.TRIANGLES, 0, 3);
-  return cv;
+  return cv;      // холст общий: вызывающий должен сразу скопировать его на свой (между вызовом и drawImage нет await)
 }
 function loadImgCors(url) {
   return new Promise(res => { const i = new Image(); i.crossOrigin = 'anonymous'; i.onload = () => res(i); i.onerror = () => res(null); i.src = url; });
@@ -1769,7 +1787,7 @@ async function goSlot(target) {
       (async () => {                                                             // данные новой карточки и её картинки подгружаем заранее
         if (!needData) return;
         try {
-          data = await apiGet('Card/Get?kind=' + target);
+          data = await apiGetRetry('Card/Get?kind=' + target);
           await Promise.all((data.stickers || []).slice(0, MAX_STICKERS).map(s => preloadImg(imgUrl(s.gift, s.model))));
         } catch (e) { failed = 'load'; }
       })()
@@ -1871,7 +1889,7 @@ function pubModalShell(inner) {
 /* Окно публикации: что это значит, проверка подписки на канал и кнопка «Опубликовать». */
 async function openPublishModal() {
   const { o, close, note } = pubModalShell(
-    '<div class="lk">Опубликованную карточку можно открыть по ссылке и поставить ей лайк. Число лайков видите только вы. Снять карточку с публикации можно в любой момент.</div>' +
+    '<div class="lk">Опубликованную карточку смогут увидеть другие пользователи и оценить её лайком. Число лайков видите только вы. Делитесь карточкой с друзьями: по ссылке она открывается прямо в приложении. Снять карточку с публикации можно в любой момент.</div>' +
     '<div class="vw sub">Проверяю подписку на канал…</div>' +
     '<div class="b"><button class="pr go" disabled>Опубликовать</button><button class="ch" hidden>Открыть канал</button><button class="rc" hidden>Проверить подписку</button></div>');
   o.querySelector('.h span').textContent = T('Публикация карточки');
