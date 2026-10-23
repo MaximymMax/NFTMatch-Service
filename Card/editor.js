@@ -795,6 +795,11 @@ const EN_UI = {
   'Не удалось снять с публикации': 'Failed to unpublish', 'Не удалось подготовить картинку': 'Failed to prepare the image',
   'Очистить карточку': 'Clear the card', 'Слишком много лайков, попробуйте позже': 'Too many likes, try again later',
   'Сделать свою карточку': 'Make your own card', 'Не удалось сохранить карточку — попробуйте ещё раз': 'Could not save the card — try again',
+  'Публикация карточки': 'Publish the card',
+  'Опубликованную карточку можно открыть по ссылке и поставить ей лайк. Число лайков видите только вы. Снять карточку с публикации можно в любой момент.': 'A published card can be opened by link and liked. Only you can see the number of likes. You can unpublish the card at any time.',
+  'Проверяю подписку на канал…': 'Checking the channel subscription…', '✓ Вы подписаны на канал': '✓ You are subscribed to the channel',
+  'Для публикации нужно подписаться на наш канал': 'To publish, you need to subscribe to our channel', 'Не удалось проверить подписку': 'Could not check the subscription',
+  'Проверить ещё раз': 'Check again', 'Я подписался — проверить': 'I subscribed — check', 'Проверить подписку': 'Check subscription', 'Публикую…': 'Publishing…',
   'Нравится': 'Like', 'Закрытая карточка': 'Locked card', 'Открыть за 50 ★': 'Unlock for 50 ★',
   'Закрытая карточка откроется за 50 звёзд. Оплата скоро появится — пока можно оформлять первую и вторую карточки.': 'The locked card unlocks for 50 stars. Payment is coming soon — for now you can design the first and the second card.'
 };
@@ -1787,7 +1792,9 @@ async function goSlot(target) {
     slotNow = target;
     document.body.classList.toggle('locked-center', target === 'locked');
     inEl.style.display = ''; inEl.classList.add(animIn);
+    if (inEl === stageEl) { resize(); layoutStickers(); }                   // размеры карточки нужны сразу, иначе перетаскивание на неё не сработает
     renderPeeks();
+    if (inEl === stageEl && !loaded) setStatus('Не удалось загрузить карточку — обновите страницу', true);
     await sleep(320); inEl.classList.remove(animIn);
   } finally { stageEl.classList.remove('out-r', 'out-l', 'in-r', 'in-l'); lockedEl.classList.remove('out-r', 'out-l', 'in-r', 'in-l'); slotSwitching = false; }
 }
@@ -1836,20 +1843,20 @@ function updatePubButton() {
   btnPub.textContent = st.public ? 'Опубликовано' : 'Опубликовать';
   btnPub.classList.toggle('green', !!st.public); btnPub.disabled = false;
 }
-async function publish() {
-  btnPub.disabled = true;
+/* Запрос на публикацию. Возвращает 'ok' | 'sub' (нет подписки на канал) | 'fail'. */
+async function publishRequest() {
   try {
     clearTimeout(saveTimer); while (saving) await sleep(80); await flushSave();
     for (let attempt = 0; attempt < 2; attempt++) {
       const r = await fetch(api('Card/Visibility?kind=' + kind + '&public=true'), { method: 'POST', headers: { 'Authorization': authHeader() } });
-      if (r.ok) { pubState[kind] = await r.json(); updatePubButton(); openPubModal(); return; }
+      if (r.ok) { pubState[kind] = await r.json(); updatePubButton(); return 'ok'; }
       let body = {}; try { body = await r.json(); } catch (e) { /* не JSON */ }
-      if (r.status === 403 && body.error === 'subscription_required') { openSubModal(); return; }
+      if (r.status === 403 && body.error === 'subscription_required') return 'sub';
       if (r.status === 409 && body.error === 'no_card' && attempt === 0) { dirty = true; loaded = true; await flushSave(); continue; }   // карточка ещё не сохранялась — сохраняем и повторяем
-      toast(T('Не удалось опубликовать')); return;
+      return 'fail';
     }
-  } catch (e) { toast(T('Не удалось опубликовать')); }
-  finally { btnPub.disabled = false; updatePubButton(); }
+  } catch (e) { /* ниже */ }
+  return 'fail';
 }
 function pubModalShell(inner) {
   const D = P.document;
@@ -1861,13 +1868,39 @@ function pubModalShell(inner) {
   o.addEventListener('pointerdown', e => { if (e.target === o) close(); });
   return { o, close, note: t => { o.querySelector('.m').textContent = T(t); } };
 }
-function openSubModal() {
-  const { o, close, note } = pubModalShell('<div class="lk">Чтобы показывать свою карточку другим, подпишитесь на наш канал.</div>' +
-    '<div class="b"><button class="pr ch">Открыть канал</button><button class="ok">Я подписался</button></div>');
-  o.querySelector('.h span').textContent = T('Подпишитесь на канал');
+/* Окно публикации: что это значит, проверка подписки на канал и кнопка «Опубликовать». */
+async function openPublishModal() {
+  const { o, close, note } = pubModalShell(
+    '<div class="lk">Опубликованную карточку можно открыть по ссылке и поставить ей лайк. Число лайков видите только вы. Снять карточку с публикации можно в любой момент.</div>' +
+    '<div class="vw sub">Проверяю подписку на канал…</div>' +
+    '<div class="b"><button class="pr go" disabled>Опубликовать</button><button class="ch" hidden>Открыть канал</button><button class="rc" hidden>Проверить подписку</button></div>');
+  o.querySelector('.h span').textContent = T('Публикация карточки');
+  const subEl = o.querySelector('.sub'), go = o.querySelector('.go'), ch = o.querySelector('.ch'), rc = o.querySelector('.rc');
+  const show = (ok) => {                                  // ok: true — подписан, false — нет, null — не удалось проверить
+    subEl.textContent = T(ok === true ? '✓ Вы подписаны на канал' : ok === false ? 'Для публикации нужно подписаться на наш канал' : 'Не удалось проверить подписку');
+    go.disabled = ok === false; ch.hidden = ok !== false; rc.hidden = ok === true;
+    rc.textContent = T(ok === null ? 'Проверить ещё раз' : 'Я подписался — проверить');
+    trTree(o);
+  };
+  const check = async () => {
+    subEl.textContent = T('Проверяю подписку на канал…'); go.disabled = true; rc.disabled = true;
+    try {
+      const r = await fetch(api('Card/SubscriptionState'), { headers: { 'Authorization': authHeader() } });
+      show(r.ok ? true : r.status === 403 ? false : null);
+    } catch (e) { show(null); }
+    rc.disabled = false;
+  };
   trTree(o);
-  o.querySelector('.ch').onclick = () => tgOpenLink(CHANNEL_URL);
-  o.querySelector('.ok').onclick = async () => { note('Проверяю…'); close(); await publish(); };
+  ch.onclick = () => tgOpenLink(CHANNEL_URL);
+  rc.onclick = check;
+  go.onclick = async () => {
+    go.disabled = true; note('Публикую…');
+    const res = await publishRequest();
+    if (res === 'ok') { close(); openPubModal(); return; }
+    if (res === 'sub') { show(false); note(''); return; }
+    note('Не удалось опубликовать'); go.disabled = false;
+  };
+  check();
 }
 async function openPubModal() {
   const { o, close, note } = pubModalShell('<div class="vw big"><b>Лайки: <span class="lc">…</span></b></div><div class="lk">Готовлю ссылку…</div><div class="vw views" hidden></div>' +
@@ -1984,7 +2017,7 @@ function initAdmin() {
   // кнопки: «Скачать» и «Опубликовать» вместо «Поделиться» и «Очистить»
   btnDl.textContent = 'Скачать'; btnDl.onclick = downloadCard;
   btnPub.disabled = false; btnPub.textContent = 'Опубликовать';
-  btnPub.onclick = () => { if ((pubState[kind] || {}).public) openPubModal(); else publish(); };
+  btnPub.onclick = () => { if ((pubState[kind] || {}).public) openPubModal(); else openPublishModal(); };
 
   // быстрый сброс убран с экрана — остаётся маленькой ссылкой внизу блока «Выбранные»
   const clr = document.createElement('button'); clr.type = 'button'; clr.className = 'linkbtn'; clr.textContent = 'Очистить карточку';
