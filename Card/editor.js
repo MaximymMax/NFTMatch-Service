@@ -1693,7 +1693,7 @@ function tgOpenLink(url) {
 }
 
 /* ---- карусель */
-const SLOT_ORDER = ['second', 'catalog', 'locked'];   // слева направо; закрытая карточка — заглушка без данных
+const SLOT_ORDER = ['locked', 'catalog', 'second'];   // слева направо: платная (закрытая, заглушка без данных), основная, вторая
 let slotNow = 'catalog';                              // что сейчас в центре
 function peekHtml(k) {
   if (k === 'locked') return '<div class="pc locked"><svg viewBox="0 0 24 24" width="30" height="30"><rect x="5" y="11" width="14" height="9" rx="2" fill="none" stroke="#8a8f99" stroke-width="2"/><path d="M8 11V8a4 4 0 018 0v3" fill="none" stroke="#8a8f99" stroke-width="2" stroke-linecap="round"/></svg><b>50 ★</b></div>';
@@ -1703,9 +1703,21 @@ function renderPeeks() {
   const L = document.getElementById('peekL'), R = document.getElementById('peekR');
   if (!L || !R) return;
   const set = (el, k) => { el.hidden = !k; el.dataset.go = k || ''; if (k) el.innerHTML = peekHtml(k); };
-  if (slotNow === 'catalog') { set(L, 'second'); set(R, 'locked'); }
-  else if (slotNow === 'second') { set(L, null); set(R, 'catalog'); }
-  else { set(L, 'catalog'); set(R, null); }
+  if (slotNow === 'catalog') { set(L, 'locked'); set(R, 'second'); }
+  else if (slotNow === 'second') { set(L, 'catalog'); set(R, null); }
+  else { set(L, null); set(R, 'catalog'); }
+  layoutPeeks();
+}
+/* Боковые карточки чуть меньше центральной (как в карусели) и стоят на одной с ней линии центров. Размеры считаем по ширине карусели. */
+const PEEK_SCALE = .84, PEEK_SHOW = 36;
+function layoutPeeks() {
+  const car = document.getElementById('carousel'), L = document.getElementById('peekL'), R = document.getElementById('peekR');
+  if (!car || !L || !R) return;
+  const W = car.clientWidth, cardW = W - 88, cardH = cardW / 1.648;
+  const pw = cardW * PEEK_SCALE, ph = pw / 1.648, top = 32 + cardH / 2 - ph / 2;
+  [L, R].forEach(p => { p.style.width = pw + 'px'; p.style.top = top + 'px'; });
+  L.style.left = (PEEK_SHOW - pw) + 'px';
+  R.style.left = (W - PEEK_SHOW) + 'px';
 }
 function goPeek(k) { if (k) goSlot(k); }
 function slotShift(step) {            // step: -1 влево по ряду, +1 вправо
@@ -1879,8 +1891,8 @@ function initAdmin() {
   const R = document.createElement('div'); R.id = 'peekR'; R.className = 'peek peekR';
   // закрытая карточка: чёрная, с серым пунктиром (рендерить её не нужно — только заглушка)
   const lockedWrap = document.createElement('div'); lockedWrap.id = 'lockedWrap'; lockedWrap.className = 'lockedWrap'; lockedWrap.style.display = 'none';
-  lockedWrap.innerHTML = '<div class="lockcard"><svg viewBox="0 0 24 24" width="44" height="44"><rect x="5" y="11" width="14" height="9" rx="2" fill="none" stroke="#8a8f99" stroke-width="1.8"/><path d="M8 11V8a4 4 0 018 0v3" fill="none" stroke="#8a8f99" stroke-width="1.8" stroke-linecap="round"/></svg><b>50 ★</b><small>Закрытая карточка</small></div>' +
-    '<button type="button" class="pill-btn buy">Открыть за 50 ★</button>';
+  lockedWrap.innerHTML = '<div class="lockcard"><svg viewBox="0 0 24 24" width="40" height="40"><rect x="5" y="11" width="14" height="9" rx="2" fill="none" stroke="#8a8f99" stroke-width="1.8"/><path d="M8 11V8a4 4 0 018 0v3" fill="none" stroke="#8a8f99" stroke-width="1.8" stroke-linecap="round"/></svg><small>Закрытая карточка</small>' +
+    '<button type="button" class="pill-btn buy">Открыть за 50 ★</button></div>';
   lockedWrap.querySelector('.buy').onclick = () => {
     const { o } = pubModalShell('<div class="lk">Закрытая карточка откроется за 50 звёзд. Оплата скоро появится — пока можно оформлять первую и вторую карточки.</div>');
     o.querySelector('.h span').textContent = T('Скоро'); trTree(o);
@@ -1934,6 +1946,7 @@ function initAdmin() {
   clr.onclick = () => { if (state.stickers.length && confirm(T('Убрать все стикеры с карточки?'))) state.stickers.slice().forEach(s => detach(s.id)); };
   trayBox.appendChild(clr);
 
+  try { new ResizeObserver(layoutPeeks).observe(car); } catch (e) { window.addEventListener('resize', layoutPeeks); }
   renderPeeks(); refreshPublish();
   // превью второй карточки (последняя загруженная картинка)
   apiGet('Card/Get?kind=second').then(d => { if (d.imageUrl && !previews.second) { previews.second = d.imageUrl; renderPeeks(); } }).catch(() => { /* пока нет данных */ });

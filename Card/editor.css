@@ -452,3 +452,16 @@ body.admin .carousel .stage { padding-top: 32px; }
 body.locked-center .fsrow, body.locked-center .bar, body.locked-center .trayBox, body.locked-center .bgrow { display: none; }
 body.locked-center .right { opacity: .35; pointer-events: none; }
 body.fs .lockedWrap { display: none !important; }
+
+/* ===== боковые карточки: размер и положение задаёт layoutPeeks; блюр — только у содержимого ===== */
+.peek { width: auto; aspect-ratio: 1.648; transform: none; top: 0; filter: none; opacity: 1; box-shadow: 0 6px 18px rgba(0,0,0,.35); }
+.peekL, .peekR { left: auto; }
+.peek .pc { filter: none; }
+.peek .pc.locked { filter: none; }
+.peek .pc img, .peek .pc.empty span, .peek .pc.locked > * { filter: blur(1.4px); }
+.peek .pc.locked { gap: 4px; }
+.peek .pc.locked svg { transform: none; }
+/* заглушка закрытой карточки: кнопка покупки по центру самой карточки */
+.lockedWrap .lockcard { gap: 14px; }
+.lockedWrap .lockcard small { font-size: 13px; letter-spacing: .02em; }
+.lockedWrap .lockcard .buy { margin: 0; display: inline-block; padding: 13px 26px; }
