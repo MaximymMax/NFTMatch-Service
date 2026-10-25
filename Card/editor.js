@@ -917,6 +917,7 @@ function modelImg(g, m, bakeIt, lazy, uid) {
   img.onerror = () => {                                 // CDN моргнул или картинки нет: пробуем ещё, потом — фото экземпляра (для подарков профиля)
     if (tries < 2) { tries++; setTimeout(() => { img.src = imgUrl(g, m) + '?r=' + tries; }, 700 * tries); }
     else if (uid) { img.onerror = null; img.classList.add('frag'); img.src = fragUrl(uid); }
+    else { img.onerror = null; img.dispatchEvent(new Event('dead')); }
   };
   img.src = u || imgUrl(g, m);
   if (bakeIt && !u) bake(g, m).then(url => { if (url) { img.onerror = null; img.src = url; } });
@@ -1002,6 +1003,7 @@ function addModelTile(gift, model) {
   t.className = 'tile pick'; t.dataset.id = id; t.title = model + ' — ' + gift;
   t.innerHTML = '<div class="art"></div><b></b><small></small>';
   t.firstChild.appendChild(staticArt(id, true));
+  const pic = t.querySelector('img'); if (pic) pic.addEventListener('dead', () => { t.remove(); catTiles.delete(id); if (!gridEl.children.length) noteEl.textContent = 'Ничего не найдено'; });          // нет картинки модели — не показываем
   t.children[1].textContent = model; t.children[2].textContent = gift;
   t.onclick = () => toggleTray(gift, model);
   gridEl.appendChild(t); catTiles.set(id, t);
@@ -1103,7 +1105,7 @@ function refresh() {
 function tileFor(imgGift, imgModel, name, sub, onClick) {
   const d = document.createElement('div'); d.className = 'ctile';
   d.innerHTML = '<div class="art"></div><b></b><small></small>';
-  if (imgGift && imgModel) { const img = new Image(); img.alt = name; img.loading = 'lazy'; img.src = imgUrl(imgGift, imgModel); d.firstChild.appendChild(img); }
+  if (imgGift && imgModel) { const img = new Image(); img.alt = name; img.loading = 'lazy'; img.onerror = () => d.remove(); img.src = imgUrl(imgGift, imgModel); d.firstChild.appendChild(img); }
   d.children[1].textContent = name; d.children[2].textContent = sub;
   d.onclick = onClick; gridEl.appendChild(d);
 }
@@ -1934,7 +1936,7 @@ async function publishRequest() {
     clearTimeout(saveTimer); while (saving) await sleep(80); await flushSave();
     for (let attempt = 0; attempt < 2; attempt++) {
       const r = await fetch(api('Card/Visibility?kind=' + kind + '&public=true'), { method: 'POST', headers: { 'Authorization': authHeader() } });
-      if (r.ok) { pubState[kind] = await r.json(); updatePubButton(); return 'ok'; }
+      if (r.ok) { const d = await r.json(); pubState[kind] = d; if (d.closed) pubState[d.closed] = Object.assign({}, pubState[d.closed], { public: false }); updatePubButton(); return 'ok'; }
       let body = {}; try { body = await r.json(); } catch (e) { /* не JSON */ }
       if (r.status === 403 && body.error === 'subscription_required') return 'sub';
       if (r.status === 429 || r.status === 503) return 'busy';          // лимит запросов или Telegram не ответил — повторить чуть позже
@@ -1989,7 +1991,7 @@ async function openPublishModal() {
     if (res === 'busy') { note('Сервер занят, попробуйте ещё раз через минуту'); go.disabled = false; return; }
     note('Не удалось опубликовать'); go.disabled = false;
   };
-  check();
+  subEl.hidden = true; go.disabled = false;          // подписка на канал для добавления в ленту не нужна
 }
 async function openPubModal() {
   const { o, close, note } = pubModalShell('<div class="vw big"><b>Лайки: <span class="lc">…</span></b></div><div class="lk">Готовлю ссылку…</div><div class="vw views" hidden></div>' +

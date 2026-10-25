@@ -107,6 +107,16 @@
             const card = tabs.querySelector('[data-tab="card"]'), home = tabs.querySelector('[data-tab="home"]');
             if (!card || !home) return false;
             tabs.dataset.cdAdmin = '1';
+            // Главный экран (там «Главная» — кнопка, а не ссылка): над кнопками плашка конкурса, ведёт в ленту карточек. Пока только администратору.
+            if (home.tagName === 'BUTTON' && !tabs.previousElementSibling?.classList.contains('cw-contest')) {
+                const ban = document.createElement('a');
+                ban.className = 'cw-contest';
+                ban.href = new URL('Card/feed.html', SELF_SRC).href;
+                ban.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 01-10 0V4zM7 6H4v1a3 3 0 003 3M17 6h3v1a3 3 0 01-3 3"/></svg>' +
+                    '<span class="cw-contest-t"><b>Конкурс на лучшее оформление карточки</b><small>Добавьте свою карточку в ленту и участвуйте</small></span>' +
+                    '<svg class="cw-contest-go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>';
+                tabs.parentNode.insertBefore(ban, tabs);
+            }
             const inCard = location.pathname.indexOf('/Card/') !== -1;
             // вместо значка — мини-карточка: цвета берём из кэша, свежие подтягиваем с сервера
             const mini = document.createElement('span');

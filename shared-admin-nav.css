@@ -129,3 +129,13 @@ header.cw-page-header ~ main,
 
 /* Раздел «Карточка» у администратора: Главная, Лента, Карточка — обычные кнопки того же вида и размера, что на главном экране; порядок фиксирован */
 @media (min-width: 601px) { .cw-tabs.cd-three .cw-tab { order: 0 !important; } }          /* на телефоне, как на главном экране, Главная уходит вниз отдельной строкой */
+
+/* плашка конкурса на главном экране (пока только админу): над рядом кнопок */
+.cw-contest { display: flex; align-items: center; gap: 12px; width: 100%; max-width: 900px; box-sizing: border-box; margin: 10px auto 0; padding: 12px 14px; border-radius: 14px; text-decoration: none; color: #fff;
+    background: linear-gradient(135deg, rgba(245, 158, 11, .28), rgba(37, 99, 235, .22)); border: 1px solid rgba(245, 158, 11, .45); box-shadow: 0 4px 14px rgba(245, 158, 11, .15); transition: transform .15s ease, filter .15s ease; }
+.cw-contest:hover { transform: translateY(-2px); filter: brightness(1.1); }
+.cw-contest > svg:first-child { width: 28px; height: 28px; flex: 0 0 auto; color: #fbbf24; }
+.cw-contest-t { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; text-align: left; }
+.cw-contest-t b { font-size: 14px; font-weight: 800; }
+.cw-contest-t small { font-size: 12px; font-weight: 600; color: #d6e0f5; }
+.cw-contest-go { width: 20px; height: 20px; flex: 0 0 auto; color: #fbbf24; }
