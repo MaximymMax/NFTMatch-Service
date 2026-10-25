@@ -97,7 +97,7 @@
         im.src = url;
     }
     // Окно конкурса: условия, ссылка на канал организатора и две кнопки — в конструктор и в ленту.
-    const CONTEST_CHANNEL = 'https://t.me/NFTStyler';          // канал организатора конкурса
+    const CONTEST_CHANNEL = 'https://t.me/crypto_kommunalka/4070';          // пост организатора конкурса
     function openTg(url) {
         try { const w = window.Telegram && window.Telegram.WebApp; if (w && w.openTelegramLink) { w.openTelegramLink(url); return; } } catch (e) { }
         window.open(url, '_blank');
@@ -114,7 +114,7 @@
             '<li>Нажмите «Добавить в ленту» — карточка появится в ленте. В ленте у вас может быть только одна из двух карточек.</li>' +
             '<li>Лучшие работы выберет организатор конкурса. Итоги и подробности — в его канале.</li>' +
             '</ol>' +
-            '<a class="cw-ctm-ch" href="' + CONTEST_CHANNEL + '" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M21.9 4.3 18.7 19.6c-.2 1-.9 1.3-1.7.8l-4.7-3.5-2.3 2.2c-.3.3-.5.5-1 .5l.3-4.8 8.8-7.9c.4-.3-.1-.5-.6-.2L6.6 13.6 1.9 12.1c-1-.3-1-1 .2-1.5L20.4 3.5c.9-.3 1.6.2 1.5.8z"/></svg><span>Канал организатора</span></a>' +
+            '<a class="cw-ctm-ch" href="' + CONTEST_CHANNEL + '" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M21.9 4.3 18.7 19.6c-.2 1-.9 1.3-1.7.8l-4.7-3.5-2.3 2.2c-.3.3-.5.5-1 .5l.3-4.8 8.8-7.9c.4-.3-.1-.5-.6-.2L6.6 13.6 1.9 12.1c-1-.3-1-1 .2-1.5L20.4 3.5c.9-.3 1.6.2 1.5.8z"/></svg><span>Подробности в канале организатора</span></a>' +
             '<div class="cw-ctm-b"><a class="cw-ctm-btn pr" href="' + new URL('Card/card.html', SELF_SRC).href + '">Создать свою</a>' +
             '<a class="cw-ctm-btn" href="' + new URL('Card/feed.html', SELF_SRC).href + '">Посмотреть работы</a></div></div>';
         const close = () => { o.remove(); document.removeEventListener('keydown', onKey); };
@@ -125,7 +125,7 @@
         document.addEventListener('keydown', onKey);
         document.body.appendChild(o);
     }
-    // Плашка конкурса на главном экране (пока только админу): золотая рамка, лента «Конкурс», случайная карточка из ленты под наклоном (скриншот карточки, 3D-перспектива).
+    // Плашка конкурса на главном экране (пока только админу): золотая рамка, лента «Конкурс», карточка админа под наклоном (скриншот карточки, 3D-перспектива).
     function buildContest(tabs) {
         const ban = document.createElement('a');
         ban.className = 'cw-contest';
@@ -144,17 +144,21 @@
             card.style.setProperty('--ry', (-14 + px * 22) + 'deg'); card.style.setProperty('--rx', (8 - py * 16) + 'deg');
         });
         ban.addEventListener('pointerleave', () => { card.style.removeProperty('--ry'); card.style.removeProperty('--rx'); });
-        // случайная карточка из ленты (только со скриншотом); пока грузится — фирменный синий фон
+        // на плашке — карточка админа (её скриншот); пока грузится или скриншота нет — фирменный синий фон
         pic.style.background = 'linear-gradient(135deg,#3AB0F8,#1488E1)';
+        const show = url => {
+            const im = new Image(); im.alt = ''; im.draggable = false;
+            im.onload = () => { pic.style.background = 'none'; pic.innerHTML = ''; pic.appendChild(im); card.classList.add('on'); };
+            im.src = url;
+        };
+        try { const k = localStorage.getItem('cd_mini_shot'); if (k) show(k); } catch (e) { }
         try {
-            fetch(((window.CONFIG && CONFIG.SERVER_BASE_URL) || '') + '/api/Card/Feed?sort=new&skip=0', { headers: { 'Authorization': NFTAuth.getApiAuthHeader() } })
+            fetch(((window.CONFIG && CONFIG.SERVER_BASE_URL) || '') + '/api/Card/Get?kind=catalog', { headers: { 'Authorization': NFTAuth.getApiAuthHeader() } })
                 .then(r => r.ok ? r.json() : null).then(d => {
-                    const ok = ((d && d.items) || []).filter(it => it.imageUrl && it.imageOk !== false);
-                    if (!ok.length) return;
-                    const it = ok[Math.floor(Math.random() * ok.length)];
-                    const im = new Image(); im.alt = ''; im.draggable = false;
-                    im.onload = () => { pic.style.background = 'none'; pic.innerHTML = ''; pic.appendChild(im); card.classList.add('on'); };
-                    im.src = it.imageUrl;
+                    if (!d) return;
+                    if (d.bg && d.bg.c0 && d.bg.c1 && !card.classList.contains('on')) pic.style.background = 'linear-gradient(135deg,' + d.bg.c0 + ',' + d.bg.c1 + ')';
+                    if (d.imageUrl) { show(d.imageUrl); try { localStorage.setItem('cd_mini_shot', d.imageUrl); } catch (e) { } }
+                    else card.classList.add('on');
                 }).catch(() => { });
         } catch (e) { }
     }
@@ -171,6 +175,7 @@
             tabs.dataset.cdAdmin = '1';
             // Главный экран (там «Главная» — кнопка, а не ссылка): над кнопками плашка конкурса, ведёт в ленту карточек. Пока только администратору.
             if (home.tagName === 'BUTTON' && !(tabs.previousElementSibling && tabs.previousElementSibling.classList.contains('cw-contest'))) buildContest(tabs);
+            const inCard = location.pathname.indexOf('/Card/') !== -1;
             // вместо значка — мини-карточка: цвета берём из кэша, свежие подтягиваем с сервера
             const mini = document.createElement('span');
             mini.className = 'cw-mini-card';
