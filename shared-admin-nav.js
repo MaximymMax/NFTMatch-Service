@@ -74,6 +74,21 @@
         } catch (e) { }
     }
 
+    // Всем, кроме админа: рядом с «Карточкой» вкладка «Лента» (у админа свой ряд из трёх кнопок на страницах раздела).
+    function addFeedTab() {
+        try {
+            const tabs = document.querySelector('.cw-tabs');
+            if (!tabs || tabs.querySelector('[data-tab="feed"]') || !SELF_SRC || isCardAdmin()) return;
+            const card = tabs.querySelector('[data-tab="card"]'); if (!card) return;
+            const a = document.createElement('a');
+            a.className = 'cw-tab' + (location.pathname.indexOf('feed.html') !== -1 ? ' active' : '');
+            a.setAttribute('data-tab', 'feed');
+            a.href = new URL('Card/feed.html', SELF_SRC).href;
+            a.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 21h8M12 17v4M7 4h10v5a5 5 0 01-10 0V4zM7 6H4v1a3 3 0 003 3M17 6h3v1a3 3 0 01-3 3"/></svg><span>Лента</span>';
+            card.after(a);
+        } catch (e) { }
+    }
+
     // Администратору: «Карточка» стоит в центре ряда на месте «Главной» и показывает его мини-карточку (только фон),
     // а на страницах раздела в ряду остаются три кнопки — Главная, Лента, Карточка.
     const ADMIN_TG_ID = 7343414766;
@@ -202,6 +217,7 @@
             if (inCard) {
                 // в разделе: Главная, Лента, Карточка — остальное убираем
                 tabs.querySelectorAll('.cw-tab').forEach(t => { if (t !== home && t !== card) t.remove(); });
+                const oldFeed = tabs.querySelector('[data-tab="feed"]'); if (oldFeed) oldFeed.remove();
                 const feed = document.createElement('a');
                 feed.className = 'cw-tab' + (location.pathname.indexOf('feed.html') !== -1 ? ' active' : '');
                 feed.setAttribute('data-tab', 'feed');
@@ -212,6 +228,7 @@
                 home.classList.remove('active');
             } else {
                 // на остальных страницах Карточка и Главная меняются местами
+                const extraFeed = tabs.querySelector('[data-tab="feed"]'); if (extraFeed) extraFeed.remove();
                 const ph = document.createComment(''); home.replaceWith(ph); card.replaceWith(home); ph.replaceWith(card);
             }
             return true;
@@ -228,6 +245,7 @@
         document.querySelectorAll('.cw-admin-nav-hidden').forEach(el => el.classList.remove('cw-admin-nav-hidden'));
         mergeTopBarIntoHeader();
         addCardTab();
+        addFeedTab();
         if (!applyAdminNav()) { window.addEventListener('load', () => setTimeout(applyAdminNav, 800)); }
         updateGithubPlacement();
     }

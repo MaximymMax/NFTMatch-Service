@@ -1,4 +1,4 @@
-// Страница «Лента»: опубликованные карточки других людей. Пока открыта только администратору (сервер тоже отвечает остальным 403).
+// Страница «Лента»: опубликованные карточки других людей. Открыта всем; администратор видит и неопубликованные и сам дорисовывает недостающие скриншоты.
 (function () {
     const ADMIN_TG_ID = 7343414766;
     const list = document.getElementById('fd-list'), msg = document.getElementById('fd-msg'), more = document.getElementById('fd-more');
@@ -6,7 +6,8 @@
     const auth = () => { try { return NFTAuth.getApiAuthHeader(); } catch (e) { return 'Tma invalid'; } };
     let user = null;
     try { user = window.NFTAuth && NFTAuth.isAuthenticated() ? NFTAuth.getUser() : null; } catch (e) { /* ignore */ }
-    if (!user || Number(user.telegramId || user.id) !== ADMIN_TG_ID) { location.replace('./card.html'); return; }
+    if (!user) { location.replace('./card.html'); return; }
+    const isAdmin = Number(user.telegramId || user.id) === ADMIN_TG_ID;
 
     const HEART = '<svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-9.6-9.2C1 8.6 3 5 6.4 5c2 0 3.7 1.1 5.6 3.2C13.9 6.1 15.6 5 17.6 5 21 5 23 8.6 21.6 11.8 19.5 16.4 12 21 12 21z" stroke-linejoin="round"/></svg>';
     const gifts = n => n + ' ' + (n % 10 === 1 && n % 100 !== 11 ? 'гифт' : (n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20)) ? 'гифта' : 'гифтов');
@@ -142,6 +143,7 @@
         let pic;
         // нет актуального скрина: плитка ожидания, а в скрытом окне редактора карточка рисуется, уходит на сервер и подменяет плитку
         const request = () => {
+            if (!isAdmin) { const w = pic.querySelector('.fd-wait'); if (w) { w.classList.add('fail'); w.textContent = 'Скриншот пока не загрузился'; } return; }          // чужие скриншоты рисует только админ
             if (!(it.stickers && it.stickers.length)) return;
             shotQueue.push({ it, fail: () => { const w = pic.querySelector('.fd-wait'); if (w) { w.classList.add('fail'); w.textContent = 'Скриншот пока не загрузился'; } }, apply: url => { it.imageUrl = url; it.imageOk = true; const np = shotCard(it); np.onclick = () => openOverlay(it); pic.replaceWith(np); pic = np; } });
             runShots();
