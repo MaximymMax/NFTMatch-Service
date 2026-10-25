@@ -91,7 +91,7 @@
         im.onload = () => {
             el.dataset.shot = url;
             el.innerHTML = '';
-            im.style.cssText = 'position:absolute;display:block;width:115.4%;left:-7.7%;top:-13%;max-width:none;pointer-events:none';
+            im.style.cssText = 'position:absolute;display:block;width:115.4%;height:auto;object-fit:fill;border-radius:0;left:-7.7%;top:-13%;max-width:none;pointer-events:none';
             el.appendChild(im);
         };
         im.src = url;
@@ -111,7 +111,7 @@
             // вместо значка — мини-карточка: цвета берём из кэша, свежие подтягиваем с сервера
             const mini = document.createElement('span');
             mini.className = 'cw-mini-card';
-            mini.style.cssText = 'position:relative;overflow:hidden;width:46px;height:29px;border-radius:7px;flex:0 0 auto;box-shadow:0 0 0 1px rgba(255,255,255,.22),0 3px 8px rgba(0,0,0,.4)';
+            mini.style.cssText = 'position:relative;overflow:hidden;width:46px;height:28px;border-radius:7px;flex:0 0 auto;box-shadow:0 0 0 1px rgba(255,255,255,.22),0 3px 8px rgba(0,0,0,.4)';
             mini.innerHTML = '<span style="position:absolute;inset:0;background:radial-gradient(120% 90% at 85% 0%,rgba(255,255,255,.38),transparent 60%)"></span>' +
                 '<span style="position:absolute;right:5px;top:5px;width:9px;height:7px;border-radius:2px;background:rgba(255,255,255,.75)"></span>' +
                 '<span style="position:absolute;left:5px;bottom:9px;width:16px;height:3px;border-radius:2px;background:rgba(255,255,255,.85)"></span>' +
