@@ -87,7 +87,7 @@
     function row(it) {
         const el = document.createElement('div'); el.className = 'fd-item';
         const name = nameOf(it);
-        const pic = it.imageUrl ? shotCard(it) : flatCard(it);
+        const pic = (it.imageUrl && it.imageOk !== false) ? shotCard(it) : flatCard(it);
         pic.onclick = () => openOverlay(it);
         const info = document.createElement('div'); info.className = 'fd-info';
         const ava = document.createElement('div'); ava.className = 'fd-ava'; ava.textContent = (name.replace('@', '')[0] || '?').toUpperCase();
@@ -148,7 +148,7 @@
     }
 
     document.getElementById('fd-sortsel').onchange = e => { F.sort = e.target.value; load(true); };
-    document.querySelectorAll('.fd-chips').forEach(g => g.querySelectorAll('button').forEach(b => b.onclick = () => {
+    document.querySelectorAll('.fd-seg').forEach(g => g.querySelectorAll('button').forEach(b => b.onclick = () => {
         g.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
         F[g.dataset.f] = b.dataset.v; load(true);
     }));

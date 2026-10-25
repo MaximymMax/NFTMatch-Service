@@ -1307,7 +1307,7 @@ async function loadCard(prefetched) {
     // картинка на сервере отстала от карточки (закрыли приложение до отправки) или её ещё нет — догоняем
     try {
       const k0 = kind;
-      const behind = state.stickers.length && (!data.imageUrl || (data.imageAt && data.updatedAt && Date.parse(data.imageAt) < Date.parse(data.updatedAt) - 5000));
+      const behind = state.stickers.length && (!data.imageUrl || data.imageOk === false || (data.imageAt && data.updatedAt && Date.parse(data.imageAt) < Date.parse(data.updatedAt) - 5000));
       if (behind) setTimeout(() => { if (loaded && kind === k0 && !imgBusy && !dirty) uploadImage(true); }, 3500);
     } catch (e) { /* не критично */ }
     // подпись на карточке (имя владельца) хранится на сервере — если она устарела, обновляем её
@@ -1680,17 +1680,35 @@ function scheduleImageUpload() { imgDirty = true; clearTimeout(imgTimer); imgTim
 // ушли из приложения (или свернули его) раньше срока — отправляем сразу, пока страница жива
 function flushImageOnLeave() { if (imgDirty && !imgBusy && loaded && !VIEW_ID) { clearTimeout(imgTimer); uploadImage(true); } }
 document.addEventListener('visibilitychange', () => { if (document.hidden) flushImageOnLeave(); });
+/* Перепроверка: раз в 10 минут (и когда вкладку снова открыли) спрашиваем у сервера, совпадает ли скриншот с сохранённой карточкой; не совпал — отправляем заново */
+let verifyAt = 0;
+async function verifyImage() {
+  if (VIEW_ID || !loaded || dirty || imgBusy || imgDirty || !state.stickers.length || Date.now() - verifyAt < 9 * 60 * 1000) return;
+  verifyAt = Date.now();
+  const k0 = kind;
+  try {
+    const d = await apiGet('Card/Get?kind=' + k0);
+    if (kind === k0 && loaded && !dirty && !imgBusy && d.stickers && d.stickers.length && (!d.imageUrl || d.imageOk === false)) uploadImage(true);
+  } catch (e) { /* не критично, попробуем в следующий раз */ }
+}
+setInterval(verifyImage, 10 * 60 * 1000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) verifyImage(); });
 window.addEventListener('pagehide', flushImageOnLeave);
+/* Подпись скриншота: какие подарки и в каком порядке (снизу вверх) на нём нарисованы — в том же виде, что сервер считает по сохранённой карточке */
+function imageSig() {
+  return state.stickers.slice().sort((a, b) => (a.z || 0) - (b.z || 0)).map(s => { const [gift, model, uid] = splitId(s.src); return gift + '|' + model + '|' + (uid || ''); }).join(';');
+}
 async function uploadImage(force) {
   if (force) while (imgBusy) await new Promise(r => setTimeout(r, 100));
   if (imgBusy || !loaded || (dirty && !force)) return false;
   imgBusy = true;
   const k = kind;    // вид карточки на момент начала: пока рисуется картинка, слот могут переключить
+  const sig = imageSig();     // подпись снимается до отрисовки: она описывает то, что попадёт на картинку
   try {
     const cv = await renderCardImage(UPLOAD_SIZE);
     const blob = await new Promise(r => cv.toBlob(r, 'image/jpeg', .82));
     if (!blob) return false;
-    const r = await fetch(api('Card/Image?kind=' + k), { method: 'POST', headers: { 'Authorization': authHeader(), 'Content-Type': 'image/jpeg' }, body: blob });
+    const r = await fetch(api('Card/Image?kind=' + k + '&sig=' + encodeURIComponent(sig)), { method: 'POST', headers: { 'Authorization': authHeader(), 'Content-Type': 'image/jpeg' }, body: blob });
     if (r.ok) imgDirty = false;
     return r.ok;
   } catch (e) { return false; /* картинка для инлайна не критична */ } finally { imgBusy = false; }
