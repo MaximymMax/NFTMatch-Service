@@ -127,11 +127,5 @@ header.cw-page-header ~ main,
     .cw-tab[data-tab="search"] { order: 3; }
 }
 
-/* Раздел «Карточка» у администратора: три кнопки в один ряд (Главная, Лента, Карточка), в том числе на телефоне */
-.cw-tabs.cd-three { flex-wrap: nowrap; }
-.cw-tabs.cd-three .cw-tab { flex: 1 1 0; min-width: 0; order: 0 !important; padding: 10px 6px; gap: 6px; font-size: 12px; }
-.cw-tabs.cd-three .cw-tab span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-@media (min-width: 601px) { .cw-tabs.cd-three .cw-tab { font-size: 13px; padding: 12px 10px; gap: 8px; } }
-@media (max-width: 600px) { .cw-tabs.cd-three .cw-mini-card { width: 32px !important; height: 20px !important; border-radius: 5px !important; } .cw-tabs.cd-three .cw-tab svg { width: 17px; height: 17px; } }
-@media (max-width: 600px) { .cw-tabs.cd-three .cw-tab { padding: 10px 4px; gap: 5px; font-size: 11.5px; } .cw-tabs.cd-three .cw-mini-card { width: 30px !important; height: 19px !important; } .cw-tabs.cd-three .cw-tab svg { width: 15px; height: 15px; } }
-@media (max-width: 600px) { .cw-tabs.cd-three .cw-tab[data-tab="card"] { flex: 1.45 1 0; } }
+/* Раздел «Карточка» у администратора: Главная, Лента, Карточка — обычные кнопки того же вида и размера, что на главном экране; порядок фиксирован */
+.cw-tabs.cd-three .cw-tab { order: 0 !important; }
