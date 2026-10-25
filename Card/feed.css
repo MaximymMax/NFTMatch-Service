@@ -78,3 +78,4 @@ body.fd-lock { overflow: hidden; }
 .fd-wait { background: linear-gradient(110deg, rgba(255, 255, 255, .05) 30%, rgba(255, 255, 255, .13) 50%, rgba(255, 255, 255, .05) 70%) #1a2440; background-size: 220% 100%; animation: fd-sh 1.4s linear infinite; }
 @keyframes fd-sh { from { background-position: 120% 0; } to { background-position: -120% 0; } }
 .cd-title { text-align: center; }
+.fd-wait.fail { animation: none; background: #1a2440; display: flex; align-items: center; justify-content: center; text-align: center; padding: 12px; color: #7f90b4; font: 600 13px 'Inter', sans-serif; }

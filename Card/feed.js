@@ -76,16 +76,23 @@
     async function runShots() {
         if (shotBusy) return; shotBusy = true;
         while (shotQueue.length) {
-            const { it, apply } = shotQueue.shift();
+            const job = shotQueue.shift(), { it, apply } = job;
+            let ok = false;
             try {
                 const blob = await renderShot(it);
-                if (!blob) { console.warn('[feed] скрин не нарисован', it.owner); continue; }
-                const [owner, kind] = it.owner.split(':');
-                const r = await fetch(api('Card/ImageFor?owner=' + owner + '&kind=' + kind + '&v=' + encodeURIComponent(it.updatedAt) + '&sig=' + encodeURIComponent(sigOf(it))), { method: 'POST', headers: { 'Authorization': auth(), 'Content-Type': 'image/jpeg' }, body: blob });
-                if (!r.ok) { console.warn('[feed] сервер не принял скрин', it.owner, r.status); continue; }
-                const d = await r.json();
-                if (d.url) apply(d.url);
-            } catch (e) { /* не критично: карточка остаётся нарисованной из данных */ }
+                if (!blob) console.warn('[feed] скрин не нарисован', it.owner);
+                else {
+                    const [owner, kind] = it.owner.split(':');
+                    const r = await fetch(api('Card/ImageFor?owner=' + owner + '&kind=' + kind + '&v=' + encodeURIComponent(it.updatedAt) + '&sig=' + encodeURIComponent(sigOf(it))), { method: 'POST', headers: { 'Authorization': auth(), 'Content-Type': 'image/jpeg' }, body: blob });
+                    if (!r.ok) console.warn('[feed] сервер не принял скрин', it.owner, r.status);
+                    else { const d = await r.json(); if (d.url) { apply(d.url); ok = true; } else console.warn('[feed] сервер не вернул адрес скрина', it.owner); }
+                }
+            } catch (e) { console.warn('[feed] ошибка скрина', it.owner, e && e.message); }
+            if (!ok) {
+                job.tries = (job.tries || 0) + 1;
+                if (job.tries < 3) setTimeout(() => { shotQueue.push(job); runShots(); }, 15000 * job.tries);          // пробуем ещё, но не подряд: не держим очередь
+                else job.fail();
+            }
         }
         shotBusy = false;
     }
@@ -136,7 +143,7 @@
         // нет актуального скрина: плитка ожидания, а в скрытом окне редактора карточка рисуется, уходит на сервер и подменяет плитку
         const request = () => {
             if (!(it.stickers && it.stickers.length)) return;
-            shotQueue.push({ it, apply: url => { it.imageUrl = url; it.imageOk = true; const np = shotCard(it); np.onclick = () => openOverlay(it); pic.replaceWith(np); pic = np; } });
+            shotQueue.push({ it, fail: () => { const w = pic.querySelector('.fd-wait'); if (w) { w.classList.add('fail'); w.textContent = 'Скриншот пока не загрузился'; } }, apply: url => { it.imageUrl = url; it.imageOk = true; const np = shotCard(it); np.onclick = () => openOverlay(it); pic.replaceWith(np); pic = np; } });
             runShots();
         };
         pic = have ? shotCard(it, w => { pic = w; request(); }) : waitCard();
