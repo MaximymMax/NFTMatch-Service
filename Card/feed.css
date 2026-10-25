@@ -60,17 +60,9 @@ body.fd-lock { overflow: hidden; }
 
 /* карточка в списке: фон и стикеры из данных */
 .fd-flat { position: relative; overflow: hidden; }
-.fd-flat::after { content: ""; position: absolute; inset: 0; background: radial-gradient(120% 90% at 85% 0%, rgba(255, 255, 255, .22), transparent 60%); pointer-events: none; }
-.fd-st { position: absolute; aspect-ratio: 1; object-fit: contain; pointer-events: none; filter: drop-shadow(0 3px 6px rgba(0, 0, 0, .3)); }
-.fd-hold { position: absolute; left: 6%; bottom: 7%; font: 700 11px 'Inter', sans-serif; letter-spacing: .1em; color: rgba(255, 255, 255, .85); text-transform: uppercase; pointer-events: none; z-index: 1; }
-
 /* очертания карточки: скруглённый прямоугольник с рамкой и тенью на тёмной плитке */
 .fd-tile { aspect-ratio: auto; display: flex; padding: 16px; background: radial-gradient(120% 120% at 50% 0%, #223256, #141c33); }
 .fd-flat { container-type: inline-size; width: 100%; aspect-ratio: 1.648; border-radius: 7.6% / 12.5%; box-shadow: 0 0 0 1px rgba(255, 255, 255, .22), 0 12px 28px rgba(0, 0, 0, .5); }
-.fd-txt { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
-.fd-bal { position: absolute; left: 6.9%; top: 12%; font: 800 8.4cqw 'Inter', sans-serif; color: #fff; text-shadow: 0 1px 6px rgba(0, 0, 0, .25); }
-.fd-chip { position: absolute; right: 12%; top: 40%; width: 11cqw; height: 8cqw; border-radius: 1.8cqw; background: linear-gradient(135deg, #eceff3, #aeb4bd); box-shadow: 0 1px 4px rgba(0, 0, 0, .3); }
-.fd-hold { position: absolute; left: 6.9%; bottom: 8%; font: 700 4.2cqw 'Inter', sans-serif; letter-spacing: .12em; color: #fff; text-transform: uppercase; text-shadow: 0 1px 4px rgba(0, 0, 0, .35); }
 
 .fd-shot img { position: absolute; display: block; width: 115.4%; left: -7.7%; top: -13%; max-width: none; pointer-events: none; }
 
@@ -81,3 +73,7 @@ body.fd-lock { overflow: hidden; }
 .fd-t { padding: 4px 10px; border-radius: 99px; font: 700 11.5px 'Inter', sans-serif; white-space: nowrap; }
 .fd-t.prof { background: rgba(34, 197, 94, .16); color: #5be08c; box-shadow: inset 0 0 0 1px rgba(34, 197, 94, .35); }
 .fd-t.price { background: rgba(36, 129, 204, .18); color: #7cc4ff; box-shadow: inset 0 0 0 1px rgba(36, 129, 204, .4); }
+
+/* плитка ожидания: пока скриншот карточки рисуется */
+.fd-wait { background: linear-gradient(110deg, rgba(255, 255, 255, .05) 30%, rgba(255, 255, 255, .13) 50%, rgba(255, 255, 255, .05) 70%) #1a2440; background-size: 220% 100%; animation: fd-sh 1.4s linear infinite; }
+@keyframes fd-sh { from { background-position: 120% 0; } to { background-position: -120% 0; } }

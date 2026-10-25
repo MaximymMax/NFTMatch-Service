@@ -37,32 +37,18 @@
 
     /* Просмотр карточки: размытая лента на заднем плане, карточка по центру, снизу использованные модели; стрелка возвращает в ленту */
     const VER = (() => { try { return new URL(document.querySelector('link[href*="card.css"]').href).searchParams.get('v') || String(Date.now()); } catch (e) { return String(Date.now()); } })();
-    // карточка в списке рисуется из данных (фон и стикеры), а не из картинки: картинка могла отстать от карточки
-    // Серверная картинка — карточка на фоне (1600×1000, карточка 1400 в центре): показываем только саму карточку
-    function shotCard(it) {
+    // В списке — только настоящий скриншот карточки (1600×1000, карточка 1400 в центре: показываем её). Пока скрина нет — плитка ожидания.
+    function shotCard(it, onFail) {
         const tile = document.createElement('div'); tile.className = 'fd-pic fd-tile';
         const box = document.createElement('div'); box.className = 'fd-flat fd-shot';
         const im = new Image(); im.alt = ''; im.loading = 'lazy'; im.draggable = false; im.src = it.imageUrl;
-        im.onerror = () => { tile.replaceWith(flatCard(it, true)); };
+        im.onerror = () => { const w = waitCard(); w.onclick = tile.onclick; tile.replaceWith(w); if (onFail) onFail(w); };
         box.appendChild(im); tile.appendChild(box);
         return tile;
     }
-    function flatCard(it, replaced) {
+    function waitCard() {
         const tile = document.createElement('div'); tile.className = 'fd-pic fd-tile';
-        if (replaced) tile.onclick = () => openOverlay(it);
-        const box = document.createElement('div'); box.className = 'fd-flat';
-        const c0 = (it.bg && it.bg.c0) || '#3AB0F8', c1 = (it.bg && it.bg.c1) || '#1488E1';
-        box.style.background = 'linear-gradient(135deg,' + c0 + ',' + c1 + ')';
-        (it.stickers || []).forEach(s => {
-            const im = new Image(); im.className = 'fd-st'; im.alt = ''; im.loading = 'lazy'; im.draggable = false; retryImg(im, modelImg(s.gift, s.model));
-            const w = (s.sc || 1) * 23.1;
-            im.style.cssText = 'left:' + (s.x * 100) + '%;top:' + (s.y * 100) + '%;width:' + w + '%;transform:translate(-50%,-50%) rotate(' + (s.r || 0) + 'deg)';
-            box.appendChild(im);
-        });
-        const txt = document.createElement('div'); txt.className = 'fd-txt';
-        txt.innerHTML = '<b class="fd-bal">◆ 10 GRAM</b><span class="fd-chip"></span><span class="fd-hold"></span>';
-        txt.querySelector('.fd-hold').textContent = it.holder || '';
-        box.appendChild(txt);
+        const box = document.createElement('div'); box.className = 'fd-flat fd-wait';
         tile.appendChild(box);
         return tile;
     }
@@ -145,12 +131,17 @@
     function row(it) {
         const el = document.createElement('div'); el.className = 'fd-item';
         const name = nameOf(it);
-        let pic = (it.imageUrl && it.imageOk !== false) ? shotCard(it) : flatCard(it);
-        pic.onclick = () => openOverlay(it);
-        if (!(it.imageUrl && it.imageOk !== false) && it.stickers && it.stickers.length) {
+        const have = it.imageUrl && it.imageOk !== false;
+        let pic;
+        // нет актуального скрина: плитка ожидания, а в скрытом окне редактора карточка рисуется, уходит на сервер и подменяет плитку
+        const request = () => {
+            if (!(it.stickers && it.stickers.length)) return;
             shotQueue.push({ it, apply: url => { it.imageUrl = url; it.imageOk = true; const np = shotCard(it); np.onclick = () => openOverlay(it); pic.replaceWith(np); pic = np; } });
             runShots();
-        }
+        };
+        pic = have ? shotCard(it, w => { pic = w; request(); }) : waitCard();
+        pic.onclick = () => openOverlay(it);
+        if (!have) request();
         const info = document.createElement('div'); info.className = 'fd-info';
         const ava = document.createElement('div'); ava.className = 'fd-ava'; ava.textContent = (name.replace('@', '')[0] || '?').toUpperCase();
         if (it.username) {          // аватарка из Telegram; нет фото — остаётся буква
