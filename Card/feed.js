@@ -93,10 +93,10 @@
             const { it, apply } = shotQueue.shift();
             try {
                 const blob = await renderShot(it);
-                if (!blob) continue;
+                if (!blob) { console.warn('[feed] скрин не нарисован', it.owner); continue; }
                 const [owner, kind] = it.owner.split(':');
                 const r = await fetch(api('Card/ImageFor?owner=' + owner + '&kind=' + kind + '&sig=' + encodeURIComponent(sigOf(it))), { method: 'POST', headers: { 'Authorization': auth(), 'Content-Type': 'image/jpeg' }, body: blob });
-                if (!r.ok) continue;
+                if (!r.ok) { console.warn('[feed] сервер не принял скрин', it.owner, r.status); continue; }
                 const d = await r.json();
                 if (d.url) apply(d.url);
             } catch (e) { /* не критично: карточка остаётся нарисованной из данных */ }
