@@ -10,7 +10,7 @@
 'use strict';
 const VIEW_ID = new URLSearchParams(location.search).get('c') || (new URLSearchParams(location.search).get('feed') ? '_feed' : null);   // режим просмотра чужой карточки: по ссылке или из ленты ('_feed')
 
-const MAX_STICKERS = 10;
+const MAX_STICKERS = 20;
 const DEFAULT_COLORS = { c0: '#3AB0F8', c1: '#1488E1' };
 const $ = (s, r = document) => r.querySelector(s);
 
