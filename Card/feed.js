@@ -10,7 +10,7 @@
 
     const HEART = '<svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-9.6-9.2C1 8.6 3 5 6.4 5c2 0 3.7 1.1 5.6 3.2C13.9 6.1 15.6 5 17.6 5 21 5 23 8.6 21.6 11.8 19.5 16.4 12 21 12 21z" stroke-linejoin="round"/></svg>';
     const gifts = n => n + ' ' + (n % 10 === 1 && n % 100 !== 11 ? 'гифт' : (n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20)) ? 'гифта' : 'гифтов');
-    const F = { sort: 'top', tag: 'all' };
+    const F = { sort: 'new', tag: 'all' };
     const totalEl = document.getElementById('fd-total');
     let skip = 0, busy = false, reqId = 0;
 
@@ -154,9 +154,9 @@
         who.querySelector('b').textContent = name; who.querySelector('small').textContent = gifts(it.gifts);
         const like = document.createElement('button'); like.type = 'button'; like.className = 'fd-like' + (it.liked ? ' on' : '');
         let n = it.likes;
-        const paint = () => { like.innerHTML = HEART + '<span>' + n + '</span>'; };
+        const paint = () => { like.innerHTML = HEART; };          // число лайков не показываем
         paint();
-        const canLike = it.public && it.id && !it.mine;          // лайкать можно только опубликованные чужие карточки
+        const canLike = it.public && !it.mine;          // лайкать можно только опубликованные чужие карточки
         if (!canLike) like.disabled = true;
         let busyLike = false;
         like.onclick = async () => {
@@ -164,7 +164,7 @@
             const want = !like.classList.contains('on');
             like.classList.toggle('on', want); n += want ? 1 : -1; paint();
             try {
-                const r = await fetch(api('Card/Like?c=' + encodeURIComponent(it.id) + '&like=' + want), { method: 'POST', headers: { 'Authorization': auth() } });
+                const r = await fetch(api('Card/Like?' + (it.id ? 'c=' + encodeURIComponent(it.id) : 'owner=' + it.owner.split(':')[0] + '&kind=' + it.owner.split(':')[1]) + '&like=' + want), { method: 'POST', headers: { 'Authorization': auth() } });
                 if (!r.ok) throw new Error(r.status);
             } catch (e) { like.classList.toggle('on', !want); n += want ? -1 : 1; paint(); }
             busyLike = false;

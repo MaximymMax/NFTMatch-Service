@@ -786,7 +786,7 @@ const EN_UI = {
   'Выделите ссылку и скопируйте её вручную.': 'Select the link and copy it manually.', 'Готовлю картинку…': 'Preparing the image…',
   'Закрыть': 'Close', 'Фон карточки': 'Card background', 'По умолчанию': 'Default', 'Найти фон…': 'Search backgrounds…',
   'Фон от подарка': 'Background from gift', 'Не удалось загрузить фоны': 'Failed to load backgrounds', 'Загружаю…': 'Loading…',
-  'Скачать': 'Download', 'Опубликовать': 'Publish', 'Опубликовано': 'Published', 'Лайки:': 'Likes:', 'Карточка опубликована': 'Card published',
+  'Скачать': 'Download', 'Опубликовать': 'Publish', 'Опубликовано': 'Published', 'Добавить в ленту': 'Add to feed', 'В ленте': 'In the feed', 'Лайки:': 'Likes:', 'Карточка опубликована': 'Card published',
   'Снять с публикации': 'Unpublish', 'Подпишитесь на канал': 'Subscribe to the channel',
   'Чтобы показывать свою карточку другим, подпишитесь на наш канал.': 'To show your card to others, subscribe to our channel.',
   'Открыть канал': 'Open channel', 'Я подписался': 'I subscribed', 'Проверяю…': 'Checking…', 'Скоро': 'Coming soon', 'Новая карточка': 'New card',
@@ -1925,7 +1925,7 @@ async function refreshPublish() {
 }
 function updatePubButton() {
   const st = pubState[kind] || {};
-  btnPub.textContent = st.public ? 'Опубликовано' : 'Опубликовать';
+  btnPub.textContent = st.public ? 'В ленте' : 'Добавить в ленту';
   btnPub.classList.toggle('green', !!st.public); btnPub.disabled = false;
 }
 /* Запрос на публикацию. Возвращает 'ok' | 'sub' (нет подписки на канал) | 'fail'. */
@@ -1961,7 +1961,7 @@ async function openPublishModal() {
     '<div class="lk">Самые популярные работы попадут в ленту лучших в боте.</div>' +
     '<div class="lk">Снять карточку с публикации можно в любой момент.</div>' +
     '<div class="vw sub">Проверяю подписку на канал…</div>' +
-    '<div class="b"><button class="pr go" disabled>Опубликовать</button><button class="ch" hidden>Открыть канал</button><button class="rc" hidden>Проверить подписку</button></div>');
+    '<div class="b"><button class="pr go" disabled>Добавить в ленту</button><button class="ch" hidden>Открыть канал</button><button class="rc" hidden>Проверить подписку</button></div>');
   o.querySelector('.h span').textContent = T('Публикация карточки');
   const subEl = o.querySelector('.sub'), go = o.querySelector('.go'), ch = o.querySelector('.ch'), rc = o.querySelector('.rc');
   const show = (ok) => {                                  // ok: true — подписан, false — нет, null — не удалось проверить
@@ -2048,7 +2048,7 @@ async function downloadCard() {
 
 /* Кнопка «Опубликовать» на месте «Очистить» + быстрый сброс маленькой ссылкой внизу блока «Выбранные» (у всех пользователей). */
 function setupPublishButton() {
-  btnPub.disabled = false; btnPub.textContent = 'Опубликовать';
+  btnPub.disabled = false; btnPub.textContent = 'Добавить в ленту';
   btnPub.onclick = () => { if ((pubState[kind] || {}).public) openPubModal(); else openPublishModal(); };
   const clr = document.createElement('button'); clr.type = 'button'; clr.className = 'linkbtn'; clr.textContent = 'Очистить карточку';
   clr.onclick = () => { if (state.stickers.length && confirm(T('Убрать все стикеры с карточки?'))) state.stickers.slice().forEach(s => detach(s.id)); };
