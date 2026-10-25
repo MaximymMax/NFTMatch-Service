@@ -26,10 +26,11 @@
         const box = document.createElement('div'); box.className = 'fd-tags';
         const add = (cls, text, title) => { const t = document.createElement('span'); t.className = 'fd-t ' + cls; t.textContent = text; if (title) t.title = title; box.appendChild(t); };
         if (it.onlyProfile) add('prof', 'Из профиля', 'Все подарки на карточке — из профиля человека');
-        if (it.price > 0 || it.unpriced > 0) {
+        if (it.price > 0) {
             add('price', (it.unpriced > 0 ? 'от ' : '') + fmtTon(it.price) + ' TON',
                 'Сумма флоров моделей на карточке' + (it.unpriced > 0 ? ' (у ' + it.unpriced + ' без цены)' : ''));
         }
+        else if (it.unpriced > 0) add('price none', 'нет цен', 'Ни у одной модели на карточке нет флора');
         return box;
     }
     const nameOf = it => it.username ? '@' + it.username : (it.holder || 'Коллекционер');
@@ -66,8 +67,9 @@
         return tile;
     }
 
+    let lockUntil = 0;           // после закрытия ещё ~0,5 с не открываем карточки: «хвост» того же нажатия не должен попасть в плитку под оверлеем
     function openOverlay(it) {
-        if (document.querySelector('.fd-ov')) return;          // пока открыта одна карточка, другие не открываем
+        if (document.querySelector('.fd-ov') || Date.now() < lockUntil) return;          // пока открыта одна карточка, другие не открываем
         const ov = document.createElement('div'); ov.className = 'fd-ov';
         const back = document.createElement('button'); back.type = 'button'; back.className = 'fd-back'; back.setAttribute('aria-label', 'Назад к ленте');
         back.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>';
@@ -91,12 +93,14 @@
         });
         body.append(pic, who, tagsOf(it), ms);
         ov.append(back, body);
-        const close = () => { ov.remove(); document.body.classList.remove('fd-lock'); document.removeEventListener('keydown', onKey); window.removeEventListener('message', onMsg); window.removeEventListener('resize', fit); };
+        const close = () => { lockUntil = Date.now() + 500; ov.remove(); list.style.pointerEvents = ''; more.style.pointerEvents = ''; document.body.classList.remove('fd-lock'); document.removeEventListener('keydown', onKey); window.removeEventListener('message', onMsg); window.removeEventListener('resize', fit); };
         const onKey = e => { if (e.key === 'Escape') close(); };
         back.onclick = close;
-        ov.addEventListener('pointerdown', e => { if (e.target === ov) close(); });
+        // закрываем по click, а не по pointerdown: иначе оверлей исчезает до отпускания пальца и click прилетает в плитку под ним
+        ov.addEventListener('click', e => { if (e.target === ov) { e.preventDefault(); e.stopPropagation(); close(); } });
         document.addEventListener('keydown', onKey);
         document.body.classList.add('fd-lock');
+        list.style.pointerEvents = 'none'; more.style.pointerEvents = 'none';          // пока открыта карточка, ленту под ней не трогаем
         document.body.appendChild(ov);
         fit();
     }
