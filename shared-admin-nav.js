@@ -74,23 +74,8 @@
         } catch (e) { }
     }
 
-    // Всем, кроме админа: рядом с «Карточкой» вкладка «Лента» (у админа свой ряд из трёх кнопок на страницах раздела).
-    function addFeedTab() {
-        try {
-            const tabs = document.querySelector('.cw-tabs');
-            if (!tabs || tabs.querySelector('[data-tab="feed"]') || !SELF_SRC || isCardAdmin()) return;
-            const card = tabs.querySelector('[data-tab="card"]'); if (!card) return;
-            const a = document.createElement('a');
-            a.className = 'cw-tab' + (location.pathname.indexOf('feed.html') !== -1 ? ' active' : '');
-            a.setAttribute('data-tab', 'feed');
-            a.href = new URL('Card/feed.html', SELF_SRC).href;
-            a.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 21h8M12 17v4M7 4h10v5a5 5 0 01-10 0V4zM7 6H4v1a3 3 0 003 3M17 6h3v1a3 3 0 01-3 3"/></svg><span>Лента</span>';
-            card.after(a);
-        } catch (e) { }
-    }
-
-    // Администратору: «Карточка» стоит в центре ряда на месте «Главной» и показывает его мини-карточку (только фон),
-    // а на страницах раздела в ряду остаются три кнопки — Главная, Лента, Карточка.
+    // На страницах раздела «Карточка» у всех в ряду три кнопки — Главная, Лента, Карточка; плашка конкурса на главном экране — у всех.
+    // Администратору дополнительно: «Карточка» стоит в центре ряда на месте «Главной» и показывает его мини-карточку.
     const ADMIN_TG_ID = 7343414766;
     function isCardAdmin() {
         try { const u = window.NFTAuth && NFTAuth.getUser(); return !!u && Number(u.telegramId || u.id) === ADMIN_TG_ID; } catch (e) { return false; }
@@ -166,13 +151,13 @@
             im.onload = () => { pic.style.background = 'none'; pic.innerHTML = ''; pic.appendChild(im); card.classList.add('on'); };
             im.src = url;
         };
-        try { const k = localStorage.getItem('cd_mini_shot'); if (k) show(k); } catch (e) { }
+        try { const k = localStorage.getItem('cd_contest_shot'); if (k) show(k); } catch (e) { }
         try {
-            fetch(((window.CONFIG && CONFIG.SERVER_BASE_URL) || '') + '/api/Card/Get?kind=catalog', { headers: { 'Authorization': NFTAuth.getApiAuthHeader() } })
+            fetch(((window.CONFIG && CONFIG.SERVER_BASE_URL) || '') + '/api/Card/ContestImage', { headers: { 'Authorization': NFTAuth.getApiAuthHeader() } })
                 .then(r => r.ok ? r.json() : null).then(d => {
                     if (!d) return;
-                    if (d.bg && d.bg.c0 && d.bg.c1 && !card.classList.contains('on')) pic.style.background = 'linear-gradient(135deg,' + d.bg.c0 + ',' + d.bg.c1 + ')';
-                    if (d.imageUrl) { show(d.imageUrl); try { localStorage.setItem('cd_mini_shot', d.imageUrl); } catch (e) { } }
+                    if (d.c0 && d.c1 && !card.classList.contains('on')) pic.style.background = 'linear-gradient(135deg,' + d.c0 + ',' + d.c1 + ')';
+                    if (d.url) { show(d.url); try { localStorage.setItem('cd_contest_shot', d.url); } catch (e) { } }
                     else card.classList.add('on');
                 }).catch(() => { });
         } catch (e) { }
@@ -181,17 +166,20 @@
         document.querySelectorAll('.cw-mini-card').forEach(m => paintMiniCard(m, c0, c1));
         try { localStorage.setItem('cd_mini', JSON.stringify({ c0: c0, c1: c1 })); } catch (e) { }
     };
-    function applyAdminNav() {
+    function applyAdminNav(force) {
         try {
             const tabs = document.querySelector('.cw-tabs');
-            if (!tabs || tabs.dataset.cdAdmin || !isCardAdmin()) return false;
+            if (!tabs || tabs.dataset.cdAdmin) return false;
             const card = tabs.querySelector('[data-tab="card"]'), home = tabs.querySelector('[data-tab="home"]');
             if (!card || !home) return false;
+            const admin = isCardAdmin();
+            let authed = false; try { authed = !!(window.NFTAuth && NFTAuth.isAuthenticated && NFTAuth.isAuthenticated()); } catch (e) { }
+            if (!admin && !authed && !force) return false;          // ждём вход: иначе админа можно принять за обычного пользователя
             tabs.dataset.cdAdmin = '1';
-            // Главный экран (там «Главная» — кнопка, а не ссылка): над кнопками плашка конкурса, ведёт в ленту карточек. Пока только администратору.
+            // Главный экран (там «Главная» — кнопка, а не ссылка): над кнопками плашка конкурса, открывает окно с условиями.
             if (home.tagName === 'BUTTON' && !(tabs.previousElementSibling && tabs.previousElementSibling.classList.contains('cw-contest'))) buildContest(tabs);
             const inCard = location.pathname.indexOf('/Card/') !== -1;
-            // вместо значка — мини-карточка: цвета берём из кэша, свежие подтягиваем с сервера
+            // вместо значка — мини-карточка (только админу): цвета берём из кэша, свежие подтягиваем с сервера
             const mini = document.createElement('span');
             mini.className = 'cw-mini-card';
             mini.style.cssText = 'position:relative;overflow:hidden;width:46px;height:28px;border-radius:7px;flex:0 0 auto;box-shadow:0 0 0 1px rgba(255,255,255,.22),0 3px 8px rgba(0,0,0,.4)';
@@ -203,6 +191,7 @@
             try { const k = JSON.parse(localStorage.getItem('cd_mini') || 'null'); if (k && k.c0 && k.c1) { c0 = k.c0; c1 = k.c1; } } catch (e) { }
             paintMiniCard(mini, c0, c1);
             try { const sh = localStorage.getItem('cd_mini_shot'); if (sh) paintMiniShot(mini, sh); } catch (e) { }
+            if (admin) {
             const icon = card.querySelector('svg'); if (icon) icon.replaceWith(mini); else card.insertBefore(mini, card.firstChild);
             try {
                 fetch(((window.CONFIG && CONFIG.SERVER_BASE_URL) || '') + '/api/Card/Get?kind=catalog', { headers: { 'Authorization': NFTAuth.getApiAuthHeader() } })
@@ -214,6 +203,7 @@
                         if (d.imageUrl) { paintMiniShot(mini, d.imageUrl); try { localStorage.setItem('cd_mini_shot', d.imageUrl); } catch (e) { } }
                     }).catch(() => { });
             } catch (e) { }
+            }
             if (inCard) {
                 // в разделе: Главная, Лента, Карточка — остальное убираем
                 tabs.querySelectorAll('.cw-tab').forEach(t => { if (t !== home && t !== card) t.remove(); });
@@ -228,8 +218,7 @@
                 home.classList.remove('active');
             } else {
                 // на остальных страницах Карточка и Главная меняются местами
-                const extraFeed = tabs.querySelector('[data-tab="feed"]'); if (extraFeed) extraFeed.remove();
-                const ph = document.createComment(''); home.replaceWith(ph); card.replaceWith(home); ph.replaceWith(card);
+                if (admin) { const ph = document.createComment(''); home.replaceWith(ph); card.replaceWith(home); ph.replaceWith(card); }
             }
             return true;
         } catch (e) { return false; }
@@ -245,8 +234,7 @@
         document.querySelectorAll('.cw-admin-nav-hidden').forEach(el => el.classList.remove('cw-admin-nav-hidden'));
         mergeTopBarIntoHeader();
         addCardTab();
-        addFeedTab();
-        if (!applyAdminNav()) { window.addEventListener('load', () => setTimeout(applyAdminNav, 800)); }
+        if (!applyAdminNav()) { window.addEventListener('load', () => setTimeout(() => applyAdminNav(true), 800)); }
         updateGithubPlacement();
     }
 
