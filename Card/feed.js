@@ -156,7 +156,7 @@
         let n = it.likes;
         const paint = () => { like.innerHTML = HEART; };          // число лайков не показываем
         paint();
-        const canLike = it.public && !it.mine;          // лайкать можно только опубликованные чужие карточки
+        const canLike = !it.mine;          // лайкать можно только опубликованные чужие карточки
         if (!canLike) like.disabled = true;
         let busyLike = false;
         like.onclick = async () => {
@@ -166,7 +166,7 @@
             try {
                 const r = await fetch(api('Card/Like?' + (it.id ? 'c=' + encodeURIComponent(it.id) : 'owner=' + it.owner.split(':')[0] + '&kind=' + it.owner.split(':')[1]) + '&like=' + want), { method: 'POST', headers: { 'Authorization': auth() } });
                 if (!r.ok) throw new Error(r.status);
-            } catch (e) { like.classList.toggle('on', !want); n += want ? -1 : 1; paint(); }
+            } catch (e) { console.warn('[feed] лайк не поставлен', it.owner, e && e.message); like.classList.toggle('on', !want); n += want ? -1 : 1; paint(); }
             busyLike = false;
         };
         info.append(ava, who, like);
