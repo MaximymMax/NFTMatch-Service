@@ -10,7 +10,7 @@
 
     const HEART = '<svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-9.6-9.2C1 8.6 3 5 6.4 5c2 0 3.7 1.1 5.6 3.2C13.9 6.1 15.6 5 17.6 5 21 5 23 8.6 21.6 11.8 19.5 16.4 12 21 12 21z" stroke-linejoin="round"/></svg>';
     const gifts = n => n + ' ' + (n % 10 === 1 && n % 100 !== 11 ? 'гифт' : (n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20)) ? 'гифта' : 'гифтов');
-    const F = { sort: 'top', pub: 'all', kind: 'all', q: '' };
+    const F = { sort: 'top', pub: 'all', kind: 'all', tag: 'all', q: '' };
     const totalEl = document.getElementById('fd-total');
     let skip = 0, busy = false, reqId = 0;
 
@@ -20,6 +20,17 @@
         let n = 0;
         im.onerror = () => { if (n < 2) { n++; setTimeout(() => { im.src = url + '?r=' + n; }, 700 * n); } else im.onerror = null; };
         im.src = url;
+    }
+    const fmtTon = v => (Math.round(v * 100) / 100).toLocaleString('ru-RU', { maximumFractionDigits: 2 });
+    function tagsOf(it) {
+        const box = document.createElement('div'); box.className = 'fd-tags';
+        const add = (cls, text, title) => { const t = document.createElement('span'); t.className = 'fd-t ' + cls; t.textContent = text; if (title) t.title = title; box.appendChild(t); };
+        if (it.onlyProfile) add('prof', 'Из профиля', 'Все подарки на карточке — из профиля человека');
+        if (it.price > 0 || it.unpriced > 0) {
+            add('price', (it.unpriced > 0 ? 'от ' : '') + fmtTon(it.price) + ' TON',
+                'Сумма флоров моделей на карточке' + (it.unpriced > 0 ? ' (у ' + it.unpriced + ' без цены)' : ''));
+        }
+        return box;
     }
     const nameOf = it => it.username ? '@' + it.username : (it.holder || 'Коллекционер');
 
@@ -78,7 +89,7 @@
             if (m.count > 1) { const k = document.createElement('i'); k.textContent = '×' + m.count; c.appendChild(k); }
             ms.appendChild(c);
         });
-        body.append(pic, who, ms);
+        body.append(pic, who, tagsOf(it), ms);
         ov.append(back, body);
         const close = () => { ov.remove(); document.body.classList.remove('fd-lock'); document.removeEventListener('keydown', onKey); window.removeEventListener('message', onMsg); window.removeEventListener('resize', fit); };
         const onKey = e => { if (e.key === 'Escape') close(); };
@@ -124,7 +135,7 @@
         };
         info.append(ava, who, like);
         if (!it.public) { const tag = document.createElement('span'); tag.className = 'fd-tag'; tag.textContent = 'Не опубликована'; el.appendChild(tag); }
-        el.append(pic, info);
+        el.append(pic, tagsOf(it), info);
         return el;
     }
 
@@ -137,7 +148,7 @@
             let d, last;
             for (let i = 0; i < 3 && !d; i++) {
                 try {
-                    const r = await fetch(api('Card/Feed?sort=' + F.sort + '&pub=' + F.pub + '&kind=' + F.kind + '&q=' + encodeURIComponent(F.q) + '&skip=' + skip), { headers: { 'Authorization': auth() } });
+                    const r = await fetch(api('Card/Feed?sort=' + F.sort + '&pub=' + F.pub + '&kind=' + F.kind + '&tag=' + F.tag + '&q=' + encodeURIComponent(F.q) + '&skip=' + skip), { headers: { 'Authorization': auth() } });
                     if (r.status === 403) { location.replace('./card.html'); return; }
                     if (!r.ok) throw new Error(r.status);
                     d = await r.json();

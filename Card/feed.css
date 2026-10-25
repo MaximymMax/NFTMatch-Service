@@ -73,3 +73,11 @@ body.fd-lock { overflow: hidden; }
 .fd-hold { position: absolute; left: 6.9%; bottom: 8%; font: 700 4.2cqw 'Inter', sans-serif; letter-spacing: .12em; color: #fff; text-transform: uppercase; text-shadow: 0 1px 4px rgba(0, 0, 0, .35); }
 
 .fd-shot img { position: absolute; display: block; width: 115.4%; left: -7.7%; top: -13%; max-width: none; pointer-events: none; }
+
+/* теги карточки: «Из профиля» и цена (сумма флоров моделей) */
+.fd-tags { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
+.fd-item .fd-tags { justify-content: flex-start; padding: 10px 14px 0; }
+.fd-tags:empty { display: none; }
+.fd-t { padding: 4px 10px; border-radius: 99px; font: 700 11.5px 'Inter', sans-serif; white-space: nowrap; }
+.fd-t.prof { background: rgba(34, 197, 94, .16); color: #5be08c; box-shadow: inset 0 0 0 1px rgba(34, 197, 94, .35); }
+.fd-t.price { background: rgba(36, 129, 204, .18); color: #7cc4ff; box-shadow: inset 0 0 0 1px rgba(36, 129, 204, .4); }

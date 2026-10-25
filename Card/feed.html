@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="../glow.css?v=5">
     <link rel="stylesheet" href="../shared-admin-nav.css?v=22">
     <link rel="stylesheet" href="./card.css?v=46">
-    <link rel="stylesheet" href="./feed.css?v=6">
+    <link rel="stylesheet" href="./feed.css?v=7">
     <script src="../config.js"></script>
     <script>
         // Ссылка на чужую карточку (?c=...) открывается по-русски: язык задаём до i18n.js, который читает его из localStorage.
@@ -85,6 +85,8 @@
                                 <option value="old">Сначала старые</option>
                                 <option value="gifts">Больше подарков</option>
                                 <option value="giftsAsc">Меньше подарков</option>
+                                <option value="price">Дороже (сумма флоров)</option>
+                                <option value="priceAsc">Дешевле (сумма флоров)</option>
                             </select>
                             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
                         </div>
@@ -105,6 +107,13 @@
                             <button type="button" data-v="second">Вторая</button>
                         </div>
                     </div>
+                    <div class="fd-row">
+                        <span class="fd-lab">Теги</span>
+                        <div class="fd-seg" data-f="tag">
+                            <button type="button" class="on" data-v="all">Все</button>
+                            <button type="button" data-v="profile">Только из профиля</button>
+                        </div>
+                    </div>
                     <div id="fd-total" class="fd-total"></div>
                 </div>
                 <div id="fd-msg" class="fd-msg"></div>
@@ -114,7 +123,7 @@
         </div>
     </main>
 
-        <script src="./feed.js?v=7"></script>
+        <script src="./feed.js?v=8"></script>
 </body>
 
 </html>
