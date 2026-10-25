@@ -81,3 +81,4 @@ body.fd-lock { overflow: hidden; }
 .fd-t { padding: 4px 10px; border-radius: 99px; font: 700 11.5px 'Inter', sans-serif; white-space: nowrap; }
 .fd-t.prof { background: rgba(34, 197, 94, .16); color: #5be08c; box-shadow: inset 0 0 0 1px rgba(34, 197, 94, .35); }
 .fd-t.price { background: rgba(36, 129, 204, .18); color: #7cc4ff; box-shadow: inset 0 0 0 1px rgba(36, 129, 204, .4); }
+.fd-seg button:disabled { opacity: .5; cursor: default; }

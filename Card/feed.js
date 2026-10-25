@@ -183,6 +183,30 @@
         g.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
         F[g.dataset.f] = b.dataset.v; load(true);
     }));
+    // пересчёт скриншотов на сервере (только админ): запускает фоновую задачу и показывает ход
+    const rrSt = document.getElementById('fd-rrst'), rrBtns = document.querySelectorAll('#fd-rr button');
+    async function rrCall(method, force) {
+        const r = await fetch(api('Card/Rerender' + (method === 'POST' ? '?force=' + force : '')), { method, headers: { 'Authorization': auth() } });
+        if (!r.ok) throw new Error(r.status);
+        return r.json();
+    }
+    function rrShow(d) {
+        rrSt.textContent = d.running ? 'Пересчёт: ' + d.done + ' из ' + d.total + (d.failed ? ' · ошибок ' + d.failed : '') + '…'
+            : (d.finishedAt ? 'Пересчёт завершён: ' + d.done + ' нарисовано' + (d.failed ? ', ошибок ' + d.failed : '') + ', пропущено ' + d.skipped : '');
+    }
+    async function rrPoll() {
+        try {
+            for (;;) { const d = await rrCall('GET'); rrShow(d); if (!d.running) break; await new Promise(res => setTimeout(res, 3000)); }
+            load(true);
+        } catch (e) { rrSt.textContent = 'Не удалось получить ход пересчёта'; }
+        rrBtns.forEach(b => b.disabled = false);
+    }
+    rrBtns.forEach(b => b.onclick = async () => {
+        if (b.dataset.force === '1' && !confirm('Перерисовать скриншоты всех карточек на сервере? Это заменит и настоящие скрины из приложения.')) return;
+        rrBtns.forEach(x => x.disabled = true);
+        try { const d = await rrCall('POST', b.dataset.force); rrShow(d); rrPoll(); } catch (e) { rrSt.textContent = 'Не удалось запустить пересчёт'; rrBtns.forEach(x => x.disabled = false); }
+    });
+    rrCall('GET').then(d => { if (d.running) { rrBtns.forEach(x => x.disabled = true); rrShow(d); rrPoll(); } else rrShow(d); }).catch(() => { });
     more.onclick = () => load(false);
     load(true);
 })();
