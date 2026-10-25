@@ -7,10 +7,9 @@
     <title>NFT MATCH — Лента карточек</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../styles.css">
-    <link rel="stylesheet" href="../glow.css?v=5">
     <link rel="stylesheet" href="../shared-admin-nav.css?v=22">
-    <link rel="stylesheet" href="./card.css?v=48">
-    <link rel="stylesheet" href="./feed.css?v=7">
+    <link rel="stylesheet" href="./card.css?v=49">
+    <link rel="stylesheet" href="./feed.css?v=8">
     <script src="../config.js"></script>
     <script>
         // Ссылка на чужую карточку (?c=...) открывается по-русски: язык задаём до i18n.js, который читает его из localStorage.
@@ -39,13 +38,10 @@
             </a>
         </div>
     </header>
-    <script src="../shared-admin-nav.js?v=14"></script>
+    <script src="../shared-admin-nav.js?v=15"></script>
 
     <main>
         <div class="main-container">
-            <div class="glow-effect glow-left"></div>
-            <div class="glow-effect glow-right"></div>
-
             <div class="cw-tabs">
                 <a href="../Monohrome/background-finder.html" class="cw-tab">
                     <img src="https://cdn.changes.tg/gifts/models/Spring%20Basket/png/Knitty%20Kitty.png" alt="">
@@ -72,39 +68,11 @@
             <section class="cd-wrap">
                 <h1 class="cd-title">Лента карточек</h1>
                 <div class="fd-filters">
-                    <div class="fd-search">
-                        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
-                        <input type="search" id="fd-q" placeholder="Имя, @username или id" autocomplete="off" spellcheck="false">
-                    </div>
                     <div class="fd-row">
                         <span class="fd-lab">Сортировка</span>
-                        <div class="fd-selwrap">
-                            <select id="fd-sortsel">
-                                <option value="top">По лайкам</option>
-                                <option value="new">Сначала новые</option>
-                                <option value="old">Сначала старые</option>
-                                <option value="gifts">Больше подарков</option>
-                                <option value="giftsAsc">Меньше подарков</option>
-                                <option value="price">Дороже (сумма флоров)</option>
-                                <option value="priceAsc">Дешевле (сумма флоров)</option>
-                            </select>
-                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
-                        </div>
-                    </div>
-                    <div class="fd-row">
-                        <span class="fd-lab">Публикация</span>
-                        <div class="fd-seg" data-f="pub">
-                            <button type="button" class="on" data-v="all">Все</button>
-                            <button type="button" data-v="yes">Опубликованные</button>
-                            <button type="button" data-v="no">Скрытые</button>
-                        </div>
-                    </div>
-                    <div class="fd-row">
-                        <span class="fd-lab">Карточка</span>
-                        <div class="fd-seg" data-f="kind">
-                            <button type="button" class="on" data-v="all">Все</button>
-                            <button type="button" data-v="catalog">Основная</button>
-                            <button type="button" data-v="second">Вторая</button>
+                        <div class="fd-dd" id="fd-dd">
+                            <button type="button" class="fd-dd-btn" aria-haspopup="listbox" aria-expanded="false"><span id="fd-dd-cur">По лайкам</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
+                            <div class="fd-dd-menu" role="listbox" hidden><button type="button" role="option" data-v="top" class="on">По лайкам</button><button type="button" role="option" data-v="new">Сначала новые</button><button type="button" role="option" data-v="old">Сначала старые</button><button type="button" role="option" data-v="gifts">Больше подарков</button><button type="button" role="option" data-v="giftsAsc">Меньше подарков</button><button type="button" role="option" data-v="price">Дороже (сумма флоров)</button><button type="button" role="option" data-v="priceAsc">Дешевле (сумма флоров)</button></div>
                         </div>
                     </div>
                     <div class="fd-row">
@@ -123,7 +91,7 @@
         </div>
     </main>
 
-        <script src="./feed.js?v=9"></script>
+        <script src="./feed.js?v=10"></script>
 </body>
 
 </html>

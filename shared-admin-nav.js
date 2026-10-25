@@ -84,6 +84,18 @@
     function paintMiniCard(el, c0, c1) {
         el.style.background = 'linear-gradient(135deg,' + c0 + ',' + c1 + ')';
     }
+    // Вместо схематичной мини-карточки — скриншот своей карточки (на сервере он 1600×1000, карточка 1400 в центре: показываем только её)
+    function paintMiniShot(el, url) {
+        if (!url || el.dataset.shot === url) return;
+        const im = new Image(); im.alt = ''; im.draggable = false;
+        im.onload = () => {
+            el.dataset.shot = url;
+            el.innerHTML = '';
+            im.style.cssText = 'position:absolute;display:block;width:115.4%;left:-7.7%;top:-13%;max-width:none;pointer-events:none';
+            el.appendChild(im);
+        };
+        im.src = url;
+    }
     window.cdPaintMini = function (c0, c1) {
         document.querySelectorAll('.cw-mini-card').forEach(m => paintMiniCard(m, c0, c1));
         try { localStorage.setItem('cd_mini', JSON.stringify({ c0: c0, c1: c1 })); } catch (e) { }
@@ -107,6 +119,7 @@
             let c0 = '#3AB0F8', c1 = '#1488E1';
             try { const k = JSON.parse(localStorage.getItem('cd_mini') || 'null'); if (k && k.c0 && k.c1) { c0 = k.c0; c1 = k.c1; } } catch (e) { }
             paintMiniCard(mini, c0, c1);
+            try { const sh = localStorage.getItem('cd_mini_shot'); if (sh) paintMiniShot(mini, sh); } catch (e) { }
             const icon = card.querySelector('svg'); if (icon) icon.replaceWith(mini); else card.insertBefore(mini, card.firstChild);
             try {
                 fetch(((window.CONFIG && CONFIG.SERVER_BASE_URL) || '') + '/api/Card/Get?kind=catalog', { headers: { 'Authorization': NFTAuth.getApiAuthHeader() } })
@@ -115,6 +128,7 @@
                         const n0 = d.bg && d.bg.c0 || '#3AB0F8', n1 = d.bg && d.bg.c1 || '#1488E1';
                         paintMiniCard(mini, n0, n1);
                         try { localStorage.setItem('cd_mini', JSON.stringify({ c0: n0, c1: n1 })); } catch (e) { }
+                        if (d.imageUrl) { paintMiniShot(mini, d.imageUrl); try { localStorage.setItem('cd_mini_shot', d.imageUrl); } catch (e) { } }
                     }).catch(() => { });
             } catch (e) { }
             if (inCard) {

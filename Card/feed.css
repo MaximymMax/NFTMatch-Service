@@ -1,17 +1,17 @@
 /* Лента карточек: список опубликованных карточек с автором, числом подарков и лайком. */
 .fd-filters { display: flex; flex-direction: column; gap: 12px; padding: 14px; border-radius: 18px; background: linear-gradient(180deg, rgba(34, 50, 86, .55), rgba(20, 28, 51, .55)); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .07); }
-.fd-search { position: relative; }
-.fd-search svg { position: absolute; left: 14px; top: 50%; width: 18px; height: 18px; margin-top: -9px; fill: none; stroke: #8da0c8; stroke-width: 2; stroke-linecap: round; pointer-events: none; }
-.fd-search input { width: 100%; box-sizing: border-box; background: rgba(8, 12, 24, .45); color: #f1f5fa; border: 1px solid rgba(255, 255, 255, .08); border-radius: 14px; padding: 12px 14px 12px 42px; font: 500 14px 'Inter', sans-serif; outline: none; transition: border-color .15s, box-shadow .15s; }
-.fd-search input::placeholder { color: #7f90b4; }
-.fd-search input:focus { border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(36, 129, 204, .25); }
-.fd-search input::-webkit-search-cancel-button { filter: invert(.8); }
 .fd-row { display: flex; align-items: center; gap: 12px; }
 .fd-lab { flex: 0 0 92px; color: #8da0c8; font: 700 11px 'Inter', sans-serif; letter-spacing: .06em; text-transform: uppercase; }
-.fd-selwrap { position: relative; flex: 1; }
-.fd-selwrap select { width: 100%; appearance: none; -webkit-appearance: none; background: rgba(8, 12, 24, .45); color: #f1f5fa; border: 1px solid rgba(255, 255, 255, .08); border-radius: 12px; padding: 10px 36px 10px 14px; font: 600 13px 'Inter', sans-serif; outline: none; cursor: pointer; }
-.fd-selwrap select:focus { border-color: var(--primary-color); }
-.fd-selwrap svg { position: absolute; right: 12px; top: 50%; width: 16px; height: 16px; margin-top: -8px; fill: none; stroke: #8da0c8; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; pointer-events: none; }
+.fd-dd { position: relative; flex: 1; }
+.fd-dd-btn { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 10px; background: rgba(8, 12, 24, .45); color: #f1f5fa; border: 1px solid rgba(255, 255, 255, .08); border-radius: 12px; padding: 10px 12px 10px 14px; font: 600 13px 'Inter', sans-serif; cursor: pointer; text-align: left; transition: border-color .15s; }
+.fd-dd.open .fd-dd-btn { border-color: var(--primary-color); }
+.fd-dd-btn svg { width: 16px; height: 16px; flex: 0 0 auto; fill: none; stroke: #8da0c8; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; transition: transform .15s; }
+.fd-dd.open .fd-dd-btn svg { transform: rotate(180deg); }
+.fd-dd-menu { position: absolute; left: 0; right: 0; top: calc(100% + 6px); z-index: 20; padding: 5px; border-radius: 14px; background: #1a2440; box-shadow: 0 14px 34px rgba(0, 0, 0, .55), inset 0 0 0 1px rgba(255, 255, 255, .09); display: flex; flex-direction: column; gap: 2px; }
+.fd-dd-menu[hidden] { display: none; }
+.fd-dd-menu button { border: 0; border-radius: 10px; padding: 10px 12px; background: transparent; color: #c5d2f0; font: 600 13px 'Inter', sans-serif; text-align: left; cursor: pointer; }
+.fd-dd-menu button:hover { background: rgba(255, 255, 255, .06); }
+.fd-dd-menu button.on { background: var(--primary-color); color: #fff; }
 .fd-seg { flex: 1; display: flex; padding: 3px; gap: 2px; border-radius: 12px; background: rgba(8, 12, 24, .45); }
 .fd-seg button { flex: 1; border: 0; border-radius: 9px; padding: 8px 6px; background: transparent; color: #8da0c8; font: 700 12px 'Inter', sans-serif; cursor: pointer; white-space: nowrap; transition: background .15s, color .15s; }
 .fd-seg button.on { background: var(--primary-color); color: #fff; box-shadow: 0 2px 8px rgba(36, 129, 204, .4); }

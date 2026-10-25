@@ -1687,10 +1687,10 @@ function scheduleImageUpload() { imgDirty = true; clearTimeout(imgTimer); imgTim
 // ушли из приложения (или свернули его) раньше срока — отправляем сразу, пока страница жива
 function flushImageOnLeave() { if (imgDirty && !imgBusy && loaded && !VIEW_ID) { clearTimeout(imgTimer); uploadImage(true); } }
 document.addEventListener('visibilitychange', () => { if (document.hidden) flushImageOnLeave(); });
-/* Перепроверка: раз в 10 минут (и когда вкладку снова открыли) спрашиваем у сервера, совпадает ли скриншот с сохранённой карточкой; не совпал — отправляем заново */
+/* Перепроверка: раз в 5 минут (и когда вкладку снова открыли) спрашиваем у сервера, совпадает ли скриншот с сохранённой карточкой; не совпал — отправляем заново */
 let verifyAt = 0;
 async function verifyImage() {
-  if (VIEW_ID || !loaded || dirty || imgBusy || imgDirty || !state.stickers.length || Date.now() - verifyAt < 9 * 60 * 1000) return;
+  if (VIEW_ID || !loaded || dirty || imgBusy || imgDirty || !state.stickers.length || Date.now() - verifyAt < 4 * 60 * 1000) return;
   verifyAt = Date.now();
   const k0 = kind;
   try {
@@ -1698,7 +1698,8 @@ async function verifyImage() {
     if (kind === k0 && loaded && !dirty && !imgBusy && d.stickers && d.stickers.length && (!d.imageUrl || d.imageOk === false)) uploadImage(true);
   } catch (e) { /* не критично, попробуем в следующий раз */ }
 }
-setInterval(verifyImage, 10 * 60 * 1000);
+setInterval(verifyImage, 5 * 60 * 1000);
+setTimeout(verifyImage, 25 * 1000);                 // и один раз вскоре после открытия: старые скрины без подписи обновятся сами
 document.addEventListener('visibilitychange', () => { if (!document.hidden) verifyImage(); });
 window.addEventListener('pagehide', flushImageOnLeave);
 /* Подпись скриншота: какие подарки и в каком порядке (снизу вверх) на нём нарисованы — в том же виде, что сервер считает по сохранённой карточке */

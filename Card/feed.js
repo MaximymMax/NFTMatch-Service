@@ -10,7 +10,7 @@
 
     const HEART = '<svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-9.6-9.2C1 8.6 3 5 6.4 5c2 0 3.7 1.1 5.6 3.2C13.9 6.1 15.6 5 17.6 5 21 5 23 8.6 21.6 11.8 19.5 16.4 12 21 12 21z" stroke-linejoin="round"/></svg>';
     const gifts = n => n + ' ' + (n % 10 === 1 && n % 100 !== 11 ? 'гифт' : (n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20)) ? 'гифта' : 'гифтов');
-    const F = { sort: 'top', pub: 'all', kind: 'all', tag: 'all', q: '' };
+    const F = { sort: 'top', tag: 'all' };
     const totalEl = document.getElementById('fd-total');
     let skip = 0, busy = false, reqId = 0;
 
@@ -152,7 +152,7 @@
             let d, last;
             for (let i = 0; i < 3 && !d; i++) {
                 try {
-                    const r = await fetch(api('Card/Feed?sort=' + F.sort + '&pub=' + F.pub + '&kind=' + F.kind + '&tag=' + F.tag + '&q=' + encodeURIComponent(F.q) + '&skip=' + skip), { headers: { 'Authorization': auth() } });
+                    const r = await fetch(api('Card/Feed?sort=' + F.sort + '&tag=' + F.tag + '&skip=' + skip), { headers: { 'Authorization': auth() } });
                     if (r.status === 403) { location.replace('./card.html'); return; }
                     if (!r.ok) throw new Error(r.status);
                     d = await r.json();
@@ -168,13 +168,21 @@
         busy = false;
     }
 
-    document.getElementById('fd-sortsel').onchange = e => { F.sort = e.target.value; load(true); };
+    // своё окно выбора сортировки вместо системного select
+    const dd = document.getElementById('fd-dd'), ddBtn = dd.querySelector('.fd-dd-btn'), ddMenu = dd.querySelector('.fd-dd-menu'), ddCur = document.getElementById('fd-dd-cur');
+    const ddClose = () => { ddMenu.hidden = true; dd.classList.remove('open'); ddBtn.setAttribute('aria-expanded', 'false'); };
+    ddBtn.onclick = () => { const open = ddMenu.hidden; ddMenu.hidden = !open; dd.classList.toggle('open', open); ddBtn.setAttribute('aria-expanded', String(open)); };
+    ddMenu.querySelectorAll('button').forEach(b => b.onclick = () => {
+        ddMenu.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
+        ddCur.textContent = b.textContent; ddClose();
+        if (F.sort !== b.dataset.v) { F.sort = b.dataset.v; load(true); }
+    });
+    document.addEventListener('click', e => { if (!dd.contains(e.target)) ddClose(); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') ddClose(); });
     document.querySelectorAll('.fd-seg').forEach(g => g.querySelectorAll('button').forEach(b => b.onclick = () => {
         g.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
         F[g.dataset.f] = b.dataset.v; load(true);
     }));
-    let qTimer = null;
-    document.getElementById('fd-q').oninput = e => { clearTimeout(qTimer); qTimer = setTimeout(() => { F.q = e.target.value.trim(); load(true); }, 350); };
     more.onclick = () => load(false);
     load(true);
 })();
