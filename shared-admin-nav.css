@@ -130,12 +130,27 @@ header.cw-page-header ~ main,
 /* Раздел «Карточка» у администратора: Главная, Лента, Карточка — обычные кнопки того же вида и размера, что на главном экране; порядок фиксирован */
 @media (min-width: 601px) { .cw-tabs.cd-three .cw-tab { order: 0 !important; } }          /* на телефоне, как на главном экране, Главная уходит вниз отдельной строкой */
 
-/* плашка конкурса на главном экране (пока только админу): над рядом кнопок */
-.cw-contest { display: flex; align-items: center; gap: 12px; width: 100%; max-width: 900px; box-sizing: border-box; margin: 10px auto 0; padding: 12px 14px; border-radius: 14px; text-decoration: none; color: #fff;
-    background: linear-gradient(135deg, rgba(245, 158, 11, .28), rgba(37, 99, 235, .22)); border: 1px solid rgba(245, 158, 11, .45); box-shadow: 0 4px 14px rgba(245, 158, 11, .15); transition: transform .15s ease, filter .15s ease; }
-.cw-contest:hover { transform: translateY(-2px); filter: brightness(1.1); }
-.cw-contest > svg:first-child { width: 28px; height: 28px; flex: 0 0 auto; color: #fbbf24; }
-.cw-contest-t { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; text-align: left; }
-.cw-contest-t b { font-size: 14px; font-weight: 800; }
-.cw-contest-t small { font-size: 12px; font-weight: 600; color: #d6e0f5; }
-.cw-contest-go { width: 20px; height: 20px; flex: 0 0 auto; color: #fbbf24; }
+/* плашка конкурса на главном экране (пока только админу): золотая рамка, лента «Конкурс», карточка под наклоном */
+.cw-contest { position: relative; overflow: hidden; display: flex; flex-direction: column; align-items: center; width: 100%; max-width: 900px; box-sizing: border-box; margin: 10px auto 0; padding: 22px 16px 14px; border-radius: 24px; text-decoration: none; color: #fff;
+    background: radial-gradient(120% 90% at 50% 0%, #2c3a5e 0%, #1a2440 55%, #141c33 100%) padding-box, linear-gradient(135deg, #ffe58a, #e0b83a 40%, #b8860b 70%, #f6d365) border-box;
+    border: 2.5px solid transparent; box-shadow: 0 0 0 1px rgba(255, 214, 90, .18), 0 10px 34px rgba(224, 184, 58, .22), inset 0 0 60px rgba(224, 184, 58, .08); transition: transform .2s ease, box-shadow .2s ease; -webkit-tap-highlight-color: transparent; }
+.cw-contest:hover { transform: translateY(-2px); box-shadow: 0 0 0 1px rgba(255, 214, 90, .3), 0 14px 42px rgba(224, 184, 58, .32), inset 0 0 60px rgba(224, 184, 58, .12); }
+.cw-contest-ribbon { position: absolute; left: -46px; top: 20px; width: 170px; padding: 6px 0; transform: rotate(-45deg); text-align: center; z-index: 3; font: 900 17px/1 'Inter', sans-serif; letter-spacing: .04em; color: #fff; text-shadow: 0 1px 3px rgba(0, 0, 0, .4); overflow: hidden;
+    background: linear-gradient(180deg, #f3cd4c, #d4a521); box-shadow: 0 3px 10px rgba(0, 0, 0, .4), inset 0 1px 0 rgba(255, 255, 255, .45); }
+.cw-contest-ribbon::after { content: ""; position: absolute; inset: 0; background: linear-gradient(100deg, transparent 35%, rgba(255, 255, 255, .45) 50%, transparent 65%); background-size: 250% 100%; animation: cw-ct-shine 3.6s ease-in-out infinite; }
+@keyframes cw-ct-shine { 0%, 55% { background-position: 150% 0; } 100% { background-position: -120% 0; } }
+.cw-contest-stage { position: relative; z-index: 1; display: block; width: min(62%, 330px); perspective: 900px; margin: 0 auto 8px; }
+.cw-contest-card { --rx: 8deg; --ry: -14deg; position: relative; display: block; aspect-ratio: 1.648; border-radius: 7.6% / 12.5%; overflow: hidden; opacity: .35;
+    transform: rotateX(var(--rx)) rotateY(var(--ry)) rotateZ(-5deg); transform-style: preserve-3d; transition: transform .25s ease-out, opacity .4s;
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, .25), 0 22px 34px rgba(0, 0, 0, .55), 0 0 40px rgba(224, 184, 58, .25); animation: cw-ct-float 4.5s ease-in-out infinite; }
+.cw-contest-card.on { opacity: 1; }
+@keyframes cw-ct-float { 0%, 100% { translate: 0 0; } 50% { translate: 0 -5px; } }
+.cw-contest-pic { position: absolute; inset: 0; display: block; overflow: hidden; }
+.cw-contest-pic img { position: absolute; display: block; width: 115.4%; left: -7.7%; top: -13%; max-width: none; pointer-events: none; }
+.cw-contest-sheen { position: absolute; inset: 0; background: linear-gradient(115deg, transparent 38%, rgba(255, 255, 255, .26) 50%, transparent 62%); background-size: 260% 100%; animation: cw-ct-shine 4.2s ease-in-out infinite; pointer-events: none; }
+.cw-contest-title { position: relative; z-index: 1; font: 900 clamp(22px, 6vw, 30px)/1.1 'Inter', sans-serif; letter-spacing: -.01em; text-align: center; text-shadow: 0 2px 12px rgba(0, 0, 0, .5), 0 0 22px rgba(224, 184, 58, .35); }
+.cw-contest-sub { position: relative; z-index: 1; margin-top: 4px; font: 600 12.5px 'Inter', sans-serif; color: #b9c6e6; text-align: center; }
+.cw-contest-st { position: absolute; z-index: 0; width: 14px; height: 14px; opacity: .8; background: #ffe58a; clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%); animation: cw-ct-tw 2.6s ease-in-out infinite; }
+.cw-contest-st.s1 { right: 9%; top: 18%; } .cw-contest-st.s2 { right: 17%; bottom: 34%; width: 10px; height: 10px; animation-delay: .8s; } .cw-contest-st.s3 { left: 20%; bottom: 26%; width: 11px; height: 11px; animation-delay: 1.5s; }
+@keyframes cw-ct-tw { 0%, 100% { transform: scale(.5) rotate(0); opacity: .25; } 50% { transform: scale(1.15) rotate(25deg); opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .cw-contest-card, .cw-contest-st, .cw-contest-ribbon::after, .cw-contest-sheen { animation: none; } }
