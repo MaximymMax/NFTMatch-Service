@@ -67,6 +67,43 @@
         return tile;
     }
 
+    /* Нет скриншота актуальной карточки: карточка рисуется из данных, а в скрытом окне редактора сразу рендерится JPEG и уходит на сервер — после этого плитка подменяется скрином */
+    const sigOf = it => (it.stickers || []).map(s => s.gift + '|' + s.model + '|' + (s.uid || '')).join(';');
+    const shotQueue = []; let shotBusy = false;
+    function renderShot(it) {
+        return new Promise(resolve => {
+            const fr = document.createElement('iframe'); fr.style.cssText = 'position:fixed;left:-9999px;top:0;width:720px;height:480px;border:0;visibility:hidden';
+            fr.src = './editor.html?feed=1&embed=1&v=' + VER;
+            const id = it.owner + ':' + Date.now();
+            let done = false;
+            const fin = blob => { if (done) return; done = true; clearTimeout(tm); window.removeEventListener('message', onMsg); fr.remove(); resolve(blob); };
+            const onMsg = e => {
+                if (e.source !== fr.contentWindow || !e.data) return;
+                if (e.data.cdFeedReady) fr.contentWindow.postMessage({ cdFeedCard: { holder: it.holder, bg: it.bg, stickers: it.stickers }, shot: id }, '*');
+                else if (e.data.cdFeedShot === id) fin(e.data.blob || null);
+            };
+            const tm = setTimeout(() => fin(null), 40000);
+            window.addEventListener('message', onMsg);
+            document.body.appendChild(fr);
+        });
+    }
+    async function runShots() {
+        if (shotBusy) return; shotBusy = true;
+        while (shotQueue.length) {
+            const { it, apply } = shotQueue.shift();
+            try {
+                const blob = await renderShot(it);
+                if (!blob) continue;
+                const [owner, kind] = it.owner.split(':');
+                const r = await fetch(api('Card/ImageFor?owner=' + owner + '&kind=' + kind + '&sig=' + encodeURIComponent(sigOf(it))), { method: 'POST', headers: { 'Authorization': auth(), 'Content-Type': 'image/jpeg' }, body: blob });
+                if (!r.ok) continue;
+                const d = await r.json();
+                if (d.url) apply(d.url);
+            } catch (e) { /* не критично: карточка остаётся нарисованной из данных */ }
+        }
+        shotBusy = false;
+    }
+
     let lockUntil = 0;           // после закрытия ещё ~0,5 с не открываем карточки: «хвост» того же нажатия не должен попасть в плитку под оверлеем
     function openOverlay(it) {
         if (document.querySelector('.fd-ov') || Date.now() < lockUntil) return;          // пока открыта одна карточка, другие не открываем
@@ -108,8 +145,12 @@
     function row(it) {
         const el = document.createElement('div'); el.className = 'fd-item';
         const name = nameOf(it);
-        const pic = (it.imageUrl && it.imageOk !== false) ? shotCard(it) : flatCard(it);
+        let pic = (it.imageUrl && it.imageOk !== false) ? shotCard(it) : flatCard(it);
         pic.onclick = () => openOverlay(it);
+        if (!(it.imageUrl && it.imageOk !== false) && it.stickers && it.stickers.length) {
+            shotQueue.push({ it, apply: url => { it.imageUrl = url; it.imageOk = true; const np = shotCard(it); np.onclick = () => openOverlay(it); pic.replaceWith(np); pic = np; } });
+            runShots();
+        }
         const info = document.createElement('div'); info.className = 'fd-info';
         const ava = document.createElement('div'); ava.className = 'fd-ava'; ava.textContent = (name.replace('@', '')[0] || '?').toUpperCase();
         if (it.username) {          // аватарка из Telegram; нет фото — остаётся буква
@@ -183,30 +224,6 @@
         g.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
         F[g.dataset.f] = b.dataset.v; load(true);
     }));
-    // пересчёт скриншотов на сервере (только админ): запускает фоновую задачу и показывает ход
-    const rrSt = document.getElementById('fd-rrst'), rrBtns = document.querySelectorAll('#fd-rr button');
-    async function rrCall(method, force) {
-        const r = await fetch(api('Card/Rerender' + (method === 'POST' ? '?force=' + force : '')), { method, headers: { 'Authorization': auth() } });
-        if (!r.ok) throw new Error(r.status);
-        return r.json();
-    }
-    function rrShow(d) {
-        rrSt.textContent = d.running ? 'Пересчёт: ' + d.done + ' из ' + d.total + (d.failed ? ' · ошибок ' + d.failed : '') + '…'
-            : (d.finishedAt ? 'Пересчёт завершён: ' + d.done + ' нарисовано' + (d.failed ? ', ошибок ' + d.failed : '') + ', пропущено ' + d.skipped : '');
-    }
-    async function rrPoll() {
-        try {
-            for (;;) { const d = await rrCall('GET'); rrShow(d); if (!d.running) break; await new Promise(res => setTimeout(res, 3000)); }
-            load(true);
-        } catch (e) { rrSt.textContent = 'Не удалось получить ход пересчёта'; }
-        rrBtns.forEach(b => b.disabled = false);
-    }
-    rrBtns.forEach(b => b.onclick = async () => {
-        if (b.dataset.force === '1' && !confirm('Перерисовать скриншоты всех карточек на сервере? Это заменит и настоящие скрины из приложения.')) return;
-        rrBtns.forEach(x => x.disabled = true);
-        try { const d = await rrCall('POST', b.dataset.force); rrShow(d); rrPoll(); } catch (e) { rrSt.textContent = 'Не удалось запустить пересчёт'; rrBtns.forEach(x => x.disabled = false); }
-    });
-    rrCall('GET').then(d => { if (d.running) { rrBtns.forEach(x => x.disabled = true); rrShow(d); rrPoll(); } else rrShow(d); }).catch(() => { });
     more.onclick = () => load(false);
     load(true);
 })();

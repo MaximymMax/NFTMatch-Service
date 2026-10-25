@@ -1340,7 +1340,19 @@ async function startView() {
   if (VIEW_ID === '_feed') {
     // живая 3D-карточка внутри страницы ленты: данные присылает страница, кнопок и лайка здесь нет
     document.body.classList.add('feedview');
-    window.addEventListener('message', e => { if (e.source === P && e.data && e.data.cdFeedCard) fillViewCard(e.data.cdFeedCard); });
+    window.addEventListener('message', async e => {
+      if (e.source !== P || !e.data || !e.data.cdFeedCard) return;
+      fillViewCard(e.data.cdFeedCard);
+      // скрытый просмотр для скриншота: рисуем карточку в JPEG и возвращаем странице ленты, она отправит на сервер
+      if (e.data.shot) {
+        try {
+          await new Promise(r => setTimeout(r, 1500));          // курс GRAM и шрифты
+          const cv = await renderCardImage({ W: 1600, H: 1000, CW: 1400 });
+          const blob = await new Promise(r => cv.toBlob(r, 'image/jpeg', .82));
+          P.postMessage({ cdFeedShot: e.data.shot, blob }, '*');
+        } catch (err) { P.postMessage({ cdFeedShot: e.data.shot, blob: null }, '*'); }
+      }
+    });
     try { P.postMessage({ cdFeedReady: true }, '*'); } catch (e) { /* ignore */ }
     return;
   }
