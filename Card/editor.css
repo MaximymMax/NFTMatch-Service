@@ -504,3 +504,5 @@ body.view .stage { width: min(calc(100vw - 110px), calc((100vh - 200px) * 1.648)
 html:has(body.feedview), body.feedview { background: transparent !important; }
 body.feedview .stage { width: calc(100vw - 24px) !important; margin: 12px auto !important; }
 body.feedview .fsrow, body.feedview .viewbar, body.feedview .fs-exit { display: none !important; }
+
+.lot img.frag { border-radius: 22%; object-fit: cover; }

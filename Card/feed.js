@@ -15,6 +15,12 @@
     let skip = 0, busy = false, reqId = 0;
 
     const modelImg = (g, m) => 'https://cdn.changes.tg/gifts/models/' + encodeURIComponent(g) + '/png/' + encodeURIComponent(m) + '.png';
+    // CDN иногда не отдаёт картинку с первого раза: повторяем с обходом кэша (до двух раз)
+    function retryImg(im, url) {
+        let n = 0;
+        im.onerror = () => { if (n < 2) { n++; setTimeout(() => { im.src = url + '?r=' + n; }, 700 * n); } else im.onerror = null; };
+        im.src = url;
+    }
     const nameOf = it => it.username ? '@' + it.username : (it.holder || 'Коллекционер');
 
     /* Просмотр карточки: размытая лента на заднем плане, карточка по центру, снизу использованные модели; стрелка возвращает в ленту */
@@ -36,7 +42,7 @@
         const c0 = (it.bg && it.bg.c0) || '#3AB0F8', c1 = (it.bg && it.bg.c1) || '#1488E1';
         box.style.background = 'linear-gradient(135deg,' + c0 + ',' + c1 + ')';
         (it.stickers || []).forEach(s => {
-            const im = new Image(); im.className = 'fd-st'; im.alt = ''; im.loading = 'lazy'; im.draggable = false; im.src = modelImg(s.gift, s.model);
+            const im = new Image(); im.className = 'fd-st'; im.alt = ''; im.loading = 'lazy'; im.draggable = false; retryImg(im, modelImg(s.gift, s.model));
             const w = (s.sc || 1) * 23.1;
             im.style.cssText = 'left:' + (s.x * 100) + '%;top:' + (s.y * 100) + '%;width:' + w + '%;transform:translate(-50%,-50%) rotate(' + (s.r || 0) + 'deg)';
             box.appendChild(im);
@@ -66,7 +72,7 @@
         const ms = document.createElement('div'); ms.className = 'fd-models';
         (it.models || []).forEach(m => {
             const c = document.createElement('div'); c.className = 'fd-m';
-            const im = new Image(); im.alt = m.model; im.loading = 'lazy'; im.src = modelImg(m.gift, m.model);
+            const im = new Image(); im.alt = m.model; im.loading = 'lazy'; retryImg(im, modelImg(m.gift, m.model));
             const cap = document.createElement('small'); cap.textContent = m.model;
             c.append(im, cap);
             if (m.count > 1) { const k = document.createElement('i'); k.textContent = '×' + m.count; c.appendChild(k); }

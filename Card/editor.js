@@ -909,18 +909,23 @@ function bake(g, m) {
   return p;
 }
 function pumpBake() { while (bakeActive < 2 && bakeQueue.length) { bakeActive++; bakeQueue.shift()(); } }
-function modelImg(g, m, bakeIt, lazy) {
+function modelImg(g, m, bakeIt, lazy, uid) {
   const img = new Image(); img.decoding = 'async'; img.draggable = false; img.alt = m;
   if (lazy) img.loading = 'lazy';
   const key = g + '|' + m, u = bakedUrls.get(key);
+  let tries = 0;
+  img.onerror = () => {                                 // CDN моргнул или картинки нет: пробуем ещё, потом — фото экземпляра (для подарков профиля)
+    if (tries < 2) { tries++; setTimeout(() => { img.src = imgUrl(g, m) + '?r=' + tries; }, 700 * tries); }
+    else if (uid) { img.onerror = null; img.classList.add('frag'); img.src = fragUrl(uid); }
+  };
   img.src = u || imgUrl(g, m);
-  if (bakeIt && !u) bake(g, m).then(url => { if (url) img.src = url; });
+  if (bakeIt && !u) bake(g, m).then(url => { if (url) { img.onerror = null; img.src = url; } });
   return img;
 }
 function staticArt(gid, noBake) {
-  const [g, m] = splitId(gid);
+  const [g, m, uid] = splitId(gid);
   const wrap = document.createElement('div'); wrap.className = 'lot';
-  wrap.appendChild(modelImg(g, m, !noBake, !!noBake));
+  wrap.appendChild(modelImg(g, m, !noBake, !!noBake, uid));
   return wrap;
 }
 
@@ -1463,7 +1468,9 @@ function glCardCanvas(w, h, c0, c1) {
   return cv;      // холст общий: вызывающий должен сразу скопировать его на свой (между вызовом и drawImage нет await)
 }
 function loadImgCors(url) {
-  return new Promise(res => { const i = new Image(); i.crossOrigin = 'anonymous'; i.onload = () => res(i); i.onerror = () => res(null); i.src = url; });
+  // при сбое сети/CDN пробуем ещё раз (с обходом кэша), иначе стикер пропал бы со скриншота карточки
+  const once = u => new Promise(res => { const i = new Image(); i.crossOrigin = 'anonymous'; i.onload = () => res(i); i.onerror = () => res(null); i.src = u; });
+  return once(url).then(i => i || sleep(600).then(() => once(url + (url.includes('?') ? '&' : '?') + 'r=1')));
 }
 function rrPath(x, w, h, r) {
   x.beginPath(); x.moveTo(r, 0); x.arcTo(w, 0, w, h, r); x.arcTo(w, h, 0, h, r); x.arcTo(0, h, 0, 0, r); x.arcTo(0, 0, w, 0, r); x.closePath();
