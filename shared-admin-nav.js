@@ -96,72 +96,6 @@
         };
         im.src = url;
     }
-    // Окно конкурса: условия, ссылка на канал организатора и две кнопки — в конструктор и в ленту.
-    const CONTEST_CHANNEL = 'https://t.me/crypto_kommunalka/4070';          // пост организатора конкурса
-    function openTg(url) {
-        try { const w = window.Telegram && window.Telegram.WebApp; if (w && w.openTelegramLink) { w.openTelegramLink(url); return; } } catch (e) { }
-        window.open(url, '_blank');
-    }
-    function openContestModal() {
-        if (document.querySelector('.cw-ctm')) return;
-        const o = document.createElement('div'); o.className = 'cw-ctm';
-        o.innerHTML = '<div class="cw-ctm-p" role="dialog" aria-modal="true">' +
-            '<button type="button" class="cw-ctm-x" aria-label="Закрыть">✕</button>' +
-            '<div class="cw-ctm-ribbon">Конкурс</div>' +
-            '<h3>Лучшее оформление карточки</h3>' +
-            '<ol class="cw-ctm-list">' +
-            '<li>Создайте карточку в конструкторе: подберите фон и расставьте подарки.</li>' +
-            '<li>Нажмите «Добавить в ленту» — карточка появится в ленте. В ленте у вас может быть только одна из двух карточек.</li>' +
-            '<li>Лучшие работы выберет организатор конкурса. Итоги и подробности — в его канале.</li>' +
-            '</ol>' +
-            '<a class="cw-ctm-ch" href="' + CONTEST_CHANNEL + '" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M21.9 4.3 18.7 19.6c-.2 1-.9 1.3-1.7.8l-4.7-3.5-2.3 2.2c-.3.3-.5.5-1 .5l.3-4.8 8.8-7.9c.4-.3-.1-.5-.6-.2L6.6 13.6 1.9 12.1c-1-.3-1-1 .2-1.5L20.4 3.5c.9-.3 1.6.2 1.5.8z"/></svg><span>Подробности в канале организатора</span></a>' +
-            '<div class="cw-ctm-b"><a class="cw-ctm-btn pr" href="' + new URL('Card/card.html', SELF_SRC).href + '">Создать свою</a>' +
-            '<a class="cw-ctm-btn" href="' + new URL('Card/feed.html', SELF_SRC).href + '">Посмотреть работы</a></div></div>';
-        const close = () => { o.remove(); document.removeEventListener('keydown', onKey); };
-        const onKey = e => { if (e.key === 'Escape') close(); };
-        o.addEventListener('click', e => { if (e.target === o) close(); });
-        o.querySelector('.cw-ctm-x').onclick = close;
-        o.querySelector('.cw-ctm-ch').addEventListener('click', e => { e.preventDefault(); openTg(CONTEST_CHANNEL); });
-        document.addEventListener('keydown', onKey);
-        document.body.appendChild(o);
-    }
-    // Плашка конкурса на главном экране (пока только админу): золотая рамка, лента «Конкурс», карточка админа под наклоном (скриншот карточки, 3D-перспектива).
-    function buildContest(tabs) {
-        const ban = document.createElement('a');
-        ban.className = 'cw-contest';
-        ban.href = new URL('Card/feed.html', SELF_SRC).href;
-        ban.addEventListener('click', e => { e.preventDefault(); openContestModal(); });          // по нажатию — окно с условиями
-        ban.innerHTML = '<span class="cw-contest-ribbon">Конкурс</span>' +
-            '<span class="cw-contest-stage"><span class="cw-contest-card"><span class="cw-contest-pic"></span><span class="cw-contest-sheen"></span></span></span>' +
-            '<span class="cw-contest-title">Лучшее оформление</span>' +
-            '<span class="cw-contest-sub">Добавьте свою карточку в ленту и участвуйте</span>' +
-            '<i class="cw-contest-st s1"></i><i class="cw-contest-st s2"></i><i class="cw-contest-st s3"></i>';
-        tabs.parentNode.insertBefore(ban, tabs);
-        const card = ban.querySelector('.cw-contest-card'), pic = ban.querySelector('.cw-contest-pic');
-        // лёгкий наклон за пальцем/курсором
-        ban.addEventListener('pointermove', e => {
-            const r = ban.getBoundingClientRect(), px = (e.clientX - r.left) / r.width - .5, py = (e.clientY - r.top) / r.height - .5;
-            card.style.setProperty('--ry', (-14 + px * 22) + 'deg'); card.style.setProperty('--rx', (8 - py * 16) + 'deg');
-        });
-        ban.addEventListener('pointerleave', () => { card.style.removeProperty('--ry'); card.style.removeProperty('--rx'); });
-        // на плашке — карточка админа (её скриншот); пока грузится или скриншота нет — фирменный синий фон
-        pic.style.background = 'linear-gradient(135deg,#3AB0F8,#1488E1)';
-        const show = url => {
-            const im = new Image(); im.alt = ''; im.draggable = false;
-            im.onload = () => { pic.style.background = 'none'; pic.innerHTML = ''; pic.appendChild(im); card.classList.add('on'); };
-            im.src = url;
-        };
-        try { const k = localStorage.getItem('cd_contest_shot'); if (k) show(k); } catch (e) { }
-        try {
-            fetch(((window.CONFIG && CONFIG.SERVER_BASE_URL) || '') + '/api/Card/ContestImage', { headers: { 'Authorization': NFTAuth.getApiAuthHeader() } })
-                .then(r => r.ok ? r.json() : null).then(d => {
-                    if (!d) return;
-                    if (d.c0 && d.c1 && !card.classList.contains('on')) pic.style.background = 'linear-gradient(135deg,' + d.c0 + ',' + d.c1 + ')';
-                    if (d.url) { show(d.url); try { localStorage.setItem('cd_contest_shot', d.url); } catch (e) { } }
-                    else card.classList.add('on');
-                }).catch(() => { });
-        } catch (e) { }
-    }
     window.cdPaintMini = function (c0, c1) {
         document.querySelectorAll('.cw-mini-card').forEach(m => paintMiniCard(m, c0, c1));
         try { localStorage.setItem('cd_mini', JSON.stringify({ c0: c0, c1: c1 })); } catch (e) { }
@@ -176,8 +110,6 @@
             let authed = false; try { authed = !!(window.NFTAuth && NFTAuth.isAuthenticated && NFTAuth.isAuthenticated()); } catch (e) { }
             if (!admin && !authed && !force) return false;          // ждём вход: иначе админа можно принять за обычного пользователя
             tabs.dataset.cdAdmin = '1';
-            // Главный экран (там «Главная» — кнопка, а не ссылка): над кнопками плашка конкурса, открывает окно с условиями.
-            if (home.tagName === 'BUTTON' && !(tabs.previousElementSibling && tabs.previousElementSibling.classList.contains('cw-contest'))) buildContest(tabs);
             const inCard = location.pathname.indexOf('/Card/') !== -1;
             // вместо значка — мини-карточка (только админу): цвета берём из кэша, свежие подтягиваем с сервера
             const mini = document.createElement('span');
